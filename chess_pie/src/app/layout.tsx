@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import {Header} from "./components"
+import {Lexend} from 'next/font/google'
 
+const lex = Lexend({
+    subsets: ["latin"],
+    weight: ["400"],
+});
 
 export const metadata: Metadata = {
   title: "chessPie",
@@ -14,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${lex.className}`}>
       <body>
         <Header />
         {children}

@@ -15,5 +15,5 @@ export default function Board() {
     isWhite = !isWhite;
     }
 
-    return <div className="w-[643px] grid grid-cols-8 gap-0 custom-grid border-black border-2">{content}</div>;
+    return <div className="ml-4 mt-4 w-[643px] grid grid-cols-8 gap-0 custom-grid border-black border-2 rounded-md">{content}</div>;
 }
