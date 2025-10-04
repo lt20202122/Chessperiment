@@ -4,6 +4,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+:root {
+  @apply bg-amber-50 dark:bg-amber-950;
+  @apply opacity-85;
+
+}.custom-grid {
+  grid-template-columns: repeat(8,80px)
+}
+
+@theme {
+  --color-BoardGreen1:#649547d9;
+}
 .link-underline-regular {
   @apply relative lg:mx-4 text-gray-800 hover:text-amber-500 transition-colors duration-300 ease-in-out
           before:absolute before:bottom-0 before:left-0 lg:before:h-[2px] before:w-0 before:bg-amber-400 
