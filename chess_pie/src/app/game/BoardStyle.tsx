@@ -21,9 +21,15 @@ import {
 
 const styles = ["v1", "v2"]
 
-export default function BoardStyle() {
+export default function BoardStyle({
+  boardStyle,
+  onChange
+}: {
+  boardStyle: string
+  onChange: (value: string) => void
+}) {
   const [open, setOpen] = React.useState(false)
-  const [value, setValue] = React.useState("")
+  const [value, setValue] = React.useState(boardStyle)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -50,8 +56,9 @@ export default function BoardStyle() {
                   key={style}
                   value={style}
                   onSelect={(currentValue) => {
-                    setValue(currentValue === value ? "" : currentValue)
+                    setValue(currentValue)
                     setOpen(false)
+                    onChange(currentValue) // ⚡ hier wird der Wert nach außen weitergegeben
                   }}
                 >
                   <CheckIcon
