@@ -38,17 +38,32 @@ export const pieces: Piece[] = [
     new Piece("Rook", "black", "h8"),
 ];
 
-export const pieceImages: Record<string, string> = {
-    white_pawn: "/pieces/white_pawn.png",
-    black_pawn: "/pieces/black_pawn.png",
-    white_bishop: "/pieces/white_bishop.png",
-    black_bishop: "/pieces/black_bishop.png",
-    white_knight: "/pieces/white_knight.png",
-    black_knight: "/pieces/black_knight.png",
-    white_rook: "/pieces/white_rook.png",
-    black_rook: "/pieces/black_rook.png",
-    white_queen: "/pieces/white_queen.png",
-    black_queen: "/pieces/black_queen.png",
-    white_king: "/pieces/white_king.png",
-    black_king: "/pieces/black_king.png",
+export const pieceImagesv1: Record<string, string> = {
+    white_pawn: "/pieces-v1/white_pawn.png",
+    black_pawn: "/pieces-v1/black_pawn.png",
+    white_bishop: "/pieces-v1/white_bishop.png",
+    black_bishop: "/pieces-v1/black_bishop.png",
+    white_knight: "/pieces-v1/white_knight.png",
+    black_knight: "/pieces-v1/black_knight.png",
+    white_rook: "/pieces-v1/white_rook.png",
+    black_rook: "/pieces-v1/black_rook.png",
+    white_queen: "/pieces-v1/white_queen.png",
+    black_queen: "/pieces-v1/black_queen.png",
+    white_king: "/pieces-v1/white_king.png",
+    black_king: "/pieces-v1/black_king.png",
+};
+
+export const pieceImagesv2: Record<string, string> = {
+    white_pawn: "/pieces-v2/white_pawn.png",
+    black_pawn: "/pieces-v2/black_pawn.png",
+    white_bishop: "/pieces-v2/white_bishop.png",
+    black_bishop: "/pieces-v2/black_bishop.png",
+    white_knight: "/pieces-v2/white_knight.png",
+    black_knight: "/pieces-v2/black_knight.png",
+    white_rook: "/pieces-v2/white_rook.png",
+    black_rook: "/pieces-v2/black_rook.png",
+    white_queen: "/pieces-v2/white_queen.png",
+    black_queen: "/pieces-v2/black_queen.png",
+    white_king: "/pieces-v2/white_king.png",
+    black_king: "/pieces-v2/black_king.png",
 };

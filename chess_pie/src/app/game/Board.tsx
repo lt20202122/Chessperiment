@@ -1,10 +1,10 @@
 import Image from "next/image";
-import { pieces, pieceImages } from "./Data";
+import { pieces, pieceImagesv1, pieceImagesv2 } from "./Data";
+import BoardStyle from './BoardStyle'
 
-export default function Board() {
+export default function Board({boardStyle}:{boardStyle:string}) {
     let isWhite = true;
     let content = [];
-
 
     const columns = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
@@ -28,42 +28,28 @@ export default function Board() {
 
             if (piece) {
                 switch (piece.type.toLowerCase()) {
-                    case "pawn":
-                        piece.size = 40;
-                        break;
-                    case "rook":
-                        piece.size = 30;
-                        break;
-                    case "queen":
-                        piece.size = 25;
-                        break;
-                    case "king":
-                        piece.size = 20;
-                        break;
-                    case "knight":
-                        piece.size = 32;
-                        break;
-                    case "bishop":
-                        piece.size = 32;
-                        break;
-                    default:
-                        piece.size = 30; // Standardgröße
-                        break;
+                    case "pawn": piece.size = 65; break;
+                    case "rook": piece.size = 60; break;
+                    case "queen": piece.size = 75; break;
+                    case "king": piece.size = 80; break;
+                    case "knight": piece.size = 69; break;
+                    case "bishop": piece.size = 70; break;
+                    default: piece.size = 30; break;
                 }
             }
 
             content.push(
                 <div
                     key={`${i}-${a}`}
-                    className={`${isWhite ? "bg-gray-50" : "bg-BoardGreen1"} h-[80px] w-[80px] m-0 aspect-square relative ${eckenKlasse}`}
+                    className={`${isWhite ? "bg-gray-50" : "bg-BoardGreen1"} h-[80px] w-[80px] m-0 aspect-square relative ${eckenKlasse} flex items-center justify-center`}
                 >
                     {piece && (
                         <Image
-                            src={pieceImages[`${piece.color}_${piece.type.toLowerCase()}`]}
+                            src={boardStyle === "v1" ? pieceImagesv1[`${piece.color}_${piece.type.toLowerCase()}`] : boardStyle==="v2" ? pieceImagesv2[`${piece.color}_${piece.type.toLowerCase()}`] : pieceImagesv2[`${piece.color}_${piece.type.toLowerCase()}`]}
                             alt={`${piece.color} ${piece.type}`}
+                            height={piece.size}
                             width={piece.size}
-                            height={0}
-                            className="absolute top-0 left-4 h-auto w-auto"
+                            style={{ height: piece.size, width: "auto" }}
                         />
                     )}
                 </div>
@@ -77,6 +63,7 @@ export default function Board() {
     return (
         <div className="ml-4 mt-4 grid grid-cols-8 gap-0 custom-grid border-black border-2 w-fit h-fit rounded-[10px]">
             {content}
+            <BoardStyle />
         </div>
     );
 }
