@@ -4,5 +4,5 @@ import {useState} from 'react'
 
 export default function Game () {
     const [boardStyle, setBoardStyle] = useState("v2")
-    return <Board boardStyle={boardStyle}/>
+    return <Board boardStyle={boardStyle} setBoardStyle={setBoardStyle}/>
 }
