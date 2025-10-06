@@ -4,13 +4,10 @@ import { pieces, pieceImagesv1, pieceImagesv2, PieceType } from "./Data";
 import BoardStyle from './BoardStyle'
 import {useState} from 'react'
 
-export default function Board({
-    boardStyle,
-    setBoardStyle
-}: {
-    boardStyle: string,
-    setBoardStyle: (value: string) => void
-}) {
+export default function Board({boardStyle, setBoardStyle}:{boardStyle:string, setBoardStyle:(value:any) => void}) {
+    const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
+    const [select, setSelect] = useState<PieceType | null>(null);
+    const [selectedPos, setSelectedPos] = useState<string | null>(null)
     let isWhite = true;
     let content = [];
 
