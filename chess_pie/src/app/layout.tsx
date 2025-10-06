@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${lex.className}`}>
+    <html lang="en" className={`${lex.className}`} suppressHydrationWarning={false}>
       <body>
         <Header />
         {children}

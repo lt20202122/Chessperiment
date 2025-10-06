@@ -1,5 +1,13 @@
 import { Piece } from "./Piece";
 
+export interface PieceType {
+  type: string;           // z. B. "pawn", "rook", "queen" …
+  color: string;          // "white" oder "black"
+  position: string;       // z. B. "a2", "e4"
+  size?: number;          // optional: die Darstellungsgröße
+}
+
+
 export const pieces: Piece[] = [
     new Piece("Rook", "white", "a1"),
     new Piece("Knight", "white", "b1"),

@@ -1,6 +1,8 @@
+"use client"
 import Image from "next/image";
-import { pieces, pieceImagesv1, pieceImagesv2 } from "./Data";
+import { pieces, pieceImagesv1, pieceImagesv2, PieceType } from "./Data";
 import BoardStyle from './BoardStyle'
+import {useState} from 'react'
 
 export default function Board({
     boardStyle,
@@ -11,6 +13,34 @@ export default function Board({
 }) {
     let isWhite = true;
     let content = [];
+
+    function handlePieceSelect(pos:string) {
+        const clickedPiece = boardPieces.find(p => p.position === pos);
+        
+        if (select) {
+            if (clickedPiece && clickedPiece.color === select.color) return
+            
+            
+            const newPos:string = pos
+            const updatedPieces = boardPieces.map (p => p===select ? {...p, position:newPos} : p)
+            setBoardPieces(() => updatedPieces)
+            console.log("Board Pieces: "+boardPieces)
+
+            const updatedPieces2 = boardPieces.filter((p => p.position !== newPos))
+                                    .map(p => p === select ? { ...p, position: newPos } : p);
+            setBoardPieces(updatedPieces2)
+            setSelect(null)
+            setSelectedPos(null)
+            
+            
+        }
+        else {
+            setSelect(clickedPiece ?? null)
+            setSelectedPos(pos)
+            console.log(pos)
+
+        }
+    }
 
     const columns = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
