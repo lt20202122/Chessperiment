@@ -1,10 +1,43 @@
+"use client"
 import Image from "next/image";
-import { pieces, pieceImagesv1, pieceImagesv2 } from "./Data";
+import { pieces, pieceImagesv1, pieceImagesv2, PieceType } from "./Data";
 import BoardStyle from './BoardStyle'
+import {useState} from 'react'
 
 export default function Board({boardStyle}:{boardStyle:string}) {
+    const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
+    const [select, setSelect] = useState<PieceType | null>(null);
+    const [selectedPos, setSelectedPos] = useState<string | null>(null)
     let isWhite = true;
     let content = [];
+
+    function handlePieceSelect(pos:string) {
+        const clickedPiece = boardPieces.find(p => p.position === pos);
+        
+        if (select) {
+            if (clickedPiece && clickedPiece.color === select.color) return
+            
+            
+            const newPos:string = pos
+            const updatedPieces = boardPieces.map (p => p===select ? {...p, position:newPos} : p)
+            setBoardPieces(() => updatedPieces)
+            console.log("Board Pieces: "+boardPieces)
+
+            const updatedPieces2 = boardPieces.filter((p => p.position !== newPos))
+                                    .map(p => p === select ? { ...p, position: newPos } : p);
+            setBoardPieces(updatedPieces2)
+            setSelect(null)
+            setSelectedPos(null)
+            
+            
+        }
+        else {
+            setSelect(clickedPiece ?? null)
+            setSelectedPos(pos)
+            console.log(pos)
+
+        }
+    }
 
     const columns = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
@@ -24,7 +57,7 @@ export default function Board({boardStyle}:{boardStyle:string}) {
                 ${isBottomRight ? "rounded-br-md" : ""}
             `;
 
-            const piece = pieces.find(p => p.position === pos);
+            const piece = boardPieces.find(p => p.position === pos);
 
             if (piece) {
                 switch (piece.type.toLowerCase()) {
@@ -37,12 +70,14 @@ export default function Board({boardStyle}:{boardStyle:string}) {
                     default: piece.size = 30; break;
                 }
             }
-
+            // if (piece) console.log("i: "+i+"  a: "+a+"  piece_type: "+piece.type+"  piece_color: "+piece.color)
             content.push(
                 <div
                     key={`${i}-${a}`}
-                    className={`${isWhite ? "bg-gray-50" : "bg-BoardGreen1"} h-[80px] w-[80px] m-0 aspect-square relative ${eckenKlasse} flex items-center justify-center`}
-                >
+                    className={`${isWhite ? "bg-gray-50" : "bg-BoardGreen1"} h-[80px] w-[80px] m-0 aspect-square relative ${eckenKlasse} flex items-center justify-center ${selectedPos === pos ? "border-black border-2" : ""}`}
+                    onClick={() => handlePieceSelect(pos)}
+                    id={pos}
+                    >
                     {piece && (
                         <Image
                             src={boardStyle === "v1" ? pieceImagesv1[`${piece.color}_${piece.type.toLowerCase()}`] : boardStyle==="v2" ? pieceImagesv2[`${piece.color}_${piece.type.toLowerCase()}`] : pieceImagesv2[`${piece.color}_${piece.type.toLowerCase()}`]}
