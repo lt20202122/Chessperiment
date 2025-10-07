@@ -10,19 +10,33 @@ export default function Board({boardStyle, setBoardStyle}:{boardStyle:string, se
     const [selectedPos, setSelectedPos] = useState<string | null>(null)
     let isWhite = true;
     let content = [];
+    const [legal, setLegal] = useState<boolean | null>(null)
+    const [whites_turn, setWhites_Turn] = useState<boolean>(true)
+    const [startPos, setStartPos] = useState("")
 
     function handlePieceSelect(pos:string) {
         const clickedPiece = boardPieces.find(p => p.position === pos);
         
         if (select) {
             if (clickedPiece && clickedPiece.color === select.color) return
-            
+
+            fetch(`http://127.0.0.1:5000/move?${startPos}-${pos}`)
+                .then (res => res.json())
+                .then (data => {
+                    console.log("Data: ",data)
+                    setLegal(data.legal)
+                    if (legal) return;
+                })
+                .catch(console.error);
+                if (whites_turn && select.color !== "white") {setSelect(null); return}
+                if (!whites_turn && select.color !== "black") {setSelect(null); return}
+
+            setWhites_Turn(!whites_turn)
             
             const newPos:string = pos
             const updatedPieces = boardPieces.map (p => p===select ? {...p, position:newPos} : p)
             setBoardPieces(() => updatedPieces)
             console.log("Board Pieces: "+boardPieces)
-
             const updatedPieces2 = boardPieces.filter((p => p.position !== newPos))
                                     .map(p => p === select ? { ...p, position: newPos } : p);
             setBoardPieces(updatedPieces2)
@@ -34,6 +48,7 @@ export default function Board({boardStyle, setBoardStyle}:{boardStyle:string, se
         else {
             setSelect(clickedPiece ?? null)
             setSelectedPos(pos)
+            setStartPos(pos)
             console.log(pos)
 
         }
