@@ -15,7 +15,7 @@ export default function Btn() {
     return (
     <TooltipProvider delayDuration={1200}>
     <Tooltip>
-    <TooltipTrigger>
+    <TooltipTrigger asChild>
     <Button variant="outline" className={`hover:bg-Btns-regular transition-all duration-400 
     hover:scale-105 antialiased text-4xl
     h-[3.69rem] w-[36rem] cursor-pointer`} onClick={() => router.push("/game")}>Play</Button>
