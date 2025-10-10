@@ -13,6 +13,7 @@ export default function Board({boardStyle, setBoardStyle}:{boardStyle:string, se
     const [legal, setLegal] = useState<boolean | null>(null)
     const [whites_turn, setWhites_Turn] = useState<boolean>(true)
     const [startPos, setStartPos] = useState("")
+    const [take, setTake] = useState(false)
 
     async function handlePieceSelect(pos: string) {
         const clickedPiece = boardPieces.find(p => p.position === pos);
@@ -21,7 +22,8 @@ export default function Board({boardStyle, setBoardStyle}:{boardStyle:string, se
             if (clickedPiece && clickedPiece.color === select.color) return;
 
             try {
-                const res = await fetch(`http://127.0.0.1:5000/move?move=${startPos}-${pos}`);
+                if (clickedPiece) setTake(true)
+                const res = await fetch(`http://127.0.0.1:5000/move?move=${startPos}-${pos}-${take}`);
                 const data = await res.json();
 
                 console.log("Server-Antwort:", data);
@@ -47,6 +49,7 @@ export default function Board({boardStyle, setBoardStyle}:{boardStyle:string, se
                 setBoardPieces(updatedPieces);
                 setSelect(null);
                 setSelectedPos(null);
+                setTake(false)
                 console.log("Neues Brett:", updatedPieces);
 
             } catch (err) {
