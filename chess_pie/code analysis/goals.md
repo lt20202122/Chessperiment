@@ -1,0 +1,3 @@
+- Verschiedene routes verstehen
+- Fehler finden
+- returns/values analysieren

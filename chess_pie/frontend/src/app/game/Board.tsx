@@ -3,18 +3,49 @@ import Image from "next/image";
 import { pieces, pieceImagesv1, pieceImagesv2, PieceType } from "./Data";
 import BoardStyle from './BoardStyle'
 import {useState} from 'react'
+import Loading from '@/app/loading'
 
-export default function Board({boardStyle, setBoardStyle}:{boardStyle:string, setBoardStyle:(value:any) => void}) {
-    const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
+export default function Board() {
+    const [boardPieces, setBoardPieces] = useState<PieceType[]>(() => {
+            if (typeof window !== "undefined") {
+                const saved = localStorage.getItem("boardPieces");
+                if (saved) {
+                    try {
+                        return JSON.parse(saved);
+                    } catch {
+                        console.warn("Fehler beim Parsen von localStorage, Standardboard geladen.");
+                        return pieces;
+                    }
+                }
+                const saved2 = localStorage.getItem("whites_turn");
+                if (saved2) {
+                    try {
+                        return JSON.parse(saved2)
+                    } catch {
+                        console.warn("Error when parsing localStorage, loading Standard board")
+                        return pieces
+                    }
+                }
+            }
+            return pieces;
+        });
+    const [boardStyle, setBoardStyle] = useState("v2")
     const [select, setSelect] = useState<PieceType | null>(null);
     const [selectedPos, setSelectedPos] = useState<string | null>(null)
     let isWhite = true;
     let content = [];
     const [legal, setLegal] = useState<boolean | null>(null)
-    const [whites_turn, setWhites_Turn] = useState<boolean>(true)
+    const [whites_turn, setWhites_Turn] = useState<boolean>(() => {
+        if (typeof window !== "undefined") {
+            const savedTurn = localStorage.getItem("whites_turn");
+            if (savedTurn) return JSON.parse(savedTurn);
+        }
+        return true;
+    });
     const [startPos, setStartPos] = useState("")
     const [take, setTake] = useState(false)
 
+    
     async function handlePieceSelect(pos: string) {
         const clickedPiece = boardPieces.find(p => p.position === pos);
 
@@ -47,6 +78,7 @@ export default function Board({boardStyle, setBoardStyle}:{boardStyle:string, se
                     .map(p => p === select ? { ...p, position: newPos } : p);
 
                 setBoardPieces(updatedPieces);
+                if (typeof window !== undefined) {localStorage.setItem("boardPieces", JSON.stringify(updatedPieces)); localStorage.setItem("whites_turn", JSON.stringify(whites_turn))}
                 setSelect(null);
                 setSelectedPos(null);
                 setTake(false)
@@ -66,6 +98,7 @@ export default function Board({boardStyle, setBoardStyle}:{boardStyle:string, se
 
 
     const columns = ["a", "b", "c", "d", "e", "f", "g", "h"];
+    if (!boardPieces || boardPieces.length === 0) return <Loading />
 
     for (let i = 7; i >= 0; i--) {
         for (let a = 0; a < 8; a++) {
@@ -96,7 +129,6 @@ export default function Board({boardStyle, setBoardStyle}:{boardStyle:string, se
                     default: piece.size = 30; break;
                 }
             }
-            // if (piece) console.log("i: "+i+"  a: "+a+"  piece_type: "+piece.type+"  piece_color: "+piece.color)
             content.push(
                 <div
                     key={`${i}-${a}`}

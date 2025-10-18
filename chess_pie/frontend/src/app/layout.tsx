@@ -10,7 +10,7 @@ const lex = Lexend({
 
 export const metadata: Metadata = {
   title: "chessPie",
-  description: "Play fun versions off chess from everywhere you want!",
+  description: "Play fun versions of chess from everywhere you want!",
 };
 
 export default function RootLayout({

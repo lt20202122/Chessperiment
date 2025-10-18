@@ -5,45 +5,46 @@ export interface PieceType {
   color: string;          // "white" oder "black"
   position: string;       // z. B. "a2", "e4"
   size?: number;          // optional: die Darstellungsgröße
+    id?: number;            // optional server-provided id
 }
 
 
 export const pieces: Piece[] = [
-    new Piece("Rook", "white", "a1"),
-    new Piece("Knight", "white", "b1"),
-    new Piece("Bishop", "white", "c1"),
-    new Piece("Queen", "white", "d1"),
-    new Piece("King", "white", "e1"),
-    new Piece("Bishop", "white", "f1"),
-    new Piece("Knight", "white", "g1"),
-    new Piece("Rook", "white", "h1"),
+    new Piece("Rook", "white", "a1", 1),
+    new Piece("Knight", "white", "b1", 2),
+    new Piece("Bishop", "white", "c1", 3),
+    new Piece("Queen", "white", "d1", 4),
+    new Piece("King", "white", "e1", 5),
+    new Piece("Bishop", "white", "f1", 6),
+    new Piece("Knight", "white", "g1", 7),
+    new Piece("Rook", "white", "h1", 8),
 
-    new Piece("Pawn", "white", "a2"),
-    new Piece("Pawn", "white", "b2"),
-    new Piece("Pawn", "white", "c2"),
-    new Piece("Pawn", "white", "d2"),
-    new Piece("Pawn", "white", "e2"),
-    new Piece("Pawn", "white", "f2"),
-    new Piece("Pawn", "white", "g2"),
-    new Piece("Pawn", "white", "h2"),
+    new Piece("Pawn", "white", "a2", 9),
+    new Piece("Pawn", "white", "b2", 10),
+    new Piece("Pawn", "white", "c2", 11),
+    new Piece("Pawn", "white", "d2", 12),
+    new Piece("Pawn", "white", "e2", 13),
+    new Piece("Pawn", "white", "f2", 14),
+    new Piece("Pawn", "white", "g2", 15),
+    new Piece("Pawn", "white", "h2", 16),
 
-    new Piece("Pawn", "black", "a7"),
-    new Piece("Pawn", "black", "b7"),
-    new Piece("Pawn", "black", "c7"),
-    new Piece("Pawn", "black", "d7"),
-    new Piece("Pawn", "black", "e7"),
-    new Piece("Pawn", "black", "f7"),
-    new Piece("Pawn", "black", "g7"),
-    new Piece("Pawn", "black", "h7"),
+    new Piece("Pawn", "black", "a7", 17),
+    new Piece("Pawn", "black", "b7", 18),
+    new Piece("Pawn", "black", "c7", 19),
+    new Piece("Pawn", "black", "d7", 20),
+    new Piece("Pawn", "black", "e7", 21),
+    new Piece("Pawn", "black", "f7", 22),
+    new Piece("Pawn", "black", "g7", 23),
+    new Piece("Pawn", "black", "h7", 24),
 
-    new Piece("Rook", "black", "a8"),
-    new Piece("Knight", "black", "b8"),
-    new Piece("Bishop", "black", "c8"),
-    new Piece("Queen", "black", "d8"),
-    new Piece("King", "black", "e8"),
-    new Piece("Bishop", "black", "f8"),
-    new Piece("Knight", "black", "g8"),
-    new Piece("Rook", "black", "h8"),
+    new Piece("Rook", "black", "a8", 25),
+    new Piece("Knight", "black", "b8", 26),
+    new Piece("Bishop", "black", "c8", 27),
+    new Piece("Queen", "black", "d8", 28),
+    new Piece("King", "black", "e8", 29),
+    new Piece("Bishop", "black", "f8", 30),
+    new Piece("Knight", "black", "g8", 31),
+    new Piece("Rook", "black", "h8", 32),
 ];
 
 export const pieceImagesv1: Record<string, string> = {

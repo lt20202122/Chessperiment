@@ -1,11 +1,11 @@
 from legal import *
+from utils import convert_coord
 
 class Piece:
-    def __init__(self, x, y, piece_type):
+    def __init__(self, x, y, piece_type): #NOTE: We are here using the 1-1 format for coord
         self.x = x
         self.y = y
         self.type = piece_type
-        self.legalMoves = []
 
         if x == 1 or x == 2:
             self.color = "white"
@@ -27,7 +27,6 @@ class Rook(Piece):
 class Knight(Piece):
     def __init__(self, x, y):
         super().__init__(x, y, "Knight")
-        print("Hello")
 
 
 class Bishop(Piece):
@@ -49,3 +48,4 @@ class King(Piece):
 class Pawn(Piece):
     def __init__(self, x, y):
         super().__init__(x, y, "Pawn")
+        self.movedOnce = False
