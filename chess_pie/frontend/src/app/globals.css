@@ -8,26 +8,31 @@
   font-weight: normal;
   font-style: normal;
 }
-:root {
-  @apply bg-light dark:bg-dark;
-
-}.custom-grid {
-  grid-template-columns: repeat(8,80px)
-}
 
 @theme {
   --color-BoardGreen1:#649547d9;
   --color-Btns-regular:#f3b31ded;
   --color-light:#FFFBEB;
-  --color-dark:#2b2927;
+  --color-spaceDark:#353230;
   --color-headerLight:#FEF3C7;
   --color-headerDark:#353230;
+  --color-islandsDark:#2b2927;
+  --shadow-playShadow:4.5px 4px 5px #000000;
 }
+
+:root {
+  @apply bg-light dark:bg-spaceDark;
+
+}.custom-grid {
+  grid-template-columns: repeat(8,80px)
+}
+
+
 .link-underline-regular {
   @apply relative lg:mx-4 text-gray-800 hover:text-amber-500 transition-colors duration-300 ease-in-out
           before:absolute before:bottom-0 before:left-0 before:h-[2px] before:w-0 before:bg-amber-400 
           before:transition-all before:duration-300 hover:before:w-full inline h-6 text-sm
-          dark:text-orange-500 dark:hover:text-red-600 dark:before:bg-red-500;
+          dark:text-amber-500 dark:hover:text-orange-400 dark:before:bg-orange-400 caret-transparent;
 }
 .pseudos-links-regular {
   @apply active:text-amber-600 transition-colors duration-250;
