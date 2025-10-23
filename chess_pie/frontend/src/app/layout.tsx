@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import {Header} from "./components"
 import {Lexend} from 'next/font/google'
+import { ModalProvider } from "@/components/modalContext";
 
 const lex = Lexend({
     subsets: ["latin"],
@@ -9,21 +10,26 @@ const lex = Lexend({
 });
 
 export const metadata: Metadata = {
-  title: "chessPie",
-  description: "Play fun versions off chess from everywhere you want!",
+title: "chessPie",
+description: "Play fun versions of chess from everywhere you want!",
 };
 
 export default function RootLayout({
-  children,
+children,
 }: Readonly<{
-  children: React.ReactNode;
+children: React.ReactNode;
 }>) {
-  return (
+return (
     <html lang="en" className={`${lex.className}`} suppressHydrationWarning={false}>
-      <body>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+        </head>
+    <body>
+        <ModalProvider>
         <Header />
         {children}
-      </body>
+        </ModalProvider>
+    </body>
     </html> 
-  );
+);
 }
