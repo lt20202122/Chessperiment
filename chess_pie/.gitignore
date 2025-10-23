@@ -65,8 +65,3 @@ migrations/
 .idea/
 *.sublime-project
 *.sublime-workspace
-
-# ====================
-# Tailwind
-# ====================
-tailwind.config.js

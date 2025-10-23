@@ -1,0 +1,14 @@
+html{
+    background-color: red;
+}
+@keyframes BtnClick {
+    0%{
+        transform:scale(1.04);
+    }
+    15% {
+        tranform: scale(0.9);
+    }
+    40% {
+        transform: scale(3) rotate(45deg);
+    }
+}

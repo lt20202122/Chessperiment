@@ -4,6 +4,8 @@ import { pieces, pieceImagesv1, pieceImagesv2, PieceType } from "./Data";
 import BoardStyle from './BoardStyle'
 import {useState} from 'react'
 import Loading from '@/app/loading'
+import Back from './Back'
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export default function Board() {
     const [boardPieces, setBoardPieces] = useState<PieceType[]>(() => {
@@ -54,7 +56,7 @@ export default function Board() {
 
             try {
                 if (clickedPiece) setTake(true)
-                const res = await fetch(`http://127.0.0.1:5000/move?move=${startPos}-${pos}-${take}`);
+                const res = await fetch(`${BACKEND_URL}/move?move=${startPos}-${pos}-${take}`);
                 const data = await res.json();
 
                 console.log("Server-Antwort:", data);
@@ -157,6 +159,7 @@ export default function Board() {
         <div className="ml-4 mt-4 grid grid-cols-8 gap-0 custom-grid border-black border-2 w-fit h-fit rounded-[10px]">
             {content}
             <BoardStyle />
+            <Back />
         </div>
     );
 }
