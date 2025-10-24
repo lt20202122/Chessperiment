@@ -13,7 +13,10 @@
 
 @theme {
   --color-BoardGreen1:#5d8643;
+<<<<<<< Updated upstream
   --color-BoardGreen1:#5d8643;
+=======
+>>>>>>> Stashed changes
   --color-Btns-regular:#f3b31ded;
   --color-light:#FFFBEB;
   --color-spaceDark:#353230;
@@ -22,7 +25,10 @@
   --color-islandsDark:#2b2927;
   --shadow-playShadow:4.5px 4px 5px #000000;
   --shadow-islands:4.5px 4px 5px #000000
+<<<<<<< Updated upstream
   --shadow-islands:4.5px 4px 5px #000000
+=======
+>>>>>>> Stashed changes
 }
 
 >>>>>>> Stashed changes
@@ -46,7 +52,11 @@
           before:absolute before:bottom-0 before:left-0 before:h-[2px] before:w-0 before:bg-amber-400 
           before:transition-all before:duration-300 hover:before:w-full inline h-6 text-sm
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
           dark:text-orange-500 dark:hover:text-red-600 dark:before:bg-red-500;
+=======
+          dark:text-amber-500 dark:hover:text-orange-400 dark:before:bg-orange-400 caret-transparent cursor-pointer;
+>>>>>>> Stashed changes
 =======
           dark:text-amber-500 dark:hover:text-orange-400 dark:before:bg-orange-400 caret-transparent cursor-pointer;
 >>>>>>> Stashed changes
