@@ -2,19 +2,10 @@
 @plugin "tailwindcss-animate";
 @import "tw-animate-css";
 
-@font-face {
-  font-family: 'Rockswell';
-  src: url('/fonts/Rockswell.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
 
 @theme {
   --color-BoardGreen1:#5d8643;
-<<<<<<< Updated upstream
   --color-BoardGreen1:#5d8643;
-=======
->>>>>>> Stashed changes
   --color-Btns-regular:#f3b31ded;
   --color-light:#FFFBEB;
   --color-spaceDark:#353230;
@@ -32,14 +23,6 @@
   grid-template-columns: repeat(8,80px)
 }
 
-@theme {
-  --color-BoardGreen1:#649547d9;
-  --color-Btns-regular:#f3b31ded;
-  --color-light:#FFFBEB;
-  --color-dark:#2b2927;
-  --color-headerLight:#FEF3C7;
-  --color-headerDark:#353230;
-}
 .link-underline-regular {
   @apply relative lg:mx-4 text-gray-800 hover:text-amber-500 transition-colors duration-300 ease-in-out
           before:absolute before:bottom-0 before:left-0 before:h-[2px] before:w-0 before:bg-amber-400 
