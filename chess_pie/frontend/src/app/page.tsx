@@ -1,5 +1,3 @@
-"use client"
-import {useState, useEffect} from 'react'
 import Btn from "./Buttons"
 
 export default function Home() {
