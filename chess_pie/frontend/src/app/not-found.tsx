@@ -1,5 +1,5 @@
 
-import Btn from "./homepage-button"
+import Btn from "./home/homepage-button"
 
 export default function NotFound() {
     return <div className="m-5">

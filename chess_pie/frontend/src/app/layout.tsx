@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import {Header} from "./components"
 import {Lexend} from 'next/font/google'
-import { ModalProvider } from "@/components/modalContext";
+
 
 const lex = Lexend({
     subsets: ["latin"],
@@ -24,12 +23,7 @@ return (
         <head>
             <meta name="viewport" content="width=device-width, initial-scale=1" />
         </head>
-    <body>
-        <ModalProvider>
-        <Header />
-        {children}
-        </ModalProvider>
-    </body>
+    {children}
     </html> 
 );
 }
