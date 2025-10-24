@@ -1,8 +1,6 @@
-import { useModal } from '@/components/modalContext';
 
 
 export default function Btn() {
-    const {setModalOpen} = useModal()
     return (
     <button type="button" className={`block lg:h-[56px] lg:w-[412px] p-0 overflow-hidden cursor-pointer
         hover:scale-102 transition-all duration-400 antialiased lg:text-[2.8rem] text-[2rem] leading-[100000000px] lg:leading-[30px]`} 
@@ -20,9 +18,6 @@ export default function Btn() {
         willChange:"transform",
         backfaceVisibility:"hidden",
         transformStyle:"preserve-3d",
-    }}
-        onClick={() => {
-        setModalOpen(true)
     }}>Play</button>
     );
 }
