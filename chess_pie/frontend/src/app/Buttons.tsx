@@ -1,8 +1,6 @@
-import { useModal } from '@/components/modalContext';
 
 
 export default function Btn() {
-    const {setModalOpen} = useModal()
     return (
     <section className='bg-'>
     <button type="button" className={`block lg:h-[56px] lg:w-[412px] p-0 overflow-hidden cursor-pointer
@@ -22,9 +20,6 @@ export default function Btn() {
         willChange:"transform",
         backfaceVisibility:"hidden",
         transformStyle:"preserve-3d",
-    }}
-        onClick={() => {
-        setModalOpen(true)
     }}>Play</button>
     </section>
     );
