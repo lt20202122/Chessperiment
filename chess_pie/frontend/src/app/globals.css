@@ -15,11 +15,7 @@
   --shadow-playShadow:4.5px 4px 5px #000000;
   --shadow-islands:4.5px 4px 5px #000000
 }
-
-:root {
-  @apply bg-light dark:bg-dark;
-
-}.custom-grid {
+.custom-grid {
   grid-template-columns: repeat(8,80px)
 }
 
