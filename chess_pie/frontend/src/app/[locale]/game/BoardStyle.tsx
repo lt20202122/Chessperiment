@@ -40,8 +40,7 @@ export default function BoardStyle() {
       </PopoverTrigger>
 
       <PopoverContent className="w-[200px] p-0 shadow-black bg-[hsl(0,0%,90%)]" style={{
-        boxShadow:"5px 5px 10px hsl(0,0%,15%)",
-        boxShadow:"10px 10px 20px hsl(0,0%,15%)",
+        boxShadow: "5px 5px 10px hsl(0,0%,15%), 10px 10px 20px hsl(0,0%,15%)"
       }}>
         <Command>
           <CommandInput placeholder="Search style..." />
