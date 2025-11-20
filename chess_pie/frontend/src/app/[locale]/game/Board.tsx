@@ -88,9 +88,9 @@ export default function Board() {
 
             try {
                 if (clickedPiece) setTake(true)
-                const res = await fetch(`${BACKEND_URL}/move?move=${startPos}-${pos}-${take}`);
-                const data = await res.json();
-
+                // const res = await fetch(`${BACKEND_URL}/move?move=${startPos}-${pos}-${take}`);
+                // const data = await res.json();
+                const data = {legal:true}
                 console.log("Server-Antwort:", data);
                 setLegal(data.legal);
 

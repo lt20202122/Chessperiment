@@ -1,22 +1,39 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 @import "tw-animate-css";
+@theme {
+  --color-board-green-1: var(--color-board-green-1);
+  --color-btns-regular: var(--color-btns-regular);
+  --color-light: var(--color-light);
+  --color-bg: var(--color-bg);
+  --color-islands: var(--color-islands);
+  --color-accent: var(--color-accent);
+  --color-accent-hover:var(--color-accent-hover);
+  --color-secondary: var(--color-secondary);
+  --color-tertiary: var(--color-tertiary)
+}
 
 
 :root {
   --color-board-green-1:#5d8643;
   --color-btns-regular:#f3b31ded;
   --color-light:#FFFBEB;
-  --color-bg:hsl(24, 0%, 12%);
-  --color-islands:hsl(30, 5%, 16%);
+  --color-bg:oklch(26.6% 0.079 36.259);
+  --color-islands:hsl(13, 82%, 18%);
+  --color-accent:oklch(87.9% 0.169 91.605);
+  --color-accent-hover:hsl(47, 100%, 50%);
+  --color-secondary:hsla(17, 91%, 65%, 1);
+  --color-tertiary:hsla(159, 30%, 43%, 1);
 }
 
 @media (prefers-color-scheme: light){
   :root {
-    --color-space:#353230; /*TODO*/
-    --color-bg: #FFFBEB;
-    --color-islands:#2b2927; /*TODO*/
-    --color-header:#353230; /*TODO*/
+    --color-bg: #fff7d6;
+    --color-islands:hsl(48, 100%, 95%);
+    --color-accent:oklch(76.9% 0.188 70.08);
+    --color-accent-hover:hsl(47, 100%, 60%);
+    --color-secondary:hsla(17, 91%, 65%, 1);
+    --color-tertiary:hsla(159, 30%, 43%, 1);
   }
 }
 
@@ -42,10 +59,3 @@
   font-style:italic;
 }
 
-@theme {
-  --color-board-green-1: var(--color-board-green-1);
-  --color-btns-regular: var(--color-btns-regular);
-  --color-light: var(--color-light);
-  --color-bg: var(--color-bg);
-  --color-islands: var(--color-islands);
-}
