@@ -1,33 +1,56 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 @import "tw-animate-css";
-
-
 @theme {
-  --color-BoardGreen1:#5d8643;
-  --color-BoardGreen1:#5d8643;
-  --color-Btns-regular:#f3b31ded;
-  --color-light:#FFFBEB;
-  --color-spaceDark:#353230;
-  --color-headerLight:#FEF3C7;
-  --color-headerDark:#353230;
-  --color-islandsDark:#2b2927;
-  --shadow-playShadow:4.5px 4px 5px #000000;
-  --shadow-islands:4.5px 4px 5px #000000
+  --color-board-green-1: var(--color-board-green-1);
+  --color-btns-regular: var(--color-btns-regular);
+  --color-light: var(--color-light);
+  --color-bg: var(--color-bg);
+  --color-islands: var(--color-islands);
+  --color-accent: var(--color-accent);
+  --color-accent-hover:var(--color-accent-hover);
+  --color-secondary: var(--color-secondary);
+  --color-tertiary: var(--color-tertiary)
 }
 
-:root {
-  @apply bg-light dark:bg-dark;
 
-}.custom-grid {
-  grid-template-columns: repeat(8,80px)
+:root {
+  --color-board-green-1:#5d8643;
+  --color-btns-regular:#f3b31ded;
+  --color-light:#FFFBEB;
+  --color-bg:oklch(26.6% 0.079 36.259);
+  --color-islands:hsl(13, 82%, 18%);
+  --color-accent:oklch(87.9% 0.169 91.605);
+  --color-accent-hover:hsl(47, 100%, 50%);
+  --color-secondary:hsla(17, 91%, 65%, 1);
+  --color-tertiary:hsla(159, 30%, 43%, 1);
+}
+
+@media (prefers-color-scheme: light){
+  :root {
+    --color-bg: #fff7d6;
+    --color-islands:hsl(48, 100%, 95%);
+    --color-accent:oklch(76.9% 0.188 70.08);
+    --color-accent-hover:hsl(47, 100%, 60%);
+    --color-secondary:hsla(17, 91%, 65%, 1);
+    --color-tertiary:hsla(159, 30%, 43%, 1);
+  }
+}
+
+.shadow-islands {
+  box-shadow:2.5px 2px 10px hsl(0, 0%, 5%);
+  box-shadow: 10px 10px 15px hsl(0,0%,10%)
+}
+
+.play-shadow {
+  box-shadow:4.5px 4px 5px #000000;
 }
 
 .link-underline-regular {
-  @apply relative lg:mx-4 text-gray-800 hover:text-amber-500 transition-colors duration-300 ease-in-out
+  @apply relative lg:mx-4 transition-colors duration-300 ease-in-out
           before:absolute before:bottom-0 before:left-0 before:h-[2px] before:w-0 before:bg-amber-400 
           before:transition-all before:duration-300 hover:before:w-full inline h-6 text-sm
-          dark:text-amber-500 dark:hover:text-orange-400 dark:before:bg-orange-400 caret-transparent cursor-pointer;
+           caret-transparent cursor-pointer;
 }
 .pseudos-links-regular {
   @apply active:text-amber-600 transition-colors duration-250;
@@ -35,3 +58,4 @@
 .pseudos-links-regular:visited {
   font-style:italic;
 }
+
