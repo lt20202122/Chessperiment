@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import "../globals.css";
 import {Lexend} from 'next/font/google'
 import {NextIntlClientProvider, hasLocale} from 'next-intl';
 import {routing} from '@/i18n/routing';
