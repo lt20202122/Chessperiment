@@ -4,42 +4,36 @@
 
 
 :root {
-  --color-board-green1:#5d8643;
-  --color-board-green1:#5d8643;
+  --color-board-green-1:#5d8643;
   --color-btns-regular:#f3b31ded;
   --color-light:#FFFBEB;
-  --color-bg:#353230;
-  --color-header:#353230;
-  --color-islands:#2b2927;
+  --color-bg:hsl(24, 0%, 12%);
+  --color-islands:hsl(30, 5%, 16%);
 }
 
 @media (prefers-color-scheme: light){
   :root {
-    --color-header: #FEF3C7;
     --color-space:#353230; /*TODO*/
     --color-bg: #FFFBEB;
     --color-islands:#2b2927; /*TODO*/
     --color-header:#353230; /*TODO*/
-
   }
 }
 
 .shadow-islands {
-  box-shadow:4.5px 4px 5px #000000;
+  box-shadow:2.5px 2px 10px hsl(0, 0%, 5%);
+  box-shadow: 10px 10px 15px hsl(0,0%,10%)
 }
 
 .play-shadow {
   box-shadow:4.5px 4px 5px #000000;
 }
-.custom-grid {
-  grid-template-columns: repeat(8,80px)
-}
 
 .link-underline-regular {
-  @apply relative lg:mx-4 text-gray-800 hover:text-amber-500 transition-colors duration-300 ease-in-out
+  @apply relative lg:mx-4 transition-colors duration-300 ease-in-out
           before:absolute before:bottom-0 before:left-0 before:h-[2px] before:w-0 before:bg-amber-400 
           before:transition-all before:duration-300 hover:before:w-full inline h-6 text-sm
-          dark:text-amber-500 dark:hover:text-orange-400 dark:before:bg-orange-400 caret-transparent cursor-pointer;
+           caret-transparent cursor-pointer;
 }
 .pseudos-links-regular {
   @apply active:text-amber-600 transition-colors duration-250;
@@ -49,10 +43,9 @@
 }
 
 @theme {
-  --color-BoardGreen1: var(--color-BoardGreen1);
-  --color-Btns-regular: var(--color-Btns-regular);
+  --color-board-green-1: var(--color-board-green-1);
+  --color-btns-regular: var(--color-btns-regular);
   --color-light: var(--color-light);
-  --color-space: var(--color-space);
-  --color-header: var(--color-header);
+  --color-bg: var(--color-bg);
   --color-islands: var(--color-islands);
 }
