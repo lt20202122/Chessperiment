@@ -1,0 +1,4 @@
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+router.push("/game")
+fetch(`${BACKEND_URL}/start`); console.log("Start fetched")
