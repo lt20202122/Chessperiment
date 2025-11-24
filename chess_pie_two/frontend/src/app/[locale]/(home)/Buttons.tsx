@@ -20,10 +20,10 @@ export default function Btn() {
         analyzeVid.current?.pause()
     }
     return (
-    <div className='flex items-center flex-col gap-[36px] pt-10'>
+    <div className='flex items-center flex-col gap-9 pt-10'>
     <button 
     type="button" className={`block lg:h-[78px] lg:w-[577px] md:h-[60px] md:w-[400px] p-0 overflow-hidden cursor-pointer
-        hover:scale-104 transition-all duration-400 antialiased lg:text-[2.8rem] text-[2rem] leading-[20px] lg:leading-[30px]
+        hover:scale-104 transition-all duration-400 antialiased lg:text-[2.8rem] text-[2rem] leading-5 lg:leading-[30px]
         shadow-playShadow ${zillaSlab.className} mt-1`} 
     style={{
         backgroundImage:"url('PlayBtn.png')",
@@ -44,7 +44,7 @@ export default function Btn() {
     }}>
         Play</button>
     <button type="button" className={`block lg:h-[78px] lg:w-[577px] md:h-[60px] md:w-[400px] p-0 overflow-hidden cursor-pointer
-        hover:scale-104 transition-all duration-400 antialiased lg:text-[2.8rem] text-[2rem] leading-[20px] lg:leading-[30px]
+        hover:scale-104 transition-all duration-400 antialiased lg:text-[2.8rem] text-[2rem] leading-5 lg:leading-[30px]
         shadow-playShadow ${zillaSlab.className} mt-1`} 
     style={{
         backgroundImage:"url('Board2.1.jpg')",
@@ -69,7 +69,7 @@ export default function Btn() {
         onClick={()=>null}
         className={`relative block lg:h-[78px] lg:w-[577px] p-0 md:h-[60px] md:w-[400px] overflow-hidden cursor-pointer
             hover:scale-104 transition-all duration-400 antialiased lg:text-[2.8rem] text-[2rem]
-            leading-[20px] lg:leading-[30px] shadow-playShadow ${zillaSlab.className} mt-1`}
+            leading-5 lg:leading-[30px] shadow-playShadow ${zillaSlab.className} mt-1`}
         style={{
             color: "#F2FF00",
             textShadow: "-2px 2px 0 #F2FF0080",

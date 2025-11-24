@@ -3,7 +3,7 @@
 export default function Btn() {
     return (
     <section className=''>
-    <button type="button" className={`block lg:h-[56px] lg:w-[412px] p-0 overflow-hidden cursor-pointer
+    <button type="button" className={`block lg:h-14 lg:w-[412px] p-0 overflow-hidden cursor-pointer
         hover:scale-102 transition-all duration-400 antialiased lg:text-[2.8rem] text-[2rem] leading-[100000000px] lg:leading-[30px] ml-130 scale-140
         shadow-playShadow`} 
     style={{

@@ -39,7 +39,7 @@
 
 .link-underline-regular {
   @apply relative lg:mx-4 transition-colors duration-300 ease-in-out
-          before:absolute before:bottom-0 before:left-0 before:h-[2px] before:w-0 before:bg-amber-400 
+          before:absolute before:bottom-0 before:left-0 before:h-0.5 before:w-0 before:bg-amber-400 
           before:transition-all before:duration-300 hover:before:w-full inline h-6 text-sm
            caret-transparent cursor-pointer;
 }
