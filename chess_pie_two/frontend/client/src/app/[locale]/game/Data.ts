@@ -6,7 +6,6 @@ export interface PieceType {
   position: string;       // z. B. "a2", "e4"
   size?: number;          // optional: die Darstellungsgröße
     id?: number;            // optional server-provided id
-    setSize: any
 }
 
 

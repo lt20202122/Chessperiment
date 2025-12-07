@@ -5,25 +5,11 @@ import { useState, useEffect, useRef } from "react";
 import Loading from "@/app/loading";
 import Back from "./Back";
 import { Chess, Square } from "chess.js";
-import { socket } from "./Socket"; // Socket aus Chat importieren
+import Socket, { socket } from "./Socket";
 import { boardToFEN, piecesListToBoard } from "./utilities";
 
 export default function Board() {
-  const [boardPieces, setBoardPieces] = useState<PieceType[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = sessionStorage.getItem("boardPieces");
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {
-          console.warn("Fehler beim Parsen von sessionStorage");
-          return pieces;
-        }
-      }
-    }
-    return pieces;
-  });
-
+  const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
   const [boardStyle, setBoardStyle] = useState("v2");
   const [blockSize, setBlockSize] = useState(80);
   const [select, setSelect] = useState<PieceType | null>(null);
@@ -31,154 +17,265 @@ export default function Board() {
   const [screenWidth, setScreenWidth] = useState(0);
   const [screenHeight, setScreenHeight] = useState(0);
   const [currentRoom, setCurrentRoom] = useState("");
-  const [isMyTurn, setIsMyTurn] = useState(false); // Initial false
-  const [myColor, setMyColor] = useState<"white" | "black">("white");
+  const [myColor, setMyColor] = useState<"white" | "black" | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [gameEnded, setGameEnded] = useState(false);
 
   const chessRef = useRef(new Chess());
   const [startPos, setStartPos] = useState("");
 
-  // Farbe und Raum aus localStorage laden
+  // Ist der Spieler am Zug? (aus chess.js ableiten)
+  const isMyTurn = () => {
+    if (!myColor || !gameStarted || gameEnded) return false;
+    const turn = chessRef.current.turn(); // "w" oder "b"
+    return (
+      (turn === "w" && myColor === "white") ||
+      (turn === "b" && myColor === "black")
+    );
+  };
+
+  // State aus localStorage wiederherstellen
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedColor = localStorage.getItem("myColor");
       const savedRoom = localStorage.getItem("currentRoom");
+      const savedGameStarted = localStorage.getItem("gameStarted");
+      const savedGameEnded = localStorage.getItem("gameEnded");
+      const savedFEN = localStorage.getItem("boardFEN");
+
+      console.log("🔄 RELOAD - Lade gespeicherten State:");
+      console.log("  Farbe:", savedColor);
+      console.log("  Raum:", savedRoom);
+      console.log("  Gestartet:", savedGameStarted);
+      console.log("  FEN:", savedFEN);
 
       if (savedColor) {
-        setMyColor(savedColor as "white" | "black");
-        // Weiß startet immer
-        setIsMyTurn(savedColor === "white");
+        const color = savedColor as "white" | "black";
+        setMyColor(color);
+        console.log("✅ Farbe gesetzt:", color);
       }
+
       if (savedRoom) {
         setCurrentRoom(savedRoom);
+        socket.emit("rejoin_room", { room: savedRoom });
+        console.log("✅ Raum beigetreten:", savedRoom);
+      }
+
+      if (savedGameStarted === "true") {
+        setGameStarted(true);
+        console.log("✅ Spiel gestartet");
+      }
+
+      if (savedGameEnded === "true") {
+        setGameEnded(true);
+        console.log("✅ Spiel beendet");
+      }
+
+      // WICHTIG: FEN laden und Board daraus generieren
+      if (savedFEN) {
+        try {
+          chessRef.current.load(savedFEN);
+          console.log("✅ Chess.js mit FEN geladen");
+
+          // Board aus chess.js generieren
+          const board = chessRef.current.board();
+          const newPieces: PieceType[] = [];
+
+          board.forEach((row, rowIndex) => {
+            row.forEach((square, colIndex) => {
+              if (square) {
+                const columns = ["a", "b", "c", "d", "e", "f", "g", "h"];
+                const position = `${columns[colIndex]}${8 - rowIndex}`;
+
+                newPieces.push({
+                  type:
+                    square.type === "p"
+                      ? "Pawn"
+                      : square.type === "r"
+                      ? "Rook"
+                      : square.type === "n"
+                      ? "Knight"
+                      : square.type === "b"
+                      ? "Bishop"
+                      : square.type === "q"
+                      ? "Queen"
+                      : "King",
+                  color: square.color === "w" ? "white" : "black",
+                  position: position,
+                  size: 60,
+                });
+              }
+            });
+          });
+
+          setBoardPieces(newPieces);
+          console.log(
+            "✅ Board-Pieces aktualisiert:",
+            newPieces.length,
+            "Figuren"
+          );
+        } catch (e) {
+          console.error("❌ Fehler beim Laden des FEN:", e);
+        }
       }
     }
   }, []);
 
-  // Socket.IO Events
-  useEffect(() => {
-    console.log("Socket listener setup...");
+  // Board von chess.js synchronisieren (wenn sich FEN ändert)
+  const syncBoardFromChess = () => {
+    const fen = chessRef.current.fen();
+    const board = chessRef.current.board();
+    const newPieces: PieceType[] = [];
 
-    // Zug vom Gegner empfangen
+    board.forEach((row, rowIndex) => {
+      row.forEach((square, colIndex) => {
+        if (square) {
+          const columns = ["a", "b", "c", "d", "e", "f", "g", "h"];
+          const position = `${columns[colIndex]}${8 - rowIndex}`;
+
+          newPieces.push({
+            type:
+              square.type === "p"
+                ? "Pawn"
+                : square.type === "r"
+                ? "Rook"
+                : square.type === "n"
+                ? "Knight"
+                : square.type === "b"
+                ? "Bishop"
+                : square.type === "q"
+                ? "Queen"
+                : "King",
+            color: square.color === "w" ? "white" : "black",
+            position: position,
+            size: 60,
+          });
+        }
+      });
+    });
+
+    setBoardPieces(newPieces);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("boardFEN", fen);
+    }
+
+    return newPieces;
+  };
+
+  const resetBoard = (needConfirm: boolean = true) => {
+    if (needConfirm && !confirm("Board wirklich zurücksetzen?")) return;
+
+    chessRef.current.reset();
+    setBoardPieces(pieces);
+    setCurrentRoom("");
+    setMyColor(null);
+    setGameStarted(false);
+    setGameEnded(false);
+    setSelect(null);
+    setSelectedPos(null);
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("myColor");
+      localStorage.removeItem("currentRoom");
+      localStorage.removeItem("gameStarted");
+      localStorage.removeItem("gameEnded");
+      localStorage.removeItem("boardFEN");
+    }
+
+    console.log("♻️ Board zurückgesetzt!");
+  };
+
+  // Socket Events
+  useEffect(() => {
     const handleMove = (data: any) => {
-      console.log("🔵 MOVE empfangen:", data);
+      console.log("📥 Zug empfangen:", data);
 
       try {
-        // Rochade
         if (data.castle) {
-          console.log("Rochade erkannt:", data.castle);
           chessRef.current.move(data.castle);
-
-          let updatedPieces = boardPieces.map((p) =>
-            p.position === data.from ? { ...p, position: data.to } : p
-          );
-
-          if (data.castle === "O-O") {
-            const rookStart = data.from === "e1" ? "h1" : "h8";
-            const rookEnd = data.from === "e1" ? "f1" : "f8";
-            updatedPieces = updatedPieces.map((p) =>
-              p.position === rookStart ? { ...p, position: rookEnd } : p
-            );
-          } else if (data.castle === "O-O-O") {
-            const rookStart = data.from === "e1" ? "a1" : "a8";
-            const rookEnd = data.from === "e1" ? "d1" : "d8";
-            updatedPieces = updatedPieces.map((p) =>
-              p.position === rookStart ? { ...p, position: rookEnd } : p
-            );
-          }
-
-          setBoardPieces(updatedPieces);
-          setIsMyTurn(true);
-
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem(
-              "boardPieces",
-              JSON.stringify(updatedPieces)
-            );
-          }
-          return;
-        }
-
-        // Normaler Zug
-        console.log("Normaler Zug von", data.from, "nach", data.to);
-        const result = chessRef.current.move({
-          from: data.from as Square,
-          to: data.to as Square,
-        });
-
-        if (result) {
-          console.log("✅ Zug erfolgreich in chess.js");
-
-          // Board aktualisieren
-          const updatedPieces = boardPieces
-            .filter((p) => p.position !== data.to) // Geschlagene Figur entfernen
-            .map((p) =>
-              p.position === data.from ? { ...p, position: data.to } : p
-            );
-
-          console.log("Board aktualisiert:", updatedPieces);
-          setBoardPieces(updatedPieces);
-          setIsMyTurn(true);
-
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem(
-              "boardPieces",
-              JSON.stringify(updatedPieces)
-            );
-          }
         } else {
-          console.error("❌ chess.js hat Zug abgelehnt");
+          chessRef.current.move({
+            from: data.from as Square,
+            to: data.to as Square,
+          });
         }
+
+        // Board synchronisieren und FEN speichern
+        syncBoardFromChess();
+        console.log("✅ Board aktualisiert nach Gegner-Zug");
       } catch (error) {
-        console.error("❌ Fehler beim Verarbeiten des Gegner-Zugs:", error);
+        console.error("❌ Fehler beim Verarbeiten des Zugs:", error);
       }
     };
 
-    // Raum erstellt - Weiß startet
     const handleRoomCreated = (data: any) => {
-      console.log("Raum erstellt:", data.roomKey);
-      setCurrentRoom(data.roomKey);
+      console.log("🏠 Raum erstellt:", data.roomKey);
       setMyColor("white");
-      setIsMyTurn(true); // Weiß beginnt
-    };
-
-    // Raum beigetreten - Schwarz wartet
-    const handleJoinedRoom = (data: any) => {
-      console.log("Raum beigetreten:", data.roomKey);
       setCurrentRoom(data.roomKey);
+      setGameStarted(false);
+      setGameEnded(false);
+
+      chessRef.current.reset();
+      syncBoardFromChess();
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("myColor", "white");
+        localStorage.setItem("currentRoom", data.roomKey);
+        localStorage.setItem("gameStarted", "false");
+        localStorage.removeItem("gameEnded");
+      }
+    };
+
+    const handleJoinedRoom = (data: any) => {
+      console.log("🚪 Raum beigetreten:", data.roomKey);
       setMyColor("black");
-      setIsMyTurn(false); // Schwarz wartet
+      setCurrentRoom(data.roomKey);
+      setGameStarted(true);
+      setGameEnded(false);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("myColor", "black");
+        localStorage.setItem("currentRoom", data.roomKey);
+        localStorage.setItem("gameStarted", "true");
+        localStorage.removeItem("gameEnded");
+      }
     };
 
-    // Spieler beigetreten
-    const handlePlayerJoined = (data: any) => {
-      console.log("Spieler beigetreten:", data);
+    const handlePlayerJoined = () => {
+      console.log("🎮 Zweiter Spieler beigetreten!");
+      setGameStarted(true);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("gameStarted", "true");
+      }
     };
 
-    // Listener registrieren
+    const handleGameEnded = () => {
+      console.log("🏁 Spiel beendet");
+      setGameEnded(true);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("gameEnded", "true");
+      }
+    };
+
     socket.on("move", handleMove);
     socket.on("room_created", handleRoomCreated);
     socket.on("joined_room", handleJoinedRoom);
     socket.on("player_joined", handlePlayerJoined);
+    socket.on("resign", handleGameEnded);
+    socket.on("draw_accepted", handleGameEnded);
 
-    // Cleanup
     return () => {
-      console.log("Socket listeners entfernt");
       socket.off("move", handleMove);
       socket.off("room_created", handleRoomCreated);
       socket.off("joined_room", handleJoinedRoom);
       socket.off("player_joined", handlePlayerJoined);
+      socket.off("resign", handleGameEnded);
+      socket.off("draw_accepted", handleGameEnded);
     };
-  }, [boardPieces]); // Dependency: boardPieces
-
-  // Chess.js initialisieren
-  useEffect(() => {
-    if (!boardPieces) return;
-    chessRef.current.clear();
-    const board = piecesListToBoard(boardPieces);
-    const fen = boardToFEN(board);
-    chessRef.current.load(fen);
-    console.log("Chess.js geladen mit FEN:", fen);
-  }, []);
+  }, [boardPieces]);
 
   // Responsive Size
   useEffect(() => {
@@ -237,61 +334,46 @@ export default function Board() {
     else return baseSize * 0.5;
   }
 
-  async function handlePieceSelect(pos: string) {
-    // Nicht am Zug
-    if (!isMyTurn) {
-      console.log("❌ Nicht am Zug!");
+  function handlePieceSelect(pos: string) {
+    const amIAtTurn = isMyTurn();
+
+    console.log(
+      "🖱️ Klick:",
+      pos,
+      "| Gestartet:",
+      gameStarted,
+      "| Am Zug:",
+      amIAtTurn,
+      "| Farbe:",
+      myColor
+    );
+
+    if (!gameStarted) {
+      console.log("❌ Spiel noch nicht gestartet");
+      return;
+    }
+
+    if (!amIAtTurn) {
+      console.log("❌ Nicht am Zug");
       return;
     }
 
     const clickedPiece = boardPieces.find((p) => p.position === pos);
 
-    // Bereits ausgewählte Figur
     if (select) {
-      // Gleiche Farbe erneut klicken → abbrechen
       if (clickedPiece && clickedPiece.color === select.color) {
         setSelect(null);
         setSelectedPos(null);
         return;
       }
 
-      let updatedPieces;
       const castleStr = detectCastling(startPos, pos);
 
-      // Rochade
       if (castleStr) {
         try {
-          console.log("🏰 Rochade:", castleStr);
           chessRef.current.move(castleStr);
 
-          updatedPieces = boardPieces.map((p) =>
-            p === select ? { ...p, position: pos } : p
-          );
-
-          if (castleStr === "O-O") {
-            const rookStart = startPos === "e1" ? "h1" : "h8";
-            const rookEnd = startPos === "e1" ? "f1" : "f8";
-            updatedPieces = updatedPieces.map((p) =>
-              p.position === rookStart ? { ...p, position: rookEnd } : p
-            );
-          } else if (castleStr === "O-O-O") {
-            const rookStart = startPos === "e1" ? "a1" : "a8";
-            const rookEnd = startPos === "e1" ? "d1" : "d8";
-            updatedPieces = updatedPieces.map((p) =>
-              p.position === rookStart ? { ...p, position: rookEnd } : p
-            );
-          }
-
-          setBoardPieces(updatedPieces);
-
-          // Zug an Gegner senden
           if (currentRoom) {
-            console.log("📤 Sende Rochade:", {
-              room: currentRoom,
-              from: startPos,
-              to: pos,
-              castle: castleStr,
-            });
             socket.emit("move", {
               room: currentRoom,
               from: startPos,
@@ -300,48 +382,25 @@ export default function Board() {
             });
           }
 
-          setIsMyTurn(false);
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem(
-              "boardPieces",
-              JSON.stringify(updatedPieces)
-            );
-          }
+          syncBoardFromChess();
+          console.log("✅ Rochade ausgeführt");
         } catch (error) {
           console.log("❌ Rochade fehlgeschlagen:", error);
           chessRef.current.undo();
-          setSelect(null);
-          setSelectedPos(null);
-          return;
         }
-      }
-      // Normaler Zug
-      else {
+      } else {
         const legal = isLegalMove(startPos, pos);
 
         if (!legal) {
-          console.log("❌ Zug NICHT legal");
+          console.log("❌ Illegaler Zug");
           setSelect(null);
           setSelectedPos(null);
           return;
         }
 
-        console.log("✅ Zug legal:", startPos, "→", pos);
         chessRef.current.move({ from: startPos as Square, to: pos as Square });
 
-        updatedPieces = boardPieces
-          .filter((p) => p.position !== pos)
-          .map((p) => (p === select ? { ...p, position: pos } : p));
-
-        setBoardPieces(updatedPieces);
-
-        // Zug an Gegner senden
         if (currentRoom) {
-          console.log("📤 Sende Zug:", {
-            room: currentRoom,
-            from: startPos,
-            to: pos,
-          });
           socket.emit("move", {
             room: currentRoom,
             from: startPos,
@@ -349,10 +408,8 @@ export default function Board() {
           });
         }
 
-        setIsMyTurn(false);
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("boardPieces", JSON.stringify(updatedPieces));
-        }
+        syncBoardFromChess();
+        console.log("✅ Zug ausgeführt");
       }
 
       setSelect(null);
@@ -360,19 +417,10 @@ export default function Board() {
       return;
     }
 
-    // Figur auswählen (nur eigene Farbe)
     if (clickedPiece && clickedPiece.color === myColor) {
       setSelect(clickedPiece);
       setSelectedPos(pos);
       setStartPos(pos);
-      console.log("Figur ausgewählt:", pos, clickedPiece);
-    } else if (clickedPiece) {
-      console.log(
-        "❌ Falsche Farbe! Du bist:",
-        myColor,
-        "Figur ist:",
-        clickedPiece.color
-      );
     }
   }
 
@@ -382,14 +430,33 @@ export default function Board() {
   let isWhite = true;
   let content = [];
 
-  for (let i = 7; i >= 0; i--) {
-    for (let a = 0; a < 8; a++) {
+  const rowStart = myColor === "black" ? 0 : 7;
+  const rowEnd = myColor === "black" ? 8 : -1;
+  const rowStep = myColor === "black" ? 1 : -1;
+  const colStart = myColor === "black" ? 7 : 0;
+  const colEnd = myColor === "black" ? -1 : 8;
+  const colStep = myColor === "black" ? -1 : 1;
+
+  for (
+    let i = rowStart;
+    myColor === "black" ? i < rowEnd : i > rowEnd;
+    i += rowStep
+  ) {
+    for (
+      let a = colStart;
+      myColor === "black" ? a > colEnd : a < colEnd;
+      a += colStep
+    ) {
       const pos = `${columns[a]}${i + 1}`;
 
-      const isTopLeft = i === 7 && a === 0;
-      const isBottomLeft = i === 0 && a === 0;
-      const isTopRight = i === 7 && a === 7;
-      const isBottomRight = i === 0 && a === 7;
+      const isTopLeft =
+        myColor === "black" ? i === 0 && a === 7 : i === 7 && a === 0;
+      const isBottomLeft =
+        myColor === "black" ? i === 7 && a === 7 : i === 0 && a === 0;
+      const isTopRight =
+        myColor === "black" ? i === 0 && a === 0 : i === 7 && a === 7;
+      const isBottomRight =
+        myColor === "black" ? i === 7 && a === 0 : i === 0 && a === 7;
 
       const eckenKlasse = `
         ${isTopLeft ? "rounded-tl-md" : ""}
@@ -426,6 +493,8 @@ export default function Board() {
         }
       }
 
+      const amIAtTurn = isMyTurn();
+
       content.push(
         <div
           key={`${i}-${a}`}
@@ -433,7 +502,11 @@ export default function Board() {
             isWhite ? "bg-gray-50" : "bg-[#5d8643]"
           } m-0 aspect-square relative ${eckenKlasse} flex items-center justify-center ${
             selectedPos === pos ? "ring-4 ring-blue-500" : ""
-          } ${!isMyTurn ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+          } ${
+            !amIAtTurn || !gameStarted
+              ? "cursor-not-allowed opacity-70"
+              : "cursor-pointer"
+          }`}
           style={{
             width: blockSize,
             height: blockSize,
@@ -444,11 +517,9 @@ export default function Board() {
           {piece && (
             <Image
               src={
-                boardStyle === "v1"
-                  ? pieceImagesv1[`${piece.color}_${piece.type.toLowerCase()}`]
-                  : boardStyle === "v2"
+                boardStyle === "v2"
                   ? pieceImagesv2[`${piece.color}_${piece.type.toLowerCase()}`]
-                  : pieceImagesv2[`${piece.color}_${piece.type.toLowerCase()}`]
+                  : pieceImagesv1[`${piece.color}_${piece.type.toLowerCase()}`]
               }
               alt={`${piece.color} ${piece.type}`}
               height={piece.size}
@@ -464,11 +535,14 @@ export default function Board() {
     isWhite = !isWhite;
   }
 
+  const amIAtTurn = isMyTurn();
+  const currentTurn = chessRef.current.turn() === "w" ? "Weiß" : "Schwarz";
+
   return (
     <div className="flex justify-center">
       <div
         className={`bg-[hsl(0,0%,90%)] ml-4 mt-4 grid gap-0 border-black border-2 w-fit h-fit rounded-[10px] p-2 ${
-          !isMyTurn ? "opacity-70" : ""
+          !amIAtTurn || !gameStarted ? "opacity-70" : ""
         }`}
         style={{
           gridTemplateColumns: `repeat(8, ${blockSize}px)`,
@@ -477,18 +551,41 @@ export default function Board() {
         {content}
       </div>
 
-      {/* Turn Indicator */}
-      <div className="ml-4 mt-4 p-3 bg-gray-200 rounded h-fit">
-        <p
-          className={`font-semibold text-lg ${
-            isMyTurn ? "text-green-600" : "text-red-600"
-          }`}
-        >
-          {isMyTurn ? "✅ Dein Zug!" : "⏳ Gegner ist dran"}
-        </p>
-        <p className="text-sm text-gray-600 mt-1">
-          Du spielst: {myColor === "white" ? "Weiß ⚪" : "Schwarz ⚫"}
-        </p>
+      <div className="ml-4 mt-4 p-3 bg-gray-200 rounded h-fit space-y-2">
+        {!gameStarted ? (
+          <p className="font-semibold text-lg text-orange-600">
+            ⏳ Warte auf zweiten Spieler...
+          </p>
+        ) : gameEnded ? (
+          <div className="space-y-2">
+            <p className="font-semibold text-lg text-red-600">
+              🏁 Spiel beendet
+            </p>
+            <button
+              onClick={() => resetBoard(true)}
+              className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 font-semibold"
+            >
+              🔄 Board zurücksetzen
+            </button>
+          </div>
+        ) : (
+          <>
+            <p
+              className={`font-semibold text-lg ${
+                amIAtTurn ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {amIAtTurn ? "✅ Dein Zug!" : `⏳ ${currentTurn} ist am Zug`}
+            </p>
+          </>
+        )}
+
+        {myColor && (
+          <p className="text-sm text-gray-600 mt-1">
+            Du spielst: {myColor === "white" ? "Weiß ⚪" : "Schwarz ⚫"}
+          </p>
+        )}
+
         {currentRoom && (
           <p className="text-xs text-gray-500 mt-2">
             Raum: {currentRoom.substring(0, 12)}...
@@ -497,6 +594,7 @@ export default function Board() {
       </div>
 
       <Back />
+      <Socket />
     </div>
   );
 }

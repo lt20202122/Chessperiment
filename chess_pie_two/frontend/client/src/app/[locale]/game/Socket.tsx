@@ -20,6 +20,8 @@ export default function Socket() {
   const [drawOffered, setDrawOffered] = useState(false);
   const [opponentOfferedDraw, setOpponentOfferedDraw] = useState(false);
   const [myColor, setMyColor] = useState<"white" | "black" | null>(null);
+  const [gameEnded, setGameEnded] = useState(false);
+  const [gameResult, setGameResult] = useState<string | null>(null);
 
   // Raum erstellen
   const createRoom = () => {
@@ -52,7 +54,7 @@ export default function Socket() {
 
   // Remis anbieten
   const offerDraw = () => {
-    if (currentRoom) {
+    if (currentRoom && !gameEnded) {
       socket.emit("offer_draw", { room: currentRoom });
       setDrawOffered(true);
       setStatus("Remis-Angebot gesendet");
@@ -63,22 +65,41 @@ export default function Socket() {
   const acceptDraw = () => {
     if (currentRoom) {
       socket.emit("accept_draw", { room: currentRoom });
+      setGameEnded(true);
+      setGameResult("remis");
       setStatus("Remis akzeptiert! Spiel beendet.");
       setOpponentOfferedDraw(false);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("gameEnded", "true");
+      }
     }
   };
 
   // Remis ablehnen
   const declineDraw = () => {
-    setOpponentOfferedDraw(false);
-    setStatus("Remis abgelehnt");
+    if (currentRoom) {
+      socket.emit("decline_draw", { room: currentRoom });
+      setOpponentOfferedDraw(false);
+      setStatus("Remis abgelehnt");
+    }
   };
 
   // Aufgeben
   const resign = () => {
-    if (currentRoom && confirm("Möchtest du wirklich aufgeben?")) {
+    if (
+      currentRoom &&
+      !gameEnded &&
+      confirm("Möchtest du wirklich aufgeben?")
+    ) {
       socket.emit("resign", { room: currentRoom });
+      setGameEnded(true);
+      setGameResult("verloren");
       setStatus("Du hast aufgegeben");
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("gameEnded", "true");
+      }
     }
   };
 
@@ -90,10 +111,12 @@ export default function Socket() {
       setStatus(`Raum erstellt: ${data.roomKey}`);
       setPlayerCount(1);
       setMyColor("white");
+      setGameEnded(false);
+      setGameResult(null);
 
-      // Farbe in localStorage speichern
       if (typeof window !== "undefined") {
         localStorage.setItem("myColor", "white");
+        console.log("SET OWN COLOR TO WHITE IN SOCKET.TSX");
         localStorage.setItem("currentRoom", data.roomKey);
       }
     });
@@ -120,8 +143,10 @@ export default function Socket() {
       setStatus("Erfolgreich beigetreten!");
       setSearchRoomKey("");
       setMyColor("black");
+      console.log("SET OWN COLOR TO BLACK IN SOCKET.TSX");
+      setGameEnded(false);
+      setGameResult(null);
 
-      // Farbe in localStorage speichern
       if (typeof window !== "undefined") {
         localStorage.setItem("myColor", "black");
         localStorage.setItem("currentRoom", data.roomKey);
@@ -153,13 +178,32 @@ export default function Socket() {
 
     // Remis akzeptiert
     socket.on("draw_accepted", () => {
+      setGameEnded(true);
+      setGameResult("remis");
       setStatus("Remis! Spiel beendet.");
       setDrawOffered(false);
+      setOpponentOfferedDraw(false);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("gameEnded", "true");
+      }
+    });
+
+    // Remis abgelehnt
+    socket.on("draw_declined", () => {
+      setDrawOffered(false);
+      setStatus("Gegner hat Remis abgelehnt");
     });
 
     // Gegner hat aufgegeben
     socket.on("resign", () => {
+      setGameEnded(true);
+      setGameResult("gewonnen");
       setStatus("Gegner hat aufgegeben! Du hast gewonnen!");
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("gameEnded", "true");
+      }
     });
 
     // Fehler
@@ -177,6 +221,7 @@ export default function Socket() {
       socket.off("receive_message");
       socket.off("offer_draw");
       socket.off("draw_accepted");
+      socket.off("draw_declined");
       socket.off("resign");
       socket.off("error");
     };
@@ -187,9 +232,47 @@ export default function Socket() {
       <h2 className="font-bold text-lg">Schach Multiplayer</h2>
 
       {/* Status */}
-      <div className="bg-blue-100 p-2 rounded text-sm">
+      <div
+        className={`p-2 rounded text-sm font-semibold ${
+          gameResult === "gewonnen"
+            ? "bg-green-200 text-green-800"
+            : gameResult === "verloren"
+            ? "bg-red-200 text-red-800"
+            : gameResult === "remis"
+            ? "bg-yellow-200 text-yellow-800"
+            : "bg-blue-100 text-blue-800"
+        }`}
+      >
         {status || "Bereit"}
       </div>
+
+      {/* Spiel-Ergebnis */}
+      {gameEnded && gameResult && (
+        <div
+          className={`p-4 rounded-lg text-center border-4 ${
+            gameResult === "gewonnen"
+              ? "bg-green-100 border-green-500 text-green-900"
+              : gameResult === "verloren"
+              ? "bg-red-100 border-red-500 text-red-900"
+              : "bg-yellow-100 border-yellow-500 text-yellow-900"
+          }`}
+        >
+          <div className="text-4xl mb-2">
+            {gameResult === "gewonnen"
+              ? "🏆"
+              : gameResult === "verloren"
+              ? "😢"
+              : "🤝"}
+          </div>
+          <div className="text-xl font-bold">
+            {gameResult === "gewonnen"
+              ? "Du hast gewonnen!"
+              : gameResult === "verloren"
+              ? "Du hast verloren!"
+              : "Remis!"}
+          </div>
+        </div>
+      )}
 
       {/* Raum Info */}
       {currentRoom && (
@@ -208,7 +291,7 @@ export default function Socket() {
         <div className="space-y-2">
           <button
             onClick={createRoom}
-            className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600"
+            className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 font-semibold"
           >
             Neues Spiel erstellen (Weiß)
           </button>
@@ -222,7 +305,7 @@ export default function Socket() {
             />
             <button
               onClick={searchRoom}
-              className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+              className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 font-semibold"
             >
               Raum beitreten (Schwarz)
             </button>
@@ -231,26 +314,26 @@ export default function Socket() {
       )}
 
       {/* Spiel-Aktionen */}
-      {currentRoom && playerCount === 2 && (
+      {currentRoom && playerCount === 2 && !gameEnded && (
         <div className="space-y-2 border-t pt-2">
           <h3 className="font-semibold text-sm">Spiel-Aktionen</h3>
 
           {/* Remis */}
           {opponentOfferedDraw ? (
-            <div className="bg-yellow-100 p-2 rounded space-y-1">
-              <p className="text-sm font-semibold">Remis-Angebot!</p>
+            <div className="bg-yellow-100 p-3 rounded space-y-2 border-2 border-yellow-400">
+              <p className="text-sm font-bold text-center">🤝 Remis-Angebot!</p>
               <div className="flex gap-2">
                 <button
                   onClick={acceptDraw}
-                  className="flex-1 bg-green-500 text-white p-1 rounded text-sm"
+                  className="flex-1 bg-green-500 text-white p-2 rounded text-sm font-semibold hover:bg-green-600"
                 >
-                  Akzeptieren
+                  ✓ Akzeptieren
                 </button>
                 <button
                   onClick={declineDraw}
-                  className="flex-1 bg-red-500 text-white p-1 rounded text-sm"
+                  className="flex-1 bg-red-500 text-white p-2 rounded text-sm font-semibold hover:bg-red-600"
                 >
-                  Ablehnen
+                  ✗ Ablehnen
                 </button>
               </div>
             </div>
@@ -258,18 +341,18 @@ export default function Socket() {
             <button
               onClick={offerDraw}
               disabled={drawOffered}
-              className="w-full bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 disabled:bg-gray-400"
+              className="w-full bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 disabled:bg-gray-400 font-semibold"
             >
-              {drawOffered ? "Remis angeboten" : "Remis anbieten"}
+              {drawOffered ? "⏳ Remis angeboten..." : "🤝 Remis anbieten"}
             </button>
           )}
 
           {/* Aufgeben */}
           <button
             onClick={resign}
-            className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600"
+            className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600 font-semibold"
           >
-            Aufgeben
+            🏳️ Aufgeben
           </button>
         </div>
       )}
@@ -280,12 +363,19 @@ export default function Socket() {
           <h3 className="font-semibold text-sm">Chat</h3>
 
           {/* Nachrichten */}
-          <div className="bg-white p-2 rounded h-32 overflow-y-auto text-sm">
+          <div className="bg-white p-2 rounded h-32 overflow-y-auto text-sm border">
             {messageHistory.length === 0 ? (
-              <p className="text-gray-400">Keine Nachrichten</p>
+              <p className="text-gray-400 text-center mt-12">
+                Keine Nachrichten
+              </p>
             ) : (
               messageHistory.map((m, i) => (
-                <div key={i} className="mb-1">
+                <div
+                  key={i}
+                  className={`mb-1 p-1 rounded ${
+                    m.startsWith("Du:") ? "bg-blue-50 text-right" : "bg-gray-50"
+                  }`}
+                >
                   {m}
                 </div>
               ))
@@ -303,7 +393,7 @@ export default function Socket() {
             />
             <button
               onClick={sendMessage}
-              className="bg-blue-500 text-white px-4 rounded hover:bg-blue-600"
+              className="bg-blue-500 text-white px-4 rounded hover:bg-blue-600 font-semibold"
             >
               ➤
             </button>
