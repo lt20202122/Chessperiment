@@ -1,15 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
-import io from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 
-const socket = io.connect(
-  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001"
+const socket: Socket = io(
+  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001",
+  { autoConnect: true }
 );
 
 // Socket exportieren für Board.tsx
 export { socket };
 
-export default function Socket() {
+export default function SocketComponent() {
   const [msg, setMsg] = useState("");
   const [messageHistory, setMessageHistory] = useState<string[]>([]);
   const [room, setRoom] = useState("");
@@ -116,7 +117,6 @@ export default function Socket() {
 
       if (typeof window !== "undefined") {
         localStorage.setItem("myColor", "white");
-        console.log("SET OWN COLOR TO WHITE IN SOCKET.TSX");
         localStorage.setItem("currentRoom", data.roomKey);
       }
     });
@@ -143,7 +143,6 @@ export default function Socket() {
       setStatus("Erfolgreich beigetreten!");
       setSearchRoomKey("");
       setMyColor("black");
-      console.log("SET OWN COLOR TO BLACK IN SOCKET.TSX");
       setGameEnded(false);
       setGameResult(null);
 
@@ -387,7 +386,7 @@ export default function Socket() {
             <input
               value={msg}
               onChange={(e) => setMsg(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               placeholder="Nachricht..."
               className="flex-1 p-2 rounded border text-sm"
             />
