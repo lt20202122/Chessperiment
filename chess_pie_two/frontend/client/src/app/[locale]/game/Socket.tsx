@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 
 const socket: Socket = io(
@@ -7,10 +7,23 @@ const socket: Socket = io(
   { autoConnect: true }
 );
 
-// Socket exportieren für Board.tsx
 export { socket };
 
-export default function SocketComponent() {
+interface SocketComponentProps {
+  myColor: "white" | "black" | null;
+  gameStarted: boolean;
+  gameEnded: boolean;
+  currentRoom: string;
+  onPlayerJoined: () => void;
+}
+
+export default function SocketComponent({
+  myColor,
+  gameStarted,
+  gameEnded,
+  currentRoom: propCurrentRoom,
+  onPlayerJoined,
+}: SocketComponentProps) {
   const [msg, setMsg] = useState("");
   const [messageHistory, setMessageHistory] = useState<string[]>([]);
   const [room, setRoom] = useState("");
@@ -20,16 +33,40 @@ export default function SocketComponent() {
   const [playerCount, setPlayerCount] = useState(0);
   const [drawOffered, setDrawOffered] = useState(false);
   const [opponentOfferedDraw, setOpponentOfferedDraw] = useState(false);
-  const [myColor, setMyColor] = useState<"white" | "black" | null>(null);
-  const [gameEnded, setGameEnded] = useState(false);
   const [gameResult, setGameResult] = useState<string | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Raum erstellen
+  // Sync with prop
+  useEffect(() => {
+    if (propCurrentRoom) {
+      setCurrentRoom(propCurrentRoom);
+    }
+  }, [propCurrentRoom]);
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messageHistory]);
+
+  // Load saved state on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedRoom = sessionStorage.getItem("currentRoom");
+      const savedGameEnded = sessionStorage.getItem("gameEnded");
+
+      if (savedRoom) {
+        setCurrentRoom(savedRoom);
+      }
+      if (savedGameEnded === "true") {
+        setGameResult(sessionStorage.getItem("gameResult"));
+      }
+    }
+  }, []);
+
   const createRoom = () => {
     socket.emit("create_room");
   };
 
-  // Raum suchen
   const searchRoom = () => {
     if (!searchRoomKey.trim()) {
       setStatus("Bitte Raum-Code eingeben!");
@@ -39,12 +76,10 @@ export default function SocketComponent() {
     socket.emit("search_room", { roomKey: searchRoomKey.trim().toUpperCase() });
   };
 
-  // Raum beitreten
   const joinRoom = (roomKey: string) => {
     socket.emit("join_room", { room: roomKey });
   };
 
-  // Nachricht senden
   const sendMessage = () => {
     if (currentRoom && msg.trim()) {
       socket.emit("chat", { message: msg, room: currentRoom });
@@ -53,7 +88,6 @@ export default function SocketComponent() {
     }
   };
 
-  // Remis anbieten
   const offerDraw = () => {
     if (currentRoom && !gameEnded) {
       socket.emit("offer_draw", { room: currentRoom });
@@ -62,22 +96,20 @@ export default function SocketComponent() {
     }
   };
 
-  // Remis akzeptieren
   const acceptDraw = () => {
     if (currentRoom) {
       socket.emit("accept_draw", { room: currentRoom });
-      setGameEnded(true);
       setGameResult("remis");
       setStatus("Remis akzeptiert! Spiel beendet.");
       setOpponentOfferedDraw(false);
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("gameEnded", "true");
+        sessionStorage.setItem("gameEnded", "true");
+        sessionStorage.setItem("gameResult", "remis");
       }
     }
   };
 
-  // Remis ablehnen
   const declineDraw = () => {
     if (currentRoom) {
       socket.emit("decline_draw", { room: currentRoom });
@@ -86,7 +118,6 @@ export default function SocketComponent() {
     }
   };
 
-  // Aufgeben
   const resign = () => {
     if (
       currentRoom &&
@@ -94,34 +125,30 @@ export default function SocketComponent() {
       confirm("Möchtest du wirklich aufgeben?")
     ) {
       socket.emit("resign", { room: currentRoom });
-      setGameEnded(true);
       setGameResult("verloren");
       setStatus("Du hast aufgegeben");
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("gameEnded", "true");
+        sessionStorage.setItem("gameEnded", "true");
+        sessionStorage.setItem("gameResult", "verloren");
       }
     }
   };
 
   useEffect(() => {
-    // Raum erstellt - Spieler 1 ist WEISS
     socket.on("room_created", (data: any) => {
       setCurrentRoom(data.roomKey);
       setRoom(data.roomKey);
       setStatus(`Raum erstellt: ${data.roomKey}`);
       setPlayerCount(1);
-      setMyColor("white");
-      setGameEnded(false);
       setGameResult(null);
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("myColor", "white");
-        localStorage.setItem("currentRoom", data.roomKey);
+        sessionStorage.setItem("myColor", "white");
+        sessionStorage.setItem("currentRoom", data.roomKey);
       }
     });
 
-    // Raum gefunden
     socket.on("room_found", (data: any) => {
       setStatus(`Raum gefunden! ${data.playerCount}/2 Spieler`);
       if (!data.isFull) {
@@ -131,81 +158,80 @@ export default function SocketComponent() {
       }
     });
 
-    // Raum nicht gefunden
     socket.on("room_not_found", () => {
       setStatus("Raum nicht gefunden!");
     });
 
-    // Erfolgreich beigetreten - Spieler 2 ist SCHWARZ
     socket.on("joined_room", (data: any) => {
       setCurrentRoom(data.roomKey);
       setRoom(data.roomKey);
       setStatus("Erfolgreich beigetreten!");
       setSearchRoomKey("");
-      setMyColor("black");
-      setGameEnded(false);
+      setPlayerCount(2); // Spielerzahl für den beitretenden Spieler aktualisieren
       setGameResult(null);
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("myColor", "black");
-        localStorage.setItem("currentRoom", data.roomKey);
+        sessionStorage.setItem("myColor", "black");
+        sessionStorage.setItem("currentRoom", data.roomKey);
       }
     });
 
-    // Spieler beigetreten
     socket.on("player_joined", (data: any) => {
       setPlayerCount(data.playerCount);
+      onPlayerJoined(); // Callback aufrufen, um gameStarted in Board.tsx zu setzen
       setStatus("Gegner ist beigetreten! Spiel kann starten.");
     });
 
-    // Spieler verlassen
     socket.on("player_left", () => {
       setStatus("Gegner hat das Spiel verlassen");
       setPlayerCount(1);
     });
 
-    // Chat-Nachricht empfangen
     socket.on("receive_message", (data: any) => {
       setMessageHistory((prev) => [...prev, `Gegner: ${data.message}`]);
     });
 
-    // Remis-Angebot empfangen
     socket.on("offer_draw", () => {
       setOpponentOfferedDraw(true);
       setStatus("Gegner bietet Remis an!");
     });
 
-    // Remis akzeptiert
     socket.on("draw_accepted", () => {
-      setGameEnded(true);
       setGameResult("remis");
       setStatus("Remis! Spiel beendet.");
       setDrawOffered(false);
       setOpponentOfferedDraw(false);
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("gameEnded", "true");
+        sessionStorage.setItem("gameEnded", "true");
+        sessionStorage.setItem("gameResult", "remis");
       }
     });
 
-    // Remis abgelehnt
     socket.on("draw_declined", () => {
       setDrawOffered(false);
       setStatus("Gegner hat Remis abgelehnt");
     });
 
-    // Gegner hat aufgegeben
     socket.on("resign", () => {
-      setGameEnded(true);
       setGameResult("gewonnen");
       setStatus("Gegner hat aufgegeben! Du hast gewonnen!");
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("gameEnded", "true");
+        sessionStorage.setItem("gameEnded", "true");
+        sessionStorage.setItem("gameResult", "gewonnen");
       }
     });
 
-    // Fehler
+    socket.on("game_ended", (data: any) => {
+      if (data.status) {
+        setStatus(data.status);
+      }
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("gameEnded", "true");
+      }
+    });
+
     socket.on("error", (data: any) => {
       setStatus(`Fehler: ${data.message}`);
     });
@@ -222,15 +248,19 @@ export default function SocketComponent() {
       socket.off("draw_accepted");
       socket.off("draw_declined");
       socket.off("resign");
+      socket.off("game_ended");
       socket.off("error");
     };
   }, [currentRoom]);
+
+  // Show game actions for both players when game is active
+  const showGameActions =
+    currentRoom && gameStarted && !gameEnded && playerCount === 2;
 
   return (
     <div className="ml-4 mt-4 p-4 bg-gray-100 rounded-lg space-y-3 w-80 h-fit">
       <h2 className="font-bold text-lg">Schach Multiplayer</h2>
 
-      {/* Status */}
       <div
         className={`p-2 rounded text-sm font-semibold ${
           gameResult === "gewonnen"
@@ -245,7 +275,6 @@ export default function SocketComponent() {
         {status || "Bereit"}
       </div>
 
-      {/* Spiel-Ergebnis */}
       {gameEnded && gameResult && (
         <div
           className={`p-4 rounded-lg text-center border-4 ${
@@ -273,7 +302,6 @@ export default function SocketComponent() {
         </div>
       )}
 
-      {/* Raum Info */}
       {currentRoom && (
         <div className="bg-green-100 p-2 rounded text-xs">
           <strong>Raum:</strong> {currentRoom}
@@ -281,11 +309,14 @@ export default function SocketComponent() {
           <strong>Spieler:</strong> {playerCount}/2
           <br />
           <strong>Deine Farbe:</strong>{" "}
-          {myColor === "white" ? "Weiß ⚪" : "Schwarz ⚫"}
+          {myColor === "white"
+            ? "Weiß ⚪"
+            : myColor === "black"
+            ? "Schwarz ⚫"
+            : "?"}
         </div>
       )}
 
-      {/* Raum erstellen/suchen */}
       {!currentRoom && (
         <div className="space-y-2">
           <button
@@ -312,12 +343,10 @@ export default function SocketComponent() {
         </div>
       )}
 
-      {/* Spiel-Aktionen */}
-      {currentRoom && playerCount === 2 && !gameEnded && (
+      {showGameActions && (
         <div className="space-y-2 border-t pt-2">
           <h3 className="font-semibold text-sm">Spiel-Aktionen</h3>
 
-          {/* Remis */}
           {opponentOfferedDraw ? (
             <div className="bg-yellow-100 p-3 rounded space-y-2 border-2 border-yellow-400">
               <p className="text-sm font-bold text-center">🤝 Remis-Angebot!</p>
@@ -346,7 +375,6 @@ export default function SocketComponent() {
             </button>
           )}
 
-          {/* Aufgeben */}
           <button
             onClick={resign}
             className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600 font-semibold"
@@ -356,12 +384,10 @@ export default function SocketComponent() {
         </div>
       )}
 
-      {/* Chat */}
       {currentRoom && (
         <div className="border-t pt-2 space-y-2">
           <h3 className="font-semibold text-sm">Chat</h3>
 
-          {/* Nachrichten */}
           <div className="bg-white p-2 rounded h-32 overflow-y-auto text-sm border">
             {messageHistory.length === 0 ? (
               <p className="text-gray-400 text-center mt-12">
@@ -379,9 +405,9 @@ export default function SocketComponent() {
                 </div>
               ))
             )}
+            <div ref={chatEndRef} />
           </div>
 
-          {/* Eingabe */}
           <div className="flex gap-2">
             <input
               value={msg}
