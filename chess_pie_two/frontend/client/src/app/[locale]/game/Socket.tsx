@@ -15,6 +15,7 @@ interface SocketComponentProps {
   gameEnded: boolean;
   currentRoom: string;
   onPlayerJoined: () => void;
+  setGameEnded: any
 }
 
 export default function SocketComponent({
@@ -23,10 +24,10 @@ export default function SocketComponent({
   gameEnded,
   currentRoom: propCurrentRoom,
   onPlayerJoined,
+  setGameEnded
 }: SocketComponentProps) {
   const [msg, setMsg] = useState("");
   const [messageHistory, setMessageHistory] = useState<string[]>([]);
-  const [room, setRoom] = useState("");
   const [searchRoomKey, setSearchRoomKey] = useState("");
   const [currentRoom, setCurrentRoom] = useState("");
   const [status, setStatus] = useState("");
@@ -40,32 +41,28 @@ export default function SocketComponent({
   useEffect(() => {
     if (propCurrentRoom) {
       setCurrentRoom(propCurrentRoom);
+    
     }
   }, [propCurrentRoom]);
 
-  // Auto-scroll chat to bottom
+  // Auto-scroll chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messageHistory]);
 
-  // Load saved state on mount
+  // Load saved state
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedRoom = sessionStorage.getItem("currentRoom");
-      const savedGameEnded = sessionStorage.getItem("gameEnded");
-
-      if (savedRoom) {
-        setCurrentRoom(savedRoom);
-      }
-      if (savedGameEnded === "true") {
+      const savedGameStatus = sessionStorage.getItem("gameStatus");
+      if (savedRoom) setCurrentRoom(savedRoom);
+      if (savedGameStatus === "ended")
         setGameResult(sessionStorage.getItem("gameResult"));
-      }
     }
   }, []);
 
-  const createRoom = () => {
-    socket.emit("create_room");
-  };
+  // ---- Funktionen ----
+  const createRoom = () => socket.emit("create_room");
 
   const searchRoom = () => {
     if (!searchRoomKey.trim()) {
@@ -76,8 +73,12 @@ export default function SocketComponent({
     socket.emit("search_room", { roomKey: searchRoomKey.trim().toUpperCase() });
   };
 
-  const joinRoom = (roomKey: string) => {
+  const joinRoom = (roomKey: string) =>
     socket.emit("join_room", { room: roomKey });
+
+  const quickMatch = () => {
+    setStatus("Suche nach Gegner...");
+    socket.emit("quick_match");
   };
 
   const sendMessage = () => {
@@ -102,7 +103,6 @@ export default function SocketComponent({
       setGameResult("remis");
       setStatus("Remis akzeptiert! Spiel beendet.");
       setOpponentOfferedDraw(false);
-
       if (typeof window !== "undefined") {
         sessionStorage.setItem("gameEnded", "true");
         sessionStorage.setItem("gameResult", "remis");
@@ -127,7 +127,6 @@ export default function SocketComponent({
       socket.emit("resign", { room: currentRoom });
       setGameResult("verloren");
       setStatus("Du hast aufgegeben");
-
       if (typeof window !== "undefined") {
         sessionStorage.setItem("gameEnded", "true");
         sessionStorage.setItem("gameResult", "verloren");
@@ -135,14 +134,14 @@ export default function SocketComponent({
     }
   };
 
+  // ---- Socket Listener ----
   useEffect(() => {
     socket.on("room_created", (data: any) => {
       setCurrentRoom(data.roomKey);
-      setRoom(data.roomKey);
+      setCurrentRoom(data.roomKey);
       setStatus(`Raum erstellt: ${data.roomKey}`);
       setPlayerCount(1);
       setGameResult(null);
-
       if (typeof window !== "undefined") {
         sessionStorage.setItem("myColor", "white");
         sessionStorage.setItem("currentRoom", data.roomKey);
@@ -151,34 +150,26 @@ export default function SocketComponent({
 
     socket.on("room_found", (data: any) => {
       setStatus(`Raum gefunden! ${data.playerCount}/2 Spieler`);
-      if (!data.isFull) {
-        joinRoom(data.roomKey);
-      } else {
-        setStatus("Raum ist voll!");
-      }
+      if (!data.isFull) joinRoom(data.roomKey);
+      else setStatus("Raum ist voll!");
     });
 
-    socket.on("room_not_found", () => {
-      setStatus("Raum nicht gefunden!");
-    });
+    socket.on("room_not_found", () => setStatus("Raum nicht gefunden!"));
 
     socket.on("joined_room", (data: any) => {
       setCurrentRoom(data.roomKey);
-      setRoom(data.roomKey);
+      setCurrentRoom(data.roomKey);
       setStatus("Erfolgreich beigetreten!");
       setSearchRoomKey("");
-      setPlayerCount(2); // Spielerzahl für den beitretenden Spieler aktualisieren
+      setPlayerCount(2);
       setGameResult(null);
-
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("myColor", "black");
+      if (typeof window !== "undefined")
         sessionStorage.setItem("currentRoom", data.roomKey);
-      }
     });
 
     socket.on("player_joined", (data: any) => {
       setPlayerCount(data.playerCount);
-      onPlayerJoined(); // Callback aufrufen, um gameStarted in Board.tsx zu setzen
+      onPlayerJoined();
       setStatus("Gegner ist beigetreten! Spiel kann starten.");
     });
 
@@ -187,9 +178,9 @@ export default function SocketComponent({
       setPlayerCount(1);
     });
 
-    socket.on("receive_message", (data: any) => {
-      setMessageHistory((prev) => [...prev, `Gegner: ${data.message}`]);
-    });
+    socket.on("receive_message", (data: any) =>
+      setMessageHistory((prev) => [...prev, `Gegner: ${data.message}`])
+    );
 
     socket.on("offer_draw", () => {
       setOpponentOfferedDraw(true);
@@ -201,7 +192,7 @@ export default function SocketComponent({
       setStatus("Remis! Spiel beendet.");
       setDrawOffered(false);
       setOpponentOfferedDraw(false);
-
+      setGameEnded(true)
       if (typeof window !== "undefined") {
         sessionStorage.setItem("gameEnded", "true");
         sessionStorage.setItem("gameResult", "remis");
@@ -216,7 +207,6 @@ export default function SocketComponent({
     socket.on("resign", () => {
       setGameResult("gewonnen");
       setStatus("Gegner hat aufgegeben! Du hast gewonnen!");
-
       if (typeof window !== "undefined") {
         sessionStorage.setItem("gameEnded", "true");
         sessionStorage.setItem("gameResult", "gewonnen");
@@ -224,19 +214,15 @@ export default function SocketComponent({
     });
 
     socket.on("game_ended", (data: any) => {
-      if (data.status) {
-        setStatus(data.status);
-      }
-      if (typeof window !== "undefined") {
+      if (data.status) setStatus(data.status);
+      if (typeof window !== "undefined")
         sessionStorage.setItem("gameEnded", "true");
-      }
     });
 
-    socket.on("error", (data: any) => {
-      setStatus(`Fehler: ${data.message}`);
-    });
+    socket.on("error", (data: any) => setStatus(`Fehler: ${data.message}`));
 
     return () => {
+      // Cleanup
       socket.off("room_created");
       socket.off("room_found");
       socket.off("room_not_found");
@@ -253,7 +239,6 @@ export default function SocketComponent({
     };
   }, [currentRoom]);
 
-  // Show game actions for both players when game is active
   const showGameActions =
     currentRoom && gameStarted && !gameEnded && playerCount === 2;
 
@@ -340,10 +325,17 @@ export default function SocketComponent({
               Raum beitreten (Schwarz)
             </button>
           </div>
+
+          <button
+            onClick={quickMatch}
+            className="w-full bg-blue-700 text-white p-2 rounded hover:bg-blue-800 font-semibold"
+          >
+            Quick Match
+          </button>
         </div>
       )}
 
-      {showGameActions && (
+      {showGameActions && !gameEnded && (
         <div className="space-y-2 border-t pt-2">
           <h3 className="font-semibold text-sm">Spiel-Aktionen</h3>
 
@@ -427,4 +419,37 @@ export default function SocketComponent({
       )}
     </div>
   );
+}
+class Statehandler {
+  private _myColor: "white" | "black" | null;
+  private _gameState: "started" | "ended" | "waiting";
+  private _currentRoom: string;
+  private _onPlayerJoined: () => void;
+
+  constructor(
+    myColor: "white" | "black" | null,
+    currentRoom: string,
+    onPlayerJoined: () => void,
+  ) {
+    this._myColor = myColor;
+    this._gameState="waiting"
+    this._currentRoom = currentRoom;
+    this._onPlayerJoined = onPlayerJoined;
+  }
+
+  public get myColor(): "white" | "black" | null {
+    return this._myColor;
+  }
+
+  public get currentRoom(): string {
+    return this._currentRoom;
+  }
+
+  public get onPlayerJoined(): () => void {
+    return this._onPlayerJoined;
+  }
+
+  public get gameState(): "started" | "ended" | "waiting" {
+    return this._gameState;
+    }
 }

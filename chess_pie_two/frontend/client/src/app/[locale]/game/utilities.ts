@@ -1,8 +1,8 @@
-export function piecesListToBoard(pieces:any) {
+export function piecesListToBoard(pieces: any) {
   // 8x8 mit null füllen
   const board = Array.from({ length: 8 }, () => Array(8).fill(null));
 
-  pieces.forEach((piece:any) => {
+  pieces.forEach((piece: any) => {
     const file = piece.position[0]; // a–h
     const rank = piece.position[1]; // 1–8
 
@@ -15,28 +15,32 @@ export function piecesListToBoard(pieces:any) {
   return board;
 }
 
+export function calcSize(baseSize: number, sw: number, sh: number) {
+  if (sw > 1200) return baseSize;
+  else if (sw > 800) return baseSize * 0.8;
+  else if (sw > 600) return baseSize * 0.7;
+  else return baseSize * 0.5;
+}
 
+export function boardToFEN(board: any) {
+  type PieceType = "Pawn" | "Knight" | "Bishop" | "Rook" | "Queen" | "King";
 
-
-export function boardToFEN(board:any) {
-    type PieceType = "Pawn" | "Knight" | "Bishop" | "Rook" | "Queen" | "King";
-
-    interface Piece {
-        type: PieceType;
-        color: "white" | "black";
-        position: string;
-        id: number;
-        size?: number;
-        gridPos?: string;
-    }
-    const typeToFEN: Record<PieceType, string> = {
-        Pawn: "p",
-        Knight: "n",
-        Bishop: "b",
-        Rook: "r",
-        Queen: "q",
-        King: "k",
-    };
+  interface Piece {
+    type: PieceType;
+    color: "white" | "black";
+    position: string;
+    id: number;
+    size?: number;
+    gridPos?: string;
+  }
+  const typeToFEN: Record<PieceType, string> = {
+    Pawn: "p",
+    Knight: "n",
+    Bishop: "b",
+    Rook: "r",
+    Queen: "q",
+    King: "k",
+  };
   let fen = "";
 
   for (let row = 0; row < 8; row++) {

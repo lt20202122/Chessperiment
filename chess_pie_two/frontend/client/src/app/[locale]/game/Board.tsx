@@ -6,7 +6,7 @@ import Loading from "@/app/loading";
 import Back from "./Back";
 import { Chess, Square } from "chess.js";
 import Socket, { socket } from "./Socket";
-import { boardToFEN, piecesListToBoard } from "./utilities";
+import { calcSize } from "./utilities";
 import {
   DndContext,
   DragEndEvent,
@@ -46,6 +46,17 @@ export default function Board() {
   );
   const [lastMoveFrom, setLastMoveFrom] = useState<string | null>(null);
   const [lastMoveTo, setLastMoveTo] = useState<string | null>(null);
+  const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const [isViewingHistory, setIsViewingHistory] = useState(false);
+  const [simulationPieces, setSimulationPieces] = useState<PieceType[]>([]);
+  useEffect(() => {
+    if (!isViewingHistory) return;
+    setRedMarkedSquares(new Set());
+    setLastMoveFrom(null);
+    setLastMoveTo(null);
+    sessionStorage.setItem("lastMove", "");
+  }, [isViewingHistory]);
 
   const handleDragStart = (e: DragStartEvent) => {
     setActivePiece(e.active.id as any);
@@ -61,6 +72,7 @@ export default function Board() {
   };
 
   const highlightMove = (from: string, to: string) => {
+    if (isViewingHistory) return;
     setLastMoveFrom(from);
     setLastMoveTo(to);
     sessionStorage.setItem("lastMove", JSON.stringify({ from, to }));
@@ -135,11 +147,9 @@ export default function Board() {
       return true;
     }
 
-    // Check for 50-move rule and 75-move rule
     const history = chess.history({ verbose: true });
     let halfmoveClock = 0;
 
-    // Count moves since last pawn move or capture
     for (let i = history.length - 1; i >= 0; i--) {
       const move = history[i];
       if (move.captured || move.piece === "p") {
@@ -148,7 +158,6 @@ export default function Board() {
       halfmoveClock++;
     }
 
-    // 75-move rule (automatic draw)
     if (halfmoveClock >= 150) {
       setGameStatus("Remis durch 75-Züge-Regel.");
       setGameEnded(true);
@@ -165,7 +174,6 @@ export default function Board() {
       return true;
     }
 
-    // 50-move rule (can claim draw)
     if (halfmoveClock >= 100) {
       setGameStatus("50-Züge-Regel erreicht! Remis kann beansprucht werden.");
     } else if (chess.isDraw()) {
@@ -243,7 +251,6 @@ export default function Board() {
       return;
     }
 
-    // Check for promotion
     if (isPromotionMove(from, to)) {
       setPromotionMove({ from, to });
       setShowPromotionDialog(true);
@@ -299,6 +306,11 @@ export default function Board() {
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (isViewingHistory) {
+      setActivePiece(null);
+      return;
+    }
+
     const { active, over } = event;
     if (!over || !active) {
       setActivePiece(null);
@@ -341,8 +353,9 @@ export default function Board() {
 
       if (savedRoom) {
         setCurrentRoom(savedRoom);
-        socket.emit("rejoin_room", { room: savedRoom });
-        console.log("✅ Raum beigetreten:", savedRoom);
+        // Das "rejoin_room" ist nicht nötig. Der Server kümmert sich
+        // um die Wiederzuweisung basierend auf dem "authenticate"-Event.
+        console.log("✅ Raum aus Session Storage geladen:", savedRoom);
       }
 
       if (savedGameStarted === "true") {
@@ -412,6 +425,15 @@ export default function Board() {
           setLastMoveTo(to);
         } catch {}
       }
+
+      const savedHistory = sessionStorage.getItem("moveHistory");
+      if (savedHistory) {
+        try {
+          const history = JSON.parse(savedHistory);
+          setMoveHistory(history);
+          setHistoryIndex(history.length - 1);
+        } catch {}
+      }
     }
   }, []);
 
@@ -419,7 +441,6 @@ export default function Board() {
     const newRedSquares = new Set(redMarkedSquares);
 
     if (newRedSquares.has(pos)) {
-      // Remove red marking
       newRedSquares.delete(pos);
       if (squareRefs.current[pos]) {
         squareRefs.current[pos]!.style.setProperty(
@@ -428,7 +449,6 @@ export default function Board() {
         );
       }
     } else {
-      // Add red marking
       newRedSquares.add(pos);
       if (squareRefs.current[pos]) {
         squareRefs.current[pos]!.style.setProperty(
@@ -493,6 +513,13 @@ export default function Board() {
       sessionStorage.setItem("boardFEN", fen);
     }
 
+    const newHistory = chessRef.current.history();
+    setMoveHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("moveHistory", JSON.stringify(newHistory));
+    }
+
     return newPieces;
   };
 
@@ -511,6 +538,10 @@ export default function Board() {
     setRedMarkedSquares(new Set());
     setLastMoveFrom(null);
     setLastMoveTo(null);
+    setMoveHistory([]);
+    setHistoryIndex(-1);
+    setIsViewingHistory(false);
+    setSimulationPieces([]);
 
     Object.values(squareRefs.current).forEach((el) => {
       if (el) {
@@ -527,6 +558,7 @@ export default function Board() {
       sessionStorage.removeItem("lastMove");
       sessionStorage.removeItem("gameStatus");
       sessionStorage.removeItem("redMarkedSquares");
+      sessionStorage.removeItem("moveHistory");
     }
 
     console.log("♻️ Board zurückgesetzt!");
@@ -580,26 +612,32 @@ export default function Board() {
     };
 
     const handleJoinedRoom = (data: any) => {
-      console.log("🚪 Raum beigetreten:", data.roomKey);
-      setMyColor("black");
+      console.log("🚪 Raum beigetreten:", data.roomKey, "als", data.color);
+      setMyColor(data.color);
       setCurrentRoom(data.roomKey);
-      setGameStarted(true);
-      setGameEnded(false);
 
       if (typeof window !== "undefined") {
-        sessionStorage.setItem("myColor", "black");
+        sessionStorage.setItem("myColor", data.color);
         sessionStorage.setItem("currentRoom", data.roomKey);
-        sessionStorage.setItem("gameStarted", "true");
         sessionStorage.removeItem("gameEnded");
       }
     };
 
-    const handlePlayerJoined = () => {
-      console.log("🎮 Zweiter Spieler beigetreten!");
+    const handleStartGame = (data: any) => {
+      console.log("🎮 Spiel startet!", data);
       setGameStarted(true);
+      setGameEnded(false);
+      
+      try {
+        chessRef.current.load(data.fen);
+        syncBoardFromChess();
+      } catch (e) {
+        console.error("Fehler beim Laden des FEN bei Spielstart:", e);
+      }
 
       if (typeof window !== "undefined") {
         sessionStorage.setItem("gameStarted", "true");
+        sessionStorage.setItem("boardFEN", data.fen);
       }
     };
 
@@ -622,7 +660,7 @@ export default function Board() {
     socket.on("move", handleMove);
     socket.on("room_created", handleRoomCreated);
     socket.on("joined_room", handleJoinedRoom);
-    socket.on("player_joined", handlePlayerJoined);
+    socket.on("start_game", handleStartGame);
     socket.on("resign", handleGameEnded);
     socket.on("draw_accepted", handleGameEnded);
     socket.on("game_ended", handleGameEnded);
@@ -631,7 +669,7 @@ export default function Board() {
       socket.off("move", handleMove);
       socket.off("room_created", handleRoomCreated);
       socket.off("joined_room", handleJoinedRoom);
-      socket.off("player_joined", handlePlayerJoined);
+      socket.off("start_game", handleStartGame);
       socket.off("resign", handleGameEnded);
       socket.off("draw_accepted", handleGameEnded);
       socket.off("game_ended", handleGameEnded);
@@ -687,14 +725,11 @@ export default function Board() {
     return null;
   }
 
-  function calcSize(baseSize: number, sw: number, sh: number) {
-    if (sw > 1200) return baseSize;
-    else if (sw > 800) return baseSize * 0.8;
-    else if (sw > 600) return baseSize * 0.7;
-    else return baseSize * 0.5;
-  }
+  
 
   function handlePieceSelect(pos: string) {
+    if (isViewingHistory) return;
+
     const amIAtTurn = isMyTurn();
 
     console.log(
@@ -744,6 +779,68 @@ export default function Board() {
   const columns = ["a", "b", "c", "d", "e", "f", "g", "h"];
   if (!boardPieces || boardPieces.length === 0) return <Loading />;
 
+  const navigateHistory = (direction: "prev" | "next") => {
+    console.log("navigateHistory");
+    let newIndex = historyIndex;
+    if (direction === "prev" && historyIndex > -1) {
+      newIndex = historyIndex - 1;
+    } else if (direction === "next" && historyIndex < moveHistory.length - 1) {
+      console.log("True");
+      newIndex = historyIndex + 1;
+    } else {
+      return;
+    }
+
+    setHistoryIndex(newIndex);
+
+    const tempChess = new Chess();
+
+    for (let i = 0; i <= newIndex; i++) {
+      try {
+        tempChess.move(moveHistory[i]);
+      } catch (e) {
+        console.error("Error replaying move:", e);
+      }
+    }
+
+    const board = tempChess.board();
+    const simPieces: PieceType[] = [];
+
+    board.forEach((row, rowIndex) => {
+      row.forEach((square, colIndex) => {
+        if (square) {
+          const position = `${columns[colIndex]}${8 - rowIndex}`;
+          simPieces.push({
+            type:
+              square.type === "p"
+                ? "Pawn"
+                : square.type === "r"
+                ? "Rook"
+                : square.type === "n"
+                ? "Knight"
+                : square.type === "b"
+                ? "Bishop"
+                : square.type === "q"
+                ? "Queen"
+                : "King",
+            color: square.color === "w" ? "white" : "black",
+            position: position,
+            size: 60,
+          });
+        }
+      });
+    });
+
+    setSimulationPieces(simPieces);
+    setIsViewingHistory(newIndex < moveHistory.length - 1);
+  };
+
+  const exitHistoryView = () => {
+    setHistoryIndex(moveHistory.length - 1);
+    setIsViewingHistory(false);
+    setSimulationPieces([]);
+  };
+
   function DraggablePiece({
     piece,
     size,
@@ -760,7 +857,11 @@ export default function Board() {
       });
 
     const canDrag =
-      amIAtTurn && myColor === piece.color && !gameEnded && gameStarted;
+      amIAtTurn &&
+      myColor === piece.color &&
+      !gameEnded &&
+      gameStarted &&
+      !isViewingHistory;
 
     const style: React.CSSProperties = {
       fontSize: size,
@@ -864,6 +965,8 @@ export default function Board() {
   let isWhite = true;
   const content: React.ReactNode[] = [];
 
+  const displayPieces = isViewingHistory ? simulationPieces : boardPieces;
+
   const rowStart = myColor === "black" ? 0 : 7;
   const rowEnd = myColor === "black" ? 8 : -1;
   const rowStep = myColor === "black" ? 1 : -1;
@@ -899,7 +1002,7 @@ export default function Board() {
         ${isBottomRight ? "rounded-br-md" : ""}
       `;
 
-      const piece = boardPieces.find((p) => p.position === pos);
+      const piece = displayPieces.find((p) => p.position === pos);
 
       if (piece) {
         switch (piece.type.toLowerCase()) {
@@ -1032,58 +1135,132 @@ export default function Board() {
         </div>
       )}
 
-      <div
-        className={`bg-[hsl(0,0%,90%)] ml-4 mt-4 grid gap-0 border-black border-2 w-fit h-fit rounded-[10px] p-2 ${
-          !amIAtTurn || !gameStarted ? "opacity-70" : ""
-        }`}
-        style={{
-          gridTemplateColumns: `repeat(8, ${blockSize}px)`,
-        }}
-      >
-        <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-          {content}
-          <DragOverlay dropAnimation={null}>
-            {activePiece ? (
-              <div
-                style={{
-                  width: blockSize,
-                  height: blockSize,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  pointerEvents: "none",
-                  opacity: 0.8,
-                }}
+      <div className="relative">
+        <div
+          className={`bg-[hsl(0,0%,90%)] ml-4 mt-4 grid gap-0 border-black border-2 w-fit h-fit rounded-[10px] p-2 ${
+            !amIAtTurn || !gameStarted || isViewingHistory ? "opacity-70" : ""
+          }`}
+          style={{
+            gridTemplateColumns: `repeat(8, ${blockSize}px)`,
+          }}
+        >
+          <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+            {content}
+            <DragOverlay dropAnimation={null}>
+              {activePiece ? (
+                <div
+                  style={{
+                    width: blockSize,
+                    height: blockSize,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    pointerEvents: "none",
+                    opacity: 0.8,
+                  }}
+                >
+                  <Image
+                    src={
+                      boardStyle === "v2"
+                        ? pieceImagesv2[
+                            `${
+                              boardPieces.find(
+                                (p) => p.position === activePiece
+                              )?.color
+                            }_${boardPieces
+                              .find((p) => p.position === activePiece)
+                              ?.type.toLowerCase()}`
+                          ]
+                        : pieceImagesv1[
+                            `${
+                              boardPieces.find(
+                                (p) => p.position === activePiece
+                              )?.color
+                            }_${boardPieces
+                              .find((p) => p.position === activePiece)
+                              ?.type.toLowerCase()}`
+                          ]
+                    }
+                    alt=""
+                    height={blockSize}
+                    width={blockSize}
+                    style={{ pointerEvents: "none" }}
+                  />
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </div>
+
+        {moveHistory.length > 0 && (
+          <div className="absolute bottom-2 -right-50 flex gap-2 bg-[#FCFCFC] rounded-[23.5px] shadow-lg p-2 px-3">
+            <button
+              onClick={() => navigateHistory("prev")}
+              disabled={historyIndex <= -1}
+              className="w-10 h-10 disabled:text-gray-400 rounded-lg font-bold text-lg transition-colors flex items-center justify-center"
+              title="Vorheriger Zug"
+            >
+              <svg
+                width="27"
+                height="16"
+                viewBox="0 0 27 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <Image
-                  src={
-                    boardStyle === "v2"
-                      ? pieceImagesv2[
-                          `${
-                            boardPieces.find((p) => p.position === activePiece)
-                              ?.color
-                          }_${boardPieces
-                            .find((p) => p.position === activePiece)
-                            ?.type.toLowerCase()}`
-                        ]
-                      : pieceImagesv1[
-                          `${
-                            boardPieces.find((p) => p.position === activePiece)
-                              ?.color
-                          }_${boardPieces
-                            .find((p) => p.position === activePiece)
-                            ?.type.toLowerCase()}`
-                        ]
-                  }
-                  alt=""
-                  height={blockSize}
-                  width={blockSize}
-                  style={{ pointerEvents: "none" }}
+                <path
+                  d="M25.073 8.00003H1.57304M1.57304 8.00003L10.073 1.00003M1.57304 8.00003L10.073 15"
+                  stroke="#666666"
+                  strokeWidth="2"
+                  strokeLinecap="round"
                 />
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+              </svg>
+            </button>
+            <div className="flex items-center justify-center min-w-[60px] px-2 text-[24px] font-medium text-gray-700">
+              {isViewingHistory ? (
+                <span className="text-orange-600">
+                  {historyIndex + 1}/{moveHistory.length}
+                </span>
+              ) : (
+                <span className="text-[#43B600]">Live</span>
+              )}
+            </div>
+            <button
+              onClick={() => navigateHistory("next")}
+              className="w-10 h-10 disabled:text-gray-400 rounded-lg font-bold text-lg transition-colors flex items-center justify-center"
+              title="Nächster Zug"
+            >
+              <svg
+                width="27"
+                height="16"
+                viewBox="0 0 27 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M1 8.00003L24.5 8.00003M24.5 8.00003L16 15M24.5 8.00003L16 1.00003"
+                  stroke="#666666"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+            {isViewingHistory && (
+              <button
+                onClick={exitHistoryView}
+                className="ml-2 px-3 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-sm transition-colors"
+                title="Zurück zur aktuellen Position"
+              >
+                Live
+              </button>
+            )}
+          </div>
+        )}
+
+        {isViewingHistory && (
+          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold shadow-lg">
+            📖 History Modus
+          </div>
+        )}
       </div>
 
       <div className="ml-4 mt-4 p-3 bg-gray-200 rounded h-fit space-y-2 w-64 min-w-[16rem]">
@@ -1145,9 +1322,11 @@ export default function Board() {
         myColor={myColor}
         gameStarted={gameStarted}
         gameEnded={gameEnded}
+        setGameEnded={setGameEnded}
         currentRoom={currentRoom}
         onPlayerJoined={() => setGameStarted(true)}
       />
     </div>
   );
 }
+ 
