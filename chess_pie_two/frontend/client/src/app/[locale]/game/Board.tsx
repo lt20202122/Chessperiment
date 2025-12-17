@@ -4,8 +4,8 @@ import { pieces, pieceImagesv1, pieceImagesv2, PieceType } from "./Data";
 import { useState, useEffect, useRef, Fragment } from "react";
 import Loading from "@/app/loading";
 import Back from "./Back";
-import { Chess, Square } from "chess.js";
-import Socket, { socket } from "./Socket";
+import { Chess, type Square } from "chess.js";
+import SocketComponent, { socket } from "./SocketComponent"; // ← HIER: socket importieren!
 import { calcSize } from "./utilities";
 import {
   DndContext,
@@ -26,10 +26,8 @@ export default function Board() {
   const [screenWidth, setScreenWidth] = useState(0);
   const [screenHeight, setScreenHeight] = useState(0);
   const [currentRoom, setCurrentRoom] = useState("");
+  const [gameInfo, setGameInfo] = useState("");
   const [myColor, setMyColor] = useState<"white" | "black" | null>(null);
-  const [gameStarted, setGameStarted] = useState(false);
-  const [gameEnded, setGameEnded] = useState(false);
-  const [startSquare, setStartSquare] = useState<any>();
   const chessRef = useRef(new Chess());
   const [startPos, setStartPos] = useState("");
   const squareRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -39,7 +37,7 @@ export default function Board() {
     from: string;
     to: string;
   } | null>(null);
-  const [gameStatus, setGameStatus] = useState<string>("");
+  const [gameStatus, setGameStatus] = useState<"waiting" | "playing" | "ended" | "">("");
   const [moveCount, setMoveCount] = useState(0);
   const [redMarkedSquares, setRedMarkedSquares] = useState<Set<string>>(
     new Set()
@@ -50,6 +48,14 @@ export default function Board() {
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [isViewingHistory, setIsViewingHistory] = useState(false);
   const [simulationPieces, setSimulationPieces] = useState<PieceType[]>([]);
+
+  // ❌ ENTFERNT: Eigener Socket
+  // const socketRef = useRef<ReturnType<typeof io> | null>(null);
+  // useEffect(() => {
+  //   socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL as string);
+  //   ...
+  // }, []);
+
   useEffect(() => {
     if (!isViewingHistory) return;
     setRedMarkedSquares(new Set());
@@ -58,12 +64,118 @@ export default function Board() {
     sessionStorage.setItem("lastMove", "");
   }, [isViewingHistory]);
 
+  useEffect(() => {
+    // Socket Handler - verwende den importierten socket
+    if (!socket) return;
+
+    const handleRoomCreated = (data: any) => {
+      console.log("🏠 Raum erstellt:", data.roomId);
+      setCurrentRoom(data.roomId);
+      setGameStatus("waiting");
+      chessRef.current.reset();
+      syncBoardFromChess();
+    };
+
+    const handleJoinedRoom = (data: any) => {
+      console.log("🚪 Raum beigetreten:", data.roomId, "als", data.color);
+      setCurrentRoom(data.roomId);
+    };
+
+    const handleStartGame = (data: any) => {
+      console.log("🎮 Spiel startet!", data);
+      setGameStatus("playing");
+      setMyColor(data.color);
+      setCurrentRoom(data.roomId);
+      try {
+        chessRef.current.load(data.fen);
+        syncBoardFromChess();
+      } catch (e) {
+        console.error("Fehler beim Laden des FEN bei Spielstart:", e);
+      }
+    };
+
+    const handleGameEnded = (data?: any) => {
+      console.log("🏁 Spiel beendet", data);
+      setGameStatus("ended");
+      if (data?.status) {
+        setGameStatus(data.status);
+      }
+    };
+
+    const handlePromotionNeeded = (data: any) => {
+      setPromotionMove(data);
+      setShowPromotionDialog(true);
+    };
+
+    const handleIllegalMove = (data: any) => {
+      console.error("❌ Illegal move:", data.reason);
+      alert(`Ungültiger Zug: ${data.reason}`);
+    };
+
+    const handleMove = (data: any) => {
+      chessRef.current.load(data.fen);
+      syncBoardFromChess();
+      highlightMove(data.from, data.to);
+    };
+
+    socket.on("move", handleMove);
+    socket.on("room_created", handleRoomCreated);
+    socket.on("joined_room", handleJoinedRoom);
+    socket.on("start_game", handleStartGame);
+    socket.on("resign", handleGameEnded);
+    socket.on("draw_accepted", handleGameEnded);
+    socket.on("game_ended", handleGameEnded);
+    socket.on("promotion_needed", handlePromotionNeeded);
+    socket.on("illegal_move", handleIllegalMove);
+
+    return () => {
+      socket.off("move", handleMove);
+      socket.off("room_created", handleRoomCreated);
+      socket.off("joined_room", handleJoinedRoom);
+      socket.off("start_game", handleStartGame);
+      socket.off("resign", handleGameEnded);
+      socket.off("draw_accepted", handleGameEnded);
+      socket.off("game_ended", handleGameEnded);
+      socket.off("promotion_needed", handlePromotionNeeded);
+      socket.off("illegal_move", handleIllegalMove);
+    };
+  }, []); // Keine Dependency auf socket nötig, da es konstant ist
+
+  useEffect(() => {
+    const updateSize = () => {
+      const headerHeight = 65;
+      const rows = 8;
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
+
+      let widthBlock;
+      if (screenWidth >= 800) widthBlock = 80;
+      else if (screenWidth >= 600) widthBlock = 60;
+      else widthBlock = 40;
+
+      const maxHeightBlock = (screenHeight - headerHeight - 40) / rows;
+      const finalBlockSize = Math.min(widthBlock, maxHeightBlock);
+
+      setBlockSize(finalBlockSize);
+      setScreenWidth(screenWidth);
+      setScreenHeight(screenHeight);
+    };
+
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
+
+  useEffect(() => {
+    // Restore board after reload - TODO: Fetch from server
+  }, []);
+
   const handleDragStart = (e: DragStartEvent) => {
     setActivePiece(e.active.id as any);
   };
 
   const isMyTurn = () => {
-    if (!myColor || !gameStarted || gameEnded) return false;
+    if (!myColor || gameStatus !== "playing") return false;
     const turn = chessRef.current.turn();
     return (
       (turn === "w" && myColor === "white") ||
@@ -76,233 +188,6 @@ export default function Board() {
     setLastMoveFrom(from);
     setLastMoveTo(to);
     sessionStorage.setItem("lastMove", JSON.stringify({ from, to }));
-  };
-
-  const checkGameStatus = () => {
-    const chess = chessRef.current;
-
-    if (chess.isCheckmate()) {
-      const winner = chess.turn() === "w" ? "Schwarz" : "Weiß";
-      setGameStatus(`Schachmatt! ${winner} gewinnt!`);
-      setGameEnded(true);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("gameEnded", "true");
-        sessionStorage.setItem("gameStatus", `Schachmatt! ${winner} gewinnt!`);
-      }
-      if (currentRoom) {
-        socket.emit("game_ended", {
-          room: currentRoom,
-          reason: "checkmate",
-          winner,
-        });
-      }
-      return true;
-    }
-
-    if (chess.isStalemate()) {
-      setGameStatus("Patt! Remis durch Patt.");
-      setGameEnded(true);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("gameEnded", "true");
-        sessionStorage.setItem("gameStatus", "Patt! Remis durch Patt.");
-      }
-      if (currentRoom) {
-        socket.emit("game_ended", { room: currentRoom, reason: "stalemate" });
-      }
-      return true;
-    }
-
-    if (chess.isThreefoldRepetition()) {
-      setGameStatus("Remis durch dreifache Stellungswiederholung.");
-      setGameEnded(true);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("gameEnded", "true");
-        sessionStorage.setItem(
-          "gameStatus",
-          "Remis durch dreifache Stellungswiederholung."
-        );
-      }
-      if (currentRoom) {
-        socket.emit("game_ended", { room: currentRoom, reason: "repetition" });
-      }
-      return true;
-    }
-
-    if (chess.isInsufficientMaterial()) {
-      setGameStatus("Remis durch unzureichendes Material.");
-      setGameEnded(true);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("gameEnded", "true");
-        sessionStorage.setItem(
-          "gameStatus",
-          "Remis durch unzureichendes Material."
-        );
-      }
-      if (currentRoom) {
-        socket.emit("game_ended", {
-          room: currentRoom,
-          reason: "insufficient_material",
-        });
-      }
-      return true;
-    }
-
-    const history = chess.history({ verbose: true });
-    let halfmoveClock = 0;
-
-    for (let i = history.length - 1; i >= 0; i--) {
-      const move = history[i];
-      if (move.captured || move.piece === "p") {
-        break;
-      }
-      halfmoveClock++;
-    }
-
-    if (halfmoveClock >= 150) {
-      setGameStatus("Remis durch 75-Züge-Regel.");
-      setGameEnded(true);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("gameEnded", "true");
-        sessionStorage.setItem("gameStatus", "Remis durch 75-Züge-Regel.");
-      }
-      if (currentRoom) {
-        socket.emit("game_ended", {
-          room: currentRoom,
-          reason: "75_move_rule",
-        });
-      }
-      return true;
-    }
-
-    if (halfmoveClock >= 100) {
-      setGameStatus("50-Züge-Regel erreicht! Remis kann beansprucht werden.");
-    } else if (chess.isDraw()) {
-      setGameStatus("Remis!");
-      setGameEnded(true);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("gameEnded", "true");
-        sessionStorage.setItem("gameStatus", "Remis!");
-      }
-      if (currentRoom) {
-        socket.emit("game_ended", { room: currentRoom, reason: "draw" });
-      }
-      return true;
-    } else if (chess.isCheck()) {
-      setGameStatus("Schach!");
-    } else {
-      setGameStatus("");
-    }
-
-    setMoveCount(halfmoveClock);
-    return false;
-  };
-
-  const isPromotionMove = (from: string, to: string): boolean => {
-    const piece = boardPieces.find((p) => p.position === from);
-    if (!piece || piece.type !== "Pawn") return false;
-
-    const toRank = parseInt(to[1]);
-    if (piece.color === "white" && toRank === 8) return true;
-    if (piece.color === "black" && toRank === 1) return true;
-
-    return false;
-  };
-
-  const executePromotion = (promotionPiece: "q" | "r" | "b" | "n") => {
-    if (!promotionMove) return;
-
-    try {
-      chessRef.current.move({
-        from: promotionMove.from as Square,
-        to: promotionMove.to as Square,
-        promotion: promotionPiece,
-      });
-
-      if (currentRoom) {
-        socket.emit("move", {
-          room: currentRoom,
-          from: promotionMove.from,
-          to: promotionMove.to,
-          promotion: promotionPiece,
-        });
-      }
-
-      highlightMove(promotionMove.from, promotionMove.to);
-      syncBoardFromChess();
-      checkGameStatus();
-
-      setShowPromotionDialog(false);
-      setPromotionMove(null);
-    } catch (error) {
-      console.error("Fehler bei Bauernumwandlung:", error);
-    }
-  };
-
-  const attemptMove = (from: string, to: string) => {
-    const amIAtTurn = isMyTurn();
-
-    if (!gameStarted) {
-      console.log("⏳ Spiel noch nicht gestartet");
-      return;
-    }
-
-    if (!amIAtTurn) {
-      console.log("❌ Nicht am Zug");
-      return;
-    }
-
-    if (isPromotionMove(from, to)) {
-      setPromotionMove({ from, to });
-      setShowPromotionDialog(true);
-      return;
-    }
-
-    const castleStr = detectCastling(from, to);
-
-    try {
-      if (castleStr) {
-        chessRef.current.move(castleStr);
-
-        if (currentRoom) {
-          socket.emit("move", {
-            room: currentRoom,
-            from,
-            to,
-            castle: castleStr,
-          });
-        }
-
-        console.log("✅ Rochade ausgeführt");
-      } else {
-        const legal = isLegalMove(from, to);
-
-        if (!legal) {
-          console.log("❌ Illegaler Zug");
-          return;
-        }
-
-        chessRef.current.move({ from: from as Square, to: to as Square });
-
-        if (currentRoom) {
-          socket.emit("move", {
-            room: currentRoom,
-            from,
-            to,
-          });
-        }
-
-        console.log("✅ Zug ausgeführt");
-      }
-
-      highlightMove(from, to);
-      syncBoardFromChess();
-      checkGameStatus();
-    } catch (error) {
-      console.error("❌ Fehler beim Versuch zu ziehen:", error);
-      try {
-        chessRef.current.undo();
-      } catch {}
-    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -325,117 +210,11 @@ export default function Board() {
       return;
     }
 
-    attemptMove(from, to);
+    // ✅ Verwende den importierten socket, OHNE 'room' im Payload
+    console.log("🎯 Sende move:", { from, to });
+    socket.emit("move", { from, to });
     setActivePiece(null);
   };
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedColor = sessionStorage.getItem("myColor");
-      const savedRoom = sessionStorage.getItem("currentRoom");
-      const savedGameStarted = sessionStorage.getItem("gameStarted");
-      const savedGameEnded = sessionStorage.getItem("gameEnded");
-      const savedFEN = sessionStorage.getItem("boardFEN");
-      const savedGameStatus = sessionStorage.getItem("gameStatus");
-      const savedLastMove = sessionStorage.getItem("lastMove");
-
-      console.log("📄 RELOAD - Lade gespeicherten State:");
-      console.log("  Farbe:", savedColor);
-      console.log("  Raum:", savedRoom);
-      console.log("  Gestartet:", savedGameStarted);
-      console.log("  FEN:", savedFEN);
-
-      if (savedColor) {
-        const color = savedColor as "white" | "black";
-        setMyColor(color);
-        console.log("✅ Farbe gesetzt:", color);
-      }
-
-      if (savedRoom) {
-        setCurrentRoom(savedRoom);
-        // Das "rejoin_room" ist nicht nötig. Der Server kümmert sich
-        // um die Wiederzuweisung basierend auf dem "authenticate"-Event.
-        console.log("✅ Raum aus Session Storage geladen:", savedRoom);
-      }
-
-      if (savedGameStarted === "true") {
-        setGameStarted(true);
-        console.log("✅ Spiel gestartet");
-      }
-
-      if (savedGameEnded === "true") {
-        setGameEnded(true);
-        console.log("✅ Spiel beendet");
-      }
-
-      if (savedGameStatus) {
-        setGameStatus(savedGameStatus);
-      }
-
-      if (savedFEN) {
-        try {
-          chessRef.current.load(savedFEN);
-          console.log("✅ Chess.js mit FEN geladen");
-
-          const board = chessRef.current.board();
-          const newPieces: PieceType[] = [];
-
-          board.forEach((row, rowIndex) => {
-            row.forEach((square, colIndex) => {
-              if (square) {
-                const columns = ["a", "b", "c", "d", "e", "f", "g", "h"];
-                const position = `${columns[colIndex]}${8 - rowIndex}`;
-
-                newPieces.push({
-                  type:
-                    square.type === "p"
-                      ? "Pawn"
-                      : square.type === "r"
-                      ? "Rook"
-                      : square.type === "n"
-                      ? "Knight"
-                      : square.type === "b"
-                      ? "Bishop"
-                      : square.type === "q"
-                      ? "Queen"
-                      : "King",
-                  color: square.color === "w" ? "white" : "black",
-                  position: position,
-                  size: 60,
-                });
-              }
-            });
-          });
-
-          setBoardPieces(newPieces);
-          console.log(
-            "✅ Board-Pieces aktualisiert:",
-            newPieces.length,
-            "Figuren"
-          );
-        } catch (e) {
-          console.error("❌ Fehler beim Laden des FEN:", e);
-        }
-      }
-
-      if (savedLastMove) {
-        try {
-          const { from, to } = JSON.parse(savedLastMove);
-          setLastMoveFrom(from);
-          setLastMoveTo(to);
-        } catch {}
-      }
-
-      const savedHistory = sessionStorage.getItem("moveHistory");
-      if (savedHistory) {
-        try {
-          const history = JSON.parse(savedHistory);
-          setMoveHistory(history);
-          setHistoryIndex(history.length - 1);
-        } catch {}
-      }
-    }
-  }, []);
 
   const handleRightClick = (pos: string) => {
     const newRedSquares = new Set(redMarkedSquares);
@@ -459,20 +238,6 @@ export default function Board() {
     }
 
     setRedMarkedSquares(newRedSquares);
-
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(
-        "redMarkedSquares",
-        JSON.stringify(Array.from(newRedSquares))
-      );
-    }
-
-    console.log(
-      "Right clicked square:",
-      pos,
-      "Red squares:",
-      Array.from(newRedSquares)
-    );
   };
 
   const syncBoardFromChess = () => {
@@ -491,14 +256,14 @@ export default function Board() {
               square.type === "p"
                 ? "Pawn"
                 : square.type === "r"
-                ? "Rook"
-                : square.type === "n"
-                ? "Knight"
-                : square.type === "b"
-                ? "Bishop"
-                : square.type === "q"
-                ? "Queen"
-                : "King",
+                  ? "Rook"
+                  : square.type === "n"
+                    ? "Knight"
+                    : square.type === "b"
+                      ? "Bishop"
+                      : square.type === "q"
+                        ? "Queen"
+                        : "King",
             color: square.color === "w" ? "white" : "black",
             position: position,
             size: 60,
@@ -530,8 +295,7 @@ export default function Board() {
     setBoardPieces(pieces);
     setCurrentRoom("");
     setMyColor(null);
-    setGameStarted(false);
-    setGameEnded(false);
+    setGameStatus("waiting");
     setSelect(null);
     setSelectedPos(null);
     setGameStatus("");
@@ -564,168 +328,14 @@ export default function Board() {
     console.log("♻️ Board zurückgesetzt!");
   };
 
-  useEffect(() => {
-    const handleMove = (data: any) => {
-      console.log("🔥 Zug empfangen:", data);
-
-      try {
-        if (data.promotion) {
-          chessRef.current.move({
-            from: data.from as Square,
-            to: data.to as Square,
-            promotion: data.promotion,
-          });
-        } else if (data.castle) {
-          chessRef.current.move(data.castle);
-        } else {
-          chessRef.current.move({
-            from: data.from as Square,
-            to: data.to as Square,
-          });
-        }
-
-        syncBoardFromChess();
-        highlightMove(data.from, data.to);
-        checkGameStatus();
-        console.log("✅ Board aktualisiert nach Gegner-Zug");
-      } catch (error) {
-        console.error("❌ Fehler beim Verarbeiten des Zugs:", error);
-      }
-    };
-
-    const handleRoomCreated = (data: any) => {
-      console.log("🏠 Raum erstellt:", data.roomKey);
-      setMyColor("white");
-      setCurrentRoom(data.roomKey);
-      setGameStarted(false);
-      setGameEnded(false);
-
-      chessRef.current.reset();
-      syncBoardFromChess();
-
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("myColor", "white");
-        sessionStorage.setItem("currentRoom", data.roomKey);
-        sessionStorage.setItem("gameStarted", "false");
-        sessionStorage.removeItem("gameEnded");
-      }
-    };
-
-    const handleJoinedRoom = (data: any) => {
-      console.log("🚪 Raum beigetreten:", data.roomKey, "als", data.color);
-      setMyColor(data.color);
-      setCurrentRoom(data.roomKey);
-
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("myColor", data.color);
-        sessionStorage.setItem("currentRoom", data.roomKey);
-        sessionStorage.removeItem("gameEnded");
-      }
-    };
-
-    const handleStartGame = (data: any) => {
-      console.log("🎮 Spiel startet!", data);
-      setGameStarted(true);
-      setGameEnded(false);
-      
-      try {
-        chessRef.current.load(data.fen);
-        syncBoardFromChess();
-      } catch (e) {
-        console.error("Fehler beim Laden des FEN bei Spielstart:", e);
-      }
-
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("gameStarted", "true");
-        sessionStorage.setItem("boardFEN", data.fen);
-      }
-    };
-
-    const handleGameEnded = (data?: any) => {
-      console.log("🏁 Spiel beendet", data);
-      setGameEnded(true);
-
-      if (data?.status) {
-        setGameStatus(data.status);
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("gameStatus", data.status);
-        }
-      }
-
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("gameEnded", "true");
-      }
-    };
-
-    socket.on("move", handleMove);
-    socket.on("room_created", handleRoomCreated);
-    socket.on("joined_room", handleJoinedRoom);
-    socket.on("start_game", handleStartGame);
-    socket.on("resign", handleGameEnded);
-    socket.on("draw_accepted", handleGameEnded);
-    socket.on("game_ended", handleGameEnded);
-
-    return () => {
-      socket.off("move", handleMove);
-      socket.off("room_created", handleRoomCreated);
-      socket.off("joined_room", handleJoinedRoom);
-      socket.off("start_game", handleStartGame);
-      socket.off("resign", handleGameEnded);
-      socket.off("draw_accepted", handleGameEnded);
-      socket.off("game_ended", handleGameEnded);
-    };
-  }, []);
-
-  useEffect(() => {
-    const updateSize = () => {
-      const headerHeight = 65;
-      const rows = 8;
-      const screenWidth = window.innerWidth;
-      const screenHeight = window.innerHeight;
-
-      let widthBlock;
-      if (screenWidth >= 800) widthBlock = 80;
-      else if (screenWidth >= 600) widthBlock = 60;
-      else widthBlock = 40;
-
-      const maxHeightBlock = (screenHeight - headerHeight - 40) / rows;
-      const finalBlockSize = Math.min(widthBlock, maxHeightBlock);
-
-      setBlockSize(finalBlockSize);
-      setScreenWidth(screenWidth);
-      setScreenHeight(screenHeight);
-    };
-
-    updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
-  }, []);
-
-  function isLegalMove(from: string, to: string) {
-    try {
-      const result = chessRef.current.move({
-        from: from as Square,
-        to: to as Square,
-      });
-      if (result) {
-        chessRef.current.undo();
-        return true;
-      }
-      return false;
-    } catch {
-      return false;
+  function executePromotion(promotion: "q" | "r" | "b" | "n" | null) {
+    setShowPromotionDialog(false);
+    if (promotion && promotionMove) {
+      // ✅ Verwende den importierten socket
+      console.log("🎯 Sende promotion_done:", { promotion });
+      socket.emit("promotion_done", { promotion });
     }
   }
-
-  function detectCastling(from: string, to: string) {
-    if (from === "e1" && to === "g1") return "O-O";
-    if (from === "e1" && to === "c1") return "O-O-O";
-    if (from === "e8" && to === "g8") return "O-O";
-    if (from === "e8" && to === "c8") return "O-O-O";
-    return null;
-  }
-
-  
 
   function handlePieceSelect(pos: string) {
     if (isViewingHistory) return;
@@ -735,15 +345,15 @@ export default function Board() {
     console.log(
       "🖱️ Klick:",
       pos,
-      "| Gestartet:",
-      gameStarted,
+      "| GameStatus:",
+      gameStatus,
       "| Am Zug:",
       amIAtTurn,
       "| Farbe:",
       myColor
     );
 
-    if (!gameStarted) {
+    if (gameStatus !== "playing") {
       console.log("⏳ Spiel noch nicht gestartet");
       return;
     }
@@ -763,10 +373,12 @@ export default function Board() {
         return;
       }
 
-      attemptMove(startPos, pos);
+      // ✅ Verwende den importierten socket, OHNE 'room' im Payload
+      console.log("🎯 Sende move:", { from: select.position, to: pos });
+      socket.emit("move", { from: select.position, to: pos });
+
       setSelect(null);
       setSelectedPos(null);
-      return;
     }
 
     if (clickedPiece && clickedPiece.color === myColor) {
@@ -780,12 +392,10 @@ export default function Board() {
   if (!boardPieces || boardPieces.length === 0) return <Loading />;
 
   const navigateHistory = (direction: "prev" | "next") => {
-    console.log("navigateHistory");
     let newIndex = historyIndex;
     if (direction === "prev" && historyIndex > -1) {
       newIndex = historyIndex - 1;
     } else if (direction === "next" && historyIndex < moveHistory.length - 1) {
-      console.log("True");
       newIndex = historyIndex + 1;
     } else {
       return;
@@ -815,14 +425,14 @@ export default function Board() {
               square.type === "p"
                 ? "Pawn"
                 : square.type === "r"
-                ? "Rook"
-                : square.type === "n"
-                ? "Knight"
-                : square.type === "b"
-                ? "Bishop"
-                : square.type === "q"
-                ? "Queen"
-                : "King",
+                  ? "Rook"
+                  : square.type === "n"
+                    ? "Knight"
+                    : square.type === "b"
+                      ? "Bishop"
+                      : square.type === "q"
+                        ? "Queen"
+                        : "King",
             color: square.color === "w" ? "white" : "black",
             position: position,
             size: 60,
@@ -855,12 +465,10 @@ export default function Board() {
         id: piece.position,
         data: piece,
       });
-
     const canDrag =
       amIAtTurn &&
       myColor === piece.color &&
-      !gameEnded &&
-      gameStarted &&
+      gameStatus === "playing" &&
       !isViewingHistory;
 
     const style: React.CSSProperties = {
@@ -934,13 +542,9 @@ export default function Board() {
       <div
         key={pos}
         ref={combinedRef}
-        className={`square-tile ${isWhite ? "white-square" : "black-square"} ${
-          isMoveFrom ? "move-from" : ""
-        } ${
-          isMoveTo ? "move-to" : ""
-        } m-0 aspect-square relative ${eckenKlasse} flex items-center justify-center ${
-          selected ? "ring-4 ring-blue-500" : ""
-        }`}
+        className={`square-tile ${isWhite ? "white-square" : "black-square"} ${isMoveFrom ? "move-from" : ""
+          } ${isMoveTo ? "move-to" : ""} m-0 aspect-square relative ${eckenKlasse} flex items-center justify-center ${selected ? "ring-4 ring-blue-500" : ""
+          }`}
         style={{
           width: blockSize,
           height: blockSize,
@@ -1137,9 +741,10 @@ export default function Board() {
 
       <div className="relative">
         <div
-          className={`bg-[hsl(0,0%,90%)] ml-4 mt-4 grid gap-0 border-black border-2 w-fit h-fit rounded-[10px] p-2 ${
-            !amIAtTurn || !gameStarted || isViewingHistory ? "opacity-70" : ""
-          }`}
+          className={`bg-[hsl(0,0%,90%)] ml-4 mt-4 grid gap-0 border-black border-2 w-fit h-fit rounded-[10px] p-2 ${!amIAtTurn || gameStatus === "waiting" || isViewingHistory
+              ? "opacity-70"
+              : ""
+            }`}
           style={{
             gridTemplateColumns: `repeat(8, ${blockSize}px)`,
           }}
@@ -1163,23 +768,19 @@ export default function Board() {
                     src={
                       boardStyle === "v2"
                         ? pieceImagesv2[
-                            `${
-                              boardPieces.find(
-                                (p) => p.position === activePiece
-                              )?.color
-                            }_${boardPieces
-                              .find((p) => p.position === activePiece)
-                              ?.type.toLowerCase()}`
-                          ]
+                        `${boardPieces.find((p) => p.position === activePiece)
+                          ?.color
+                        }_${boardPieces
+                          .find((p) => p.position === activePiece)
+                          ?.type.toLowerCase()}`
+                        ]
                         : pieceImagesv1[
-                            `${
-                              boardPieces.find(
-                                (p) => p.position === activePiece
-                              )?.color
-                            }_${boardPieces
-                              .find((p) => p.position === activePiece)
-                              ?.type.toLowerCase()}`
-                          ]
+                        `${boardPieces.find((p) => p.position === activePiece)
+                          ?.color
+                        }_${boardPieces
+                          .find((p) => p.position === activePiece)
+                          ?.type.toLowerCase()}`
+                        ]
                     }
                     alt=""
                     height={blockSize}
@@ -1264,17 +865,17 @@ export default function Board() {
       </div>
 
       <div className="ml-4 mt-4 p-3 bg-gray-200 rounded h-fit space-y-2 w-64 min-w-[16rem]">
-        {gameStatus && (
+        {gameInfo && (
           <p className="font-bold text-lg text-red-600 text-center animate-pulse">
-            {gameStatus}
+            {gameInfo}
           </p>
         )}
 
-        {!gameStarted ? (
+        {gameStatus === "waiting" ? (
           <p className="font-semibold text-lg text-orange-600">
             ⏳ Warte auf zweiten Spieler...
           </p>
-        ) : gameEnded ? (
+        ) : gameStatus === "ended" ? (
           <div className="space-y-2">
             <p className="font-semibold text-lg text-red-600">
               🏁 Spiel beendet
@@ -1289,9 +890,8 @@ export default function Board() {
         ) : (
           <>
             <p
-              className={`font-semibold text-lg ${
-                amIAtTurn ? "text-green-600" : "text-red-600"
-              }`}
+              className={`font-semibold text-lg ${amIAtTurn ? "text-green-600" : "text-red-600"
+                }`}
             >
               {amIAtTurn ? "✅ Dein Zug!" : `⏳ ${currentTurn} ist am Zug`}
             </p>
@@ -1318,15 +918,15 @@ export default function Board() {
       </div>
 
       <Back />
-      <Socket
+      <SocketComponent
         myColor={myColor}
-        gameStarted={gameStarted}
-        gameEnded={gameEnded}
-        setGameEnded={setGameEnded}
+        gameStatus={gameStatus as "playing" | "waiting" | "ended" | ""}
+        setGameStatus={setGameStatus}
         currentRoom={currentRoom}
-        onPlayerJoined={() => setGameStarted(true)}
+        onPlayerJoined={() => setGameStatus("playing")}
+        gameInfo={gameInfo}
+        setMyColor={setMyColor}
       />
     </div>
   );
 }
- 
