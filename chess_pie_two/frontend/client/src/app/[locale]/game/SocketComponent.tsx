@@ -48,13 +48,8 @@ export default function SocketComponent({
     // Beim Server registrieren
     socket.emit("register_player", { playerId });
 
-    // Auto-Rejoin Handler
-    socket.on("rejoin_game", (data) => {
-      setCurrentRoom(data.roomId);
-      setMyColor(data.color);
-      setGameStatus(data.status);
-      // Board mit data.fen laden
-    });
+    // Beim Server registrieren
+    socket.emit("register_player", { playerId });
   }, []);
   // Sync with prop
   useEffect(() => {

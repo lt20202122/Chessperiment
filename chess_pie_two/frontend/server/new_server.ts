@@ -138,11 +138,17 @@ io.on("connection", (socket: Socket) => {
             if (game && game.status !== "ended") {
                 socket.join(roomId);  // Stelle sicher, dass der Socket dem Raum beitritt
                 const color = game.getColorForPlayer(playerId);
+
+                if (!color) {
+                    console.log("⚠️ Rejoin Warning: Player", playerId, "is in room", roomId, "but not in game players:", game.players);
+                }
+
                 socket.emit("rejoin_game", {
                     roomId,
-                    color: color === "w" ? "white" : "black",
+                    color: color === "w" ? "white" : (color === "b" ? "black" : null),
                     fen: game.board_fen,
-                    status: game.status
+                    status: game.status,
+                    history: game.history
                 });
                 console.log("Player rejoined:", playerId, "Room:", roomId);
             }
@@ -361,8 +367,8 @@ io.on("connection", (socket: Socket) => {
         const game = games.get(roomId);
         if (!game) return;
 
-        // Benachrichtige andere Spieler
-        socket.to(roomId).emit("opp_disconnected", { playerId });
+        // Benachrichtige andere Spieler - NICHT das Spiel beenden
+        // socket.to(roomId).emit("opp_disconnected", { playerId });
 
         // NICHT den Spieler aus dem Spiel entfernen - nur Socket-Disconnect
         // Spieler kann sich wieder verbinden

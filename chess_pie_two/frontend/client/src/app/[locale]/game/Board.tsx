@@ -118,6 +118,32 @@ export default function Board() {
       highlightMove(data.from, data.to);
     };
 
+    const handleRejoin = (data: any) => {
+      console.log("♻️ Rejoined game:", data);
+
+      // 1. Restore Game Identity
+      if (data.roomId) setCurrentRoom(data.roomId);
+      if (data.color) setMyColor(data.color);
+      if (data.status) setGameStatus(data.status);
+
+      // 2. Restore Board State
+      if (data.fen) {
+        try {
+          chessRef.current.reset();
+          chessRef.current.load(data.fen);
+          syncBoardFromChess();
+        } catch (e) {
+          console.error("Error loading FEN on rejoin:", e);
+        }
+      }
+
+      // 3. Restore History
+      if (data.history) {
+        setMoveHistory(data.history);
+        setHistoryIndex(data.history.length - 1);
+      }
+    };
+
     socket.on("move", handleMove);
     socket.on("room_created", handleRoomCreated);
     socket.on("joined_room", handleJoinedRoom);
@@ -127,6 +153,7 @@ export default function Board() {
     socket.on("game_ended", handleGameEnded);
     socket.on("promotion_needed", handlePromotionNeeded);
     socket.on("illegal_move", handleIllegalMove);
+    socket.on("rejoin_game", handleRejoin);
 
     return () => {
       socket.off("move", handleMove);
@@ -138,6 +165,7 @@ export default function Board() {
       socket.off("game_ended", handleGameEnded);
       socket.off("promotion_needed", handlePromotionNeeded);
       socket.off("illegal_move", handleIllegalMove);
+      socket.off("rejoin_game", handleRejoin);
     };
   }, []); // Keine Dependency auf socket nötig, da es konstant ist
 
@@ -742,8 +770,8 @@ export default function Board() {
       <div className="relative">
         <div
           className={`bg-[hsl(0,0%,90%)] ml-4 mt-4 grid gap-0 border-black border-2 w-fit h-fit rounded-[10px] p-2 ${!amIAtTurn || gameStatus === "waiting" || isViewingHistory
-              ? "opacity-70"
-              : ""
+            ? "opacity-70"
+            : ""
             }`}
           style={{
             gridTemplateColumns: `repeat(8, ${blockSize}px)`,
