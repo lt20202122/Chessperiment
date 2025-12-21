@@ -7,5 +7,5 @@ const bungee = Bungee({
 })
 
 export default function LoginPageServerSide() {
-    return <LoginPage bungee={bungee} />
+    return <LoginPage bungee={bungee.className} />
 }

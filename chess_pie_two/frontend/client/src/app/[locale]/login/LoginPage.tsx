@@ -9,7 +9,7 @@ export default function LoginPage({ bungee }: { bungee: any }) {
     return (
         <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
             <div className="w-full max-w-md p-8 bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-3xl shadow-2xl animate-in fade-in zoom-in duration-500">
-                <h1 className={`${bungee.className} text-4xl lg:text-5xl text-yellow-400 text-center mb-8`}>
+                <h1 className={`${bungee} text-4xl lg:text-5xl text-yellow-400 text-center mb-8`}>
                     ChessPie
                 </h1>
 
