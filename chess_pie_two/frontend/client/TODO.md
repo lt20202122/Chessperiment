@@ -35,6 +35,8 @@
 ## Random
 - [ ] Make the color selection random when starting a new game.
 
+## Login Error
+- [ ] On login, the user gets redirected to api/auth/error. Every singe time.
 
 ## Instructions
 If you spot a task that is not completed, please do it. If you spot a task that is completed, please remove it from the list.
