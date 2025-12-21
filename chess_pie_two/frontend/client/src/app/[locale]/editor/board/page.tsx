@@ -14,6 +14,7 @@ export default function BoardEditorPage() {
     const [selectedPiece, setSelectedPiece] = useState({ type: 'Pawn', color: 'white' });
     const [boardStyle, setBoardStyle] = useState('v3');
 
+
     return (
         <EditorLayout sidebar={
             <EditorSidebar

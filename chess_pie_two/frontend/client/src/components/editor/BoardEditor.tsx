@@ -28,20 +28,40 @@ interface BoardEditorProps {
 }
 
 export default function BoardEditor({ editMode, selectedPiece, boardStyle }: BoardEditorProps) {
+
     const [rows, setRows] = useState(8);
     const [cols, setCols] = useState(8);
-    const [placedPieces, setPlacedPieces] = useState<Record<string, { type: string, color: string }>>({});
+    const [placedPieces, setPlacedPieces] =
+        useState<Record<string, { type: string; color: string }>>({});
+    const [activeSquares, setActiveSquares] = useState<Set<string>>(new Set());
 
-    // Initialize with standard 8x8 board
-    const [activeSquares, setActiveSquares] = useState<Set<string>>(() => {
+    useEffect(() => {
+        const savedRows = Number(localStorage.getItem('boardEditorRows') || 8);
+        const savedCols = Number(localStorage.getItem('boardEditorCols') || 8);
+        const savedPieces = JSON.parse(
+            localStorage.getItem('boardEditorPlacedPieces') || '{}'
+        );
+
+        setRows(savedRows);
+        setCols(savedCols);
+        setPlacedPieces(savedPieces);
+
         const initial = new Set<string>();
-        for (let y = 0; y < 8; y++) {
-            for (let x = 0; x < 8; x++) {
+        for (let y = 0; y < savedRows; y++) {
+            for (let x = 0; x < savedCols; x++) {
                 initial.add(toKey(x, y));
             }
         }
-        return initial;
-    });
+        setActiveSquares(initial);
+    }, []);
+
+
+    useEffect(() => {
+        localStorage.setItem('boardEditorRows', rows.toString());
+        localStorage.setItem('boardEditorCols', cols.toString());
+        localStorage.setItem('boardEditorPlacedPieces', JSON.stringify(placedPieces));
+    }, [rows, cols, placedPieces]);
+
 
     const [squareSize, setSquareSize] = useState(70);
 

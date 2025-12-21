@@ -34,6 +34,7 @@
 
 ## Random
 - [ ] Make the color selection random when starting a new game.
+- [ ] In /editor/board, make the UX way cleaner. The feedback should be way more direct, one flick and it should be applied. Also adjust the piece size, you can use the browser for that (for real, request to do so).
 
 ## Login Error
 - [ ] On login, the user gets redirected to api/auth/error. Every singe time.
