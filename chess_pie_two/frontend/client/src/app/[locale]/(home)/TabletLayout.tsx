@@ -1,4 +1,4 @@
 
-export default function MobileLayout({children}:{children: React.ReactNode}) {
+export default function TabletLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>
 }

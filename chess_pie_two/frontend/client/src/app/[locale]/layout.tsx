@@ -2,8 +2,13 @@ import type { Metadata } from "next";
 import "../globals.css";
 import { Lexend } from "next/font/google";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
+import { getMessages } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { Header } from "@/components/Header";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { SessionWrapper } from "@/components/auth/SessionWrapper";
+import { UserPanel } from "@/components/auth/UserPanel";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -27,21 +32,33 @@ export default async function RootLayout({
   params: Promise<{ locale: string }>;
 }>) {
   const { locale } = await params;
+  const messages = await getMessages();
+
   return (
     <html
       lang={locale}
       className={`${lex.className}`}
-      suppressHydrationWarning={false}
+      suppressHydrationWarning={true}
     >
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className="bg-bg">
-        <NextIntlClientProvider>
-          <Header />
-
-          {children}
-        </NextIntlClientProvider>
+      <body className="bg-bg transition-colors duration-300 dark:bg-stone-950">
+        <SessionWrapper>
+          <NextIntlClientProvider messages={messages}>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <Header />
+              {children}
+              <UserPanel />
+              <ThemeToggle />
+            </ThemeProvider>
+          </NextIntlClientProvider>
+        </SessionWrapper>
       </body>
     </html>
   );

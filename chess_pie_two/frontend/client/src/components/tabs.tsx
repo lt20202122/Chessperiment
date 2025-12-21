@@ -2,7 +2,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export function TabsWithIconsExample() {
     return (
-        <Tabs defaultValue="board">
+        <Tabs defaultValue="board" className="bg-">
             <TabsList>
                 <TabsTrigger value="board">
                     <img src="/chessboard.svg" alt="Chessboard" width={24} height={24} />

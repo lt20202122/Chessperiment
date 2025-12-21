@@ -1,0 +1,207 @@
+"use client"
+
+import { useSession } from "next-auth/react"
+import { useTranslations } from "next-intl"
+import { useEffect, useState } from "react"
+import { Bungee } from "next/font/google"
+import { Trophy, Target, TrendingUp, Calendar } from "lucide-react"
+
+const bungee = Bungee({
+    subsets: ["latin"],
+    weight: ["400"],
+})
+
+interface UserStats {
+    gamesPlayed: number
+    wins: number
+    losses: number
+    draws: number
+    rating: number
+}
+
+interface GameHistoryItem {
+    id: string
+    result: "win" | "loss" | "draw"
+    opponent?: string
+    timestamp: { seconds: number }
+    roomId?: string
+}
+
+export default function ProfilePage() {
+    const { data: session, status } = useSession()
+    const t = useTranslations("Profile")
+    const [stats, setStats] = useState<UserStats | null>(null)
+    const [history, setHistory] = useState<GameHistoryItem[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        if (status === "authenticated") {
+            fetchUserData()
+        }
+    }, [status])
+
+    const fetchUserData = async () => {
+        try {
+            const [statsRes, historyRes] = await Promise.all([
+                fetch("/api/stats"),
+                fetch("/api/history?limit=10"),
+            ])
+
+            if (statsRes.ok) {
+                const statsData = await statsRes.json()
+                setStats(statsData)
+            }
+
+            if (historyRes.ok) {
+                const historyData = await historyRes.json()
+                setHistory(historyData)
+            }
+        } catch (error) {
+            console.error("Error fetching user data:", error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (status === "loading" || loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[70vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-400"></div>
+            </div>
+        )
+    }
+
+    if (status === "unauthenticated") {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
+                <h1 className="text-3xl font-bold text-amber-400 mb-4">
+                    {t("notLoggedIn")}
+                </h1>
+                <p className="text-amber-400/60">{t("pleaseLogin")}</p>
+            </div>
+        )
+    }
+
+    const winRate = stats && stats.gamesPlayed > 0
+        ? ((stats.wins / stats.gamesPlayed) * 100).toFixed(1)
+        : "0.0"
+
+    return (
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
+            {/* Profile Header */}
+            <div className="bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-3xl p-8 mb-8">
+                <div className="flex items-center gap-6">
+                    {session?.user?.image ? (
+                        <img
+                            src={session.user.image}
+                            alt={session.user.name || "User"}
+                            className="w-24 h-24 rounded-full border-4 border-amber-400/30"
+                        />
+                    ) : (
+                        <div className="w-24 h-24 rounded-full bg-amber-400/10 border-4 border-amber-400/30 flex items-center justify-center">
+                            <span className="text-4xl text-amber-400">
+                                {session?.user?.name?.[0] || "?"}
+                            </span>
+                        </div>
+                    )}
+                    <div>
+                        <h1 className={`${bungee.className} text-4xl text-yellow-400 mb-2`}>
+                            {session?.user?.name}
+                        </h1>
+                        <p className="text-amber-400/60">{session?.user?.email}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <StatCard
+                    icon={<Trophy size={32} />}
+                    label={t("wins")}
+                    value={stats?.wins || 0}
+                    color="text-green-400"
+                />
+                <StatCard
+                    icon={<Target size={32} />}
+                    label={t("gamesPlayed")}
+                    value={stats?.gamesPlayed || 0}
+                    color="text-blue-400"
+                />
+                <StatCard
+                    icon={<TrendingUp size={32} />}
+                    label={t("winRate")}
+                    value={`${winRate}%`}
+                    color="text-amber-400"
+                />
+                <StatCard
+                    icon={<Calendar size={32} />}
+                    label={t("rating")}
+                    value={stats?.rating || 1500}
+                    color="text-purple-400"
+                />
+            </div>
+
+            {/* Game History */}
+            <div className="bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-3xl p-8">
+                <h2 className="text-2xl font-bold text-amber-400 mb-6">
+                    {t("recentGames")}
+                </h2>
+
+                {history.length === 0 ? (
+                    <p className="text-amber-400/60 text-center py-8">
+                        {t("noGamesYet")}
+                    </p>
+                ) : (
+                    <div className="space-y-4">
+                        {history.map((game) => (
+                            <GameHistoryCard key={game.id} game={game} />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+function StatCard({ icon, label, value, color }: any) {
+    return (
+        <div className="bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-2xl p-6">
+            <div className={`${color} mb-3`}>{icon}</div>
+            <div className="text-3xl font-bold text-white mb-1">{value}</div>
+            <div className="text-sm text-amber-400/60">{label}</div>
+        </div>
+    )
+}
+
+function GameHistoryCard({ game }: { game: GameHistoryItem }) {
+    const resultColors = {
+        win: "bg-green-400/10 border-green-400/30 text-green-400",
+        loss: "bg-red-400/10 border-red-400/30 text-red-400",
+        draw: "bg-amber-400/10 border-amber-400/30 text-amber-400",
+    }
+
+    const date = new Date(game.timestamp.seconds * 1000).toLocaleDateString()
+
+    return (
+        <div className="flex items-center justify-between p-4 bg-bg-secondary/30 border border-amber-400/10 rounded-xl">
+            <div className="flex items-center gap-4">
+                <div
+                    className={`px-4 py-2 rounded-lg border font-bold uppercase ${resultColors[game.result]}`}
+                >
+                    {game.result}
+                </div>
+                <div>
+                    <p className="text-white font-medium">
+                        {game.opponent || "Unknown Opponent"}
+                    </p>
+                    <p className="text-sm text-amber-400/60">{date}</p>
+                </div>
+            </div>
+            {game.roomId && (
+                <div className="text-xs text-amber-400/40 font-mono">
+                    {game.roomId}
+                </div>
+            )}
+        </div>
+    )
+}

@@ -450,6 +450,80 @@ io.on("connection", (socket: Socket) => {
             console.log("Game started in room:", roomId);
         }
     });
+    socket.on("resign", () => {
+        const playerId = socketToPlayer.get(socket.id);
+        if (!playerId) return;
+        const roomId = playerToRoom.get(playerId);
+        if (!roomId) return;
+        const game = games.get(roomId);
+        if (!game || game.status !== "playing") return;
+
+        const myColor = game.getColorForPlayer(playerId);
+        if (!myColor) return;
+
+        game.status = "ended";
+        // If I resign, opponent wins
+        const result = myColor === "w" ? "b" : "w";
+
+        io.to(roomId).emit("game_ended", {
+            reason: "Gegner hat aufgegeben",
+            result: result,
+            status: "ended"
+        });
+    });
+
+    socket.on("offer_draw", () => {
+        const playerId = socketToPlayer.get(socket.id);
+        if (!playerId) return;
+        const roomId = playerToRoom.get(playerId);
+        if (!roomId) return;
+        const game = games.get(roomId);
+        if (!game || game.status !== "playing") return;
+
+        // Send ONLY to opponent
+        socket.to(roomId).emit("draw_offered", { from: playerId });
+    });
+
+    socket.on("accept_draw", () => {
+        const playerId = socketToPlayer.get(socket.id);
+        if (!playerId) return;
+        const roomId = playerToRoom.get(playerId);
+        if (!roomId) return;
+        const game = games.get(roomId);
+        if (!game || game.status !== "playing") return;
+
+        game.status = "ended";
+
+        io.to(roomId).emit("game_ended", {
+            reason: "Remis vereinbart",
+            result: "0",
+            status: "ended"
+        });
+    });
+
+    socket.on("reset_game", () => {
+        const playerId = socketToPlayer.get(socket.id);
+        if (!playerId) return;
+
+        const roomId = playerToRoom.get(playerId);
+        if (roomId) {
+            console.log("♻️ Deleting room:", roomId, "requested by player:", playerId);
+
+            // Notify others in room
+            socket.to(roomId).emit("game_ended", {
+                reason: "Das Spiel wurde vom Host zurückgesetzt.",
+                status: "ended"
+            });
+
+            // Cleanup
+            const game = games.get(roomId);
+            if (game) {
+                if (game.players.white) playerToRoom.delete(game.players.white);
+                if (game.players.black) playerToRoom.delete(game.players.black);
+                games.delete(roomId);
+            }
+        }
+    });
 });
 
 const PORT = process.env.PORT || 3001;

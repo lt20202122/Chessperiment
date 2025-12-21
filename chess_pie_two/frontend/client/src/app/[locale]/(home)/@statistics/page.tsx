@@ -1,4 +1,5 @@
+import UserLibrary from './UserLibrary';
 
 export default function Stats() {
-    return <section className=''>Statistics</section>
+    return <UserLibrary />
 }

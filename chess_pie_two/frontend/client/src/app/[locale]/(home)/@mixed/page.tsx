@@ -1,10 +1,7 @@
-import News from './News'
-import Trending from './News'
+import MarketplaceTrending from './MarketplaceTrending'
 
 export default function Mixed() {
     return <>
-        <News />
-        <Trending />
+        <MarketplaceTrending />
     </>
-    
 }

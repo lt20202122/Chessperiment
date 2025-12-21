@@ -1,10 +1,10 @@
 import { Piece } from "./Piece";
 
 export interface PieceType {
-  type: string;           // z. B. "pawn", "rook", "queen" …
-  color: string;          // "white" oder "black"
-  position: string;       // z. B. "a2", "e4"
-  size?: number;          // optional: die Darstellungsgröße
+    type: string;           // z. B. "pawn", "rook", "queen" …
+    color: string;          // "white" oder "black"
+    position: string;       // z. B. "a2", "e4"
+    size?: number;          // optional: die Darstellungsgröße
     id?: number;            // optional server-provided id
 }
 
@@ -47,19 +47,19 @@ export const pieces: Piece[] = [
     new Piece("Rook", "black", "h8", 32),
 ];
 
-export const pieceImagesv1: Record<string, string> = {
-    white_pawn: "/pieces-v1/white_pawn.png",
-    black_pawn: "/pieces-v1/black_pawn.png",
-    white_bishop: "/pieces-v1/white_bishop.png",
-    black_bishop: "/pieces-v1/black_bishop.png",
-    white_knight: "/pieces-v1/white_knight.png",
-    black_knight: "/pieces-v1/black_knight.png",
-    white_rook: "/pieces-v1/white_rook.png",
-    black_rook: "/pieces-v1/black_rook.png",
-    white_queen: "/pieces-v1/white_queen.png",
-    black_queen: "/pieces-v1/black_queen.png",
-    white_king: "/pieces-v1/white_king.png",
-    black_king: "/pieces-v1/black_king.png",
+export const pieceImagesv3: Record<string, string> = {
+    white_pawn: "/pieces-v3/white_pawn.png",
+    black_pawn: "/pieces-v3/black_pawn.png",
+    white_bishop: "/pieces-v3/white_bishop.png",
+    black_bishop: "/pieces-v3/black_bishop.png",
+    white_knight: "/pieces-v3/white_knight.png",
+    black_knight: "/pieces-v3/black_knight.png",
+    white_rook: "/pieces-v3/white_rook.png",
+    black_rook: "/pieces-v3/black_rook.png",
+    white_queen: "/pieces-v3/white_queen.png",
+    black_queen: "/pieces-v3/black_queen.png",
+    white_king: "/pieces-v3/white_king.png",
+    black_king: "/pieces-v3/black_king.png",
 };
 
 export const pieceImagesv2: Record<string, string> = {
@@ -75,4 +75,10 @@ export const pieceImagesv2: Record<string, string> = {
     black_queen: "/pieces-v2/black_queen.png",
     white_king: "/pieces-v2/white_king.png",
     black_king: "/pieces-v2/black_king.png",
+};
+
+export const getPieceImage = (style: string, color: string, type: string) => {
+    const key = `${color}_${type.toLowerCase()}`;
+    if (style === "v2") return pieceImagesv2[key];
+    return pieceImagesv3[key];
 };

@@ -1,10 +1,12 @@
 "use client"
 import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
-export default function HomepageButton () {
+export default function HomepageButton() {
     const router = useRouter()
-    return(
-        <Button variant="secondary" onClick={()=>{router.push("/")}} className="bg-blue-400 text-black">Go back to Homepage</Button>
+    const t = useTranslations('Analyze');
+    return (
+        <Button variant="secondary" onClick={() => { router.push("/") }} className="bg-blue-400 text-black">{t('goBackHome')}</Button>
     )
 }

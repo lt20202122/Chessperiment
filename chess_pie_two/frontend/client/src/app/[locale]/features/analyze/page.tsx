@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Zilla_Slab, Lexend } from 'next/font/google';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 
 const zillaSlab = Zilla_Slab({
     weight: ['700'],
@@ -23,6 +24,7 @@ const calculateTargetDate = () => {
 };
 
 export default function AnalyzeFeaturePage() {
+    const t = useTranslations('Analyze');
     const [targetDate] = useState(calculateTargetDate());
     const [timeLeft, setTimeLeft] = useState({
         days: 0,
@@ -61,10 +63,10 @@ export default function AnalyzeFeaturePage() {
         <main className="flex flex-col items-center justify-center leading-xl min-h-screen bg-bg text-white p-6 text-center">
             <div className="max-w-3xl">
                 <h1 className={`${zillaSlab.className} text-5xl md:text-7xl font-bold text-[#F2FF00] text-shadow-yellow mb-4`}>
-                    Analysis Feature Coming Soon
+                    {t('title')}
                 </h1>
                 <p className={`${lexend.className} text-lg md:text-xl text-gray-300 mb-8`}>
-                    Get ready to elevate your game. Our upcoming analysis tool will use a powerful chess engine to review your past games, providing deep insights into your strategy. Discover your blunders, missed opportunities, and brilliant moves to learn faster and play smarter.
+                    {t('description')}
                 </p>
 
                 {/* <div className="flex justify-center gap-4 md:gap-8 my-10">
@@ -78,11 +80,11 @@ export default function AnalyzeFeaturePage() {
                     ))}
                 </div> */}
 
-                <Link 
-                    href="/" 
+                <Link
+                    href="/"
                     className={`${lexend.className} inline-block bg-yellow-400 text-black font-semibold px-8 py-3 rounded-lg hover:bg-yellow-300 transition-colors duration-300`}
                 >
-                    Go Back Home
+                    {t('goBackHome')}
                 </Link>
             </div>
         </main>

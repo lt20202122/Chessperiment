@@ -1,75 +1,49 @@
 "use client"
 
 import * as React from "react"
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react"
+import { CheckIcon, Crown } from "lucide-react"
+import { useTranslations } from "next-intl"
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+const styles = [
+  { id: "v2", name: "Classic" },
+  { id: "v3", name: "Modern" }
+]
 
-const styles = ["v1", "v2"]
+interface BoardStyleProps {
+  currentStyle: string;
+  onStyleChange: (style: string) => void;
+}
 
-export default function BoardStyle() {
-  const [open, setOpen] = React.useState(false)
-  const [value, setValue] = React.useState("")
+export default function BoardStyle({ currentStyle, onStyleChange }: BoardStyleProps) {
+  const t = useTranslations('Game')
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild className=""> 
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-[200px] justify-between"
-        >
-          {value || "Select board style..."}
-          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
+    <div className="w-full">
+      <label className="text-xs font-semibold text-gray-800 dark:text-gray-200 mb-2 block flex items-center gap-1.5">
+        <Crown className="w-3.5 h-3.5" />
+        Piece Style
+      </label>
 
-      <PopoverContent className="w-[200px] p-0 shadow-black bg-[hsl(0,0%,90%)]" style={{
-        boxShadow: "5px 5px 10px hsl(0,0%,15%), 10px 10px 20px hsl(0,0%,15%)"
-      }}>
-        <Command>
-          <CommandInput placeholder="Search style..." />
-          <CommandList>
-            <CommandEmpty>No style found.</CommandEmpty>
-            <CommandGroup>
-              {styles.map((style) => (
-                <CommandItem
-                  className="hover:scale-[1.02] transition-all duration-200 cursor-pointer"
-                  key={style}
-                  value={style}
-                  onSelect={(currentValue) => {
-                    setValue(currentValue === value ? "" : currentValue)
-                    setOpen(false)
-                  }}
-                >
-                  <CheckIcon
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === style ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {style}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+      <div className="inline-flex rounded-lg border border-gray-200 dark:border-stone-700 p-0.5 bg-gray-50 dark:bg-stone-900">
+        {styles.map((style) => (
+          <button
+            key={style.id}
+            onClick={() => onStyleChange(style.id)}
+            className={`
+              relative px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150
+              ${currentStyle === style.id
+                ? 'bg-white dark:bg-stone-800 text-amber-600 dark:text-amber-400 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }
+            `}
+          >
+            {currentStyle === style.id && (
+              <CheckIcon className="w-3 h-3 inline mr-1" />
+            )}
+            {style.name}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }

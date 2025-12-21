@@ -1,12 +1,13 @@
 "use client";
 import Image from "next/image";
-import { pieces, pieceImagesv1, pieceImagesv2, PieceType } from "./Data";
+import { pieces, pieceImagesv2, pieceImagesv3, getPieceImage, PieceType } from "./Data";
 import { useState, useEffect, useRef, Fragment } from "react";
+import { useTranslations } from "next-intl";
 import Loading from "@/app/loading";
 import Back from "./Back";
 import { Chess, type Square } from "chess.js";
 import SocketComponent, { socket } from "./SocketComponent"; // ← HIER: socket importieren!
-import { calcSize } from "./utilities";
+import BoardStyle from "./BoardStyle";
 import {
   DndContext,
   DragEndEvent,
@@ -14,12 +15,38 @@ import {
   useDraggable,
   useDroppable,
   DragOverlay,
+  useSensor,
+  useSensors,
+  PointerSensor,
 } from "@dnd-kit/core";
+import { ArrowLeft, ArrowRight, RotateCcw, Layers, History } from "lucide-react";
 import "./Board.css";
 
+const getGamePieceScale = (type: string) => {
+  switch (type.toLowerCase()) {
+    case "king": return 0.96;
+    case "queen": return 0.94;
+    case "bishop": return 0.88;
+    case "knight": return 0.88;
+    case "rook": return 0.82;
+    case "pawn": return 0.78;
+    default: return 0.85;
+  }
+};
+
 export default function Board() {
+  const t = useTranslations("Multiplayer");
   const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
-  const [boardStyle, setBoardStyle] = useState("v2");
+
+  // Configure sensors to allow click events (drag only starts after 5px movement)
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  );
+  const [boardStyle, setBoardStyle] = useState("v3");
   const [blockSize, setBlockSize] = useState(80);
   const [select, setSelect] = useState<PieceType | null>(null);
   const [selectedPos, setSelectedPos] = useState<string | null>(null);
@@ -49,12 +76,16 @@ export default function Board() {
   const [isViewingHistory, setIsViewingHistory] = useState(false);
   const [simulationPieces, setSimulationPieces] = useState<PieceType[]>([]);
 
-  // ❌ ENTFERNT: Eigener Socket
-  // const socketRef = useRef<ReturnType<typeof io> | null>(null);
-  // useEffect(() => {
-  //   socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL as string);
-  //   ...
-  // }, []);
+  useEffect(() => {
+    const savedStyle = localStorage.getItem("boardStyle");
+    if (savedStyle === "v2" || savedStyle === "v3") {
+      setBoardStyle(savedStyle);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("boardStyle", boardStyle);
+  }, [boardStyle]);
 
   useEffect(() => {
     if (!isViewingHistory) return;
@@ -109,11 +140,26 @@ export default function Board() {
 
     const handleIllegalMove = (data: any) => {
       console.error("❌ Illegal move:", data.reason);
-      alert(`Ungültiger Zug: ${data.reason}`);
+      alert(`${t("invalidMove")}${data.reason}`);
     };
 
     const handleMove = (data: any) => {
-      chessRef.current.load(data.fen);
+      try {
+        const result = chessRef.current.move({
+          from: data.from,
+          to: data.to,
+          promotion: data.promotion,
+        });
+
+        if (!result) {
+          console.warn("Local move failed, falling back to FEN (History might be lost)");
+          chessRef.current.load(data.fen);
+        }
+      } catch (e) {
+        console.error("Error executing move locally:", e);
+        chessRef.current.load(data.fen);
+      }
+
       syncBoardFromChess();
       highlightMove(data.from, data.to);
     };
@@ -171,18 +217,32 @@ export default function Board() {
 
   useEffect(() => {
     const updateSize = () => {
-      const headerHeight = 65;
+      const headerHeight = 100; // Safer estimate for header space
       const rows = 8;
       const screenWidth = window.innerWidth;
       const screenHeight = window.innerHeight;
 
-      let widthBlock;
-      if (screenWidth >= 800) widthBlock = 80;
-      else if (screenWidth >= 600) widthBlock = 60;
-      else widthBlock = 40;
+      let finalBlockSize;
+      // Conservative margin calculation:
+      // Desktop uses standard 120px
+      // Mobile needs more room for stacked info and history controls
+      const safetyMargin = screenWidth < 640 ? 220 : 120;
+      const maxHeightBlock = (screenHeight - headerHeight - safetyMargin) / rows;
 
-      const maxHeightBlock = (screenHeight - headerHeight - 40) / rows;
-      const finalBlockSize = Math.min(widthBlock, maxHeightBlock);
+      if (screenWidth < 640) {
+        // Mobile: Fit to width with some padding
+        const availableWidth = screenWidth - 24;
+        const widthBlock = Math.floor(availableWidth / 8);
+        // Use the smaller of width-based or height-based size
+        // Ensure it doesn't get ridiculously small (min 25px per square = 200px board)
+        finalBlockSize = Math.max(25, Math.min(widthBlock, maxHeightBlock));
+      } else {
+        let widthBlock;
+        if (screenWidth >= 800) widthBlock = 80;
+        else widthBlock = 60; // 600-800
+
+        finalBlockSize = Math.max(10, Math.min(widthBlock, maxHeightBlock));
+      }
 
       setBlockSize(finalBlockSize);
       setScreenWidth(screenWidth);
@@ -317,10 +377,14 @@ export default function Board() {
   };
 
   const resetBoard = (needConfirm: boolean = true) => {
-    if (needConfirm && !confirm("Board wirklich zurücksetzen?")) return;
+    if (needConfirm && !confirm(t("confirmReset"))) return;
+
+    // Notify server to delete the room
+    socket.emit("reset_game");
 
     chessRef.current.reset();
-    setBoardPieces(pieces);
+    syncBoardFromChess();
+
     setCurrentRoom("");
     setMyColor(null);
     setGameStatus("waiting");
@@ -351,9 +415,11 @@ export default function Board() {
       sessionStorage.removeItem("gameStatus");
       sessionStorage.removeItem("redMarkedSquares");
       sessionStorage.removeItem("moveHistory");
+      sessionStorage.removeItem("lastMoveFrom");
+      sessionStorage.removeItem("lastMoveTo");
     }
 
-    console.log("♻️ Board zurückgesetzt!");
+    console.log("♻️ Board und Raum zurückgesetzt!");
   };
 
   function executePromotion(promotion: "q" | "r" | "b" | "n" | null) {
@@ -483,10 +549,12 @@ export default function Board() {
     piece,
     size,
     amIAtTurn,
+    onClick,
   }: {
     piece: PieceType;
     size: number;
     amIAtTurn: boolean;
+    onClick: () => void;
   }) {
     const { attributes, listeners, setNodeRef, transform, isDragging } =
       useDraggable({
@@ -520,16 +588,19 @@ export default function Board() {
         ref={setNodeRef}
         {...(canDrag ? { ...attributes, ...listeners } : {})}
         style={style}
+        onClick={(e) => {
+          // Allow click to propagate even if drag listeners are present
+          // e.stopPropagation(); // Do NOT stop propagation, or handle explicitly
+          onClick();
+        }}
       >
         <Image
-          src={
-            boardStyle === "v2"
-              ? pieceImagesv2[`${piece.color}_${piece.type.toLowerCase()}`]
-              : pieceImagesv1[`${piece.color}_${piece.type.toLowerCase()}`]
-          }
+          src={getPieceImage(boardStyle, piece.color, piece.type)}
           alt={`${piece.color} ${piece.type}`}
           height={piece.size}
           width={piece.size}
+          unoptimized
+          className="bg-transparent"
           style={{ height: size, width: "auto", pointerEvents: "none" }}
         />
       </div>
@@ -588,6 +659,7 @@ export default function Board() {
             piece={piece}
             size={piece.size as number}
             amIAtTurn={isMyTurn()}
+            onClick={() => onClick(pos)}
           />
         )}
       </div>
@@ -634,32 +706,10 @@ export default function Board() {
         ${isBottomRight ? "rounded-br-md" : ""}
       `;
 
-      const piece = displayPieces.find((p) => p.position === pos);
+      const displayPiece = displayPieces.find((p) => p.position === pos);
 
-      if (piece) {
-        switch (piece.type.toLowerCase()) {
-          case "pawn":
-            piece.size = calcSize(65, screenWidth, screenHeight);
-            break;
-          case "rook":
-            piece.size = calcSize(60, screenWidth, screenHeight);
-            break;
-          case "queen":
-            piece.size = calcSize(75, screenWidth, screenHeight);
-            break;
-          case "king":
-            piece.size = calcSize(75, screenWidth, screenHeight);
-            break;
-          case "knight":
-            piece.size = calcSize(69, screenWidth, screenHeight);
-            break;
-          case "bishop":
-            piece.size = calcSize(70, screenWidth, screenHeight);
-            break;
-          default:
-            piece.size = 30;
-            break;
-        }
+      if (displayPiece) {
+        displayPiece.size = blockSize * getGamePieceScale(displayPiece.type);
       }
 
       content.push(
@@ -668,7 +718,7 @@ export default function Board() {
           pos={pos}
           isWhite={isWhite}
           eckenKlasse={eckenKlasse}
-          piece={piece}
+          piece={displayPiece}
           blockSize={blockSize}
           selected={selectedPos === pos}
           isMoveFrom={lastMoveFrom === pos}
@@ -684,18 +734,18 @@ export default function Board() {
   }
 
   const amIAtTurn = isMyTurn();
-  const currentTurn = chessRef.current.turn() === "w" ? "Weiß" : "Schwarz";
+  const currentTurn = chessRef.current.turn() === "w" ? t('white') : t('black');
 
   return (
-    <div className="flex justify-center">
+    <div className="flex flex-col lg:flex-row justify-center items-center lg:items-start min-h-screen pb-10">
       {showPromotionDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-xl">
             <h3 className="text-xl font-bold mb-4 text-center">
-              Bauernumwandlung
+              {t('promotionTitle')}
             </h3>
             <p className="text-sm text-gray-600 mb-4 text-center">
-              Wähle eine Figur:
+              {t('promotionSubtitle')}
             </p>
             <div className="flex gap-4 justify-center">
               <button
@@ -703,216 +753,201 @@ export default function Board() {
                 className="p-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
               >
                 <Image
-                  src={
-                    boardStyle === "v2"
-                      ? pieceImagesv2[`${myColor}_queen`]
-                      : pieceImagesv1[`${myColor}_queen`]
-                  }
+                  src={getPieceImage(boardStyle, myColor || "white", "queen")}
                   alt="Queen"
                   width={60}
                   height={60}
+                  unoptimized
+                  className="bg-transparent"
                 />
-                <p className="text-xs text-center mt-2">Dame</p>
+                <p className="text-xs text-center mt-2">{t('queen')}</p>
               </button>
               <button
                 onClick={() => executePromotion("r")}
                 className="p-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
               >
                 <Image
-                  src={
-                    boardStyle === "v2"
-                      ? pieceImagesv2[`${myColor}_rook`]
-                      : pieceImagesv1[`${myColor}_rook`]
-                  }
+                  src={getPieceImage(boardStyle, myColor || "white", "rook")}
                   alt="Rook"
                   width={60}
                   height={60}
+                  unoptimized
+                  className="bg-transparent"
                 />
-                <p className="text-xs text-center mt-2">Turm</p>
+                <p className="text-xs text-center mt-2">{t('rook')}</p>
               </button>
               <button
                 onClick={() => executePromotion("b")}
                 className="p-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
               >
                 <Image
-                  src={
-                    boardStyle === "v2"
-                      ? pieceImagesv2[`${myColor}_bishop`]
-                      : pieceImagesv1[`${myColor}_bishop`]
-                  }
+                  src={getPieceImage(boardStyle, myColor || "white", "bishop")}
                   alt="Bishop"
                   width={60}
                   height={60}
+                  unoptimized
+                  className="bg-transparent"
                 />
-                <p className="text-xs text-center mt-2">Läufer</p>
+                <p className="text-xs text-center mt-2">{t('bishop')}</p>
               </button>
               <button
                 onClick={() => executePromotion("n")}
                 className="p-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
               >
                 <Image
-                  src={
-                    boardStyle === "v2"
-                      ? pieceImagesv2[`${myColor}_knight`]
-                      : pieceImagesv1[`${myColor}_knight`]
-                  }
+                  src={getPieceImage(boardStyle, myColor || "white", "knight")}
                   alt="Knight"
                   width={60}
                   height={60}
+                  unoptimized
+                  className="bg-transparent"
                 />
-                <p className="text-xs text-center mt-2">Springer</p>
+                <p className="text-xs text-center mt-2">{t('knight')}</p>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="relative">
-        <div
-          className={`bg-[hsl(0,0%,90%)] ml-4 mt-4 grid gap-0 border-black border-2 w-fit h-fit rounded-[10px] p-2 ${!amIAtTurn || gameStatus === "waiting" || isViewingHistory
-            ? "opacity-70"
-            : ""
-            }`}
-          style={{
-            gridTemplateColumns: `repeat(8, ${blockSize}px)`,
-          }}
-        >
-          <DndContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-            {content}
-            <DragOverlay dropAnimation={null}>
-              {activePiece ? (
-                <div
-                  style={{
-                    width: blockSize,
-                    height: blockSize,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    pointerEvents: "none",
-                    opacity: 0.8,
-                  }}
-                >
-                  <Image
-                    src={
-                      boardStyle === "v2"
-                        ? pieceImagesv2[
-                        `${boardPieces.find((p) => p.position === activePiece)
-                          ?.color
-                        }_${boardPieces
-                          .find((p) => p.position === activePiece)
-                          ?.type.toLowerCase()}`
-                        ]
-                        : pieceImagesv1[
-                        `${boardPieces.find((p) => p.position === activePiece)
-                          ?.color
-                        }_${boardPieces
-                          .find((p) => p.position === activePiece)
-                          ?.type.toLowerCase()}`
-                        ]
-                    }
-                    alt=""
-                    height={blockSize}
-                    width={blockSize}
-                    style={{ pointerEvents: "none" }}
-                  />
-                </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
+      <div className="flex flex-col items-center w-full max-w-[800px]">
+        <div className="relative">
+          <div
+            className={`bg-transparent lg:ml-4 mt-4 grid gap-0 border-black border-2 w-fit h-fit rounded-[10px] p-2 ${(!amIAtTurn && gameStatus === "playing") || gameStatus === "waiting" || isViewingHistory
+              ? "opacity-80"
+              : ""
+              }`}
+            style={{
+              gridTemplateColumns: `repeat(8, ${blockSize}px)`,
+            }}
+          >
+            <DndContext
+              sensors={sensors}
+              onDragEnd={handleDragEnd}
+              onDragStart={handleDragStart}
+            >
+              {content}
+              <DragOverlay dropAnimation={null}>
+                {activePiece ? (
+                  <div
+                    style={{
+                      width: blockSize,
+                      height: blockSize,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      pointerEvents: "none",
+                      opacity: 0.8,
+                    }}
+                  >
+                    <Image
+                      src={getPieceImage(
+                        boardStyle,
+                        boardPieces.find((p) => p.position === activePiece)?.color || "white",
+                        boardPieces.find((p) => p.position === activePiece)?.type || "Pawn"
+                      )}
+                      alt=""
+                      height={blockSize * getGamePieceScale(boardPieces.find((p) => p.position === activePiece)?.type || "Pawn")}
+                      width={blockSize * getGamePieceScale(boardPieces.find((p) => p.position === activePiece)?.type || "Pawn")}
+                      unoptimized
+                      className="bg-transparent"
+                      style={{ pointerEvents: "none" }}
+                    />
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          </div>
+
+          {isViewingHistory && (
+            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold shadow-lg z-50 flex items-center gap-2">
+              <History size={18} />
+              {t('historyMode')}
+            </div>
+          )}
         </div>
 
+        {/* History Controls - Now ALWAYS below the board */}
         {moveHistory.length > 0 && (
-          <div className="absolute bottom-2 -right-50 flex gap-2 bg-[#FCFCFC] rounded-[23.5px] shadow-lg p-2 px-3">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4 bg-white/80 dark:bg-black/40 backdrop-blur-md rounded-2xl shadow-xl p-3 px-6 border border-gray-200 dark:border-gray-800 z-30 transition-all">
             <button
               onClick={() => navigateHistory("prev")}
               disabled={historyIndex <= -1}
-              className="w-10 h-10 disabled:text-gray-400 rounded-lg font-bold text-lg transition-colors flex items-center justify-center"
-              title="Vorheriger Zug"
+              className="w-12 h-12 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-accent hover:text-white disabled:opacity-30 disabled:hover:bg-gray-100 dark:disabled:hover:bg-gray-800 transition-all shadow-sm group"
+              title={t('previousMove')}
             >
-              <svg
-                width="27"
-                height="16"
-                viewBox="0 0 27 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M25.073 8.00003H1.57304M1.57304 8.00003L10.073 1.00003M1.57304 8.00003L10.073 15"
-                  stroke="#666666"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
+              <ArrowLeft size={24} className="group-hover:-translate-x-0.5 transition-transform" />
             </button>
-            <div className="flex items-center justify-center min-w-[60px] px-2 text-[24px] font-medium text-gray-700">
-              {isViewingHistory ? (
-                <span className="text-orange-600">
-                  {historyIndex + 1}/{moveHistory.length}
-                </span>
-              ) : (
-                <span className="text-[#43B600]">Live</span>
-              )}
+
+            <div className="flex flex-col items-center justify-center min-w-[100px] border-x border-gray-200 dark:border-gray-700 px-4">
+              <span className="text-[10px] uppercase font-bold tracking-widest opacity-50 mb-0.5">
+                {isViewingHistory ? t('historyMode') : t('live')}
+              </span>
+              <div className="text-xl font-black tabular-nums">
+                {isViewingHistory ? (
+                  <span className="text-orange-500">
+                    {historyIndex + 1} <span className="text-gray-400 font-medium">/</span> {moveHistory.length}
+                  </span>
+                ) : (
+                  <span className="text-green-500 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    {t('live')}
+                  </span>
+                )}
+              </div>
             </div>
+
             <button
               onClick={() => navigateHistory("next")}
-              className="w-10 h-10 disabled:text-gray-400 rounded-lg font-bold text-lg transition-colors flex items-center justify-center"
-              title="Nächster Zug"
+              disabled={!isViewingHistory}
+              className="w-12 h-12 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-accent hover:text-white disabled:opacity-30 disabled:hover:bg-gray-100 dark:disabled:hover:bg-gray-800 transition-all shadow-sm group"
+              title={t('nextMove')}
             >
-              <svg
-                width="27"
-                height="16"
-                viewBox="0 0 27 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M1 8.00003L24.5 8.00003M24.5 8.00003L16 15M24.5 8.00003L16 1.00003"
-                  stroke="#666666"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
+              <ArrowRight size={24} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
+
             {isViewingHistory && (
               <button
                 onClick={exitHistoryView}
-                className="ml-2 px-3 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-sm transition-colors"
-                title="Zurück zur aktuellen Position"
+                className="ml-2 flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold text-sm transition-all shadow-md active:scale-95"
               >
-                Live
+                <RotateCcw size={16} />
+                {t('live')}
               </button>
             )}
           </div>
         )}
-
-        {isViewingHistory && (
-          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white px-4 py-2 rounded-lg font-semibold shadow-lg">
-            📖 History Modus
-          </div>
-        )}
       </div>
 
-      <div className="ml-4 mt-4 p-3 bg-gray-200 rounded h-fit space-y-2 w-64 min-w-[16rem]">
+      <div className="lg:ml-4 mt-4 p-3 bg-gray-200 text-gray-800 rounded h-fit space-y-2 w-full max-w-[90vw] lg:w-64 min-w-[16rem]">
         {gameInfo && (
           <p className="font-bold text-lg text-red-600 text-center animate-pulse">
             {gameInfo}
           </p>
         )}
 
+        {/* Piece Selection UI */}
+        <div className="bg-white/50 dark:bg-black/20 p-3 rounded-lg border border-gray-300 dark:border-gray-700">
+          <p className="text-xs font-bold uppercase tracking-wider mb-2 opacity-70 flex items-center gap-2">
+            <Layers size={16} />
+            Design
+          </p>
+          <BoardStyle currentStyle={boardStyle} onStyleChange={setBoardStyle} />
+        </div>
+
         {gameStatus === "waiting" ? (
           <p className="font-semibold text-lg text-orange-600">
-            ⏳ Warte auf zweiten Spieler...
+            ⏳ {t('waiting')}
           </p>
         ) : gameStatus === "ended" ? (
           <div className="space-y-2">
             <p className="font-semibold text-lg text-red-600">
-              🏁 Spiel beendet
+              🏁 {t('ended')}
             </p>
             <button
               onClick={() => resetBoard(true)}
               className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 font-semibold"
             >
-              🔄 Board zurücksetzen
+              🔄 {t('resetBoard')}
             </button>
           </div>
         ) : (
@@ -921,26 +956,26 @@ export default function Board() {
               className={`font-semibold text-lg ${amIAtTurn ? "text-green-600" : "text-red-600"
                 }`}
             >
-              {amIAtTurn ? "✅ Dein Zug!" : `⏳ ${currentTurn} ist am Zug`}
+              {amIAtTurn ? `✅ ${t('yourTurn')}` : `⏳${t('turnOf')}`}
             </p>
           </>
         )}
 
         {myColor && (
           <p className="text-sm text-gray-600 mt-1">
-            Du spielst: {myColor === "white" ? "Weiß ⚪" : "Schwarz ⚫"}
+            {t('youPlay')} {myColor === "white" ? `${t('white')} ⚪` : `${t('black')} ⚫`}
           </p>
         )}
 
         {currentRoom && (
           <p className="text-xs text-gray-500 mt-2 break-all">
-            Raum: {currentRoom.substring(0, 12)}...
+            {t('room')}{currentRoom.substring(0, 12)}...
           </p>
         )}
 
         {moveCount >= 100 && (
           <p className="text-xs text-orange-600 font-semibold mt-2">
-            ⚠️ {Math.floor(moveCount / 2)} Züge ohne Bauernzug/Schlagen
+            ⚠️ {t('movesWithoutPawn', { count: Math.floor(moveCount / 2) })}
           </p>
         )}
       </div>
