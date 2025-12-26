@@ -1,8 +1,10 @@
+"use client"
 
+import { useState } from 'react';
 
 import type { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
-import { generateHreflangs } from '@/lib/hreflang';
+import { generateHreflangs, Locale } from '@/lib/hreflang';
 import { ChevronDown } from 'lucide-react';
 
 // Static FAQ data (can be moved to a separate file if it grows large)
@@ -75,7 +77,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? "Hier findest du alle häufigen Fragen zum ChessPie Board Editor, inklusive Tipps zum Erstellen eigener Boards und Figuren."
         : "Here you will find all frequently asked questions about the ChessPie Board Editor, including tips for creating your own boards and pieces.";
 
-    const hreflangs = generateHreflangs('/editor/board/faq', ['de', 'en'], locale, 'https://chesspie.de');
+    const hreflangs = generateHreflangs('/editor/board/faq', ['de', 'en'], locale as Locale, 'https://chesspie.de');
 
     return {
         title: title,
