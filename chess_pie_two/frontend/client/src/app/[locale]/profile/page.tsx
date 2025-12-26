@@ -5,6 +5,10 @@ import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
 import { Bungee } from "next/font/google"
 import { Trophy, Target, TrendingUp, Calendar } from "lucide-react"
+import type { Metadata } from "next"
+import { generateHreflangs } from '@/lib/hreflang';
+
+const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.de');
 
 const bungee = Bungee({
     subsets: ["latin"],
@@ -26,6 +30,48 @@ interface GameHistoryItem {
     timestamp: { seconds: number }
     roomId?: string
 }
+export const metadata: Metadata = {
+    title: 'ChessPie User Profiles',
+    description: 'View and manage ChessPie user profiles.',
+    openGraph: {
+        title: 'ChessPie User Profiles',
+        description: 'View and manage ChessPie user profiles.',
+        url: 'https://chesspie.de/profile',
+        siteName: 'ChessPie',
+        images: ['/og-profile.png'],
+        type: 'website',
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'ChessPie User Profiles',
+        description: 'View and manage ChessPie user profiles.',
+        images: ['/og-profile.png'],
+    },
+    alternates: {
+        canonical: "https://chesspie.de/profile", // absolute URL
+        languages: hreflangs.reduce((acc, tag) => {
+            acc[tag.hrefLang] = tag.href;
+            return acc;
+        }, {} as Record<string, string>),
+    },
+};
+
+const jsonLdProfilePage = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage", // alternativ WebPage
+    "url": "https://chesspie.de/profile",
+    "name": "Profile – ChessPie",
+    "description": "Erfahre mehr über die Profile und Features auf ChessPie, inklusive Benutzerstatistiken, Achievements und personalisierten Einstellungen.",
+    "publisher": {
+        "@type": "Organization",
+        "name": "ChessPie",
+        "url": "https://chesspie.de",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://chesspie.de/static/logo.svg"
+        }
+    }
+};
 
 export default function ProfilePage() {
     const { data: session, status } = useSession()
@@ -87,79 +133,86 @@ export default function ProfilePage() {
         : "0.0"
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-6xl">
-            {/* Profile Header */}
-            <div className="bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-3xl p-8 mb-8">
-                <div className="flex items-center gap-6">
-                    {session?.user?.image ? (
-                        <img
-                            src={session.user.image}
-                            alt={session.user.name || "User"}
-                            className="w-24 h-24 rounded-full border-4 border-amber-400/30"
-                        />
-                    ) : (
-                        <div className="w-24 h-24 rounded-full bg-amber-400/10 border-4 border-amber-400/30 flex items-center justify-center">
-                            <span className="text-4xl text-amber-400">
-                                {session?.user?.name?.[0] || "?"}
-                            </span>
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdProfilePage).replace(/</g, '\\u003c') }}
+            />
+
+            <div className="container mx-auto px-4 py-8 max-w-6xl">
+                {/* Profile Header */}
+                <div className="bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-3xl p-8 mb-8">
+                    <div className="flex items-center gap-6">
+                        {session?.user?.image ? (
+                            <img
+                                src={session.user.image}
+                                alt={session.user.name || "User"}
+                                className="w-24 h-24 rounded-full border-4 border-amber-400/30"
+                            />
+                        ) : (
+                            <div className="w-24 h-24 rounded-full bg-amber-400/10 border-4 border-amber-400/30 flex items-center justify-center">
+                                <span className="text-4xl text-amber-400">
+                                    {session?.user?.name?.[0] || "?"}
+                                </span>
+                            </div>
+                        )}
+                        <div>
+                            <h1 className={`${bungee.className} text-4xl text-yellow-400 mb-2`}>
+                                {session?.user?.name}
+                            </h1>
+                            <p className="text-amber-400/60">{session?.user?.email}</p>
                         </div>
-                    )}
-                    <div>
-                        <h1 className={`${bungee.className} text-4xl text-yellow-400 mb-2`}>
-                            {session?.user?.name}
-                        </h1>
-                        <p className="text-amber-400/60">{session?.user?.email}</p>
                     </div>
                 </div>
-            </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <StatCard
-                    icon={<Trophy size={32} />}
-                    label={t("wins")}
-                    value={stats?.wins || 0}
-                    color="text-green-400"
-                />
-                <StatCard
-                    icon={<Target size={32} />}
-                    label={t("gamesPlayed")}
-                    value={stats?.gamesPlayed || 0}
-                    color="text-blue-400"
-                />
-                <StatCard
-                    icon={<TrendingUp size={32} />}
-                    label={t("winRate")}
-                    value={`${winRate}%`}
-                    color="text-amber-400"
-                />
-                <StatCard
-                    icon={<Calendar size={32} />}
-                    label={t("rating")}
-                    value={stats?.rating || 1500}
-                    color="text-purple-400"
-                />
-            </div>
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <StatCard
+                        icon={<Trophy size={32} />}
+                        label={t("wins")}
+                        value={stats?.wins || 0}
+                        color="text-green-400"
+                    />
+                    <StatCard
+                        icon={<Target size={32} />}
+                        label={t("gamesPlayed")}
+                        value={stats?.gamesPlayed || 0}
+                        color="text-blue-400"
+                    />
+                    <StatCard
+                        icon={<TrendingUp size={32} />}
+                        label={t("winRate")}
+                        value={`${winRate}%`}
+                        color="text-amber-400"
+                    />
+                    <StatCard
+                        icon={<Calendar size={32} />}
+                        label={t("rating")}
+                        value={stats?.rating || 1500}
+                        color="text-purple-400"
+                    />
+                </div>
 
-            {/* Game History */}
-            <div className="bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-3xl p-8">
-                <h2 className="text-2xl font-bold text-amber-400 mb-6">
-                    {t("recentGames")}
-                </h2>
+                {/* Game History */}
+                <div className="bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-3xl p-8">
+                    <h2 className="text-2xl font-bold text-amber-400 mb-6">
+                        {t("recentGames")}
+                    </h2>
 
-                {history.length === 0 ? (
-                    <p className="text-amber-400/60 text-center py-8">
-                        {t("noGamesYet")}
-                    </p>
-                ) : (
-                    <div className="space-y-4">
-                        {history.map((game) => (
-                            <GameHistoryCard key={game.id} game={game} />
-                        ))}
-                    </div>
-                )}
+                    {history.length === 0 ? (
+                        <p className="text-amber-400/60 text-center py-8">
+                            {t("noGamesYet")}
+                        </p>
+                    ) : (
+                        <div className="space-y-4">
+                            {history.map((game) => (
+                                <GameHistoryCard key={game.id} game={game} />
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     )
 }
 

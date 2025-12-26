@@ -845,7 +845,7 @@ export default function Board() {
                         boardPieces.find((p) => p.position === activePiece)?.color || "white",
                         boardPieces.find((p) => p.position === activePiece)?.type || "Pawn"
                       )}
-                      alt=""
+                      alt="" //TODO
                       height={blockSize * getGamePieceScale(boardPieces.find((p) => p.position === activePiece)?.type || "Pawn")}
                       width={blockSize * getGamePieceScale(boardPieces.find((p) => p.position === activePiece)?.type || "Pawn")}
                       unoptimized

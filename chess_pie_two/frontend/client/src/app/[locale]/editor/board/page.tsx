@@ -5,8 +5,54 @@ import BoardEditor from '@/components/editor/BoardEditor';
 import { Grid3x3 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import type { Metadata } from "next"
+import { generateHreflangs } from '@/lib/hreflang';
+
+const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.de');
 
 export type EditMode = 'shape' | 'pieces';
+
+// app/editor/board/page.tsx
+
+export const metadata: Metadata = {
+    title: "ChessPie – Spiele deine eigenen Schachbretter",
+    description: "Erstelle eigene Schachbretter, Figuren und Spiele auf ChessPie.de",
+    alternates: {
+        canonical: "https://chesspie.de/game",
+        languages: hreflangs.reduce((acc, tag) => {
+            acc[tag.hrefLang] = tag.href;
+            return acc;
+        }, {} as Record<string, string>),
+    },
+    openGraph: {
+        title: "ChessPie – Spiele deine eigenen Schachbretter",
+        description: "Erstelle eigene Schachbretter, Figuren und Spiele auf ChessPie.de",
+        url: "https://chesspie.de/game",
+        type: "website"
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "ChessPie – Spiele deine eigenen Schachbretter",
+        description: "Erstelle eigene Schachbretter, Figuren und Spiele auf ChessPie.de"
+    },
+};
+
+const jsonLd_boardEditor = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "ChessPie Board Editor",
+    "url": "https://chesspie.de/editor/board",
+    "description": "An editor to design custom chess boards on ChessPie. Create grids, zones and custom layouts.",
+    "applicationCategory": "DesignApplication",
+    "provider": { "@type": "Organization", "name": "ChessPie", "url": "https://chesspie.de" },
+    "featureList": [
+        "Grid editor",
+        "Tile coloring",
+        "Custom starting positions",
+        "Export / Share"
+    ]
+};
+
 
 export default function BoardEditorPage() {
     const t = useTranslations('Editor.Board');
@@ -16,36 +62,42 @@ export default function BoardEditorPage() {
 
 
     return (
-        <EditorLayout sidebar={
-            <EditorSidebar
-                editMode={editMode}
-                setEditMode={setEditMode}
-                selectedPiece={selectedPiece}
-                setSelectedPiece={setSelectedPiece}
-                boardStyle={boardStyle}
-                setBoardStyle={setBoardStyle}
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd_boardEditor).replace(/</g, '\\u003c') }}
             />
-        }>
-            <div className="flex flex-col items-center w-full">
-                <div className="mb-12 text-center max-w-2xl animate-in slide-in-from-top-4 fade-in duration-700">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 text-accent-hover text-xs font-semibold uppercase tracking-widest mb-4 border border-accent/20">
-                        <Grid3x3 size={14} /> {t('badge')}
-                    </div>
-                    <h1 className="text-4xl md:text-5xl font-black text-text mb-4 tracking-tight">
-                        {t.rich('title', {
-                            accent: (chunks) => <span className="text-accent underline decoration-wavy decoration-2 underline-offset-4">{chunks}</span>
-                        })}
-                    </h1>
-                    <p className="text-text/60 text-lg leading-relaxed max-w-lg mx-auto">
-                        {t('description')}
-                    </p>
-                </div>
-                <BoardEditor
+            <EditorLayout sidebar={
+                <EditorSidebar
                     editMode={editMode}
+                    setEditMode={setEditMode}
                     selectedPiece={selectedPiece}
+                    setSelectedPiece={setSelectedPiece}
                     boardStyle={boardStyle}
+                    setBoardStyle={setBoardStyle}
                 />
-            </div>
-        </EditorLayout>
+            }>
+                <div className="flex flex-col items-center w-full">
+                    <div className="mb-12 text-center max-w-2xl animate-in slide-in-from-top-4 fade-in duration-700">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 text-accent-hover text-xs font-semibold uppercase tracking-widest mb-4 border border-accent/20">
+                            <Grid3x3 size={14} /> {t('badge')}
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-black text-text mb-4 tracking-tight">
+                            {t.rich('title', {
+                                accent: (chunks) => <span className="text-accent underline decoration-wavy decoration-2 underline-offset-4">{chunks}</span>
+                            })}
+                        </h1>
+                        <p className="text-text/60 text-lg leading-relaxed max-w-lg mx-auto">
+                            {t('description')}
+                        </p>
+                    </div>
+                    <BoardEditor
+                        editMode={editMode}
+                        selectedPiece={selectedPiece}
+                        boardStyle={boardStyle}
+                    />
+                </div>
+            </EditorLayout>
+        </>
     );
 }
