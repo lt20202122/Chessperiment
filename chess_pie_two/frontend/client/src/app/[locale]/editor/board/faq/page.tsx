@@ -1,6 +1,4 @@
-"use client"
 
-import { useState } from 'react';
 
 import type { Metadata } from 'next';
 import { useTranslations } from 'next-intl';
@@ -105,56 +103,60 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-export default function FAQPage({ params: { locale } }: Props) {
-    const t = useTranslations('FAQ'); // Assuming a new translation namespace 'FAQ'
-    const [openFaq, setOpenFaq] = useState<string | null>(null);
+// export default function FAQPage({ params: { locale } }: Props) {
+//     const t = useTranslations('FAQ'); // Assuming a new translation namespace 'FAQ'
+//     const [openFaq, setOpenFaq] = useState<string | null>(null);
 
-    const toggleFaq = (id: string) => {
-        setOpenFaq(openFaq === id ? null : id);
-    };
+//     const toggleFaq = (id: string) => {
+//         setOpenFaq(openFaq === id ? null : id);
+//     };
 
-    const jsonLd_faq = {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": faqs.map(faq => ({
-            "@type": "Question",
-            "name": faq.question[locale as keyof typeof faq.question],
-            "acceptedAnswer": {
-                "@type": "Answer",
-                "text": faq.answer[locale as keyof typeof faq.answer]
-            }
-        }))
-    };
+//     const jsonLd_faq = {
+//         "@context": "https://schema.org",
+//         "@type": "FAQPage",
+//         "mainEntity": faqs.map(faq => ({
+//             "@type": "Question",
+//             "name": faq.question[locale as keyof typeof faq.question],
+//             "acceptedAnswer": {
+//                 "@type": "Answer",
+//                 "text": faq.answer[locale as keyof typeof faq.answer]
+//             }
+//         }))
+//     };
 
-    return (
-        <div className="container mx-auto p-4 md:p-8 max-w-4xl">
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd_faq).replace(/</g, '\u003c') }}
-            />
+//     return (
+//         <div className="container mx-auto p-4 md:p-8 max-w-4xl">
+//             <script
+//                 type="application/ld+json"
+//                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd_faq).replace(/</g, '\u003c') }}
+//             />
 
-            <h1 className="text-4xl md:text-5xl font-bold text-center mb-10 text-text">
-                {t('title')}
-            </h1>
+//             <h1 className="text-4xl md:text-5xl font-bold text-center mb-10 text-text">
+//                 {t('title')}
+//             </h1>
 
-            <div className="space-y-4">
-                {faqs.map((faq) => (
-                    <div key={faq.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-                        <button
-                            className="flex justify-between items-center w-full p-5 text-lg font-semibold text-left text-gray-900 dark:text-gray-100"
-                            onClick={() => toggleFaq(faq.id)}
-                        >
-                            {faq.question[locale as keyof typeof faq.question]}
-                            <ChevronDown className={`w-5 h-5 transition-transform ${openFaq === faq.id ? 'rotate-180' : ''}`} />
-                        </button>
-                        {openFaq === faq.id && (
-                            <div className="px-5 pb-5 text-gray-700 dark:text-gray-300 prose prose-sm max-w-none">
-                                <p>{faq.answer[locale as keyof typeof faq.answer]}</p>
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+//             <div className="space-y-4">
+//                 {faqs.map((faq) => (
+//                     <div key={faq.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+//                         <button
+//                             className="flex justify-between items-center w-full p-5 text-lg font-semibold text-left text-gray-900 dark:text-gray-100"
+//                             onClick={() => toggleFaq(faq.id)}
+//                         >
+//                             {faq.question[locale as keyof typeof faq.question]}
+//                             <ChevronDown className={`w-5 h-5 transition-transform ${openFaq === faq.id ? 'rotate-180' : ''}`} />
+//                         </button>
+//                         {openFaq === faq.id && (
+//                             <div className="px-5 pb-5 text-gray-700 dark:text-gray-300 prose prose-sm max-w-none">
+//                                 <p>{faq.answer[locale as keyof typeof faq.answer]}</p>
+//                             </div>
+//                         )}
+//                     </div>
+//                 ))}
+//             </div>
+//         </div>
+//     );
+// }
+
+export default function FAQPage() {
+    return <></>
 }
