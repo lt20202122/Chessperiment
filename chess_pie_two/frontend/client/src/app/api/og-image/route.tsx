@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
         // Load custom font
         const fontData = await fetch(
-            new URL('/public/fonts/Rockwell Regular.otf', import.meta.url)
+            new URL('/fonts/Rockwell Regular.otf', req.url)
         ).then((res) => res.arrayBuffer());
 
         return new ImageResponse(

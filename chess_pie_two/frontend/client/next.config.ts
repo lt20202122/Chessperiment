@@ -3,6 +3,7 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const nextConfig: NextConfig = {
     // Redirects: www → non-www
+    trailingSlash: false,
     async redirects() {
         return [
             {

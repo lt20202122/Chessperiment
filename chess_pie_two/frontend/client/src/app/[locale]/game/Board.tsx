@@ -36,6 +36,152 @@ const getGamePieceScale = (type: string) => {
   }
 };
 
+const DraggablePiece = memo(function DraggablePiece({
+  piece,
+  size,
+  amIAtTurn,
+  onClick,
+  boardStyle,
+  isViewingHistory, // Add isViewingHistory to props
+  gameStatus,       // Add gameStatus to props
+  myColor,          // Add myColor to props
+}: {
+  piece: PieceType;
+  size: number;
+  amIAtTurn: boolean;
+  onClick: () => void;
+  boardStyle: string;
+  isViewingHistory: boolean;
+  gameStatus: string;
+  myColor: "white" | "black" | null;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: piece.position,
+      data: piece,
+    });
+  const canDrag =
+    amIAtTurn &&
+    myColor === piece.color &&
+    gameStatus === "playing" &&
+    !isViewingHistory;
+
+  const style: React.CSSProperties = {
+    fontSize: size,
+    cursor: canDrag ? "grab" : "default",
+    userSelect: "none",
+    position: "absolute",
+    inset: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    opacity: isDragging ? 0.5 : 1,
+    transform: transform
+      ? `translate(${transform.x}px, ${transform.y}px)`
+      : "none",
+    zIndex: 20,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...(canDrag ? { ...attributes, ...listeners } : {})}
+      style={style}
+      onClick={(e) => {
+        // Allow click to propagate even if drag listeners are present
+        // e.stopPropagation(); // Do NOT stop propagation, or handle explicitly
+        onClick();
+      }}
+    >
+      <Image
+        src={getPieceImage(boardStyle, piece.color, piece.type)}
+        alt={`${piece.color} ${piece.type}`}
+        height={piece.size}
+        width={piece.size}
+        unoptimized
+        className="bg-transparent"
+        style={{ height: size, width: "auto", pointerEvents: "none" }}
+        priority
+      />
+    </div>
+  );
+});
+
+const SquareTile = memo(function SquareTile({
+  pos,
+  isWhite,
+  eckenKlasse,
+  piece,
+  blockSize,
+  selected,
+  isMoveFrom,
+  isMoveTo,
+  onClick,
+  onContextMenu,
+  boardStyle, // Add boardStyle to props
+  isViewingHistory, // Add isViewingHistory to props
+  gameStatus,       // Add gameStatus to props
+  myColor,          // Add myColor to props
+  amIAtTurn,
+  squareRefs,
+}: {
+  pos: string;
+  isWhite: boolean;
+  eckenKlasse: string;
+  piece?: PieceType;
+  blockSize: number;
+  selected: boolean;
+  isMoveFrom: boolean;
+  isMoveTo: boolean;
+  onClick: (p: string) => void;
+  onContextMenu: (e: any) => void;
+  boardStyle: string;
+  isViewingHistory: boolean;
+  gameStatus: string;
+  myColor: "white" | "black" | null;
+  amIAtTurn: boolean;
+  squareRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: pos });
+
+  const combinedRef = (el: HTMLDivElement | null) => {
+    setNodeRef(el);
+    squareRefs.current[pos] = el;
+  };
+
+  return (
+    <div
+      key={pos}
+      ref={combinedRef}
+      className={`square-tile ${isWhite ? "white-square" : "black-square"} ${isMoveFrom ? "move-from" : ""
+        } ${isMoveTo ? "move-to" : ""} m-0 aspect-square relative ${eckenKlasse} flex items-center justify-center ${selected ? "ring-4 ring-blue-500" : ""
+        }`}
+      style={{
+        width: blockSize,
+        height: blockSize,
+      }}
+      onClick={() => onClick(pos)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onContextMenu(pos);
+      }}
+    >
+      {piece && (
+        <DraggablePiece
+          piece={piece}
+          size={piece.size as number}
+          amIAtTurn={amIAtTurn}
+          onClick={() => onClick(pos)}
+          boardStyle={boardStyle}
+          isViewingHistory={isViewingHistory}
+          gameStatus={gameStatus}
+          myColor={myColor}
+        />
+      )}
+    </div>
+  );
+});
+
 export default function Board() {
   const t = useTranslations("Multiplayer");
   const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
@@ -588,127 +734,7 @@ export default function Board() {
     }
   };
 
-  const DraggablePiece = memo(function DraggablePiece({
-    piece,
-    size,
-    amIAtTurn,
-    onClick,
-  }: {
-    piece: PieceType;
-    size: number;
-    amIAtTurn: boolean;
-    onClick: () => void;
-  }) {
-    const { attributes, listeners, setNodeRef, transform, isDragging } =
-      useDraggable({
-        id: piece.position,
-        data: piece,
-      });
-    const canDrag =
-      amIAtTurn &&
-      myColor === piece.color &&
-      gameStatus === "playing" &&
-      !isViewingHistory;
-
-    const style: React.CSSProperties = {
-      fontSize: size,
-      cursor: canDrag ? "grab" : "default",
-      userSelect: "none",
-      position: "absolute",
-      inset: 0,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      opacity: isDragging ? 0.5 : 1,
-      transform: transform
-        ? `translate(${transform.x}px, ${transform.y}px)`
-        : "none",
-      zIndex: 20,
-    };
-
-    return (
-      <div
-        ref={setNodeRef}
-        {...(canDrag ? { ...attributes, ...listeners } : {})}
-        style={style}
-        onClick={(e) => {
-          // Allow click to propagate even if drag listeners are present
-          // e.stopPropagation(); // Do NOT stop propagation, or handle explicitly
-          onClick();
-        }}
-      >
-                                        <Image
-                                            src={getPieceImage(boardStyle, piece.color, piece.type)}
-                                            alt={`${piece.color} ${piece.type}`}
-                                            height={piece.size}
-                                            width={piece.size}
-                                            unoptimized
-                                            className="bg-transparent"
-                                            style={{ height: size, width: "auto", pointerEvents: "none" }}
-                                            priority
-                                        />      </div>
-    );
-  }
-
-  const SquareTile = memo(function SquareTile({
-    pos,
-    isWhite,
-    eckenKlasse,
-    piece,
-    blockSize,
-    selected,
-    isMoveFrom,
-    isMoveTo,
-    onClick,
-    onContextMenu,
-  }: {
-    pos: string;
-    isWhite: boolean;
-    eckenKlasse: string;
-    piece?: PieceType;
-    blockSize: number;
-    selected: boolean;
-    isMoveFrom: boolean;
-    isMoveTo: boolean;
-    onClick: (p: string) => void;
-    onContextMenu: (e: any) => void;
-  }) {
-    const { setNodeRef, isOver } = useDroppable({ id: pos });
-
-    const combinedRef = (el: HTMLDivElement | null) => {
-      setNodeRef(el);
-      squareRefs.current[pos] = el;
-    };
-
-    return (
-      <div
-        key={pos}
-        ref={combinedRef}
-        className={`square-tile ${isWhite ? "white-square" : "black-square"} ${isMoveFrom ? "move-from" : ""
-          } ${isMoveTo ? "move-to" : ""} m-0 aspect-square relative ${eckenKlasse} flex items-center justify-center ${selected ? "ring-4 ring-blue-500" : ""
-          }`}
-        style={{
-          width: blockSize,
-          height: blockSize,
-        }}
-        onClick={() => onClick(pos)}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          onContextMenu(pos);
-        }}
-      >
-        {piece && (
-          <DraggablePiece
-            piece={piece}
-            size={piece.size as number}
-            amIAtTurn={isMyTurn()}
-            onClick={() => onClick(pos)}
-          />
-        )}
-      </div>
-    );
-  }
-
+  
   let isWhite = true;
   const content: React.ReactNode[] = [];
 
@@ -768,6 +794,12 @@ export default function Board() {
           isMoveTo={lastMoveTo === pos}
           onClick={handlePieceSelect}
           onContextMenu={handleRightClick}
+          boardStyle={boardStyle} // Pass boardStyle
+          isViewingHistory={isViewingHistory} // Pass isViewingHistory
+          gameStatus={gameStatus} // Pass gameStatus
+          myColor={myColor} // Pass myColor
+          amIAtTurn={amIAtTurn()}
+          squareRefs={squareRefs}
         />
       );
 

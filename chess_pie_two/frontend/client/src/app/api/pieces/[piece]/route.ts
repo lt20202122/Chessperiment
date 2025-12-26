@@ -1,5 +1,5 @@
 
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
@@ -15,14 +15,14 @@ if (process.env.FIREBASE_PRIVATE_KEY && !getApps().length) {
 }
 const db = getFirestore();
 
-export async function GET(req: Request, { params }: { params: { piece: string } }) {
+export async function GET(req: NextRequest, context: any) {
     const session = await auth();
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const userId = session.user.id;
 
-    const { piece } = params;
+    const { piece } = context.params;
     const [pieceType, color] = piece.split('_');
 
     if (!pieceType || !color) {

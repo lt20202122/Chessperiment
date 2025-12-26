@@ -29,6 +29,10 @@ export const metadata: Metadata = {
             return acc;
         }, {} as Record<string, string>),
     },
+    robots: {
+        index: false,   // Nicht indexieren
+        follow: true,   // Links dennoch folgen
+    },
 };
 
 const bungee = Bungee({

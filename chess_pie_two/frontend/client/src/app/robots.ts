@@ -7,7 +7,13 @@ export default function robots(): MetadataRoute.Robots {
             {
                 userAgent: "*",
                 allow: "/",
-                disallow: ["/api/", "/trpc/", "/_next/", "/_vercel/"],
+                disallow: [
+                    "/api/",
+                    "/trpc/",
+                    "/_next/",
+                    "/_vercel/",
+                    "/login",
+                ],
             },
         ],
         sitemap: "https://chesspie.de/sitemap.xml",

@@ -32,31 +32,7 @@ interface GameHistoryItem {
     timestamp: { seconds: number }
     roomId?: string
 }
-export const metadata: Metadata = {
-    title: 'ChessPie User Profiles',
-    description: 'View and manage ChessPie user profiles.',
-    openGraph: {
-        title: 'ChessPie User Profiles',
-        description: 'View and manage ChessPie user profiles.',
-        url: 'https://chesspie.de/profile',
-        siteName: 'ChessPie',
-        images: ['/og-profile.png'],
-        type: 'website',
-    },
-    twitter: {
-        card: 'summary_large_image',
-        title: 'ChessPie User Profiles',
-        description: 'View and manage ChessPie user profiles.',
-        images: ['/og-profile.png'],
-    },
-    alternates: {
-        canonical: "https://chesspie.de/profile", // absolute URL
-        languages: hreflangs.reduce((acc, tag) => {
-            acc[tag.hrefLang] = tag.href;
-            return acc;
-        }, {} as Record<string, string>),
-    },
-};
+
 
 const jsonLdProfilePage = {
     "@context": "https://schema.org",

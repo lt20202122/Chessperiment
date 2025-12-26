@@ -1,6 +1,6 @@
 
 import { useTranslations } from 'next-intl';
-import announcements from '../../../../announcements'; // Adjust path as necessary
+import announcements from '@/app/announcements';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
