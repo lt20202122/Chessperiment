@@ -4,7 +4,7 @@ import announcements from '@/app/announcements';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { generateHreflangs } from '@/lib/hreflang';
+import { generateHreflangs, Locale } from '@/lib/hreflang';
 
 type Props = {
     params: { id: string; locale: string };
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const description = announcement.shortDescription[locale as keyof typeof announcement.shortDescription];
     const imageUrl = `https://chesspie.de${announcement.image}`; // Assuming base URL
 
-    const hreflangs = generateHreflangs(`/announcements/${id}`, ['de', 'en'], locale, 'https://chesspie.de');
+    const hreflangs = generateHreflangs(`/announcements/${id}`, ['de', 'en'], locale as Locale, 'https://chesspie.de');
 
     return {
         title: `ChessPie – ${title}`,

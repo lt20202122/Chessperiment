@@ -227,6 +227,7 @@ export default function Board() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const isViewingHistoryRef = useRef(isViewingHistory);
+
   useEffect(() => {
     isViewingHistoryRef.current = isViewingHistory;
   }, [isViewingHistory]);
@@ -286,11 +287,11 @@ export default function Board() {
       if (data?.status) {
         setGameStatus(data.status);
         if (data.status === "checkmate") {
-            const turn = chessRef.current.turn();
-            const iWon = (turn === "b" && myColor === "white") || (turn === "w" && myColor === "black");
-            setGameResult(iWon ? "win" : "loss");
+          const turn = chessRef.current.turn();
+          const iWon = (turn === "b" && myColor === "white") || (turn === "w" && myColor === "black");
+          setGameResult(iWon ? "win" : "loss");
         } else if (data.status === "draw" || data.status === "stalemate" || data.status === "threefold_repetition" || data.status === "insufficient_material") {
-            setGameResult("draw");
+          setGameResult("draw");
         }
       }
     };
@@ -354,8 +355,8 @@ export default function Board() {
     };
 
     const handleDrawOffered = () => {
-        setToastMessage(t('drawOffered'));
-        setShowToast(true);
+      setToastMessage(t('drawOffered'));
+      setShowToast(true);
     };
 
     socket.on("move", handleMove);
@@ -440,7 +441,7 @@ export default function Board() {
       (turn === "b" && myColor === "black")
     );
   };
-
+  const amIAtTurn = isMyTurn();
   const highlightMove = (from: string, to: string) => {
     if (isViewingHistory) return;
     setLastMoveFrom(from);
@@ -677,7 +678,6 @@ export default function Board() {
         console.error("Error replaying move:", e);
       }
     }
-
     const history = tempChess.history({ verbose: true });
     const lastMove = history[history.length - 1];
     if (lastMove) {
@@ -725,16 +725,16 @@ export default function Board() {
     setIsViewingHistory(false);
     setSimulationPieces([]);
     const lastMove = chessRef.current.history({ verbose: true }).pop();
-    if(lastMove){
-        setLastMoveFrom(lastMove.from);
-        setLastMoveTo(lastMove.to);
+    if (lastMove) {
+      setLastMoveFrom(lastMove.from);
+      setLastMoveTo(lastMove.to);
     } else {
-        setLastMoveFrom(null);
-        setLastMoveTo(null);
+      setLastMoveFrom(null);
+      setLastMoveTo(null);
     }
   };
 
-  
+
   let isWhite = true;
   const content: React.ReactNode[] = [];
 
@@ -773,7 +773,7 @@ export default function Board() {
         ${isBottomLeft ? "rounded-bl-md" : ""}
         ${isTopRight ? "rounded-tr-md" : ""}
         ${isBottomRight ? "rounded-br-md" : ""}
-      `;
+        `;
 
       const displayPiece = displayPieces.find((p) => p.position === pos);
 
@@ -798,7 +798,7 @@ export default function Board() {
           isViewingHistory={isViewingHistory} // Pass isViewingHistory
           gameStatus={gameStatus} // Pass gameStatus
           myColor={myColor} // Pass myColor
-          amIAtTurn={amIAtTurn()}
+          amIAtTurn={amIAtTurn}
           squareRefs={squareRefs}
         />
       );
@@ -808,7 +808,6 @@ export default function Board() {
     isWhite = !isWhite;
   }
 
-  const amIAtTurn = isMyTurn();
   const currentTurn = chessRef.current.turn() === "w" ? t('white') : t('black');
 
   return (
