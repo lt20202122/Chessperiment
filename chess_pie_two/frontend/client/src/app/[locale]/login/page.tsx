@@ -33,6 +33,7 @@ export const metadata: Metadata = {
 
 const bungee = Bungee({
     subsets: ["latin"],
+    display: "swap",
     weight: ["400"],
 })
 

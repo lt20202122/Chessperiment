@@ -6,6 +6,7 @@ import { LogIn, LogOut, User, ChevronUp } from "lucide-react"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Link } from "@/i18n/navigation"
+import Image from "next/image"
 
 export function UserPanel() {
     const { data: session, status } = useSession()
@@ -36,10 +37,12 @@ export function UserPanel() {
                             <div className="flex flex-col gap-3">
                                 <div className="flex items-center gap-3 pb-3 border-b border-amber-400/10">
                                     {session.user?.image ? (
-                                        <img
+                                        <Image
                                             src={session.user.image}
                                             alt={session.user.name || "User"}
                                             className="w-10 h-10 rounded-full border border-amber-400/20"
+                                            width={40}
+                                            height={40}
                                         />
                                     ) : (
                                         <div className="w-10 h-10 rounded-full bg-amber-400/10 flex items-center justify-center">
@@ -100,10 +103,12 @@ export function UserPanel() {
             >
                 {session && !isOpen ? (
                     session.user?.image ? (
-                        <img
+                        <Image
                             src={session.user.image}
                             alt="User"
                             className="w-full h-full rounded-full"
+                            width={48}
+                            height={48}
                         />
                     ) : (
                         <User size={24} />

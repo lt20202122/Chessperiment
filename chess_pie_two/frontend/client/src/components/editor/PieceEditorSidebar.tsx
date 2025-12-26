@@ -15,18 +15,48 @@ export default function PieceEditorSidebar({ selectedPiece, setSelectedPiece, pi
     const pieceTypes = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king'];
     const colors = ['white', 'black'];
 
-    const handleSave = () => {
-        // implement save to database
-        alert(t('saved'));
-    };
-    const handleLoad = () => {
-        const saved = localStorage.getItem(`piece_${selectedPiece.color}_${selectedPiece.type}`);
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            setSelectedPiece({ type: selectedPiece.type, color: selectedPiece.color });
-            setPixels(parsed);
+    const handleSave = async () => {
+        try {
+            const response = await fetch('/api/pieces', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pieceType: selectedPiece.type,
+                    color: selectedPiece.color,
+                    pixels,
+                }),
+            });
+
+            if (response.ok) {
+                alert(t('saved'));
+            } else {
+                const errorData = await response.json();
+                alert(`${t('errorSaving')}: ${errorData.error}`);
+            }
+        } catch (error) {
+            console.error('Error saving piece:', error);
+            alert(t('errorSaving'));
         }
-    }
+    };
+    const handleLoad = async () => {
+        try {
+            const response = await fetch(`/api/pieces/${selectedPiece.type}_${selectedPiece.color}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                setPixels(data.pixels);
+                alert(t('loaded'));
+            } else {
+                const errorData = await response.json();
+                alert(`${t('errorLoading')}: ${errorData.error}`);
+            }
+        } catch (error) {
+            console.error('Error loading piece:', error);
+            alert(t('errorLoading'));
+        }
+    };
     const handleExport = () => {
         const dataStr = JSON.stringify(pixels);
         const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);

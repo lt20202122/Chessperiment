@@ -18,7 +18,7 @@ export default function EditorLayout({ children, sidebar }: EditorLayoutProps) {
 
             {/* Main Canvas Area - Infinite feel */}
             <div className="flex-1 overflow-auto relative flex flex-col z-10">
-                <div className="flex-1 p-12 min-w-fit min-h-fit flex items-center justify-center">
+                <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-12 min-w-fit min-h-fit flex items-center justify-center">
                     {children}
                 </div>
             </div>

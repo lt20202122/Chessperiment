@@ -1,63 +1,97 @@
-// // app/announcements/[id]/page.tsx
-// import { getAnnouncementById } from "@/components/announcemnt"
+
+import { useTranslations } from 'next-intl';
+import announcements from '../../../../announcements'; // Adjust path as necessary
+import Image from 'next/image';
+import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { generateHreflangs } from '@/lib/hreflang';
 
-const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.de');
+type Props = {
+    params: { id: string; locale: string };
+};
 
-// export async function generateMetadata({ params }: { params: any }) {
-//     const announcement = await getAnnouncementById(params.id);
-//      const canonicalUrl = `https://chesspie.de/announcements/${params.id}`;
-//     return {
-//         title: announcement.title,
-//         description: announcement.summary || announcement.content.slice(0, 160),
-//         openGraph: {
-//             title: announcement.title,
-//             description: announcement.summary || announcement.content.slice(0, 160),
-//             url: `https://chesspie.de/announcements/${announcement.id}`,
-//             siteName: 'ChessPie',
-//             images: [announcement.image || '/og-announcement-default.png'],
-//             type: 'article',
-//         },
-//         twitter: {
-//             card: 'summary_large_image',
-//             title: announcement.title,
-//             description: announcement.summary || announcement.content.slice(0, 160),
-//             images: [announcement.image || '/og-announcement-default.png'],
-//         },
-//         alternates: { canonical: canonicalUrl },
-//         languages: hreflangs.reduce((acc, tag) => {
-//      acc[tag.hrefLang] = tag.href;
-//      return acc;
-//    }, {} as Record<string, string>),
-//     };
-// }
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { id, locale } = params;
+    const announcement = announcements.find((a) => a.id === id);
 
-function jsonLd_forAnnouncement(a: any) {
-    // a: { id, slug, title, summary, content, imageUrl, datePublished, dateModified, authorName }
+    if (!announcement) {
+        return {};
+    }
+
+    const title = announcement.title[locale as keyof typeof announcement.title];
+    const description = announcement.shortDescription[locale as keyof typeof announcement.shortDescription];
+    const imageUrl = `https://chesspie.de${announcement.image}`; // Assuming base URL
+
+    const hreflangs = generateHreflangs(`/announcements/${id}`, ['de', 'en'], locale, 'https://chesspie.de');
+
     return {
-        "@context": "https://schema.org",
-        "@type": "NewsArticle",
-        "headline": a.title,
-        "description": a.summary || a.content?.slice(0, 160),
-        "image": a.imageUrl || "https://chesspie.de/static/og-announcement-default.png",
-        "datePublished": a.datePublished,
-        "dateModified": a.dateModified || a.datePublished,
-        "author": { "@type": "Person", "name": a.authorName || "ChessPie Team" },
-        "publisher": {
-            "@type": "Organization",
-            "name": "ChessPie",
-            "logo": { "@type": "ImageObject", "url": "https://chesspie.de/static/logo.svg" }
+        title: `ChessPie – ${title}`,
+        description: description,
+        alternates: {
+            canonical: `https://chesspie.de/announcements/${id}`,
+            languages: hreflangs.reduce((acc, tag) => {
+                acc[tag.hrefLang] = tag.href;
+                return acc;
+            }, {} as Record<string, string>),
         },
-        "mainEntityOfPage": `https://chesspie.de/announcements/${a.id}`
+        openGraph: {
+            title: `ChessPie – ${title}`,
+            description: description,
+            url: `https://chesspie.de/announcements/${id}`,
+            images: [
+                {
+                    url: imageUrl,
+                    width: 1200,
+                    height: 630,
+                    alt: title,
+                },
+            ],
+            type: "article",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: `ChessPie – ${title}`,
+            description: description,
+            images: [imageUrl],
+        },
     };
 }
 
 
-export default function AnnouncementPage() {
-    return <>
-        <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd_forAnnouncement).replace(/</g, '\\u003c') }}
-        />
-    </>
+export default function AnnouncementPage({ params: { id, locale } }: Props) {
+    const t = useTranslations('Announcements');
+    const announcement = announcements.find((a) => a.id === id);
+
+    if (!announcement) {
+        notFound();
+    }
+
+    return (
+        <div className="container mx-auto p-4 md:p-8 max-w-3xl">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                <div className="relative w-full h-64 md:h-96">
+                    <Image
+                        src={announcement.image}
+                        alt={announcement.title[locale as keyof typeof announcement.title]}
+                        fill
+                        className="object-cover"
+                        priority
+                    />
+                </div>
+                <div className="p-6">
+                    <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                        {announcement.title[locale as keyof typeof announcement.title]}
+                    </h1>
+                    <div className="flex justify-between items-center text-sm text-gray-500 mb-6">
+                        <span>{t('by')} {announcement.author}</span>
+                        <span>{announcement.date}</span>
+                    </div>
+                    <div
+                        className="prose dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ __html: announcement.content[locale as keyof typeof announcement.content] }}
+                    />
+                </div>
+            </div>
+        </div>
+    );
 }

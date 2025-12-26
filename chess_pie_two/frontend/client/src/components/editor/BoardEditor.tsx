@@ -68,18 +68,25 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
     useEffect(() => {
         const updateSize = () => {
             if (typeof window === 'undefined') return;
-            const isDesktop = window.innerWidth >= 1024;
-            if (isDesktop) {
-                setSquareSize(70);
-            } else {
-                setSquareSize(40);
-            }
+            
+            const container = document.querySelector('.flex-1.p-4.sm\\:p-6.md\\:p-8.lg\\:p-12');
+            if (!container) return;
+            
+            const availableWidth = container.clientWidth;
+            const availableHeight = container.clientHeight;
+            
+            const widthBasedSize = Math.floor(availableWidth / (cols + 2));
+            const heightBasedSize = Math.floor(availableHeight / (rows + 2));
+            
+            const newSize = Math.max(20, Math.min(widthBasedSize, heightBasedSize, 70));
+
+            setSquareSize(newSize);
         };
 
         updateSize();
         window.addEventListener('resize', updateSize);
         return () => window.removeEventListener('resize', updateSize);
-    }, []);
+    }, [rows, cols]);
 
     const SQUARE_SIZE = squareSize;
 
@@ -220,7 +227,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
                                     key={key}
                                     style={{ width: SQUARE_SIZE, height: SQUARE_SIZE }}
                                     className={`
-                    relative flex items-center justify-center transition-all duration-200 group
+                    relative flex items-center justify-center group
                     ${isActive
                                             ? (isBlackSquare ? 'bg-[#779954]' : 'bg-[#e9edcc]')
                                             : 'bg-gray-300/10 border border-gray-400/20 border-dashed hover:border-accent hover:bg-accent/10 cursor-pointer'}
@@ -239,6 +246,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
                                                 height={SQUARE_SIZE * getPieceScale(piece.type)}
                                                 unoptimized
                                                 className="drop-shadow-lg transform transition-transform group-hover:scale-105"
+                                                priority
                                             />
                                         </div>
                                     )}
@@ -261,11 +269,12 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
                                         <div className="opacity-0 group-hover:opacity-60 transition-opacity pointer-events-none">
                                             <Image
                                                 src={getPieceImage(boardStyle, selectedPiece.color, selectedPiece.type)}
-                                                alt="preview"
+                                                alt={`${selectedPiece.color} ${selectedPiece.type} preview`}
                                                 width={SQUARE_SIZE * getPieceScale(selectedPiece.type)}
                                                 height={SQUARE_SIZE * getPieceScale(selectedPiece.type)}
                                                 unoptimized
                                                 className="bg-transparent"
+                                                priority
                                             />
                                         </div>
                                     )}
@@ -277,20 +286,20 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
 
                 {/* --- Resize Handles --- */}
                 <div
-                    className="absolute top-0 -right-8 w-8 h-full cursor-e-resize flex items-center justify-center group z-50"
+                    className="absolute top-0 -right-10 w-10 h-full cursor-e-resize flex items-center justify-center group z-50"
                     onMouseDown={(e) => handleMouseDown('cols', e)}
                 >
-                    <div className="w-6 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 group-hover:text-blue-500 group-hover:scale-110 transition-all">
-                        <GripVertical size={16} />
+                    <div className="w-8 h-16 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 group-hover:text-blue-500 group-hover:scale-110 transition-all">
+                        <GripVertical size={20} />
                     </div>
                 </div>
 
                 <div
-                    className="absolute -bottom-8 left-0 w-full h-8 cursor-s-resize flex items-center justify-center group z-50"
+                    className="absolute -bottom-10 left-0 w-full h-10 cursor-s-resize flex items-center justify-center group z-50"
                     onMouseDown={(e) => handleMouseDown('rows', e)}
                 >
-                    <div className="h-6 w-12 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 group-hover:text-blue-500 group-hover:scale-110 transition-all">
-                        <GripHorizontal size={16} />
+                    <div className="h-8 w-16 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 group-hover:text-blue-500 group-hover:scale-110 transition-all">
+                        <GripHorizontal size={20} />
                     </div>
                 </div>
             </div>

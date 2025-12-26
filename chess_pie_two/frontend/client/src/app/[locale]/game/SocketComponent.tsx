@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { io, Socket } from "socket.io-client";
+import { Share2 } from 'lucide-react';
 import { v4 as uuidv4 } from "uuid";
 import { useSession } from "next-auth/react";
 
@@ -40,8 +41,22 @@ export default function SocketComponent({
   const [playerCount, setPlayerCount] = useState(0);
   const [gameResult, setGameResult] = useState<string | null>(null);
   const [drawOfferedByOpponent, setDrawOfferedByOpponent] = useState(false);
+  const [lastMessageTime, setLastMessageTime] = useState(0);
+  const [showEloSelection, setShowEloSelection] = useState(false);
+  const [selectedElo, setSelectedElo] = useState(1300); // Default Elo
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
+
+  const offensiveWords = ["fuck", "shit", "bitch", "asshole", "faggot", " retarded", "cunt", "damn"];
+
+  const filterMessage = (message: string) => {
+    let filteredMessage = message;
+    offensiveWords.forEach(word => {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        filteredMessage = filteredMessage.replace(regex, '***');
+    });
+    return filteredMessage;
+  };
 
   // Bei Component Mount:
   useEffect(() => {
@@ -79,8 +94,8 @@ export default function SocketComponent({
   }, [messageHistory]);
 
   // ---- Funktionen ----
-  const createRoom = () => {
-    socket.emit("create_room");
+  const createRoom = (color: "white" | "black" | "random") => {
+    socket.emit("create_room", { color });
     setStatus(t('creatingRoom'));
   };
 
@@ -92,6 +107,11 @@ export default function SocketComponent({
     console.log("JOIN ROOM FUNCTION CALLED:", roomId);
     setStatus(t('joiningRoom'));
     socket.emit("join_room", { roomId: roomId.trim().toUpperCase() });
+  };
+
+  const handleQuickSearch = () => {
+    socket.emit("quick_search");
+    setStatus(t('searchingForGame'));
   };
 
   const resign = () => {
@@ -114,6 +134,40 @@ export default function SocketComponent({
   const acceptDraw = () => {
     if (currentRoom && gameStatus === "playing") {
       socket.emit("accept_draw");
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: t('shareGameTitle'),
+          url: `${window.location.origin}/game?room=${currentRoom}`,
+        });
+        console.log('Game shared successfully');
+      } catch (error) {
+        console.error('Error sharing game:', error);
+      }
+    } else {
+      // Fallback for browsers that do not support the Web Share API
+      // Copy to clipboard
+      const shareLink = `${window.location.origin}/game?room=${currentRoom}`;
+      navigator.clipboard.writeText(shareLink);
+      alert(t('shareLinkCopied'));
+    }
+  };
+
+  const sendMessage = () => {
+    const now = Date.now();
+    if (now - lastMessageTime < 2000) {
+        setStatus("You are sending messages too fast.");
+        return;
+    }
+
+    if (msg.trim() && currentRoom) {
+      socket.emit("chat_message", { message: filterMessage(msg) });
+      setMsg("");
+      setLastMessageTime(now);
     }
   };
 
@@ -210,8 +264,16 @@ export default function SocketComponent({
       }
     });
 
+    socket.on("chat_message", (data: any) => {
+        setMessageHistory((prev) => [...prev, filterMessage(data.message)]);
+    });
+
     socket.on("error", (data: any) => {
       setStatus(`${t('error')}${data.message}`);
+    });
+
+    socket.on("quick_search_started", () => {
+        setStatus(t('searchingForGame'));
     });
 
     socket.on("illegal_move", (data: any) => {
@@ -241,6 +303,8 @@ export default function SocketComponent({
       socket.off("error");
       socket.off("illegal_move");
       socket.off("draw_offered");
+      socket.off("chat_message");
+      socket.off("quick_search_started");
     };
   }, [currentRoom, myColor, onPlayerJoined, setGameStatus]);
 
@@ -308,10 +372,22 @@ export default function SocketComponent({
       {!currentRoom && (
         <div className="space-y-2">
           <button
-            onClick={createRoom}
+            onClick={() => createRoom("random")}
             className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 font-semibold"
           >
-            {t('createRoom')}
+            {t('playAsRandom')}
+          </button>
+          <button
+            onClick={() => createRoom("white")}
+            className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 font-semibold"
+          >
+            {t('playAsWhite')}
+          </button>
+          <button
+            onClick={() => createRoom("black")}
+            className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 font-semibold"
+          >
+            {t('playAsBlack')}
           </button>
 
           <div className="space-y-1">
@@ -328,6 +404,55 @@ export default function SocketComponent({
             >
               {t('joinRoom')}
             </button>
+            <button
+              onClick={handleQuickSearch}
+              className="w-full bg-purple-500 text-white p-2 rounded hover:bg-purple-600 font-semibold"
+            >
+              {t('quickSearch')}
+            </button>
+            <button
+              onClick={() => setShowEloSelection(true)}
+              className="w-full bg-gray-500 text-white p-2 rounded hover:bg-gray-600 font-semibold"
+            >
+              {t('playAgainstComputer')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Elo Selection Dialog */}
+      {showEloSelection && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
+            <h3 className="text-xl font-bold mb-4 text-gray-800">{t('selectElo')}</h3>
+            <input
+              type="range"
+              min="400"
+              max="2800"
+              step="100"
+              value={selectedElo}
+              onChange={(e) => setSelectedElo(Number(e.target.value))}
+              className="w-full accent-green-500"
+            />
+            <p className="text-gray-800 text-lg mt-2 mb-4">Elo: {selectedElo}</p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  socket.emit("play_against_computer", { elo: selectedElo });
+                  setStatus(t('startingComputerGame'));
+                  setShowEloSelection(false);
+                }}
+                className="bg-green-500 text-white p-2 rounded hover:bg-green-600 font-semibold"
+              >
+                {t('start')}
+              </button>
+              <button
+                onClick={() => setShowEloSelection(false)}
+                className="bg-red-500 text-white p-2 rounded hover:bg-red-600 font-semibold"
+              >
+                {t('cancel')}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -365,6 +490,12 @@ export default function SocketComponent({
             >
               🏳️ {t('resign')}
             </button>
+            <button
+              onClick={handleShare}
+              className="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600 font-semibold text-sm"
+            >
+              <Share2 size={16} className="inline-block mr-1" /> {t('share')}
+            </button>
           </div>
         </div>
       )}
@@ -374,6 +505,31 @@ export default function SocketComponent({
           {gameInfo}
         </div>
       )}
+
+        <div className="border-t pt-2">
+            <h3 className="font-semibold text-sm mb-2">{t('chat')}</h3>
+            <div className="h-32 overflow-y-auto bg-white p-2 rounded-md mb-2">
+                {messageHistory.map((message, i) => (
+                    <div key={i} className="text-sm">{message}</div>
+                ))}
+                <div ref={chatEndRef} />
+            </div>
+            <div className="flex gap-2">
+                <input
+                    value={msg}
+                    onChange={(e) => setMsg(e.target.value)}
+                    placeholder={t('sendMessage')}
+                    className="flex-1 p-2 rounded border"
+                    onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                />
+                <button
+                    onClick={sendMessage}
+                    className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 font-semibold"
+                >
+                    {t('send')}
+                </button>
+            </div>
+        </div>
     </div>
   );
 }

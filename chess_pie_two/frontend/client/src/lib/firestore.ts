@@ -4,13 +4,17 @@ import { initializeApp, getApps, cert as adminCert } from "firebase-admin/app"
 
 // Initialize Firebase Admin if not already initialized
 if (!getApps().length && process.env.FIREBASE_PROJECT_ID) {
-    initializeApp({
-        credential: cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-        }),
-    })
+    try {
+        initializeApp({
+            credential: cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+            }),
+        })
+    } catch (error) {
+        console.error("Error initializing Firebase Admin:", error);
+    }
 }
 
 const db = process.env.FIREBASE_PROJECT_ID ? getFirestore() : null

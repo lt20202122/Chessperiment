@@ -58,7 +58,7 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                     </h3>
 
                     {/* All Pieces Grid - No Toggle! */}
-                    <div className="grid grid-cols-6 lg:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
                         {/* White Pieces */}
                         {pieceTypes.map(type => (
                             <button

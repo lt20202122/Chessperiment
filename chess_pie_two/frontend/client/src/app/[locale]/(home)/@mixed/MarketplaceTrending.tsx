@@ -33,7 +33,7 @@ export default function MarketplaceTrending() {
                     >
                         <div className="flex gap-3 items-center">
                             {/* Preview Image */}
-                            <div className="w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-50 dark:from-stone-800 dark:to-stone-900 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                            <div className="w-12 h-12 bg-linear-to-br from-gray-100 to-gray-50 dark:from-stone-800 dark:to-stone-900 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
                                 <Image
                                     src={item.image}
                                     alt={item.name}
@@ -41,6 +41,7 @@ export default function MarketplaceTrending() {
                                     height={36}
                                     unoptimized
                                     className="opacity-70 group-hover:opacity-100 transition-opacity"
+                                    priority
                                 />
                             </div>
 

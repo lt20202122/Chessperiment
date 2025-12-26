@@ -6,6 +6,7 @@ import { Bungee } from "next/font/google";
 import { Menu, X } from 'lucide-react';
 
 const bungee = Bungee({
+    display: "swap",
     subsets: ["latin"],
     weight: ["400"],
 });

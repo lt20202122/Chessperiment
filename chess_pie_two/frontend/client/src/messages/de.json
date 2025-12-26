@@ -36,6 +36,9 @@
         "ended": "Spiel beendet",
         "resetBoard": "Brett zurücksetzen",
         "colorLabel": "Deine Farbe: ",
+        "playAsWhite": "Als Weiß spielen",
+        "playAsBlack": "Als Schwarz spielen",
+        "playAsRandom": "Zufällige Farbe",
         "playersLabel": "Spieler: ",
         "enterCode": "Raumcode eingeben",
         "youPlay": "Du spielst ",
@@ -59,6 +62,16 @@
         "drawOffered": "Remis angeboten",
         "chat": "Chat",
         "sendMessage": "Nachricht senden",
+        "send": "Senden",
+        "shareGameTitle": "Tritt meinem ChessPie-Spiel bei!",
+        "shareLinkCopied": "Spiellink in die Zwischenablage kopiert!",
+        "share": "Teilen",
+        "quickSearch": "Schnellsuche",
+        "searchingForGame": "Suche nach Spiel...",
+        "playAgainstComputer": "Gegen Computer spielen",
+        "selectElo": "Elo auswählen",
+        "start": "Starten",
+        "startingComputerGame": "Computerspiel startet...",
         "gameOver": "Spiel beendet",
         "youWon": "Du hast gewonnen!",
         "youLost": "Du hast verloren!",
@@ -161,5 +174,17 @@
         "selectPiece": "Figur auswählen",
         "editing": "Bearbeite",
         "saved": "Figur erfolgreich gespeichert!"
+    },
+    "GameEnd": {
+        "win": "Du hast gewonnen!",
+        "loss": "Du hast verloren!",
+        "draw": "Unentschieden!"
+    },
+    "Announcements": {
+        "title": "Neues & Updates",
+        "by": "Von"
+    },
+    "FAQ": {
+        "title": "Brett-Editor FAQ – Alle Antworten"
     }
 }

@@ -1,13 +1,14 @@
 "use client";
 import Image from "next/image";
 import { pieces, pieceImagesv2, pieceImagesv3, getPieceImage, PieceType } from "./Data";
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment, memo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import Loading from "@/app/loading";
 import Back from "./Back";
 import { Chess, type Square } from "chess.js";
 import SocketComponent, { socket } from "./SocketComponent"; // ← HIER: socket importieren!
 import BoardStyle from "./BoardStyle";
+import GameEndEffect from "./GameEndEffect";
 import {
   DndContext,
   DragEndEvent,
@@ -19,6 +20,7 @@ import {
   useSensors,
   PointerSensor,
 } from "@dnd-kit/core";
+import Toast from "./Toast";
 import { ArrowLeft, ArrowRight, RotateCcw, Layers, History } from "lucide-react";
 import "./Board.css";
 
@@ -75,6 +77,13 @@ export default function Board() {
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [isViewingHistory, setIsViewingHistory] = useState(false);
   const [simulationPieces, setSimulationPieces] = useState<PieceType[]>([]);
+  const [gameResult, setGameResult] = useState<'win' | 'loss' | 'draw' | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const isViewingHistoryRef = useRef(isViewingHistory);
+  useEffect(() => {
+    isViewingHistoryRef.current = isViewingHistory;
+  }, [isViewingHistory]);
 
   useEffect(() => {
     const savedStyle = localStorage.getItem("boardStyle");
@@ -130,6 +139,13 @@ export default function Board() {
       setGameStatus("ended");
       if (data?.status) {
         setGameStatus(data.status);
+        if (data.status === "checkmate") {
+            const turn = chessRef.current.turn();
+            const iWon = (turn === "b" && myColor === "white") || (turn === "w" && myColor === "black");
+            setGameResult(iWon ? "win" : "loss");
+        } else if (data.status === "draw" || data.status === "stalemate" || data.status === "threefold_repetition" || data.status === "insufficient_material") {
+            setGameResult("draw");
+        }
       }
     };
 
@@ -144,6 +160,7 @@ export default function Board() {
     };
 
     const handleMove = (data: any) => {
+      if (isViewingHistoryRef.current) return;
       try {
         const result = chessRef.current.move({
           from: data.from,
@@ -190,6 +207,11 @@ export default function Board() {
       }
     };
 
+    const handleDrawOffered = () => {
+        setToastMessage(t('drawOffered'));
+        setShowToast(true);
+    };
+
     socket.on("move", handleMove);
     socket.on("room_created", handleRoomCreated);
     socket.on("joined_room", handleJoinedRoom);
@@ -200,6 +222,7 @@ export default function Board() {
     socket.on("promotion_needed", handlePromotionNeeded);
     socket.on("illegal_move", handleIllegalMove);
     socket.on("rejoin_game", handleRejoin);
+    socket.on("draw_offered", handleDrawOffered);
 
     return () => {
       socket.off("move", handleMove);
@@ -212,6 +235,7 @@ export default function Board() {
       socket.off("promotion_needed", handlePromotionNeeded);
       socket.off("illegal_move", handleIllegalMove);
       socket.off("rejoin_game", handleRejoin);
+      socket.off("draw_offered", handleDrawOffered);
     };
   }, []); // Keine Dependency auf socket nötig, da es konstant ist
 
@@ -249,7 +273,7 @@ export default function Board() {
       setScreenHeight(screenHeight);
     };
 
-    updateSize();
+    setTimeout(updateSize, 100);
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
   }, []);
@@ -304,7 +328,7 @@ export default function Board() {
     setActivePiece(null);
   };
 
-  const handleRightClick = (pos: string) => {
+  const handleRightClick = useCallback((pos: string) => {
     const newRedSquares = new Set(redMarkedSquares);
 
     if (newRedSquares.has(pos)) {
@@ -326,7 +350,7 @@ export default function Board() {
     }
 
     setRedMarkedSquares(newRedSquares);
-  };
+  }, [redMarkedSquares]);
 
   const syncBoardFromChess = () => {
     const fen = chessRef.current.fen();
@@ -398,6 +422,7 @@ export default function Board() {
     setHistoryIndex(-1);
     setIsViewingHistory(false);
     setSimulationPieces([]);
+    setGameResult(null);
 
     Object.values(squareRefs.current).forEach((el) => {
       if (el) {
@@ -431,7 +456,7 @@ export default function Board() {
     }
   }
 
-  function handlePieceSelect(pos: string) {
+  const handlePieceSelect = useCallback((pos: string) => {
     if (isViewingHistory) return;
 
     const amIAtTurn = isMyTurn();
@@ -480,7 +505,7 @@ export default function Board() {
       setSelectedPos(pos);
       setStartPos(pos);
     }
-  }
+  }, [isViewingHistory, isMyTurn, gameStatus, myColor, boardPieces, select, setSelectedPos, setSelect, setStartPos, socket]);
 
   const columns = ["a", "b", "c", "d", "e", "f", "g", "h"];
   if (!boardPieces || boardPieces.length === 0) return <Loading />;
@@ -505,6 +530,16 @@ export default function Board() {
       } catch (e) {
         console.error("Error replaying move:", e);
       }
+    }
+
+    const history = tempChess.history({ verbose: true });
+    const lastMove = history[history.length - 1];
+    if (lastMove) {
+      setLastMoveFrom(lastMove.from);
+      setLastMoveTo(lastMove.to);
+    } else {
+      setLastMoveFrom(null);
+      setLastMoveTo(null);
     }
 
     const board = tempChess.board();
@@ -543,9 +578,17 @@ export default function Board() {
     setHistoryIndex(moveHistory.length - 1);
     setIsViewingHistory(false);
     setSimulationPieces([]);
+    const lastMove = chessRef.current.history({ verbose: true }).pop();
+    if(lastMove){
+        setLastMoveFrom(lastMove.from);
+        setLastMoveTo(lastMove.to);
+    } else {
+        setLastMoveFrom(null);
+        setLastMoveTo(null);
+    }
   };
 
-  function DraggablePiece({
+  const DraggablePiece = memo(function DraggablePiece({
     piece,
     size,
     amIAtTurn,
@@ -594,20 +637,20 @@ export default function Board() {
           onClick();
         }}
       >
-        <Image
-          src={getPieceImage(boardStyle, piece.color, piece.type)}
-          alt={`${piece.color} ${piece.type}`}
-          height={piece.size}
-          width={piece.size}
-          unoptimized
-          className="bg-transparent"
-          style={{ height: size, width: "auto", pointerEvents: "none" }}
-        />
-      </div>
+                                        <Image
+                                            src={getPieceImage(boardStyle, piece.color, piece.type)}
+                                            alt={`${piece.color} ${piece.type}`}
+                                            height={piece.size}
+                                            width={piece.size}
+                                            unoptimized
+                                            className="bg-transparent"
+                                            style={{ height: size, width: "auto", pointerEvents: "none" }}
+                                            priority
+                                        />      </div>
     );
   }
 
-  function SquareTile({
+  const SquareTile = memo(function SquareTile({
     pos,
     isWhite,
     eckenKlasse,
@@ -737,7 +780,9 @@ export default function Board() {
   const currentTurn = chessRef.current.turn() === "w" ? t('white') : t('black');
 
   return (
-    <div className="flex flex-col lg:flex-row justify-center items-center lg:items-start min-h-screen pb-10">
+    <div className="flex flex-col lg:flex-row justify-center items-center lg:items-start min-h-screen pb-10 px-4 mx-auto">
+      <Toast message={toastMessage} show={showToast} onClose={() => setShowToast(false)} />
+      {gameResult && <GameEndEffect result={gameResult} />}
       {showPromotionDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-xl">
@@ -759,6 +804,7 @@ export default function Board() {
                   height={60}
                   unoptimized
                   className="bg-transparent"
+                  priority
                 />
                 <p className="text-xs text-center mt-2">{t('queen')}</p>
               </button>
@@ -773,6 +819,7 @@ export default function Board() {
                   height={60}
                   unoptimized
                   className="bg-transparent"
+                  priority
                 />
                 <p className="text-xs text-center mt-2">{t('rook')}</p>
               </button>
@@ -787,6 +834,7 @@ export default function Board() {
                   height={60}
                   unoptimized
                   className="bg-transparent"
+                  priority
                 />
                 <p className="text-xs text-center mt-2">{t('bishop')}</p>
               </button>
@@ -801,6 +849,7 @@ export default function Board() {
                   height={60}
                   unoptimized
                   className="bg-transparent"
+                  priority
                 />
                 <p className="text-xs text-center mt-2">{t('knight')}</p>
               </button>
@@ -845,12 +894,13 @@ export default function Board() {
                         boardPieces.find((p) => p.position === activePiece)?.color || "white",
                         boardPieces.find((p) => p.position === activePiece)?.type || "Pawn"
                       )}
-                      alt="" //TODO
+                      alt={`${boardPieces.find((p) => p.position === activePiece)?.color || "white"} ${boardPieces.find((p) => p.position === activePiece)?.type || "Pawn"}`}
                       height={blockSize * getGamePieceScale(boardPieces.find((p) => p.position === activePiece)?.type || "Pawn")}
                       width={blockSize * getGamePieceScale(boardPieces.find((p) => p.position === activePiece)?.type || "Pawn")}
                       unoptimized
                       className="bg-transparent"
                       style={{ pointerEvents: "none" }}
+                      priority
                     />
                   </div>
                 ) : null}

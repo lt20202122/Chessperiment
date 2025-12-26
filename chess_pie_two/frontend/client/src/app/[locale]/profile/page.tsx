@@ -7,11 +7,13 @@ import { Bungee } from "next/font/google"
 import { Trophy, Target, TrendingUp, Calendar } from "lucide-react"
 import type { Metadata } from "next"
 import { generateHreflangs } from '@/lib/hreflang';
+import Image from "next/image";
 
 const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.de');
 
 const bungee = Bungee({
     subsets: ["latin"],
+    display: "swap",
     weight: ["400"],
 })
 
@@ -144,10 +146,12 @@ export default function ProfilePage() {
                 <div className="bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-3xl p-8 mb-8">
                     <div className="flex items-center gap-6">
                         {session?.user?.image ? (
-                            <img
+                            <Image
                                 src={session.user.image}
                                 alt={session.user.name || "User"}
                                 className="w-24 h-24 rounded-full border-4 border-amber-400/30"
+                                width={96}
+                                height={96}
                             />
                         ) : (
                             <div className="w-24 h-24 rounded-full bg-amber-400/10 border-4 border-amber-400/30 flex items-center justify-center">
