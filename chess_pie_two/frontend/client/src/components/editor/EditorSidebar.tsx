@@ -1,6 +1,6 @@
 import React from 'react';
 import { Globe, Download, Share2, MousePointer, Move, LayoutGrid, UserCircle2 } from 'lucide-react';
-import { EditMode } from '@/app/[locale]/editor/board/page';
+import { EditMode } from '@/app/[locale]/editor/board/PageClient';
 import Image from 'next/image';
 import { getPieceImage } from '@/app/[locale]/game/Data';
 import BoardStyle from '@/app/[locale]/game/BoardStyle';

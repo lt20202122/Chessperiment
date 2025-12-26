@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { GripVertical, GripHorizontal, Plus, X } from 'lucide-react';
 import Image from 'next/image';
 import { getPieceImage } from '@/app/[locale]/game/Data';
-import { EditMode } from '@/app/[locale]/editor/board/page';
+import { EditMode } from '@/app/[locale]/editor/board/PageClient';
 
 // Utils to convert x,y to string key
 const toKey = (x: number, y: number) => `${x},${y}`;
@@ -68,16 +68,16 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
     useEffect(() => {
         const updateSize = () => {
             if (typeof window === 'undefined') return;
-            
+
             const container = document.querySelector('.flex-1.p-4.sm\\:p-6.md\\:p-8.lg\\:p-12');
             if (!container) return;
-            
+
             const availableWidth = container.clientWidth;
             const availableHeight = container.clientHeight;
-            
+
             const widthBasedSize = Math.floor(availableWidth / (cols + 2));
             const heightBasedSize = Math.floor(availableHeight / (rows + 2));
-            
+
             const newSize = Math.max(20, Math.min(widthBasedSize, heightBasedSize, 70));
 
             setSquareSize(newSize);
