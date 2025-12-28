@@ -9,7 +9,7 @@ import type { Metadata } from "next"
 import { generateHreflangs } from '@/lib/hreflang';
 import Image from "next/image";
 
-const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.de');
+const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.org');
 
 const bungee = Bungee({
     subsets: ["latin"],
@@ -37,16 +37,16 @@ interface GameHistoryItem {
 const jsonLdProfilePage = {
     "@context": "https://schema.org",
     "@type": "AboutPage", // alternativ WebPage
-    "url": "https://chesspie.de/profile",
+    "url": "https://chesspie.org/profile",
     "name": "Profile – ChessPie",
     "description": "Erfahre mehr über die Profile und Features auf ChessPie, inklusive Benutzerstatistiken, Achievements und personalisierten Einstellungen.",
     "publisher": {
         "@type": "Organization",
         "name": "ChessPie",
-        "url": "https://chesspie.de",
+        "url": "https://chesspie.org",
         "logo": {
             "@type": "ImageObject",
-            "url": "https://chesspie.de/static/logo.svg"
+            "url": "https://chesspie.org/static/logo.svg"
         }
     }
 };

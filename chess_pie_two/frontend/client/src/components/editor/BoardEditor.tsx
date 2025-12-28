@@ -34,6 +34,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
     const [placedPieces, setPlacedPieces] =
         useState<Record<string, { type: string; color: string }>>({});
     const [activeSquares, setActiveSquares] = useState<Set<string>>(new Set());
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const savedRows = Number(localStorage.getItem('boardEditorRows') || 8);
@@ -69,21 +70,24 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
         const updateSize = () => {
             if (typeof window === 'undefined') return;
 
-            const container = document.querySelector('.flex-1.p-4.sm\\:p-6.md\\:p-8.lg\\:p-12');
-            if (!container) return;
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const isLarge = w >= 1024;
 
-            const availableWidth = container.clientWidth;
-            const availableHeight = container.clientHeight;
+            // Robust calculation based on window or container if available
+            const availableWidth = isLarge ? w - 420 : w - 48;
+            const availableHeight = isLarge ? h - 180 : h * 0.45;
 
-            const widthBasedSize = Math.floor(availableWidth / (cols + 2));
-            const heightBasedSize = Math.floor(availableHeight / (rows + 2));
+            const widthBasedSize = Math.floor(availableWidth / (cols + 1));
+            const heightBasedSize = Math.floor(availableHeight / (rows + 1));
 
-            const newSize = Math.max(20, Math.min(widthBasedSize, heightBasedSize, 70));
+            const newSize = Math.max(28, Math.min(widthBasedSize, heightBasedSize, 70));
 
             setSquareSize(newSize);
         };
 
         updateSize();
+        const timeout = setTimeout(updateSize, 100); // Small delay for layout stabilization
         window.addEventListener('resize', updateSize);
         return () => window.removeEventListener('resize', updateSize);
     }, [rows, cols]);
@@ -95,21 +99,33 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
     const startPosRef = useRef<{ x: number, y: number } | null>(null);
     const startDimRef = useRef<{ rows: number, cols: number } | null>(null);
 
-    const handleMouseDown = (type: 'cols' | 'rows', e: React.MouseEvent) => {
-        e.preventDefault();
-        resizingRef.current = type;
-        startPosRef.current = { x: e.clientX, y: e.clientY };
-        startDimRef.current = { rows, cols };
-
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
+    // Unified pointer handling for both mouse and touch
+    const getPointerPosition = (e: MouseEvent | TouchEvent) => {
+        if ('touches' in e && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY };
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerDown = (type: 'cols' | 'rows', e: React.MouseEvent | React.TouchEvent) => {
+        e.preventDefault();
+        resizingRef.current = type;
+        const pos = getPointerPosition(e.nativeEvent as any);
+        startPosRef.current = pos;
+        startDimRef.current = { rows, cols };
+
+        document.addEventListener('mousemove', handlePointerMove);
+        document.addEventListener('mouseup', handlePointerUp);
+        document.addEventListener('touchmove', handlePointerMove);
+        document.addEventListener('touchend', handlePointerUp);
+    };
+
+    const handlePointerMove = (e: MouseEvent | TouchEvent) => {
         if (!resizingRef.current || !startPosRef.current || !startDimRef.current) return;
 
-        const dx = e.clientX - startPosRef.current.x;
-        const dy = e.clientY - startPosRef.current.y;
+        const pos = getPointerPosition(e);
+        const dx = pos.x - startPosRef.current.x;
+        const dy = pos.y - startPosRef.current.y;
 
         if (resizingRef.current === 'cols') {
             const addedCols = Math.floor(dx / SQUARE_SIZE);
@@ -146,12 +162,14 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
         }
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
         resizingRef.current = null;
         startPosRef.current = null;
         startDimRef.current = null;
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('mousemove', handlePointerMove);
+        document.removeEventListener('mouseup', handlePointerUp);
+        document.removeEventListener('touchmove', handlePointerMove);
+        document.removeEventListener('touchend', handlePointerUp);
     };
 
     const handleSquareClick = (x: number, y: number, e: React.MouseEvent) => {
@@ -203,7 +221,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
     };
 
     return (
-        <div className="flex flex-col items-center animate-in fade-in zoom-in duration-500">
+        <div ref={containerRef} className="flex flex-col items-center animate-in fade-in zoom-in duration-500 w-full overflow-hidden">
             {/* Canvas Wrapper */}
             <div
                 className="relative bg-transparent shadow-2xl rounded-sm transition-all duration-200 ease-out select-none"
@@ -287,7 +305,9 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
                 {/* --- Resize Handles --- */}
                 <div
                     className="absolute top-0 -right-10 w-10 h-full cursor-e-resize flex items-center justify-center group z-50"
-                    onMouseDown={(e) => handleMouseDown('cols', e)}
+                    onMouseDown={(e) => handlePointerDown('cols', e)}
+                    onTouchStart={(e) => handlePointerDown('cols', e)}
+                    style={{ touchAction: 'none' }}
                 >
                     <div className="w-8 h-16 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 group-hover:text-blue-500 group-hover:scale-110 transition-all">
                         <GripVertical size={20} />
@@ -296,7 +316,9 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
 
                 <div
                     className="absolute -bottom-10 left-0 w-full h-10 cursor-s-resize flex items-center justify-center group z-50"
-                    onMouseDown={(e) => handleMouseDown('rows', e)}
+                    onMouseDown={(e) => handlePointerDown('rows', e)}
+                    onTouchStart={(e) => handlePointerDown('rows', e)}
+                    style={{ touchAction: 'none' }}
                 >
                     <div className="h-8 w-16 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 group-hover:text-blue-500 group-hover:scale-110 transition-all">
                         <GripHorizontal size={20} />

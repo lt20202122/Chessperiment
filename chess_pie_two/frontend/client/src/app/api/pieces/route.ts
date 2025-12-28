@@ -26,8 +26,19 @@ export async function POST(req: Request) {
 
     const { pieceType, color, pixels } = await req.json();
 
+    const validPieceTypes = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king'];
+    const validColors = ['white', 'black'];
+
     if (!pieceType || !color || !pixels) {
         return NextResponse.json({ error: "Missing data" }, { status: 400 });
+    }
+
+    if (!validPieceTypes.includes(pieceType)) {
+        return NextResponse.json({ error: "Invalid piece type" }, { status: 400 });
+    }
+
+    if (!validColors.includes(color)) {
+        return NextResponse.json({ error: "Invalid color" }, { status: 400 });
     }
 
     try {

@@ -1,29 +1,23 @@
 import Btn from "./Buttons"
 import type { Metadata } from "next";
-import { generateHreflangs } from '@/lib/hreflang';
-
-const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.de');
-
 export const metadata: Metadata = {
-  title: "ChessPie – Eigene Schachbretter und Figuren erstellen",
-  description: "ChessPie: Erstelle eigene Schachbretter, Figuren und Spiele. Spiele online mit Freunden oder teste neue Regeln.",
+  title: "ChessPie | Custom Chess Board & Piece Creator",
+  description: "Create your own chess world. Design pieces, boards and rules. Play unique chess variants online with friends on ChessPie.",
   alternates: {
-    canonical: "https://chesspie.de/",
-    languages: hreflangs.reduce((acc, tag) => {
-      acc[tag.hrefLang] = tag.href;
-      return acc;
-    }, {} as Record<string, string>),
+    canonical: "https://chesspie.org",
   },
   openGraph: {
-    title: "ChessPie – Eigene Schachbretter und Figuren erstellen",
-    description: "ChessPie: Erstelle eigene Schachbretter, Figuren und Spiele. Spiele online mit Freunden oder teste neue Regeln.",
-    url: "https://chesspie.de/",
+    title: "ChessPie | Custom Chess Board & Piece Creator",
+    description: "Create your own chess world. Design pieces, boards and rules. Play unique chess variants online.",
+    url: "https://chesspie.org",
     type: "website",
+    images: [{ url: "/images/seo/og-home.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ChessPie – Eigene Schachbretter und Figuren erstellen",
-    description: "ChessPie: Erstelle eigene Schachbretter, Figuren und Spiele. Spiele online mit Freunden oder teste neue Regeln.",
+    title: "ChessPie | Custom Chess Board & Piece Creator",
+    description: "Create your own chess world. Design pieces, boards and rules. Play unique chess variants online.",
+    images: ["/images/seo/twitter-image.png"],
   },
 };
 
@@ -32,25 +26,22 @@ const jsonLd_home = {
   "@graph": [
     {
       "@type": "WebSite",
-      "@id": "https://chesspie.de/#website",
-      "url": "https://chesspie.de/",
+      "@id": "https://chesspie.org/#website",
+      "url": "https://chesspie.org/",
       "name": "ChessPie",
-      "description": "Create custom chess boards, pieces and rules — play and share your creations.",
+      "description": "The ultimate platform for custom chess creation and play.",
       "inLanguage": "en"
     },
     {
       "@type": "Organization",
-      "@id": "https://chesspie.de/#organization",
+      "@id": "https://chesspie.org/#organization",
       "name": "ChessPie",
-      "url": "https://chesspie.de/",
+      "url": "https://chesspie.org/",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://chesspie.de/static/logo.svg"
+        "url": "https://chesspie.org/icon.png"
       },
-      "sameAs": [
-        "https://twitter.com/chesspie",
-        "https://instagram.com/chesspie"
-      ]
+      "sameAs": [] // Populate when social links exist
     }
   ]
 };

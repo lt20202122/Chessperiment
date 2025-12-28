@@ -1,4 +1,4 @@
-const baseUrl = "https://chesspie.de";
+const baseUrl = "https://chesspie.org";
 
 export function generateBreadcrumbs(pathname: string) {
     const segments = pathname.split("/").filter(Boolean); // ["editor", "board"]

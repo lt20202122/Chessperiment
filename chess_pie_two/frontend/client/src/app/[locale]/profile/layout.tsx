@@ -2,7 +2,7 @@
 import type { Metadata } from 'next';
 import { generateHreflangs } from '@/lib/hreflang';
 
-const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.de');
+const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.org');
 
 export const metadata: Metadata = {
     title: 'ChessPie User Profiles',
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     openGraph: {
         title: 'ChessPie User Profiles',
         description: 'View and manage ChessPie user profiles.',
-        url: 'https://chesspie.de/profile',
+        url: 'https://chesspie.org/profile',
         siteName: 'ChessPie',
         images: ['/og-profile.png'],
         type: 'website',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
         images: ['/og-profile.png'],
     },
     alternates: {
-        canonical: "https://chesspie.de/profile", // absolute URL
+        canonical: "https://chesspie.org/profile", // absolute URL
         languages: hreflangs.reduce((acc, tag) => {
             acc[tag.hrefLang] = tag.href;
             return acc;

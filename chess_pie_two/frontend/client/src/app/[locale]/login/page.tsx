@@ -3,7 +3,7 @@ import { Bungee } from "next/font/google"
 import type { Metadata } from "next";
 import { generateHreflangs } from '@/lib/hreflang';
 
-const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.de');
+const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.org');
 
 export const metadata: Metadata = {
     title: 'Login – ChessPie',
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     openGraph: {
         title: 'Login – ChessPie',
         description: 'Access your ChessPie account to manage games, boards, and marketplace items.',
-        url: 'https://chesspie.de/login',
+        url: 'https://chesspie.org/login',
         siteName: 'ChessPie',
         images: ['/og-login.png'],
         type: 'website',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
         images: ['/og-login.png'],
     },
     alternates: {
-        canonical: "https://chesspie.de/login", // absolute URL
+        canonical: "https://chesspie.org/login", // absolute URL
         languages: hreflangs.reduce((acc, tag) => {
             acc[tag.hrefLang] = tag.href;
             return acc;

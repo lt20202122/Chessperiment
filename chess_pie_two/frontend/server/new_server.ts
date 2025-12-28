@@ -122,9 +122,73 @@ class Game {
 const games = new Map<string, Game>();
 const playerToRoom = new Map<string, string>();
 const socketToPlayer = new Map<string, string>();
+const searchQueue: string[] = [];
 
 io.on("connection", (socket: Socket) => {
     console.log("connected:", socket.id);
+
+    socket.on("quick_search", () => {
+        console.log("Quick search requested");
+        const playerId = socketToPlayer.get(socket.id);
+        if (!playerId) return;
+
+        console.log("Player entered quick search:", playerId);
+
+        // Avoid duplicates in queue
+        if (searchQueue.includes(playerId)) return;
+
+        searchQueue.push(playerId);
+        socket.emit("quick_search_started");
+
+        if (searchQueue.length >= 2) {
+            const p1 = searchQueue.shift()!;
+            const p2 = searchQueue.shift()!;
+
+            console.log("Matching players:", p1, "and", p2);
+
+            const game = new Game(p1);
+            game.addPlayer(p2);
+            game.status = "playing";
+
+            games.set(game.roomId, game);
+            playerToRoom.set(p1, game.roomId);
+            playerToRoom.set(p2, game.roomId);
+
+            // Notify both players
+            const socketsP1 = Array.from(socketToPlayer.entries()).filter(([_, id]) => id === p1).map(([sid]) => sid);
+            const socketsP2 = Array.from(socketToPlayer.entries()).filter(([_, id]) => id === p2).map(([sid]) => sid);
+
+            // Randomize colors
+            const p1IsWhite = Math.random() > 0.5;
+            if (!p1IsWhite) {
+                // Swap roles in game object if needed, or just emit correctly
+                game.players.white = p2;
+                game.players.black = p1;
+            }
+
+            socketsP1.forEach(sid => {
+                const s = io.sockets.sockets.get(sid);
+                if (s) s.join(game.roomId);
+                io.to(sid).emit("start_game", { roomId: game.roomId, color: p1IsWhite ? "white" : "black", fen: game.board_fen });
+            });
+
+            socketsP2.forEach(sid => {
+                const s = io.sockets.sockets.get(sid);
+                if (s) s.join(game.roomId);
+                io.to(sid).emit("start_game", { roomId: game.roomId, color: p1IsWhite ? "black" : "white", fen: game.board_fen });
+            });
+        }
+    });
+
+    socket.on("cancel_search", () => {
+        const playerId = socketToPlayer.get(socket.id);
+        if (!playerId) return;
+        const index = searchQueue.indexOf(playerId);
+        if (index > -1) {
+            searchQueue.splice(index, 1);
+            socket.emit("search_cancelled");
+        }
+    });
 
     socket.on("register_player", (data: { playerId: string }) => {
         const playerId = data.playerId;
@@ -523,6 +587,22 @@ io.on("connection", (socket: Socket) => {
                 games.delete(roomId);
             }
         }
+    });
+
+    socket.on("chat_message", (data: { message: string }) => {
+        const playerId = socketToPlayer.get(socket.id);
+        if (!playerId) return;
+
+        const roomId = playerToRoom.get(playerId);
+        if (!roomId) return;
+
+        console.log("Chat Message in room", roomId, ":", data.message);
+        
+        // Broadcast to everyone in the room
+        io.to(roomId).emit("chat_message", {
+            message: data.message,
+            playerId: playerId
+        });
     });
 });
 

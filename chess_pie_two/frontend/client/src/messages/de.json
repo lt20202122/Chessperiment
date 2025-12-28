@@ -11,8 +11,15 @@
         "news": "Neuigkeiten",
         "menu": "Menü",
         "login": "Anmelden",
+        "english": "Englisch",
+        "german": "Deutsch",
         "boardEditor": "Board-Editor",
-        "pieceEditor": "Figuren-Editor"
+        "pieceEditor": "Figuren-Editor",
+        "marketplace": "Marktplatz"
+    },
+    "Marketplace": {
+        "inProduction": "In Produktion",
+        "marketplaceBetaMessage": "Unser Marktplatz wird zurzeit stark weiterentwickelt. Freu dich auf einzigartige Figuren-Designs und benutzerdefinierte Bretter!"
     },
     "Multiplayer": {
         "actions": "Spielaktionen",
@@ -23,7 +30,7 @@
         "room": "Raum",
         "roomLabel": "Aktueller Raum: ",
         "turnOf": "Gegner ist dran",
-        "joiningRoom": "Raum beitreten...",
+        "joining": "Raum beitreten...",
         "creatingRoom": "Raum erstellen...",
         "roomCreated": "Raum erstellt: ",
         "live": "Live",
@@ -93,7 +100,21 @@
         "leaveGame": "Spiel verlassen",
         "confirmLeave": "Möchtest du das Spiel wirklich verlassen?",
         "cancel": "Abbrechen",
-        "leave": "Verlassen"
+        "leave": "Verlassen",
+        "roomFull": "Raum ist bereits voll!",
+        "alreadyInRoom": "Du bist bereits in diesem Raum!"
+    },
+    "GameSidebar": {
+        "info": "Info",
+        "moves": "Züge",
+        "chat": "Chat",
+        "live": "LIVE",
+        "placeholder": "Schreib etwas...",
+        "gameStatus": "Spielstatus",
+        "roomCode": "Raumcode",
+        "players": "Spieler",
+        "youArePlaying": "Du spielst",
+        "yourSide": "Deine Seite"
     },
     "Editor": {
         "Board": {
@@ -120,8 +141,23 @@
             "clickToPlace": "Klicke auf ein Feld, um {piece} zu platzieren",
             "rightClickToRemove": "Rechtsklick, um Figuren zu entfernen"
         },
-        "piece": {
-            "loadFromDatabase": "Anfangen, wo Sie aufgehört haben"
+        "Piece": {
+            "loadFromDatabase": "Aus Datenbank laden",
+            "saved": "Figur erfolgreich gespeichert!",
+            "loaded": "Figur erfolgreich geladen!",
+            "errorSaving": "Fehler beim Speichern",
+            "errorLoading": "Fehler beim Laden",
+            "selectPiece": "Figur auswählen",
+            "description": "Erstelle pixelgenaue benutzerdefinierte Schachfiguren mit unserem intuitiven 2D-Editor",
+            "import": "Importieren",
+            "editing": "Bearbeite",
+            "export": "Exportieren",
+            "publish": "Veröffentlichen",
+            "badge": "Figuren-Editor",
+            "save": "Speichern",
+            "title": "Gestalte deine <accent>Schachfiguren</accent>",
+            "inProduction": "Creator Studio",
+            "pieceEditorBetaMessage": "Der Figuren-Editor befindet sich zurzeit in der Beta-Phase und ist nur für ausgewählte Ersteller verfügbar. Wir arbeiten hart daran, die pixelgenaue Anpassung für alle zugänglich zu machen!"
         }
     },
     "Game": {
@@ -163,18 +199,7 @@
         "design": "Design",
         "game": "Spiel"
     },
-    "PieceEditor": {
-        "badge": "Figuren-Editor",
-        "title": "Gestalte deine <accent>Schachfiguren</accent>",
-        "description": "Erstelle pixelgenaue benutzerdefinierte Schachfiguren mit unserem intuitiven 2D-Editor",
-        "save": "Speichern",
-        "publish": "Veröffentlichen",
-        "import": "Importieren",
-        "export": "Exportieren",
-        "selectPiece": "Figur auswählen",
-        "editing": "Bearbeite",
-        "saved": "Figur erfolgreich gespeichert!"
-    },
+
     "GameEnd": {
         "win": "Du hast gewonnen!",
         "loss": "Du hast verloren!",

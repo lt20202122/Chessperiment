@@ -75,13 +75,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? "Hier findest du alle häufigen Fragen zum ChessPie Board Editor, inklusive Tipps zum Erstellen eigener Boards und Figuren."
         : "Here you will find all frequently asked questions about the ChessPie Board Editor, including tips for creating your own boards and pieces.";
 
-    const hreflangs = generateHreflangs('/editor/board/faq', ['de', 'en'], locale as Locale, 'https://chesspie.de');
+    const hreflangs = generateHreflangs('/editor/board/faq', ['de', 'en'], locale as Locale, 'https://chesspie.org');
 
     return {
         title: title,
         description: description,
         alternates: {
-            canonical: "https://chesspie.de/editor/board/faq",
+            canonical: "https://chesspie.org/editor/board/faq",
             languages: hreflangs.reduce((acc, tag) => {
                 acc[tag.hrefLang] = tag.href;
                 return acc;
@@ -90,15 +90,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         openGraph: {
             title: title,
             description: description,
-            url: "https://chesspie.de/editor/board/faq",
-            images: ['https://chesspie.de/editor-board-faq.png'], // Assuming this image exists
+            url: "https://chesspie.org/editor/board/faq",
+            images: ['https://chesspie.org/editor-board-faq.png'], // Assuming this image exists
             type: "website"
         },
         twitter: {
             card: "summary_large_image",
             title: title,
             description: description,
-            images: ['https://chesspie.de/editor-board-faq.png'], // Assuming this image exists
+            images: ['https://chesspie.org/editor-board-faq.png'], // Assuming this image exists
         },
     };
 }

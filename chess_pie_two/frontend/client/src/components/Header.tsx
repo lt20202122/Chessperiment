@@ -22,7 +22,7 @@ export function Header() {
     return (
         <>
             <header className={`flex justify-between items-center lg:px-5 pt-2 ${small ? "group" : "pb-10"} bg-bg relative z-50`}>
-                <Link href="/" className={`${bungee.className} [font-variant-caps:small-caps] ml-1.5 lg:ml-0 transition-color duration-300 ${small ? "text-3xl lg:text-5xl text-amber-400/50 group-hover:text-amber-400" : "text-4xl lg:text-7xl text-yellow-400 dark:text-amber-400"} caret-transparent`}>ChessPie</Link>
+                <Link href="/" className={`${bungee.className} [font-variant-caps:small-caps] ml-1.5 lg:ml-0 transition-colors duration-300 ${small ? "text-3xl lg:text-5xl text-amber-400/50 group-hover:text-amber-400" : "text-4xl lg:text-7xl text-yellow-400 dark:text-amber-400"} caret-transparent`}>ChessPie</Link>
 
                 {/* Desktop Nav */}
                 <div className={`hidden lg:flex gap-4 items-center`}>
@@ -30,12 +30,13 @@ export function Header() {
                         <Link href="/game" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('play')}</Link>
                         <Link href="/editor/board" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('boardEditor')}</Link>
                         <Link href="/editor/piece" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('pieceEditor')}</Link>
-                        <Link href="/news" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('news')}</Link>
+                        <Link href="/announcements" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('news')}</Link>
+                        <Link href="/marketplace" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('marketplace')}</Link>
                         <Link href="/login" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('login')}</Link>
                     </div>
                     <div className="flex relative items-center bg-amber-400/10 rounded-full p-1 border border-amber-400/20 ml-4 focus-within:ring-2 focus-within:ring-amber-400/40 outline-none">
                         <div
-                            className={`absolute h-6 w-8 bg-gradient-to-br from-amber-300 to-amber-500 rounded-full transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) shadow-[0_0_8px_rgba(245,158,11,0.5)]`}
+                            className={`absolute h-6 w-8 bg-linear-to-br from-amber-300 to-amber-500 rounded-full transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) shadow-[0_0_8px_rgba(245,158,11,0.5)]`}
                             style={{
                                 left: locale === 'en' ? '4px' : '36px',
                             }}
@@ -69,7 +70,7 @@ export function Header() {
 
                 {/* Mobile Nav Overlay */}
                 {isMenuOpen && (
-                    <div className="fixed inset-0 bg-bg/80 backdrop-blur-xl z-[100] flex flex-col items-center justify-center p-8 animate-in fade-in duration-300">
+                    <div className="fixed inset-0 bg-bg/80 backdrop-blur-xl z-50 flex flex-col items-center justify-center p-8 animate-in fade-in duration-300">
                         {/* Close button inside overlay */}
                         <button
                             className="absolute top-4 right-4 p-4 text-amber-400 hover:scale-110 transition-transform"
@@ -110,11 +111,21 @@ export function Header() {
                                 </div>
                             </Link>
                             <Link
-                                href="/news"
+                                href="/announcements"
                                 className="group flex items-center justify-between text-4xl font-black text-white hover:text-accent transition-colors border-b-4 border-amber-400/20 pb-4"
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 <span>{t('news')}</span>
+                                <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center group-hover:bg-accent group-hover:text-bg transition-all">
+                                    <Menu size={24} />
+                                </div>
+                            </Link>
+                            <Link
+                                href="/marketplace"
+                                className="group flex items-center justify-between text-4xl font-black text-white hover:text-accent transition-colors border-b-4 border-amber-400/20 pb-4"
+                                onClick={() => setIsMenuOpen(false)}
+                            >
+                                <span>{t('marketplace')}</span>
                                 <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center group-hover:bg-accent group-hover:text-bg transition-all">
                                     <Menu size={24} />
                                 </div>

@@ -23,8 +23,8 @@ export default function Btn() {
     return (
         <div className='flex items-center flex-col gap-9 pt-10 px-4'>
             <button
-                type="button" className={`-mb-4 block lg:h-[78px] w-full max-w-xl md:max-w-lg sm:max-w-sm h-[60px] p-0 overflow-hidden cursor-pointer
-        transition-all duration-400 antialiased lg:text-[2.8rem] text-[2rem] leading-5 lg:leading-[30px] rounded-[10px]
+                type="button" className={`-mb-4 block lg:h-[78px] w-full max-w-xl md:max-w-lg sm:max-w-sm h-14 sm:h-[60px] p-0 overflow-hidden cursor-pointer
+        transition-all duration-400 antialiased lg:text-[2.8rem] text-2xl sm:text-[2rem] leading-5 lg:leading-[30px] rounded-[10px]
         shadow-playShadow ${zillaSlab.className} mt-1 active:scale-95 group`}
                 style={{
                     backgroundImage: "url('/PlayBtn.webp')",
@@ -50,9 +50,9 @@ export default function Btn() {
 
 
             <div className="relative group pt-4 rounded-[10px] w-full max-w-xl md:max-w-lg sm:max-w-sm">
-                <button type="button" className={`block lg:h-[78px] w-full h-[60px] p-0 -mb-4
+                <button type="button" className={`block lg:h-[78px] w-full h-14 sm:h-[60px] p-0 -mb-4
         cursor-pointer
-        transition-all duration-400 antialiased lg:text-[2.8rem] text-[2rem] leading-5 lg:leading-[30px]
+        transition-all duration-400 antialiased lg:text-[2.8rem] text-2xl sm:text-[2rem] leading-5 lg:leading-[30px]
         shadow-playShadow ${zillaSlab.className} mt-1
         group
         `}

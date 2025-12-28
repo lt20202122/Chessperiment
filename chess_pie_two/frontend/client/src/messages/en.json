@@ -8,7 +8,46 @@
         "english": "English",
         "german": "German",
         "boardEditor": "Board Editor",
-        "pieceEditor": "Piece Editor"
+        "pieceEditor": "Piece Editor",
+        "marketplace": "Marketplace"
+    },
+    "Marketplace": {
+        "title": "Marketplace",
+        "subtitle": "Discover unique boards, pieces, and designs created by the community.",
+        "searchPlaceholder": "Search for boards, pieces...",
+        "loading": "Loading amazing items...",
+        "noResults": "No items found matching your criteria.",
+        "backToMarketplace": "Back to Marketplace",
+        "noImage": "No Preview",
+        "price": "Price",
+        "free": "Free",
+        "addToLibrary": "Add to Library",
+        "buyNow": "Buy Now",
+        "noDescription": "No description provided.",
+        "accessDenied": "Access Denied",
+        "loginRequired": "Please log in to create marketplace items.",
+        "createItem": "Create Item",
+        "publishItem": "Publish Item",
+        "form": {
+            "title": "Title",
+            "titlePlaceholder": "e.g. Neon Chess Set",
+            "type": "Type",
+            "price": "Price (USD)",
+            "description": "Description",
+            "descriptionPlaceholder": "Tell us about your creation...",
+            "imageUrl": "Image URL",
+            "imageUrlHelp": "Paste a direct link to an image (e.g. Imgur, S3)"
+        },
+        "filters": {
+            "all": "All Items",
+            "board": "Boards",
+            "piece": "Pieces",
+            "design": "Designs",
+            "free": "Free",
+            "paid": "Premium"
+        },
+        "inProduction": "In Production",
+        "marketplaceBetaMessage": "Our marketplace is currently under heavy development. Stay tuned for unique piece designs and custom boards!"
     },
     "Homepage": {
         "play": "Play",
@@ -125,8 +164,11 @@
             "rightClickToRemove": "Right-click to remove piece"
         },
         "Piece": {
-            "loadFromDatabase": "Start where you ended",
+            "loadFromDatabase": "Load from Database",
             "saved": "Piece saved successfully!",
+            "loaded": "Piece loaded successfully!",
+            "errorSaving": "Error saving piece",
+            "errorLoading": "Error loading piece",
             "selectPiece": "Select Piece",
             "description": "Create pixel-perfect custom chess pieces with our intuitive 2D editor",
             "import": "Import",
@@ -135,7 +177,9 @@
             "publish": "Publish",
             "badge": "Piece Editor",
             "save": "Save",
-            "title": "Design Your \u003caccent\u003eChess Pieces\u003c/accent\u003e"
+            "title": "Design Your <accent>Chess Pieces</accent>",
+            "inProduction": "Creator Studio",
+            "pieceEditorBetaMessage": "The Piece Editor is currently in beta and only available to selected creators. We are working hard to bring pixel-perfect customization to everyone!"
         }
     },
     "Auth": {
@@ -169,11 +213,23 @@
         "game": "game",
         "boards": "Boards"
     },
-    "PieceEditor": {},
+
     "GameEnd": {
         "win": "You won!",
         "loss": "You lost!",
         "draw": "Draw!"
+    },
+    "GameSidebar": {
+        "info": "Info",
+        "moves": "Moves",
+        "chat": "Chat",
+        "live": "LIVE",
+        "placeholder": "Say something...",
+        "gameStatus": "Game Status",
+        "roomCode": "Room Code",
+        "players": "Players",
+        "youArePlaying": "You are playing",
+        "yourSide": "Your Side"
     },
     "Announcements": {
         "title": "Latest News & Updates",

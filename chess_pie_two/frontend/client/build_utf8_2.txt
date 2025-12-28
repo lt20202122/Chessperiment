@@ -1,0 +1,43 @@
+
+> chess_pie@0.1.0 build
+> next build --turbopack
+
+   ▲ Next.js 16.0.10 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 5.1s
+   Running TypeScript ...
+   Collecting page data using 19 workers ...
+ ⚠ Using edge runtime on a page currently disables static generation for that page
+Auth config - FIREBASE_PROJECT_ID: chesspie-18b92
+Auth config - FIREBASE_CLIENT_EMAIL: firebase-adminsdk-fbsvc@chesspie-18b92.iam.gserviceaccount.com
+Auth config - FIREBASE_PRIVATE_KEY (first 20 chars): -----BEGIN PRIVATE K
+Auth config - FIREBASE_PROJECT_ID: chesspie-18b92
+Auth config - FIREBASE_CLIENT_EMAIL: firebase-adminsdk-fbsvc@chesspie-18b92.iam.gserviceaccount.com
+Auth config - FIREBASE_PRIVATE_KEY (first 20 chars): -----BEGIN PRIVATE K
+Auth config - FIREBASE_PROJECT_ID: chesspie-18b92
+Auth config - FIREBASE_PROJECT_ID: chesspie-18b92
+Auth config - FIREBASE_CLIENT_EMAIL: firebase-adminsdk-fbsvc@chesspie-18b92.iam.gserviceaccount.com
+Auth config - FIREBASE_PRIVATE_KEY (first 20 chars): -----BEGIN PRIVATE K
+Auth config - FIREBASE_CLIENT_EMAIL: firebase-adminsdk-fbsvc@chesspie-18b92.iam.gserviceaccount.com
+Auth config - FIREBASE_PRIVATE_KEY (first 20 chars): -----BEGIN PRIVATE K
+Auth config - FIREBASE_PROJECT_ID: chesspie-18b92
+Auth config - FIREBASE_CLIENT_EMAIL: firebase-adminsdk-fbsvc@chesspie-18b92.iam.gserviceaccount.com
+Auth config - FIREBASE_PRIVATE_KEY (first 20 chars): -----BEGIN PRIVATE K
+Auth config - FIREBASE_PROJECT_ID: chesspie-18b92
+Auth config - FIREBASE_CLIENT_EMAIL: firebase-adminsdk-fbsvc@chesspie-18b92.iam.gserviceaccount.com
+Auth config - FIREBASE_PRIVATE_KEY (first 20 chars): -----BEGIN PRIVATE K
+Error: Failed to collect configuration for /[locale]/marketplace/[id]
+    at ignore-listed frames {
+  [cause]: Error: A "use server" file can only export async functions, found object.
+  Read more: https://nextjs.org/docs/messages/invalid-use-server-value
+      at d (C:\Users\Lasse\Documents\Programmieren\GitHub\chessPIE\chess_pie_two\frontend\client\.next\server\chunks\ssr\[root-of-the-server]__c58f4b87._.js:1:1000)
+      at <unknown> (C:\Users\Lasse\Documents\Programmieren\GitHub\chessPIE\chess_pie_two\frontend\client\.next\server\chunks\ssr\[root-of-the-server]__c58f4b87._.js:2:1323)
+}
+
+> Build error occurred
+Error: Failed to collect page data for /[locale]/marketplace/[id]
+    at ignore-listed frames {
+  type: 'Error'
+}

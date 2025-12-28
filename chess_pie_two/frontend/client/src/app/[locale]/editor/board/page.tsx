@@ -2,43 +2,35 @@ import PageClient from "./PageClient";
 import type { Metadata } from "next"
 import { generateHreflangs } from '@/lib/hreflang';
 
-const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.de');
-
-
-// app/editor/board/page.tsx
-
 export const metadata: Metadata = {
-    title: "ChessPie – Spiele deine eigenen Schachbretter",
-    description: "Erstelle eigene Schachbretter, Figuren und Spiele auf ChessPie.de",
+    title: "ChessPie | Custom Board Editor",
+    description: "Design unique chess boards with custom colors, zones, and layouts. The best free online chess board creator.",
     alternates: {
-        canonical: "https://chesspie.de/game",
-        languages: hreflangs.reduce((acc, tag) => {
-            acc[tag.hrefLang] = tag.href;
-            return acc;
-        }, {} as Record<string, string>),
+        canonical: "https://chesspie.org/editor/board",
     },
     openGraph: {
-        title: "ChessPie – Spiele deine eigenen Schachbretter",
-        description: "Erstelle eigene Schachbretter, Figuren und Spiele auf ChessPie.de",
-        url: "https://chesspie.de/game",
-        type: "website"
+        title: "ChessPie | Custom Board Editor",
+        description: "Design unique chess boards with custom colors, zones, and layouts.",
+        url: "https://chesspie.org/editor/board",
+        type: "website",
+        images: [{ url: "/images/seo/og-editor.png", width: 1200, height: 630 }],
     },
     twitter: {
         card: "summary_large_image",
-        title: "ChessPie – Spiele deine eigenen Schachbretter",
-        description: "Erstelle eigene Schachbretter, Figuren und Spiele auf ChessPie.de"
+        title: "ChessPie | Custom Board Editor",
+        description: "Design unique chess boards with custom colors, zones, and layouts.",
+        images: ["/images/seo/twitter-image.png"],
     },
 };
-
 
 const jsonLd_boardEditor = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "ChessPie Board Editor",
-    "url": "https://chesspie.de/editor/board",
+    "url": "https://chesspie.org/editor/board",
     "description": "An editor to design custom chess boards on ChessPie. Create grids, zones and custom layouts.",
     "applicationCategory": "DesignApplication",
-    "provider": { "@type": "Organization", "name": "ChessPie", "url": "https://chesspie.de" },
+    "provider": { "@type": "Organization", "name": "ChessPie", "url": "https://chesspie.org" },
     "featureList": [
         "Grid editor",
         "Tile coloring",

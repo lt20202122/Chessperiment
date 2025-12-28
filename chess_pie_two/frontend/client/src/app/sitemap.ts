@@ -1,28 +1,21 @@
-import { MetadataRoute } from 'next';
+import type { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://chesspie.de';
-    const locales = ['de', 'en'];
+  const baseUrl = 'https://chesspie.org';
+  
+  // List of known static routes
+  const routes = [
+    '',
+    '/editor',
+    '/marketplace',
+    '/game',
+    '/announcements',
+  ];
 
-    const staticPages = [
-        '',
-        '/login',
-        '/game',
-        '/marketplace',
-        '/profile',
-        '/editor/board',
-        '/editor/piece',
-        '/announcements',
-        '/legal-notice',
-        '/privacy-policy',
-    ];
-
-    const sitemap = staticPages.flatMap((path) =>
-        locales.map((locale) => ({
-            url: `${baseUrl}/${locale}${path}`,
-            lastModified: new Date().toISOString(),
-        }))
-    );
-
-    return sitemap;
+  return routes.map((route) => ({
+    url: `${baseUrl}${route}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily',
+    priority: route === '' ? 1 : 0.8,
+  }));
 }

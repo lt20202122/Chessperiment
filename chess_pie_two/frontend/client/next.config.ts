@@ -11,10 +11,10 @@ const nextConfig: NextConfig = {
                 has: [
                     {
                         type: 'host',
-                        value: 'www.chesspie.de',
+                        value: 'www.chesspie.org',
                     },
                 ],
-                destination: 'https://chesspie.de/:path*',
+                destination: 'https://chesspie.org/:path*',
                 permanent: true, // 301 Redirect
             },
         ];
