@@ -1,18 +1,186 @@
 import { Square } from './types';
-class Piece {
-        id: string;       // unique ID der Figur: 1,2,3,4,5...
-        type: string;     // z.B. "pawn", "knight", "custom_piece"
-        color: "white" | "black" | string;
-        position: Square;
-        hasMoved?: boolean; // für Spezialregeln wie Rochade
-        // Also add possible moves, so something like this:
-        // diffX === 2 && diffY === 1 || diffX === 1 && diffY === 2 for Knight ---> extendibilty
-        
-        constructor(id: string, type: string, color: "white" | "black" | string, position: Square) {
-            this.id = id;
-            this.type = type;
-            this.color = color;
-            this.position = position;
-            this.hasMoved = false;
+import { toCoords, toSquare } from './utils';
+import { Board } from './board';
+
+export abstract class Piece {
+    id: string;
+    type: string;
+    color: "white" | "black";
+    position: Square;
+    hasMoved: boolean;
+
+    constructor(id: string, type: string, color: "white" | "black", position: Square) {
+        this.id = id;
+        this.type = type;
+        this.color = color;
+        this.position = position;
+        this.hasMoved = false;
+    }
+
+    abstract isValidMove(from: Square, to: Square, board: Board): boolean;
+}
+
+export class Pawn extends Piece {
+    constructor(id: string, color: "white" | "black", position: Square) {
+        super(id, 'pawn', color, position);
+    }
+
+    isValidMove(from: Square, to: Square, board: Board): boolean {
+        const fromCoords = toCoords(from);
+        const toCoordsCoords = toCoords(to);
+        const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
+        const diffY = toCoordsCoords[1] - fromCoords[1];
+
+        const direction = this.color === 'white' ? 1 : -1;
+        const startingRank = this.color === 'white' ? 1 : 6;
+
+        // Standard one-square move
+        if (diffX === 0 && diffY === direction) {
+            return board.getPiece(to) === null;
         }
+
+        // Initial two-square move
+        if (diffX === 0 && fromCoords[1] === startingRank && diffY === 2 * direction) {
+            const pathClear = board.getPiece(toSquare([fromCoords[0], fromCoords[1] + direction])) === null;
+            return pathClear && board.getPiece(to) === null;
+        }
+
+        // Capture
+        if (diffX === 1 && diffY === direction) {
+            const destinationPiece = board.getPiece(to);
+            return destinationPiece !== null && destinationPiece.color !== this.color;
+        }
+
+        return false;
+    }
+}
+
+export class Knight extends Piece {
+    constructor(id: string, color: "white" | "black", position: Square) {
+        super(id, 'knight', color, position);
+    }
+
+    isValidMove(from: Square, to: Square, board: Board): boolean {
+        const fromCoords = toCoords(from);
+        const toCoordsCoords = toCoords(to);
+        const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
+        const diffY = Math.abs(fromCoords[1] - toCoordsCoords[1]);
+
+        const destinationPiece = board.getPiece(to);
+        if (destinationPiece !== null && destinationPiece.color === this.color) {
+            return false;
+        }
+
+        return (diffX === 2 && diffY === 1) || (diffX === 1 && diffY === 2);
+    }
+}
+
+export class Bishop extends Piece {
+    constructor(id: string, color: "white" | "black", position: Square) {
+        super(id, 'bishop', color, position);
+    }
+
+    isValidMove(from: Square, to: Square, board: Board): boolean {
+        const fromCoords = toCoords(from);
+        const toCoordsCoords = toCoords(to);
+        const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
+        const diffY = Math.abs(fromCoords[1] - toCoordsCoords[1]);
+
+        if (diffX !== diffY) {
+            return false;
+        }
+
+        const destinationPiece = board.getPiece(to);
+        if (destinationPiece !== null && destinationPiece.color === this.color) {
+            return false;
+        }
+        
+        // Check for obstructions
+        const xDirection = toCoordsCoords[0] > fromCoords[0] ? 1 : -1;
+        const yDirection = toCoordsCoords[1] > fromCoords[1] ? 1 : -1;
+        for (let i = 1; i < diffX; i++) {
+            const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1] + i * yDirection]);
+            if (board.getPiece(square) !== null) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+export class Rook extends Piece {
+    constructor(id: string, color: "white" | "black", position: Square) {
+        super(id, 'rook', color, position);
+    }
+
+    isValidMove(from: Square, to: Square, board: Board): boolean {
+        const fromCoords = toCoords(from);
+        const toCoordsCoords = toCoords(to);
+        const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
+        const diffY = Math.abs(fromCoords[1] - toCoordsCoords[1]);
+
+        if (diffX !== 0 && diffY !== 0) {
+            return false;
+        }
+
+        const destinationPiece = board.getPiece(to);
+        if (destinationPiece !== null && destinationPiece.color === this.color) {
+            return false;
+        }
+
+        // Check for obstructions
+        if (diffX === 0) {
+            const yDirection = toCoordsCoords[1] > fromCoords[1] ? 1 : -1;
+            for (let i = 1; i < diffY; i++) {
+                const square = toSquare([fromCoords[0], fromCoords[1] + i * yDirection]);
+                if (board.getPiece(square) !== null) {
+                    return false;
+                }
+            }
+        } else {
+            const xDirection = toCoordsCoords[0] > fromCoords[0] ? 1 : -1;
+            for (let i = 1; i < diffX; i++) {
+                const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1]]);
+                if (board.getPiece(square) !== null) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+}
+
+export class Queen extends Piece {
+    constructor(id: string, color: "white" | "black", position: Square) {
+        super(id, 'queen', color, position);
+    }
+
+    isValidMove(from: Square, to: Square, board: Board): boolean {
+        // A queen's move is valid if it's a valid rook or bishop move
+        const rook = new Rook(this.id, this.color, from);
+        const bishop = new Bishop(this.id, this.color, from);
+        return rook.isValidMove(from, to, board) || bishop.isValidMove(from, to, board);
+    }
+}
+
+export class King extends Piece {
+    constructor(id: string, color: "white" | "black", position: Square) {
+        super(id, 'king', color, position);
+    }
+
+    isValidMove(from: Square, to: Square, board: Board): boolean {
+        const fromCoords = toCoords(from);
+        const toCoordsCoords = toCoords(to);
+        const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
+        const diffY = Math.abs(fromCoords[1] - toCoordsCoords[1]);
+
+        const destinationPiece = board.getPiece(to);
+        if (destinationPiece !== null && destinationPiece.color === this.color) {
+            return false;
+        }
+
+        return diffX <= 1 && diffY <= 1;
+    }
 }

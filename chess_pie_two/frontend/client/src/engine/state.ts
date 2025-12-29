@@ -31,4 +31,11 @@ export class BoardStateManager {
     getSquares() {
         return { ...this.squares };
     }
+
+    clone(): BoardStateManager {
+        const clonedManager = new BoardStateManager(this.getSquares());
+        clonedManager.history = [...this.history];
+        clonedManager.turn = this.turn;
+        return clonedManager;
+    }
 }

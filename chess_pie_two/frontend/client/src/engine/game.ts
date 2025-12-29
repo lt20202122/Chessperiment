@@ -1,23 +1,25 @@
 import { type Square } from './types'
-import {ValidatorClass} from './rules'
-{/*
-1. Functions:
- - makeMove()
- - 
-
-
-*/}
+import { ValidatorClass } from './rules'
+import { Board } from './board'
 
 export class Game {
-    validator: ValidatorClass;
+    private board: Board;
+    private validator: ValidatorClass;
+
     constructor() {
-        this.validator = new ValidatorClass();
+        this.board = new Board();
+        this.validator = new ValidatorClass(this.board);
     }
-    makeMove({ from, to }: { from: Square, to: Square }) {
-        if (!this.validator.isLegal(from, to)) return false;
-        // make move and send it to board.ts
-        return true;
+
+    makeMove(from: Square, to: Square): boolean {
+        if (this.validator.isLegal(from, to)) {
+            this.board.movePiece(from, to);
+            return true;
+        }
+        return false;
+    }
+
+    getBoard(): Board {
+        return this.board;
     }
 }
-
-// btw we definitely need a function to convert "from" and "to" into numbers

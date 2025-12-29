@@ -1,50 +1,147 @@
-import { Square } from "./types";
-
-{/*
-1. Piece Move validation
-2. 50-move-rule and these things (from state.ts)
-3. Checkmate
-4. Check
-*/}
+import { Square } from './types';
+import { Board } from './board';
+import { King, Pawn } from './piece';
+import { toCoords, toSquare } from './utils';
 
 export class ValidatorClass {
-    _pieceMove({ from, to }: { from: Square, to: Square }): boolean {
-        // maybe also convert from and to to numbers, so yu dont have a b c d e f g h
-        const diffX = from[0].charCodeAt(0) - to[0].charCodeAt(0);
-        const diffY = from[1] - to[1];
-        // switch (getPiece(from)) {
-        //     case 'pawn':
-        //         if (diffX === 0 && diffY === 1) return true;
-        //         if (diffX === 0 && diffY === 2 && !getPiece(to)) return true;
-        //         return false;
-        //     case 'knight':
-        //         if (diffX === 2 && diffY === 1) return true;
-        //         if (diffX === 1 && diffY === 2) return true;
-        //         return false;
-        //     case 'bishop':
-        //         if (diffX === diffY) return true;
-        //         return false;
-        //     case 'rook':
-        //         if (diffX === 0 || diffY === 0) return true;
-        //         return false;
-        //     case 'queen':
-        //         if (diffX === 0 || diffY === 0 || diffX === diffY) return true;
-        //         return false;
-        //     case 'king':
-        //         if (diffX === 1 && diffY === 1) return true;
-        //         if (diffX === 1 && diffY === 0) return true;
-        //         if (diffX === 0 && diffY === 1) return true;
-        //         return false;
-        //     default:
-        //         return false;
-        // }
-        // ⬆️ NOT that way! We want code that is easily extendable. So, create a function for each piece in piece.ts
-        // ... 
+    private board: Board;
+
+    constructor(board: Board) {
+        this.board = board;
+    }
+
+    private isSquareAttacked(square: Square, attackerColor: 'white' | 'black', board: Board): boolean {
+        const squares = board.getSquares();
+        for (const s in squares) {
+            const piece = squares[s as Square];
+            if (piece && piece.color === attackerColor) {
+                if (piece.isValidMove(s as Square, square, board)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private _pieceMove(from: Square, to: Square): boolean {
+        const piece = this.board.getPiece(from);
+        if (!piece) {
+            return false;
+        }
+        return piece.isValidMove(from, to, this.board);
+    }
+
+    private _isEnPassant(from: Square, to: Square): boolean {
+        const piece = this.board.getPiece(from);
+        if (!(piece instanceof Pawn)) {
+            return false;
+        }
+
+        const fromCoords = toCoords(from);
+        const toCoordsCoords = toCoords(to);
+        const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
+        const diffY = toCoordsCoords[1] - fromCoords[1];
+        const direction = piece.color === 'white' ? 1 : -1;
+
+        if (diffX === 1 && diffY === direction) {
+            const capturedPawnSquare = toSquare([toCoordsCoords[0], toCoordsCoords[1] - direction]);
+            const capturedPawn = this.board.getPiece(capturedPawnSquare);
+
+            if (capturedPawn instanceof Pawn && capturedPawn.color !== piece.color) {
+                const history = this.board.getHistory();
+                const lastMove = history[history.length - 1];
+                if (
+                    lastMove &&
+                    lastMove.pieceId === capturedPawn.id &&
+                    lastMove.to === capturedPawnSquare &&
+                    Math.abs(toCoords(lastMove.from)[1] - toCoords(lastMove.to)[1]) === 2
+                ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private _isCastling(from: Square, to: Square): boolean {
+        const piece = this.board.getPiece(from);
+        if (!(piece instanceof King) || piece.hasMoved) {
+            return false;
+        }
+
+        const fromCoords = toCoords(from);
+        const toCoordsCoords = toCoords(to);
+        const diffX = toCoordsCoords[0] - fromCoords[0];
+
+        if (Math.abs(diffX) !== 2 || fromCoords[1] !== toCoordsCoords[1]) {
+            return false;
+        }
+
+        const rank = fromCoords[1];
+        const rookFile = diffX > 0 ? 7 : 0;
+        const rookSquare = toSquare([rookFile, rank]);
+        const rook = this.board.getPiece(rookSquare);
+
+        if (!rook || rook.hasMoved) {
+            return false;
+        }
+
+        const direction = diffX > 0 ? 1 : -1;
+        for (let i = 1; i < Math.abs(diffX); i++) {
+            const square = toSquare([fromCoords[0] + i * direction, rank]);
+            if (this.board.getPiece(square) !== null) {
+                return false;
+            }
+        }
+
+        const attackerColor = piece.color === 'white' ? 'black' : 'white';
+        if (this.isSquareAttacked(from, attackerColor, this.board)) {
+            return false;
+        }
+        for (let i = 1; i <= Math.abs(diffX); i++) {
+            const square = toSquare([fromCoords[0] + i * (diffX > 0 ? 1 : -1), fromCoords[1]]);
+            if (this.isSquareAttacked(square, attackerColor, this.board)) {
+                return false;
+            }
+        }
+
         return true;
     }
-    isLegal({from, to}: {from: Square, to: Square}) : boolean {
-        if (!this._pieceMove(from, to)) return false;
-        // All the other rules like 50-move-rule, checkmate, check, etc.
-        return true;
+
+    isLegal(from: Square, to: Square): boolean {
+        const piece = this.board.getPiece(from);
+        if (!piece) {
+            return false;
+        }
+
+        if (this._isCastling(from, to)) {
+            return true;
+        }
+
+        if (!this._pieceMove(from, to) && !this._isEnPassant(from, to)) {
+            return false;
+        }
+
+        const tempBoard = this.board.clone();
+        tempBoard.movePiece(from, to);
+
+        const kingSquare = this.findKing(piece.color, tempBoard);
+        if (!kingSquare) {
+            return false;
+        }
+
+        const attackerColor = piece.color === 'white' ? 'black' : 'white';
+        return !this.isSquareAttacked(kingSquare, attackerColor, tempBoard);
+    }
+
+    private findKing(color: 'white' | 'black', board: Board): Square | null {
+        const squares = board.getSquares();
+        for (const s in squares) {
+            const piece = squares[s as Square];
+            if (piece instanceof King && piece.color === color) {
+                return s as Square;
+            }
+        }
+        return null;
     }
 }
