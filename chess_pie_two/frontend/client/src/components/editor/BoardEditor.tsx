@@ -25,9 +25,10 @@ interface BoardEditorProps {
     editMode: EditMode;
     selectedPiece: { type: string, color: string };
     boardStyle: string;
+    generateBoardData: (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => void;
 }
 
-export default function BoardEditor({ editMode, selectedPiece, boardStyle }: BoardEditorProps) {
+export default function BoardEditor({ editMode, selectedPiece, boardStyle, generateBoardData }: BoardEditorProps) {
 
     const [rows, setRows] = useState(8);
     const [cols, setCols] = useState(8);
@@ -61,7 +62,8 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle }: Boa
         localStorage.setItem('boardEditorRows', rows.toString());
         localStorage.setItem('boardEditorCols', cols.toString());
         localStorage.setItem('boardEditorPlacedPieces', JSON.stringify(placedPieces));
-    }, [rows, cols, placedPieces]);
+        generateBoardData(rows, cols, activeSquares, placedPieces);
+    }, [rows, cols, placedPieces, generateBoardData]);
 
 
     const [squareSize, setSquareSize] = useState(70);

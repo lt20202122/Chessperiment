@@ -208,9 +208,13 @@ const SquareTile = memo(function SquareTile({
 export default function Board({
   initialRoomId,
   gameModeVar,
+  initialFen,
+  onMove,
 }: {
-  initialRoomId: string;
-  gameModeVar: "online" | "computer";
+  initialRoomId?: string;
+  gameModeVar?: "online" | "computer";
+  initialFen?: string;
+  onMove?: (move: any) => void;
 }) {
   const t = useTranslations("Multiplayer");
   const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
@@ -257,12 +261,16 @@ export default function Board({
   const [playerCount, setPlayerCount] = useState(0);
 
   // New Modes
-  const [gameMode, setGameMode] = useState<"online" | "computer">(gameModeVar);
+  const [gameMode, setGameMode] = useState<"online" | "computer">(gameModeVar || 'online');
   const [stockfishDifficulty, setStockfishDifficulty] = useState(1300);
   const [isSearching, setIsSearching] = useState(false);
 
   // --- INITIALIZATION ---
   useEffect(() => {
+    if (initialFen) {
+      chessRef.current.load(initialFen);
+      syncBoardFromChess();
+    }
     const savedStyle = localStorage.getItem("boardStyle");
     if (savedStyle === "v2" || savedStyle === "v3") {
       setBoardStyle(savedStyle);
@@ -415,6 +423,10 @@ export default function Board({
 
         // Check End
         checkGameEnd();
+
+        if (onMove) {
+          onMove(move);
+        }
 
         return true;
       }

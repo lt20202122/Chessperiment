@@ -50,7 +50,6 @@ export default function CreateMarketplaceItemPage() {
                 type,
                 imageUrl,
                 author: session?.user?.name || 'Anonymous',
-                authorId: session?.user?.id || 'unknown',
             });
 
             router.push(`/marketplace/${id}`);

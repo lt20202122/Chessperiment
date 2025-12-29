@@ -15,7 +15,22 @@ export default function PageClient() {
     const [editMode, setEditMode] = useState<EditMode>('shape');
     const [selectedPiece, setSelectedPiece] = useState({ type: 'Pawn', color: 'white' });
     const [boardStyle, setBoardStyle] = useState('v3');
+    const [board, setBoard] = useState({
+        rows: 8,
+        cols: 8,
+        placedPieces: {},
+        activeSquares: new Set<string>(),
+    });
 
+    const generateBoardData = (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => {
+        const boardData = {
+            rows,
+            cols,
+            placedPieces,
+            activeSquares: Array.from(activeSquares),
+        };
+        return JSON.stringify(boardData, null, 2);
+    };
 
     return (
         <>
@@ -28,6 +43,8 @@ export default function PageClient() {
                     setSelectedPiece={setSelectedPiece}
                     boardStyle={boardStyle}
                     setBoardStyle={setBoardStyle}
+                    generateBoardData={() => generateBoardData(board.rows, board.cols, board.activeSquares, board.placedPieces)}
+                    board={board}
                 />
             }>
                 <div className="flex flex-col items-center w-full">
@@ -48,6 +65,9 @@ export default function PageClient() {
                         editMode={editMode}
                         selectedPiece={selectedPiece}
                         boardStyle={boardStyle}
+                        generateBoardData={(rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => {
+                            setBoard({ rows, cols, activeSquares, placedPieces });
+                        }}
                     />
                 </div>
             </EditorLayout>

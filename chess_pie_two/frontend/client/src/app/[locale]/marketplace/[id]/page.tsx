@@ -1,4 +1,3 @@
-import { getMarketplaceItem } from '@/lib/marketplace-data';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Star, ArrowLeft, ShoppingCart, User } from 'lucide-react';
@@ -15,6 +14,7 @@ interface Props {
 
 // Generate Metadata
 export async function generateMetadata({ params }: Props) {
+    const { getMarketplaceItem } = await import('@/lib/marketplace-data');
     const { id } = await params;
     const item = await getMarketplaceItem(id);
     if (!item) return { title: 'Item Not Found' };
@@ -26,6 +26,7 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function MarketplaceItemPage({ params }: Props) {
+    const { getMarketplaceItem } = await import('@/lib/marketplace-data');
     const { id } = await params;
     const item = await getMarketplaceItem(id);
     const t = await getTranslations('Marketplace');
