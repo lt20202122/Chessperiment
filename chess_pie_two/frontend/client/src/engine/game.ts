@@ -20,4 +20,4 @@ export class Game {
     }
 }
 
-// btw we definately need a function to convert "from" and "to" into numbers
+// btw we definitely need a function to convert "from" and "to" into numbers
