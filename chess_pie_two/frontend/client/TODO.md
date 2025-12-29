@@ -107,3 +107,13 @@ If you spot a task that is not completed, please do it. If you spot a task that 
 - [ ] Add a way to rate and review the boards, pieces and designs.
 - [ ] Add a way to search/sort/filter.
 - [ ] Sell functionality.
+
+
+# Plan
+## Engine
+**We need an engine that can validate all moves**
+1. Normal engine bauen
+ --> piece-Züge
+ --> 50-move-rule etc.
+2. Durch pieces erweitern
+ --> eigene Funktionen pro Piece
