@@ -2,11 +2,23 @@
 import { useRouter } from 'next/navigation';
 import GameLobby from './GameLobby';
 import { useSocket } from '@/context/SocketContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 export default function GamePage() {
     const router = useRouter();
     const socket = useSocket();
     const [isSearching, setIsSearching] = useState(false);
+
+    useEffect(() => {
+        const handleMatchFound = (data: { roomId: string }) => {
+            router.push(`/game/${data.roomId}?mode=join`);
+        };
+
+        socket.on('match_found', handleMatchFound);
+
+        return () => {
+            socket.off('match_found', handleMatchFound);
+        };
+    }, [socket, router]);
 
     const handleQuickSearch = () => {
         // Will be handled by socket, which will redirect when room is created

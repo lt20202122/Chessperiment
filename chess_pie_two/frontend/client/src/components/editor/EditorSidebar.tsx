@@ -1,10 +1,11 @@
 import React from 'react';
-import { Globe, Download, Share2, MousePointer, Move, LayoutGrid, UserCircle2 } from 'lucide-react';
+import { Globe, Download, Share2, MousePointer, Move, LayoutGrid, UserCircle2, Swords } from 'lucide-react';
 import { EditMode } from '@/app/[locale]/editor/board/PageClient';
 import Image from 'next/image';
 import { getPieceImage } from '@/app/[locale]/game/Data';
 import BoardStyle from '@/app/[locale]/game/BoardStyle';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 
 interface EditorSidebarProps {
     editMode: EditMode;
@@ -13,16 +14,32 @@ interface EditorSidebarProps {
     setSelectedPiece: (piece: { type: string, color: string }) => void;
     boardStyle: string;
     setBoardStyle: (style: string) => void;
+    generateBoardData: () => string;
+    board: {
+        rows: number;
+        cols: number;
+        placedPieces: Record<string, { type: string; color: string }>;
+        activeSquares: Set<string>;
+    };
 }
 
 const pieceTypes = ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'];
 
-export default function EditorSidebar({ editMode, setEditMode, selectedPiece, setSelectedPiece, boardStyle, setBoardStyle }: EditorSidebarProps) {
+export default function EditorSidebar({ editMode, setEditMode, selectedPiece, setSelectedPiece, boardStyle, setBoardStyle, generateBoardData, board }: EditorSidebarProps) {
+    const router = useRouter();
     const t = useTranslations('Editor.Board');
     const tg = useTranslations('Game');
+    const [copied, setCopied] = React.useState(false);
 
     const handlePieceSelect = (type: string, color: string) => {
         setSelectedPiece({ type, color });
+    };
+
+    const handleExport = () => {
+        const boardData = generateBoardData();
+        navigator.clipboard.writeText(boardData);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     return (
@@ -127,6 +144,18 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                     label={t('export')}
                     sub={t('exportSub')}
                     className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md border border-blue-400/20"
+                    onClick={handleExport}
+                    copied={copied}
+                />
+                <ActionButton
+                    icon={<Swords size={18} />}
+                    label={t('playYourself')}
+                    sub={t('playYourselfSub')}
+                    className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-md border border-purple-400/20"
+                    onClick={() => {
+                        sessionStorage.setItem('board', JSON.stringify({ ...board, activeSquares: Array.from(board.activeSquares) }));
+                        router.push('/editor/board/play');
+                    }}
                 />
             </div>
 
@@ -162,12 +191,12 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
     );
 }
 
-function ActionButton({ label, sub, className, icon }: { label: string, sub: string, className: string, icon: React.ReactNode }) {
+function ActionButton({ label, sub, className, icon, onClick, copied }: { label: string, sub: string, className: string, icon: React.ReactNode, onClick?: () => void, copied?: boolean }) {
     return (
-        <button className={`w-full p-3 rounded-xl text-left transition-all group relative overflow-hidden ${className}`}>
+        <button onClick={onClick} className={`w-full p-3 rounded-xl text-left transition-all group relative overflow-hidden ${className}`}>
             <div className="flex items-center justify-between relative z-10">
                 <div>
-                    <div className="text-white font-bold text-base">{label}</div>
+                    <div className="text-white font-bold text-base">{copied ? 'Copied!' : label}</div>
                     <div className="text-white/70 text-[10px] font-medium">{sub}</div>
                 </div>
                 <div className="text-white/60 group-hover:text-white transition-transform">

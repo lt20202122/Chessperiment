@@ -2,22 +2,38 @@ import {
     NextResponse
 } from "next/server";
 import { auth } from "@/auth";
-import { getFirestore } from "firebase-admin/firestore";
-import { initializeApp, getApps, cert } from "firebase-admin/app";
 
-if (process.env.FIREBASE_PRIVATE_KEY && !getApps().length) {
-    initializeApp({
-        credential: cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-        }),
-    });
+export async function GET(req: Request) {
+    const { searchParams } = new URL(req.url);
+    const piece = searchParams.get('piece');
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const userId = session.user.id;
+
+    if (!piece) {
+        return NextResponse.json({ error: "Missing piece" }, { status: 400 });
+    }
+
+    try {
+        const { db } = await import("@/lib/firebase");
+        const pieceRef = db.collection("pieces").doc(`${userId}_${piece}`);
+        const doc = await pieceRef.get();
+
+        if (!doc.exists) {
+            return NextResponse.json({ error: "Piece not found" }, { status: 404 });
+        }
+
+        return NextResponse.json(doc.data());
+    } catch (error) {
+        console.error("Error fetching piece:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
 }
-const db = getFirestore();
-
 
 export async function POST(req: Request) {
+    const { db } = await import("@/lib/firebase");
     const session = await auth();
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

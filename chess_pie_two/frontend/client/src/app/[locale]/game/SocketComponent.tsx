@@ -7,10 +7,6 @@ import { useSocket } from "@/context/SocketContext";
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
 
-// Initialize socket outside component to maintain connection
-const socket = useSocket()
-
-
 interface SocketComponentProps {
   myColor: "white" | "black" | null;
   gameStatus: "playing" | "ended" | "waiting" | "";
@@ -45,6 +41,7 @@ export default function SocketComponent({
   onSearchStarted,
   onSearchCancelled
 }: SocketComponentProps) {
+  const socket = useSocket();
   const t = useTranslations('Multiplayer');
   const [currentRoom, setCurrentRoom] = useState("");
   const { data: session } = useSession();
@@ -78,7 +75,7 @@ export default function SocketComponent({
       playerId = storedId;
     }
     socket.emit("register_player", { playerId });
-  }, [session?.user?.id]);
+  }, [session?.user?.id, socket]);
 
   useEffect(() => {
     if (propCurrentRoom) {
@@ -175,7 +172,7 @@ export default function SocketComponent({
       socket.off("quick_search_started");
       socket.off("search_cancelled");
     };
-  }, [currentRoom, myColor, onPlayerJoined, setGameStatus, onChatMessage, onRoomInfo, onGameResult, onGameInfo, t]);
+  }, [socket, currentRoom, myColor, onPlayerJoined, setGameStatus, onChatMessage, onRoomInfo, onGameResult, onGameInfo, t, onSearchCancelled, onSearchStarted]);
 
   return null; // Headless
 }
