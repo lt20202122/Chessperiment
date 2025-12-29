@@ -5,6 +5,8 @@ class Piece {
         color: "white" | "black" | string;
         position: Square;
         hasMoved?: boolean; // für Spezialregeln wie Rochade
+        // Also add possible moves, so something like this:
+        // diffX === 2 && diffY === 1 || diffX === 1 && diffY === 2 for Knight ---> extendibilty
         
         constructor(id: string, type: string, color: "white" | "black" | string, position: Square) {
             this.id = id;
