@@ -153,6 +153,8 @@
             "shareSub": "Send to a friend directly",
             "playHeader": "Play",
             "vsYourself": "VS Yourself",
+            "playYourself": "Play vs. Yourself",
+            "playYourselfSub": "Test your creation",
             "howToUse": "How to use",
             "clickHelp": "Click empty slots to add squares",
             "rightClickHelp": "Right-click to remove squares",

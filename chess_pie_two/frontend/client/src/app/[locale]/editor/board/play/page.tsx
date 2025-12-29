@@ -2,26 +2,38 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Chess } from 'chess.js';
+import { Chess, type Square } from 'chess.js';
 import Board from '@/app/[locale]/game/Board';
+
+interface PlacedPiece {
+    type: string;
+    color: string;
+}
+
+interface CustomBoard {
+    activeSquares: string[];
+    placedPieces: {
+        [square: string]: PlacedPiece;
+    };
+}
 
 export default function PlayPage() {
     const router = useRouter();
-    const [board, setBoard] = useState<any>(null);
-    const [game, setGame] = useState<any>(null);
+    const [board, setBoard] = useState<CustomBoard | null>(null);
+    const [game, setGame] = useState<Chess | null>(null);
     const [moveValidation, setMoveValidation] = useState(true);
 
     useEffect(() => {
         const boardData = sessionStorage.getItem('board');
         if (boardData) {
-            const parsedBoard = JSON.parse(boardData);
+            const parsedBoard: CustomBoard = JSON.parse(boardData);
             setBoard(parsedBoard);
             const newGame = new Chess();
             newGame.clear();
-            parsedBoard.activeSquares.forEach((square: string) => {
+            parsedBoard.activeSquares.forEach((square) => {
                 const piece = parsedBoard.placedPieces[square];
                 if (piece) {
-                    newGame.put({ type: piece.type.charAt(0).toLowerCase(), color: piece.color.charAt(0) }, square as any);
+                    newGame.put({ type: piece.type.charAt(0).toLowerCase() as any, color: piece.color.charAt(0) as any }, square as Square);
                 }
             });
             setGame(newGame);
@@ -34,7 +46,7 @@ export default function PlayPage() {
         };
     }, [router]);
 
-    if (!board) {
+    if (!board || !game) {
         return <div>Loading...</div>;
     }
 
@@ -58,17 +70,9 @@ export default function PlayPage() {
                 </div>
                 <Board
                     initialFen={game.fen()}
+                    disableValidation={!moveValidation}
                     onMove={(move) => {
-                        if (moveValidation) {
-                            try {
-                                game.move(move);
-                            } catch (error) {
-                                console.error('Invalid move:', error);
-                            }
-                        } else {
-                            game.move(move, { sloppy: true });
-                        }
-                        setGame(new Chess(game.fen()));
+                        setGame(new Chess(move.fen));
                     }}
                 />
                 <div className="flex justify-between mt-4">

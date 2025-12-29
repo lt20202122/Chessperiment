@@ -22,12 +22,8 @@ export default function GamePage() {
 
     const handleQuickSearch = () => {
         // Will be handled by socket, which will redirect when room is created
-        // For now, create a temporary room ID
-        // const tempRoomId = 'quick-' + Math.random().toString(36).substring(7);
-        // router.push(`/game/${tempRoomId}?mode=quick`);
-        socket.emit('quick_search');
+        socket.emit('find_match', { elo: 1200 }); // Placeholder ELO
         setIsSearching(true);
-
     };
 
     const handleCancelSearch = () => {

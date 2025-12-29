@@ -12,6 +12,11 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
+        // origin: [
+        //     "http://localhost:3000",
+        //     "https://chessgamedev-l-ts-projects-95f31583.vercel.app",
+
+        // ],
         origin: "*",
         methods: ["GET", "POST"],
     },
@@ -601,7 +606,7 @@ io.on("connection", (socket: Socket) => {
     });
 });
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
-server.listen(PORT, "0.0.0.0", () => {
+const PORT = process.env.PORT || 3002;
+server.listen(PORT as number, "0.0.0.0", () => {
     console.log("Server running on port", PORT);
 });

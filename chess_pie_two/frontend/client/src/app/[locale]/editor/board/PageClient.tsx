@@ -4,7 +4,7 @@ import EditorSidebar from '@/components/editor/EditorSidebar';
 import BoardEditor from '@/components/editor/BoardEditor';
 import { Grid3x3 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 export type EditMode = 'shape' | 'pieces';
 
 
@@ -22,7 +22,7 @@ export default function PageClient() {
         activeSquares: new Set<string>(),
     });
 
-    const generateBoardData = (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => {
+    const generateBoardData = useCallback((rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => {
         const boardData = {
             rows,
             cols,
@@ -30,7 +30,11 @@ export default function PageClient() {
             activeSquares: Array.from(activeSquares),
         };
         return JSON.stringify(boardData, null, 2);
-    };
+    }, []);
+
+    const setBoardCallback = useCallback((rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => {
+        setBoard({ rows, cols, activeSquares, placedPieces });
+    }, []);
 
     return (
         <>
@@ -65,9 +69,7 @@ export default function PageClient() {
                         editMode={editMode}
                         selectedPiece={selectedPiece}
                         boardStyle={boardStyle}
-                        generateBoardData={(rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => {
-                            setBoard({ rows, cols, activeSquares, placedPieces });
-                        }}
+                        generateBoardData={setBoardCallback}
                     />
                 </div>
             </EditorLayout>

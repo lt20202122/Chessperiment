@@ -5,7 +5,7 @@ let socket: Socket | null = null;
 
 export function getSocket() {
   if (!socket) {
-    socket = io("https://dein-server", {
+    socket = io("http://localhost:3002", { // Connect to the TypeScript backend
       transports: ["websocket"],
     });
   }

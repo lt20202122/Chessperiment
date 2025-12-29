@@ -136,9 +136,11 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
             if (newCols > startDimRef.current.cols) {
                 setActiveSquares(prev => {
                     const next = new Set(prev);
-                    for (let x = startDimRef.current!.cols; x < newCols; x++) {
-                        for (let y = 0; y < startDimRef.current!.rows; y++) {
-                            next.add(toKey(x, y));
+                    if (startDimRef.current) {
+                        for (let x = startDimRef.current.cols; x < newCols; x++) {
+                            for (let y = 0; y < startDimRef.current.rows; y++) {
+                                next.add(toKey(x, y));
+                            }
                         }
                     }
                     return next;
@@ -152,9 +154,11 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
             if (newRows > startDimRef.current.rows) {
                 setActiveSquares(prev => {
                     const next = new Set(prev);
-                    for (let y = startDimRef.current!.rows; y < newRows; y++) {
-                        for (let x = 0; x < startDimRef.current!.cols; x++) {
-                            next.add(toKey(x, y));
+                    if (startDimRef.current) {
+                        for (let y = startDimRef.current.rows; y < newRows; y++) {
+                            for (let x = 0; x < startDimRef.current.cols; x++) {
+                                next.add(toKey(x, y));
+                            }
                         }
                     }
                     return next;
@@ -223,7 +227,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     };
 
     return (
-        <div ref={containerRef} className="flex flex-col items-center animate-in fade-in zoom-in duration-500 w-full overflow-hidden">
+        <div ref={containerRef} className="flex flex-col items-center animate-in fade-in zoom-in duration-500 w-full">
             {/* Canvas Wrapper */}
             <div
                 className="relative bg-transparent shadow-2xl rounded-sm transition-all duration-200 ease-out select-none"

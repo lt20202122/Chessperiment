@@ -2,10 +2,11 @@
   "name": "server",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node new_server.ts"
+    "dev": "ts-node new_server.ts"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +17,7 @@
     "express": "^5.2.1",
     "nodemon": "^3.1.11",
     "socket.io": "^4.8.1",
+    "ts-node": "^10.9.2",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

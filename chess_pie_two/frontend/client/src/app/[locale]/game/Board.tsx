@@ -210,11 +210,13 @@ export default function Board({
   gameModeVar,
   initialFen,
   onMove,
+  disableValidation,
 }: {
   initialRoomId?: string;
   gameModeVar?: "online" | "computer";
   initialFen?: string;
   onMove?: (move: any) => void;
+  disableValidation?: boolean;
 }) {
   const t = useTranslations("Multiplayer");
   const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
@@ -265,12 +267,41 @@ export default function Board({
   const [stockfishDifficulty, setStockfishDifficulty] = useState(1300);
   const [isSearching, setIsSearching] = useState(false);
 
+  const syncBoardFromChess = useCallback(() => {
+    const board = chessRef.current.board();
+    const newPieces: PieceType[] = [];
+    board.forEach((row, i) => {
+      row.forEach((square, j) => {
+        if (square) {
+          const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+          const position = `${files[j]}${8 - i}`;
+          let type = square.type === "n" ? "Knight" : square.type === "k" ? "King" : square.type === "q" ? "Queen" : square.type === "b" ? "Bishop" : square.type === "r" ? "Rook" : "Pawn";
+          // Helper for Knight naming if needed, existing code used "Knight" likely
+          if (square.type === "n") type = "Knight";
+
+          newPieces.push({
+            position,
+            type: type as any,
+            color: square.color === "w" ? "white" : "black",
+            size: blockSize,
+          });
+        }
+      });
+    });
+    setBoardPieces(newPieces);
+    setMoveCount(chessRef.current.moveNumber());
+    setMoveHistory(chessRef.current.history());
+  }, [blockSize]);
+
   // --- INITIALIZATION ---
   useEffect(() => {
     if (initialFen) {
       chessRef.current.load(initialFen);
       syncBoardFromChess();
     }
+  }, [initialFen, syncBoardFromChess]);
+
+  useEffect(() => {
     const savedStyle = localStorage.getItem("boardStyle");
     if (savedStyle === "v2" || savedStyle === "v3") {
       setBoardStyle(savedStyle);
@@ -349,31 +380,6 @@ export default function Board({
 
 
   // --- GAME LOGIC ---
-  const syncBoardFromChess = useCallback(() => {
-    const board = chessRef.current.board();
-    const newPieces: PieceType[] = [];
-    board.forEach((row, i) => {
-      row.forEach((square, j) => {
-        if (square) {
-          const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
-          const position = `${files[j]}${8 - i}`;
-          let type = square.type === "n" ? "Knight" : square.type === "k" ? "King" : square.type === "q" ? "Queen" : square.type === "b" ? "Bishop" : square.type === "r" ? "Rook" : "Pawn";
-          // Helper for Knight naming if needed, existing code used "Knight" likely
-          if (square.type === "n") type = "Knight";
-
-          newPieces.push({
-            position,
-            type: type as any,
-            color: square.color === "w" ? "white" : "black",
-            size: blockSize,
-          });
-        }
-      });
-    });
-    setBoardPieces(newPieces);
-    setMoveCount(chessRef.current.moveNumber());
-    setMoveHistory(chessRef.current.history());
-  }, [blockSize]);
 
   const checkGameEnd = () => {
     if (chessRef.current.isGameOver()) {
@@ -393,6 +399,19 @@ export default function Board({
   };
 
   const executeMove = (from: string, to: string, promotion?: string) => {
+    if (disableValidation) {
+      // Manually move piece without validation
+      const piece = chessRef.current.remove(from as Square);
+      if (piece) {
+        chessRef.current.put(piece, to as Square);
+        syncBoardFromChess();
+        if (onMove) {
+          onMove({ fen: chessRef.current.fen() });
+        }
+      }
+      return;
+    }
+
     try {
       const move = chessRef.current.move({ from, to, promotion: promotion || undefined });
       if (move) {
@@ -425,7 +444,7 @@ export default function Board({
         checkGameEnd();
 
         if (onMove) {
-          onMove(move);
+          onMove({ fen: chessRef.current.fen() });
         }
 
         return true;
