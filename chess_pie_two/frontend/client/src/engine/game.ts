@@ -19,3 +19,5 @@ export class Game {
         return true;
     }
 }
+
+// btw we definately need a function to convert "from" and "to" into numbers
