@@ -141,7 +141,8 @@
             "piecesMode": "Figuren",
             "selectPiece": "Figuren auswählen",
             "clickToPlace": "Klicke auf ein Feld, um {piece} zu platzieren",
-            "rightClickToRemove": "Rechtsklick, um Figuren zu entfernen"
+            "rightClickToRemove": "Rechtsklick, um Figuren zu entfernen",
+            "cleanup": "Neu starten"
         },
         "Piece": {
             "loadFromDatabase": "Aus Datenbank laden",

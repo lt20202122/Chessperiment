@@ -17,6 +17,7 @@ export default function RoomPage() {
         // Validate room
         if (!roomId) {
             setError('No room ID provided');
+            console.log('No room ID provided');
             setTimeout(() => router.push('/game'), 2000);
             return;
         }

@@ -128,11 +128,14 @@ io.on("connection", (socket: Socket) => {
     console.log("connected:", socket.id);
 
     socket.on("find_match", () => {
-        console.log("Quick search requested");
+        console.log("Quick search requested from socket:", socket.id);
         const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) return;
+        if (!playerId) {
+            console.log("❌ Player not registered! Socket:", socket.id, "Available players:", Array.from(socketToPlayer.entries()));
+            return;
+        }
 
-        console.log("Player entered quick search:", playerId);
+        console.log("✅ Player entered quick search:", playerId);
 
         // Avoid duplicates in queue
         if (searchQueue.includes(playerId)) return;

@@ -19,7 +19,7 @@ export default function BoardStyle({ currentStyle, onStyleChange }: BoardStylePr
 
   return (
     <div className="w-full">
-      <label className="text-xs font-semibold text-gray-800 dark:text-gray-200 mb-2 block flex items-center gap-1.5">
+      <label className="text-xs font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-1.5">
         <Crown className="w-3.5 h-3.5" />
         Piece Style
       </label>

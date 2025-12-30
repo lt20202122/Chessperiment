@@ -26,7 +26,7 @@ export default function UserLibrary() {
                     return (
                         <div
                             key={idx}
-                            className="flex items-center justify-between p-3.5 bg-gradient-to-br from-gray-50 to-white dark:from-stone-800 dark:to-stone-900 rounded-xl border border-gray-100 dark:border-stone-700 hover:shadow-sm transition-all cursor-pointer"
+                            className="flex items-center justify-between p-3.5 bg-linear-to-br from-gray-50 to-white dark:from-stone-800 dark:to-stone-900 rounded-xl border border-gray-100 dark:border-stone-700 hover:shadow-sm transition-all cursor-pointer"
                         >
                             <div className="flex items-center gap-3">
                                 <div className={`p-2 ${stat.bg} rounded-lg`}>

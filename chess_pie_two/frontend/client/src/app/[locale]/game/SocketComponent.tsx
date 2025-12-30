@@ -93,6 +93,20 @@ export default function SocketComponent({
       onGameInfo(t('roomCreated') + data.roomId);
     });
 
+    socket.on("rejoin_game", (data: any) => {
+      console.log("Rejoining game:", data);
+      setMyColor(data.color);
+      setCurrentRoom(data.roomId);
+
+      // Set game status based on server status
+      if (data.status === "playing" || data.status === "waiting") {
+        setGameStatus(data.status);
+      }
+
+      onRoomInfo({ playerCount: 2, room: data.roomId });
+      onGameInfo(data.status === "playing" ? t('gameStarted') : t('waitingForOpponent'));
+    });
+
     socket.on("joined_room", (data: any) => {
       console.log("Joined room:", data);
       setCurrentRoom(data.roomId);
@@ -102,7 +116,9 @@ export default function SocketComponent({
     });
 
     socket.on("start_game", (data: any) => {
+      console.log("Game starting:", data);
       setMyColor(data.color);
+      setGameStatus("playing"); // Set status to playing so board renders
       // Ensure specific room info is set
       onRoomInfo({ playerCount: 2, room: data.roomId || currentRoom });
       onPlayerJoined();
@@ -158,8 +174,19 @@ export default function SocketComponent({
       onSearchCancelled?.();
     });
 
+    socket.on("match_found", (data: any) => {
+      console.log("Match found:", data);
+      setMyColor(data.color);
+      setGameStatus("playing");
+      setCurrentRoom(data.roomId);
+      onRoomInfo({ playerCount: 2, room: data.roomId });
+      onGameInfo(t('gameStarted'));
+      onSearchCancelled?.(); // Stop searching state
+    });
+
     return () => {
       socket.off("room_created");
+      socket.off("rejoin_game");
       socket.off("joined_room");
       socket.off("start_game");
       socket.off("room_not_found");
@@ -171,6 +198,7 @@ export default function SocketComponent({
       socket.off("chat_message");
       socket.off("quick_search_started");
       socket.off("search_cancelled");
+      socket.off("match_found");
     };
   }, [socket, currentRoom, myColor, onPlayerJoined, setGameStatus, onChatMessage, onRoomInfo, onGameResult, onGameInfo, t, onSearchCancelled, onSearchStarted]);
 

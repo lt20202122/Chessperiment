@@ -7,6 +7,7 @@ import { getPieceImage } from '@/app/[locale]/game/Data';
 import BoardStyle from '@/app/[locale]/game/BoardStyle';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import CleanUp from '@/components/editor/Cleanup';
 
 interface EditorSidebarProps {
     editMode: EditMode;
@@ -16,17 +17,12 @@ interface EditorSidebarProps {
     boardStyle: string;
     setBoardStyle: (style: string) => void;
     generateBoardData: () => string;
-    board: {
-        rows: number;
-        cols: number;
-        placedPieces: Record<string, { type: string; color: string }>;
-        activeSquares: Set<string>;
-    };
+    setBoard: any;
 }
 
 const pieceTypes = ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'];
 
-export default function EditorSidebar({ editMode, setEditMode, selectedPiece, setSelectedPiece, boardStyle, setBoardStyle, generateBoardData, board }: EditorSidebarProps) {
+export default function EditorSidebar({ editMode, setEditMode, selectedPiece, setSelectedPiece, boardStyle, setBoardStyle, generateBoardData, setBoard }: EditorSidebarProps) {
     const router = useRouter();
     const t = useTranslations('Editor.Board');
     const tg = useTranslations('Game');
@@ -124,12 +120,31 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
             )}
 
             {/* Board Style Selector */}
-            <div className="mb-8 border-t border-gray-200/20 pt-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-80">Design</h3>
-                <BoardStyle currentStyle={boardStyle} onStyleChange={(style) => {
-                    setBoardStyle(style);
-                    localStorage.setItem('boardStyle', style);
-                }} />
+            <div className="mb-8 border-t border-gray-200/20 pt-6 flex justify-around items-center gap-5">
+                <div>
+
+                    <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-80">Design</h3>
+                    <BoardStyle currentStyle={boardStyle} onStyleChange={(style) => {
+                        setBoardStyle(style);
+                        localStorage.setItem('boardStyle', style);
+                    }} />
+                </div>
+                <CleanUp
+                    handleCleanup={() => {
+                        setBoard({
+                            rows: 8,
+                            cols: 8,
+                            placedPieces: {},
+                            activeSquares: new Set<string>(),
+                        })
+                        localStorage.setItem("cols", "8")
+                        localStorage.setItem("rows", "8")
+                        localStorage.setItem("placedPieces", "{}")
+                        localStorage.setItem("activeSquares", "[]")
+                        window.location.reload()
+                        console.log("Booard reseted")
+                    }}
+                />
             </div>
 
             {/* Actions Grid */}
@@ -138,13 +153,13 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                     icon={<Globe size={18} />}
                     label={t('publish')}
                     sub={t('publishSub')}
-                    className="bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md border border-green-400/20"
+                    className="bg-linear-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md border border-green-400/20"
                 />
                 <ActionButton
                     icon={<Download size={18} />}
                     label={t('export')}
                     sub={t('exportSub')}
-                    className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md border border-blue-400/20"
+                    className="bg-linear-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md border border-blue-400/20"
                     onClick={handleExport}
                     copied={copied}
                 />
@@ -152,7 +167,7 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                     icon={<Swords size={18} />}
                     label={t('playYourself')}
                     sub={t('playYourselfSub')}
-                    className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-md border border-purple-400/20"
+                    className="bg-linear-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-md border border-purple-400/20"
                     onClick={() => {
                         sessionStorage.setItem('board', generateBoardData());
                         router.push('/editor/board/play');
@@ -160,7 +175,7 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                 />
             </div>
 
-            <div className="mt-auto bg-bg/50 rounded-xl p-4 border border-gray-200/20 mt-8">
+            <div className="mt-8 bg-bg/50 rounded-xl p-4 border border-gray-200/20">
                 <h4 className="font-semibold text-sm mb-2">{t('howToUse')}</h4>
                 <ul className="text-sm opacity-80 space-y-2">
                     {editMode === 'shape' ? (
@@ -204,7 +219,7 @@ function ActionButton({ label, sub, className, icon, onClick, copied }: { label:
                     {icon}
                 </div>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out z-0" />
+            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out z-0" />
         </button>
     )
 }

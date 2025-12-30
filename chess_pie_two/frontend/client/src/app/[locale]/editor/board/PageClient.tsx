@@ -48,9 +48,10 @@ export default function PageClient() {
                     boardStyle={boardStyle}
                     setBoardStyle={setBoardStyle}
                     generateBoardData={() => generateBoardData(board.rows, board.cols, board.activeSquares, board.placedPieces)}
-                    board={board}
+                    setBoard={setBoard}
                 />
             }>
+
                 <div className="flex flex-col items-center w-full">
                     <div className="mb-12 text-center max-w-2xl animate-in slide-in-from-top-4 fade-in duration-700">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 text-accent-hover text-xs font-semibold uppercase tracking-widest mb-4 border border-accent/20">
@@ -71,6 +72,7 @@ export default function PageClient() {
                         boardStyle={boardStyle}
                         generateBoardData={setBoardCallback}
                     />
+
                 </div>
             </EditorLayout>
         </>

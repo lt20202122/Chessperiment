@@ -10,18 +10,33 @@ export default function GamePage() {
 
     useEffect(() => {
         const handleMatchFound = (data: { roomId: string }) => {
+            console.log("Match found! Joining room:", data.roomId);
+            setIsSearching(false);
             router.push(`/game/${data.roomId}?mode=join`);
         };
 
+        const handleQuickSearchStarted = () => {
+            console.log("Quick search started - waiting for opponent...");
+        };
+
+        const handleSearchCancelled = () => {
+            console.log("Search cancelled");
+            setIsSearching(false);
+        };
+
         socket.on('match_found', handleMatchFound);
+        socket.on('quick_search_started', handleQuickSearchStarted);
+        socket.on('search_cancelled', handleSearchCancelled);
 
         return () => {
             socket.off('match_found', handleMatchFound);
+            socket.off('quick_search_started', handleQuickSearchStarted);
+            socket.off('search_cancelled', handleSearchCancelled);
         };
     }, [socket, router]);
 
     const handleQuickSearch = () => {
-        // Will be handled by socket, which will redirect when room is created
+        console.log("Quick search button clicked, emitting find_match event");
         socket.emit('find_match', { elo: 1200 }); // Placeholder ELO
         setIsSearching(true);
     };

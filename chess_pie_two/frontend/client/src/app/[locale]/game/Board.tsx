@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, Fragment, memo, useCallback } from "react"
 import { useTranslations } from "next-intl";
 import Loading from "@/app/loading";
 import Back from "./Back";
-import { Chess, type Square } from "chess.js";
+// import { Chess, type Square } from "chess.js"; // REMOVED
 import SocketComponent from "./SocketComponent";
 import BoardStyle from "./BoardStyle";
 import GameEndEffect from "./GameEndEffect";
@@ -24,9 +24,77 @@ import Toast from "./Toast";
 import { History, Share2 } from "lucide-react";
 import "./Board.css";
 import GameSidebar from "./GameSidebar";
-import { useStockfish } from "@/hooks/useStockfish";
+// import { useStockfish } from "@/hooks/useStockfish"; // REMOVED
 import GameLobby from "./GameLobby";
 import { useSocket } from "@/context/SocketContext";
+
+type Square = string;
+
+// Helpers
+const parseFen = (fen: string): PieceType[] => {
+  const [placement] = fen.split(' ');
+  const rows = placement.split('/');
+  const newPieces: PieceType[] = [];
+  const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+  rows.forEach((row, rowIndex) => {
+    let colIndex = 0;
+    for (const char of row) {
+      if (/\d/.test(char)) {
+        colIndex += parseInt(char);
+      } else {
+        const color = char === char.toUpperCase() ? 'white' : 'black';
+        const typeMap: Record<string, string> = {
+          'p': 'Pawn', 'r': 'Rook', 'n': 'Knight', 'b': 'Bishop', 'q': 'Queen', 'k': 'King'
+        };
+        const type = typeMap[char.toLowerCase()];
+        const position = `${files[colIndex]}${8 - rowIndex}`;
+        newPieces.push({
+          position,
+          type: type as any,
+          color,
+          size: 80 // Default, updated later
+        });
+        colIndex++;
+      }
+    }
+  });
+  return newPieces;
+};
+
+const generateFen = (boardPieces: PieceType[], turn: 'w' | 'b'): string => {
+  let fen = "";
+  const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  for (let i = 0; i < 8; i++) {
+    let empty = 0;
+    for (let j = 0; j < 8; j++) {
+      const pos = `${files[j]}${8 - i}`;
+      const piece = boardPieces.find(p => p.position === pos);
+      if (piece) {
+        if (empty > 0) {
+          fen += empty;
+          empty = 0;
+        }
+        let char = "";
+        switch (piece.type.toLowerCase()) {
+          case 'pawn': char = 'p'; break;
+          case 'rook': char = 'r'; break;
+          case 'knight': char = 'n'; break;
+          case 'bishop': char = 'b'; break;
+          case 'queen': char = 'q'; break;
+          case 'king': char = 'k'; break;
+        }
+        fen += piece.color === 'white' ? char.toUpperCase() : char;
+      } else {
+        empty++;
+      }
+    }
+    if (empty > 0) fen += empty;
+    if (i < 7) fen += "/";
+  }
+  return `${fen} ${turn} - - 0 1`; // Defaulting castling/enpassant/clocks
+};
+
 
 const getGamePieceScale = (type: string) => {
   switch (type.toLowerCase()) {
@@ -176,7 +244,7 @@ const SquareTile = memo(function SquareTile({
     <div
       key={pos}
       ref={combinedRef}
-      className={`square-tile ${isWhite ? "white-square" : "black-square"} ${isMoveFrom ? "move-from" : ""
+      className={`  ${isWhite ? "white-square" : "black-square"} ${isMoveFrom ? "move-from" : ""
         } ${isMoveTo ? "move-to" : ""} m-0 aspect-square relative ${eckenKlasse} flex items-center justify-center ${selected ? "ring-4 ring-blue-500" : ""
         }`}
       style={{
@@ -213,7 +281,7 @@ export default function Board({
   disableValidation,
 }: {
   initialRoomId?: string;
-  gameModeVar?: "online" | "computer";
+  gameModeVar?: "online" | "computer" | "local";
   initialFen?: string;
   onMove?: (move: any) => void;
   disableValidation?: boolean;
@@ -238,8 +306,9 @@ export default function Board({
   // Game Logic State
   const [gameStatus, setGameStatus] = useState<"waiting" | "playing" | "ended" | "">("");
   const [myColor, setMyColor] = useState<"white" | "black" | null>(null);
-  const chessRef = useRef(new Chess());
-  const [moveCount, setMoveCount] = useState(0);
+  // const chessRef = useRef(new Chess()); // REMOVED
+  const [currentTurn, setCurrentTurn] = useState<'w' | 'b'>('w');
+  const [moveCount, setMoveCount] = useState(0); // Need to track manually?
   const [redMarkedSquares, setRedMarkedSquares] = useState<Set<string>>(new Set());
   const [lastMoveFrom, setLastMoveFrom] = useState<string | null>(null);
   const [lastMoveTo, setLastMoveTo] = useState<string | null>(null);
@@ -263,43 +332,36 @@ export default function Board({
   const [playerCount, setPlayerCount] = useState(0);
 
   // New Modes
-  const [gameMode, setGameMode] = useState<"online" | "computer">(gameModeVar || 'online');
+  const [gameMode, setGameMode] = useState<"online" | "computer" | "local">(gameModeVar || 'local');
   const [stockfishDifficulty, setStockfishDifficulty] = useState(1300);
   const [isSearching, setIsSearching] = useState(false);
 
-  const syncBoardFromChess = useCallback(() => {
-    const board = chessRef.current.board();
-    const newPieces: PieceType[] = [];
-    board.forEach((row, i) => {
-      row.forEach((square, j) => {
-        if (square) {
-          const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
-          const position = `${files[j]}${8 - i}`;
-          let type = square.type === "n" ? "Knight" : square.type === "k" ? "King" : square.type === "q" ? "Queen" : square.type === "b" ? "Bishop" : square.type === "r" ? "Rook" : "Pawn";
-          // Helper for Knight naming if needed, existing code used "Knight" likely
-          if (square.type === "n") type = "Knight";
-
-          newPieces.push({
-            position,
-            type: type as any,
-            color: square.color === "w" ? "white" : "black",
-            size: blockSize,
-          });
-        }
-      });
-    });
-    setBoardPieces(newPieces);
-    setMoveCount(chessRef.current.moveNumber());
-    setMoveHistory(chessRef.current.history());
-  }, [blockSize]);
+  // const {
+  //   bestMove,
+  //   evaluation,
+  //   isThinking,
+  //   startSearch,
+  //   stopSearch,
+  //   setDifficulty
+  // } = useStockfish(chessRef.current, stockfishDifficulty); 
+  // REMOVED useStockfish call or commented out
 
   // --- INITIALIZATION ---
+  // Initialize game status when joining a room
+  useEffect(() => {
+    if (initialRoomId && gameStatus === "") {
+      setGameStatus("waiting");
+    }
+  }, [initialRoomId, gameStatus]);
+
   useEffect(() => {
     if (initialFen) {
-      chessRef.current.load(initialFen);
-      syncBoardFromChess();
+      const parsed = parseFen(initialFen);
+      setBoardPieces(parsed);
+      const parts = initialFen.split(' ');
+      if (parts[1]) setCurrentTurn(parts[1] as 'w' | 'b');
     }
-  }, [initialFen, syncBoardFromChess]);
+  }, [initialFen]);
 
   useEffect(() => {
     const savedStyle = localStorage.getItem("boardStyle");
@@ -338,132 +400,74 @@ export default function Board({
     localStorage.setItem("boardStyle", boardStyle);
   }, [boardStyle]);
 
-  // --- STOCKFISH ---
-  // Callback when Stockfish finds a move
-  const onStockfishMove = useCallback((move: string) => {
-    if (gameMode !== "computer" || gameStatus !== "playing") return;
+  // --- STOCKFISH (Disabled) ---
+  // Stockfish logic disabled as it depends on chess.js
 
-    try {
-      const from = move.substring(0, 2);
-      const to = move.substring(2, 4);
-      const promotion = move.length > 4 ? move.substring(4, 5) : undefined;
-
-      const result = chessRef.current.move({ from, to, promotion });
-      if (result) {
-        syncBoardFromChess();
-        setLastMoveFrom(from);
-        setLastMoveTo(to);
-        checkGameEnd();
-      }
-    } catch (e) {
-      console.error("Stockfish made illegal move?", move, e);
-    }
-  }, [gameMode, gameStatus]); // Dependencies
-
-  const { isReady: stockfishReady, isThinking, requestMove } = useStockfish(chessRef.current, stockfishDifficulty, onStockfishMove);
-
-  // Trigger computer move if it's their turn
-  useEffect(() => {
-    if (gameMode === "computer" && gameStatus === "playing") {
-      const turn = chessRef.current.turn(); // 'w' or 'b'
-      const computerColor = myColor === "white" ? "b" : "w";
-
-      if (turn === computerColor && !isThinking && !chessRef.current.isGameOver()) {
-        // Include a small delay for realism
-        const timer = setTimeout(() => {
-          requestMove();
-        }, 500);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [moveCount, gameMode, gameStatus, myColor, isThinking, requestMove]);
 
 
   // --- GAME LOGIC ---
 
   const checkGameEnd = () => {
-    if (chessRef.current.isGameOver()) {
-      setGameStatus("ended");
-      if (chessRef.current.isCheckmate()) {
-        const winner = chessRef.current.turn() === "w" ? "black" : "white";
-        setGameResult(winner === myColor ? "win" : "loss");
-        setGameInfo(winner === myColor ? "You Won!" : "Checkmate! You Lost.");
-      } else {
-        setGameResult("draw");
-        setGameInfo("Game Over: Draw");
-      }
-    } else if (chessRef.current.inCheck()) {
-      setToastMessage("Check!");
-      setShowToast(true);
-    }
+    // No explicit game end checking
   };
+
+  const getPieceAt = (pos: string) => boardPieces.find(p => p.position === pos);
 
   const executeMove = (from: string, to: string, promotion?: string) => {
-    if (disableValidation) {
-      // Manually move piece without validation
-      const piece = chessRef.current.remove(from as Square);
-      if (piece) {
-        chessRef.current.put(piece, to as Square);
-        syncBoardFromChess();
-        if (onMove) {
-          onMove({ fen: chessRef.current.fen() });
-        }
-      }
-      return;
+    const movingPiece = getPieceAt(from);
+    if (!movingPiece) return false;
+
+    const targetPiece = getPieceAt(to);
+    const isCapture = !!targetPiece;
+
+    let newPieces = boardPieces.filter(p => p.position !== from && p.position !== to);
+
+    const updatedPiece = { ...movingPiece, position: to };
+    if (promotion) {
+      const typeMap: Record<string, string> = {
+        'q': 'Queen', 'r': 'Rook', 'b': 'Bishop', 'n': 'Knight',
+        'Q': 'Queen', 'R': 'Rook', 'B': 'Bishop', 'N': 'Knight',
+        'p': 'Pawn', 'P': 'Pawn'
+      };
+      updatedPiece.type = (typeMap[promotion] || 'Queen') as any;
+    }
+    newPieces.push(updatedPiece);
+    setBoardPieces(newPieces);
+
+    const newTurn = currentTurn === 'w' ? 'b' : 'w';
+    setCurrentTurn(newTurn);
+
+    const fen = generateFen(newPieces, newTurn);
+
+    setLastMoveFrom(from);
+    setLastMoveTo(to);
+    setSelectedPos(null);
+    setRedMarkedSquares(new Set());
+
+    const audio = new Audio(isCapture ? "/sounds/capture.mp3" : "/sounds/move-self.mp3");
+    audio.play().catch(() => { });
+
+    if (gameMode === "online" && socket) {
+      socket.emit("move", {
+        roomId: currentRoom,
+        move: { from, to, promotion },
+        fen: fen,
+        history: []
+      });
     }
 
-    try {
-      const move = chessRef.current.move({ from, to, promotion: promotion || undefined });
-      if (move) {
-        syncBoardFromChess();
-        setLastMoveFrom(from);
-        setLastMoveTo(to);
-        setSelectedPos(null);
-        setRedMarkedSquares(new Set());
-
-        // Effects
-        if (move.captured) {
-          const audio = new Audio("/sounds/capture.mp3");
-          audio.play().catch(() => { });
-        } else {
-          const audio = new Audio("/sounds/move-self.mp3");
-          audio.play().catch(() => { });
-        }
-
-        // Online Sync
-        if (gameMode === "online" && socket) {
-          socket.emit("move", {
-            roomId: currentRoom,
-            move: { from, to, promotion },
-            fen: chessRef.current.fen(),
-            history: chessRef.current.history(),
-          });
-        }
-
-        // Check End
-        checkGameEnd();
-
-        if (onMove) {
-          onMove({ fen: chessRef.current.fen() });
-        }
-
-        return true;
-      }
-    } catch (e) {
-      // Invalid move
-      return false;
+    if (onMove) {
+      onMove({ fen });
     }
-    return false;
+
+    return true;
   };
+
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     setActivePiece(active.id);
     setSelectedPos(active.id as string);
-
-    // Optional: Highlight valid moves for this piece
-    const moves = chessRef.current.moves({ square: active.id as Square, verbose: true });
-    // marking valid moves logic can be added here
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -474,11 +478,10 @@ export default function Board({
       const from = active.id as string;
       const to = over.id as string;
 
-      // Check promotion
-      const piece = chessRef.current.get(from as Square);
-      const isPromotion = piece?.type === 'p' && (
-        (piece.color === 'w' && to[1] === '8') ||
-        (piece.color === 'b' && to[1] === '1')
+      const piece = getPieceAt(from);
+      const isPromotion = piece?.type === 'Pawn' && (
+        (piece.color === 'white' && to[1] === '8') ||
+        (piece.color === 'black' && to[1] === '1')
       );
 
       if (isPromotion) {
@@ -495,50 +498,44 @@ export default function Board({
   const handlePieceSelect = (pos: string) => {
     if (gameStatus !== "playing") return;
     if (isViewingHistory) return;
-    /* 
-       Complex click logic:
-       1. If nothing selected, select piece (if mine).
-       2. If selected, check if clicking same -> deselect.
-       3. If clicking different square -> attempt move.
-       4. If move invalid but clicked own piece -> change selection.
-    */
 
     if (!selectedPos) {
-      const piece = chessRef.current.get(pos as Square);
-      if (piece && (myColor ? piece.color === (myColor === 'white' ? 'w' : 'b') : true)) {
-        setSelectedPos(pos);
+      const piece = getPieceAt(pos);
+      if (piece) {
+        const pieceTurn = piece.color === 'white' ? 'w' : 'b';
+        if (pieceTurn === currentTurn) {
+          if (!myColor || piece.color === myColor) {
+            setSelectedPos(pos);
+          }
+        }
       }
     } else {
       if (selectedPos === pos) {
-        setSelectedPos(null); // Deselect
+        setSelectedPos(null);
       } else {
-        // Attempt Move
-        const piece = chessRef.current.get(selectedPos as Square);
+        const piece = getPieceAt(selectedPos);
         if (!piece) return;
 
-        const isPromotion = piece.type === 'p' && (
-          (piece.color === 'w' && pos[1] === '8') ||
-          (piece.color === 'b' && pos[1] === '1')
+        const isPromotion = piece.type === 'Pawn' && (
+          (piece.color === 'white' && pos[1] === '8') ||
+          (piece.color === 'black' && pos[1] === '1')
         );
 
         if (isPromotion) {
           setPromotionMove({ from: selectedPos, to: pos });
           setShowPromotionDialog(true);
         } else {
-          const success = executeMove(selectedPos, pos);
-          if (!success) {
-            // If move failed, maybe we clicked another own piece?
-            const targetPiece = chessRef.current.get(pos as Square);
-            if (targetPiece && targetPiece.color === piece.color) {
-              setSelectedPos(pos);
-            } else {
-              setSelectedPos(null);
-            }
+          const target = getPieceAt(pos);
+          if (target && target.color === piece.color) {
+            setSelectedPos(pos);
+          } else {
+            executeMove(selectedPos, pos);
           }
         }
       }
     }
   };
+
 
   const executePromotion = (pieceType: string) => {
     if (!promotionMove) return;
@@ -552,73 +549,26 @@ export default function Board({
     setStockfishDifficulty(elo);
     setCurrentRoom("Vs Stockfish");
     setGameStatus("playing");
-    setMyColor("white"); // Player is white
+    setMyColor("white");
     setGameResult(null);
     setGameInfo(`Playing vs Computer (Elo ${elo})`);
     setChatMessages(prev => [...prev, `System: Started game against Stockfish (Elo ${elo})`]);
 
-    chessRef.current.reset();
-    syncBoardFromChess();
+    // Reset board
+    const startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    setBoardPieces(parseFen(startFen));
+    setCurrentTurn('w');
   };
 
 
   // --- HISTORY VIEW MODE ---
   const navigateHistory = (direction: "prev" | "next" | "start" | "end") => {
-    const history = chessRef.current.history();
-    // Not strictly trivial with chess.js unless we replay.
-    // To visualize history, we often replay from start up to index.
-
-    let newIndex = historyIndex;
-    if (!isViewingHistory) newIndex = history.length - 1;
-
-    if (direction === "prev") newIndex = Math.max(-1, newIndex - 1);
-    if (direction === "next") newIndex = Math.min(history.length - 1, newIndex + 1);
-    if (direction === "start") newIndex = -1;
-    if (direction === "end") newIndex = history.length - 1;
-
-    setIsViewingHistory(true);
-    setHistoryIndex(newIndex);
-
-    // Reconstruct board at index
-    const tempChess = new Chess();
-    // Apply moves up to newIndex
-    for (let i = 0; i <= newIndex; i++) {
-      tempChess.move(history[i]);
-    }
-
-    // Sync phantom state (we don't overwrite chessRef current state, just visual pieces)
-    // BUT, Board uses boardPieces which are driven by syncBoardFromChess using chessRef.
-    // So we need to temporarily load position into chessRef? NO, that breaks game state.
-
-    // Better: separate visual pieces from logic? Or use a temp chess instance for displayPieces?
-    // For simplicity in this refactor, I will reuse syncBoard but we need to ensure we can restore state.
-    // Actually, standard practice: render from tempChess.board() but keep chessRef for game state.
-
-    const board = tempChess.board();
-    const newPieces: PieceType[] = [];
-    board.forEach((row, i) => {
-      row.forEach((square, j) => {
-        if (square) {
-          const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
-          const position = `${files[j]}${8 - i}`;
-          let type = square.type === "n" ? "Night" : square.type === "k" ? "King" : square.type === "q" ? "Queen" : square.type === "b" ? "Bishop" : square.type === "r" ? "Rook" : "Pawn";
-          if (square.type === "n") type = "Knight";
-          newPieces.push({
-            position,
-            type: type as any,
-            color: square.color === "w" ? "white" : "black",
-            size: blockSize,
-          });
-        }
-      });
-    });
-    setBoardPieces(newPieces);
+    // History navigation disabled in manual mode
   };
 
   const exitHistoryView = () => {
     setIsViewingHistory(false);
     setHistoryIndex(-1);
-    syncBoardFromChess(); // Restore current state
   };
 
 
@@ -674,7 +624,6 @@ export default function Board({
     socket.emit("join_room", { roomId: roomCode });
   };
 
-
   // --- RENDER ---
   const boardContent = [];
   let isWhite = true;
@@ -708,7 +657,11 @@ export default function Board({
           isViewingHistory={isViewingHistory}
           gameStatus={gameStatus}
           myColor={myColor}
-          amIAtTurn={!isViewingHistory && gameStatus === "playing" && chessRef.current.turn() === (myColor === "white" ? "w" : "b")}
+          amIAtTurn={!isViewingHistory && gameStatus === "playing" && (
+            myColor
+              ? currentTurn === (myColor === "white" ? "w" : "b")
+              : (displayPiece ? (displayPiece.color === "white" ? "w" : "b") === currentTurn : false)
+          )}
           squareRefs={squareRefs}
         />
       );
@@ -739,7 +692,7 @@ export default function Board({
 
       {/* --- MAIN CONTENT (BOARD or LOBBY) --- */}
       <div className="flex-1 min-h-0 min-w-0 flex flex-col items-center justify-center relative p-4 lg:p-10 overflow-y-auto" style={{ touchAction: 'pan-y' }}>
-        {(gameStatus === "" && !isSearching) || (gameStatus === "ended" && !isSearching) ? (
+        {(gameStatus === "" && !isSearching) ? (
           <GameLobby
             onQuickSearch={handleQuickSearch}
             onCancelSearch={handleCancelSearch}

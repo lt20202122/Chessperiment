@@ -163,7 +163,9 @@
             "piecesMode": "Pieces",
             "selectPiece": "Select Piece",
             "clickToPlace": "Click square to place {piece}",
-            "rightClickToRemove": "Right-click to remove piece"
+            "rightClickToRemove": "Right-click to remove piece",
+            "cleanup": "Start from scratch"
+
         },
         "Piece": {
             "loadFromDatabase": "Load from Database",

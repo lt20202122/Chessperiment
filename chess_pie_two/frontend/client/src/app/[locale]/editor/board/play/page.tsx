@@ -1,84 +1,88 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Board from '@/app/[locale]/game/Board';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Board from "./Board";
+import { ArrowLeft, RefreshCcw } from "lucide-react";
 
-interface PlacedPiece {
-    type: string;
-    color: string;
+/* =======================
+   Types – Custom Board
+======================= */
+
+export interface Coord {
+    col: number; // 0 .. cols-1
+    row: number; // 0 .. rows-1
 }
 
-interface CustomBoard {
-    activeSquares: string[];
-    placedPieces: {
-        [square: string]: PlacedPiece;
-    };
+export type PieceType =
+    | "pawn"
+    | "rook"
+    | "knight"
+    | "bishop"
+    | "queen"
+    | "king"
+    | string; // allows custom pieces
+
+export type Color = "white" | "black" | string;
+
+export interface PlacedPiece {
+    type: PieceType;
+    color: Color;
 }
+
+// key format: "col,row" (e.g. "3,5")
+export type PlacedPieces = Record<string, PlacedPiece>;
+
+export interface CustomBoard {
+    cols: number;
+    rows: number;
+    activeSquares: Coord[];
+    placedPieces: PlacedPieces;
+}
+
+/* =======================
+   Component
+======================= */
 
 export default function PlayPage() {
     const router = useRouter();
+
     const [board, setBoard] = useState<CustomBoard | null>(null);
-    const [fen, setFen] = useState<string | null>(null);
 
     useEffect(() => {
-        const boardData = sessionStorage.getItem('board');
-        if (boardData) {
-            const parsedBoard: CustomBoard = JSON.parse(boardData);
-            setBoard(parsedBoard);
+        const rawCols = localStorage.getItem("cols");
+        const rawRows = localStorage.getItem("rows");
+        console.log("PlayPage loaded. localStorage:", { rawCols, rawRows });
 
-            let fenString = "";
-            for (let i = 0; i < 8; i++) {
-                let emptySquares = 0;
-                for (let j = 0; j < 8; j++) {
-                    const square = `${String.fromCharCode(97 + j)}${8 - i}`;
-                    const piece = parsedBoard.placedPieces[square];
-                    if (piece) {
-                        if (emptySquares > 0) {
-                            fenString += emptySquares;
-                            emptySquares = 0;
-                        }
-                        fenString += piece.color === 'white' ? piece.type.charAt(0).toUpperCase() : piece.type.charAt(0).toLowerCase();
-                    } else {
-                        emptySquares++;
-                    }
-                }
-                if (emptySquares > 0) {
-                    fenString += emptySquares;
-                }
-                if (i < 7) {
-                    fenString += "/";
-                }
-            }
-            fenString += " w - - 0 1";
-            setFen(fenString);
+        const cols = parseInt(rawCols || "8", 10);
+        const rows = parseInt(rawRows || "8", 10);
+        const activeSquaresRaw = JSON.parse(localStorage.getItem("activeSquares") ?? "[]");
+        const activeSquares: Coord[] = activeSquaresRaw.map((s: string) => {
+            const [col, row] = s.split(',').map(Number);
+            return { col, row };
+        });
+        const placedPieces = JSON.parse(localStorage.getItem("placedPieces") ?? "{}");
+        setBoard({ cols, rows, activeSquares, placedPieces });
+    }, []);
 
-        } else {
-            router.push('/editor/board');
-        }
-
-        return () => {
-            sessionStorage.removeItem('board');
-        };
-    }, [router]);
-
-    if (!board || !fen) {
+    if (!board) {
         return <div>Loading...</div>;
     }
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
             <div className="w-full max-w-lg p-4 bg-white rounded-lg shadow-lg dark:bg-gray-800">
-                <div className="flex justify-between mb-4">
+                <div className="flex justify-between items-center mb-4">
+                    <button onClick={() => router.push('/editor/board')} className="p-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
+                        <ArrowLeft size={20} />
+                    </button>
                     <h1 className="text-2xl font-bold">Play vs. Yourself</h1>
+                    <button onClick={() => window.location.reload()} className="p-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
+                        <RefreshCcw size={20} />
+                    </button>
                 </div>
-                <Board
-                    initialFen={fen}
-                    disableValidation={true}
-                    onMove={(move) => {
-                        setFen(move.fen);
-                    }}
-                />
+
+                <Board board={board} />
             </div>
         </div>
     );

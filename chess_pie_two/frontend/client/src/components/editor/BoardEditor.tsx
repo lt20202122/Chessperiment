@@ -29,41 +29,46 @@ interface BoardEditorProps {
 }
 
 export default function BoardEditor({ editMode, selectedPiece, boardStyle, generateBoardData }: BoardEditorProps) {
+    const [rows, setRows] = useState<number>(() => Number(localStorage.getItem('rows') || 8));
+    const [cols, setCols] = useState<number>(() => Number(localStorage.getItem('cols') || 8));
+    const [placedPieces, setPlacedPieces] = useState<Record<string, { type: string; color: string }>>(() => {
+        try {
+            return JSON.parse(localStorage.getItem('placedPieces') || '{}');
+        } catch {
+            return {};
+        }
+    });
 
-    const [rows, setRows] = useState(8);
-    const [cols, setCols] = useState(8);
-    const [placedPieces, setPlacedPieces] =
-        useState<Record<string, { type: string; color: string }>>({});
-    const [activeSquares, setActiveSquares] = useState<Set<string>>(new Set());
+    const [activeSquares, setActiveSquares] = useState<Set<string>>(() => {
+        try {
+            const stored = localStorage.getItem('activeSquares');
+            if (stored) return new Set(JSON.parse(stored));
+        } catch { }
+        return new Set();
+    });
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const savedRows = Number(localStorage.getItem('boardEditorRows') || 8);
-        const savedCols = Number(localStorage.getItem('boardEditorCols') || 8);
-        const savedPieces = JSON.parse(
-            localStorage.getItem('boardEditorPlacedPieces') || '{}'
-        );
-
-        setRows(savedRows);
-        setCols(savedCols);
-        setPlacedPieces(savedPieces);
-
-        const initial = new Set<string>();
-        for (let y = 0; y < savedRows; y++) {
-            for (let x = 0; x < savedCols; x++) {
-                initial.add(toKey(x, y));
+        if (activeSquares.size === 0) {
+            const newSet = new Set<string>();
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    newSet.add(toKey(x, y));
+                }
             }
+            setActiveSquares(newSet);
         }
-        setActiveSquares(initial);
     }, []);
 
 
     useEffect(() => {
-        localStorage.setItem('boardEditorRows', rows.toString());
-        localStorage.setItem('boardEditorCols', cols.toString());
-        localStorage.setItem('boardEditorPlacedPieces', JSON.stringify(placedPieces));
+        localStorage.setItem('rows', rows.toString());
+        localStorage.setItem('cols', cols.toString());
+        localStorage.setItem('placedPieces', JSON.stringify(placedPieces));
+        localStorage.setItem('activeSquares', JSON.stringify(Array.from(activeSquares)));
+
         generateBoardData(rows, cols, activeSquares, placedPieces);
-    }, [rows, cols, placedPieces, generateBoardData]);
+    }, [rows, cols, placedPieces, activeSquares, generateBoardData]);
 
 
     const [squareSize, setSquareSize] = useState(70);
