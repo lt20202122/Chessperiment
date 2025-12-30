@@ -127,7 +127,7 @@ const searchQueue: string[] = [];
 io.on("connection", (socket: Socket) => {
     console.log("connected:", socket.id);
 
-    socket.on("quick_search", () => {
+    socket.on("find_match", () => {
         console.log("Quick search requested");
         const playerId = socketToPlayer.get(socket.id);
         if (!playerId) return;
@@ -169,13 +169,13 @@ io.on("connection", (socket: Socket) => {
             socketsP1.forEach(sid => {
                 const s = io.sockets.sockets.get(sid);
                 if (s) s.join(game.roomId);
-                io.to(sid).emit("start_game", { roomId: game.roomId, color: p1IsWhite ? "white" : "black", fen: game.board_fen });
+                io.to(sid).emit("match_found", { roomId: game.roomId, color: p1IsWhite ? "white" : "black", fen: game.board_fen });
             });
 
             socketsP2.forEach(sid => {
                 const s = io.sockets.sockets.get(sid);
                 if (s) s.join(game.roomId);
-                io.to(sid).emit("start_game", { roomId: game.roomId, color: p1IsWhite ? "black" : "white", fen: game.board_fen });
+                io.to(sid).emit("match_found", { roomId: game.roomId, color: p1IsWhite ? "black" : "white", fen: game.board_fen });
             });
         }
     });

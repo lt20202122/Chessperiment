@@ -1,3 +1,4 @@
+"use client";
 import React from 'react';
 import { Globe, Download, Share2, MousePointer, Move, LayoutGrid, UserCircle2, Swords } from 'lucide-react';
 import { EditMode } from '@/app/[locale]/editor/board/PageClient';
@@ -153,7 +154,7 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                     sub={t('playYourselfSub')}
                     className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-md border border-purple-400/20"
                     onClick={() => {
-                        sessionStorage.setItem('board', JSON.stringify({ ...board, activeSquares: Array.from(board.activeSquares) }));
+                        sessionStorage.setItem('board', generateBoardData());
                         router.push('/editor/board/play');
                     }}
                 />

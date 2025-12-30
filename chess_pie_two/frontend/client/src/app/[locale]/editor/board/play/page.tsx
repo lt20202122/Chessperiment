@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Chess, type Square } from 'chess.js';
 import Board from '@/app/[locale]/game/Board';
 
 interface PlacedPiece {
@@ -20,23 +19,40 @@ interface CustomBoard {
 export default function PlayPage() {
     const router = useRouter();
     const [board, setBoard] = useState<CustomBoard | null>(null);
-    const [game, setGame] = useState<Chess | null>(null);
-    const [moveValidation, setMoveValidation] = useState(true);
+    const [fen, setFen] = useState<string | null>(null);
 
     useEffect(() => {
         const boardData = sessionStorage.getItem('board');
         if (boardData) {
             const parsedBoard: CustomBoard = JSON.parse(boardData);
             setBoard(parsedBoard);
-            const newGame = new Chess();
-            newGame.clear();
-            parsedBoard.activeSquares.forEach((square) => {
-                const piece = parsedBoard.placedPieces[square];
-                if (piece) {
-                    newGame.put({ type: piece.type.charAt(0).toLowerCase() as any, color: piece.color.charAt(0) as any }, square as Square);
+
+            let fenString = "";
+            for (let i = 0; i < 8; i++) {
+                let emptySquares = 0;
+                for (let j = 0; j < 8; j++) {
+                    const square = `${String.fromCharCode(97 + j)}${8 - i}`;
+                    const piece = parsedBoard.placedPieces[square];
+                    if (piece) {
+                        if (emptySquares > 0) {
+                            fenString += emptySquares;
+                            emptySquares = 0;
+                        }
+                        fenString += piece.color === 'white' ? piece.type.charAt(0).toUpperCase() : piece.type.charAt(0).toLowerCase();
+                    } else {
+                        emptySquares++;
+                    }
                 }
-            });
-            setGame(newGame);
+                if (emptySquares > 0) {
+                    fenString += emptySquares;
+                }
+                if (i < 7) {
+                    fenString += "/";
+                }
+            }
+            fenString += " w - - 0 1";
+            setFen(fenString);
+
         } else {
             router.push('/editor/board');
         }
@@ -46,7 +62,7 @@ export default function PlayPage() {
         };
     }, [router]);
 
-    if (!board || !game) {
+    if (!board || !fen) {
         return <div>Loading...</div>;
     }
 
@@ -55,51 +71,14 @@ export default function PlayPage() {
             <div className="w-full max-w-lg p-4 bg-white rounded-lg shadow-lg dark:bg-gray-800">
                 <div className="flex justify-between mb-4">
                     <h1 className="text-2xl font-bold">Play vs. Yourself</h1>
-                    <div className="flex items-center">
-                        <span className="mr-2">Move Validation</span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                                type="checkbox"
-                                className="sr-only peer"
-                                checked={moveValidation}
-                                onChange={() => setMoveValidation(!moveValidation)}
-                            />
-                            <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                        </label>
-                    </div>
                 </div>
                 <Board
-                    initialFen={game.fen()}
-                    disableValidation={!moveValidation}
+                    initialFen={fen}
+                    disableValidation={true}
                     onMove={(move) => {
-                        setGame(new Chess(move.fen));
+                        setFen(move.fen);
                     }}
                 />
-                <div className="flex justify-between mt-4">
-                    <div className="text-lg font-bold">
-                        Turn: {game.turn() === 'w' ? 'White' : 'Black'}
-                    </div>
-                    <button
-                        className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-500"
-                        onClick={() => {
-                            const boardData = sessionStorage.getItem('board');
-                            if (boardData) {
-                                const parsedBoard = JSON.parse(boardData);
-                                const newGame = new Chess();
-                                newGame.clear();
-                                parsedBoard.activeSquares.forEach((square: string) => {
-                                    const piece = parsedBoard.placedPieces[square];
-                                    if (piece) {
-                                        newGame.put({ type: piece.type.charAt(0).toLowerCase(), color: piece.color.charAt(0) }, square as any);
-                                    }
-                                });
-                                setGame(newGame);
-                            }
-                        }}
-                    >
-                        Reset
-                    </button>
-                </div>
             </div>
         </div>
     );
