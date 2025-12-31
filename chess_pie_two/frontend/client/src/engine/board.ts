@@ -77,6 +77,10 @@ export class BoardClass {
         return this.stateManager.getHistory();
     }
 
+    getTurn(): "white" | "black" {
+        return this.stateManager.turn;
+    }
+
     clone(): BoardClass {
         const clonedBoard = new BoardClass();
         clonedBoard.stateManager = this.stateManager.clone();

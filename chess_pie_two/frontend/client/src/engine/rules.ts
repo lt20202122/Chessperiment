@@ -110,7 +110,7 @@ export class ValidatorClass {
 
     isLegal(from: Square, to: Square): boolean {
         const piece = this.board.getPiece(from);
-        if (!piece) {
+        if (!piece || piece.color !== this.board.getTurn()) {
             return false;
         }
 
