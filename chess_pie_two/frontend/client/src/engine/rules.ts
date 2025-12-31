@@ -1,5 +1,5 @@
 import { Square } from './types';
-import { Board } from './board';
+import { BoardClass as Board } from './board';
 import { King, Pawn } from './piece';
 import { toCoords, toSquare } from './utils';
 

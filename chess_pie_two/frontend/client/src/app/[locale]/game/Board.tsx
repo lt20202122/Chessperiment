@@ -156,7 +156,7 @@ const DraggablePiece = memo(function DraggablePiece({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0 : 1,
     transform: transform
       ? `translate(${transform.x}px, ${transform.y}px)`
       : "none",

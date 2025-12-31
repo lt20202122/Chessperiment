@@ -18,6 +18,7 @@ export abstract class Piece {
     }
 
     abstract isValidMove(from: Square, to: Square, BoardClass: BoardClass): boolean;
+    abstract clone(): Piece;
 }
 
 export class Pawn extends Piece {
@@ -53,6 +54,12 @@ export class Pawn extends Piece {
 
         return false;
     }
+
+    clone(): Pawn {
+        const p = new Pawn(this.id, this.color, this.position);
+        p.hasMoved = this.hasMoved;
+        return p;
+    }
 }
 
 export class Knight extends Piece {
@@ -72,6 +79,13 @@ export class Knight extends Piece {
         }
 
         return (diffX === 2 && diffY === 1) || (diffX === 1 && diffY === 2);
+        return (diffX === 2 && diffY === 1) || (diffX === 1 && diffY === 2);
+    }
+
+    clone(): Knight {
+        const p = new Knight(this.id, this.color, this.position);
+        p.hasMoved = this.hasMoved;
+        return p;
     }
 }
 
@@ -106,6 +120,13 @@ export class Bishop extends Piece {
         }
 
         return true;
+        return true;
+    }
+
+    clone(): Bishop {
+        const p = new Bishop(this.id, this.color, this.position);
+        p.hasMoved = this.hasMoved;
+        return p;
     }
 }
 
@@ -149,6 +170,13 @@ export class Rook extends Piece {
         }
 
         return true;
+        return true;
+    }
+
+    clone(): Rook {
+        const p = new Rook(this.id, this.color, this.position);
+        p.hasMoved = this.hasMoved;
+        return p;
     }
 }
 
@@ -162,6 +190,12 @@ export class Queen extends Piece {
         const rook = new Rook(this.id, this.color, from);
         const bishop = new Bishop(this.id, this.color, from);
         return rook.isValidMove(from, to, BoardClass) || bishop.isValidMove(from, to, BoardClass);
+    }
+
+    clone(): Queen {
+        const p = new Queen(this.id, this.color, this.position);
+        p.hasMoved = this.hasMoved;
+        return p;
     }
 }
 
@@ -183,5 +217,10 @@ export class King extends Piece {
 
         return diffX <= 1 && diffY <= 1;
     }
+
+    clone(): King {
+        const p = new King(this.id, this.color, this.position);
+        p.hasMoved = this.hasMoved;
+        return p;
+    }
 }
-BoardClass
