@@ -467,10 +467,9 @@ export default function Board({
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const { width } = entry.contentRect;
-        // Prioritize width to ensure full visibility horizontally. 
-        // Vertically, we allow the page to scroll if the board is taller than the viewport.
-        const minDim = width - 48; // 48px padding for safety (scrollbars, borders)
+        const { width, height } = entry.contentRect;
+        // Prioritize the smaller dimension to fit safely on screen
+        const minDim = Math.min(width, height) - 24; // 24px padding
         const calculated = Math.floor(minDim / 8);
 
         // Clamp between 20 and 120px per square
@@ -632,11 +631,11 @@ export default function Board({
   });
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-dvh w-full bg-stone-50 dark:bg-stone-950">
-      <div className="flex-1 flex flex-col relative bg-stone-100/50 dark:bg-black/20">
+    <div className="flex flex-col lg:flex-row h-dvh w-full bg-stone-50 dark:bg-stone-950 overflow-hidden">
+      <div className="flex-1 flex flex-col relative bg-stone-100/50 dark:bg-black/20 overflow-hidden">
         <div className="flex flex-col w-full h-full">
           {/* Top/Center content area */}
-          <div className={`flex-1 flex flex-col items-center p-2 lg:p-4 w-full overflow-auto ${gameStatus === "playing" ? "justify-start" : "justify-center"}`}>
+          <div className={`flex-1 flex flex-col items-center p-2 w-full overflow-hidden ${gameStatus === "playing" ? "justify-center" : "justify-center"}`}>
 
             {(gameStatus === "" && !isSearching) ? (
               <div className="text-center p-8 lg:p-12 bg-white dark:bg-stone-900 rounded-3xl lg:rounded-[3rem] shadow-2xl border border-stone-200 dark:border-stone-800 max-w-lg w-full animate-in zoom-in duration-500 my-auto">
@@ -664,7 +663,7 @@ export default function Board({
                 {/* Board Container - Flexible area */}
                 <div
                   ref={boardContainerRef}
-                  className="w-full flex justify-center p-1 max-w-3xl lg:max-w-[85vh] mx-auto"
+                  className="w-full h-full flex items-center justify-center min-h-0 p-2"
                 >
                   <div className="relative shadow-2xl rounded-xl bg-stone-300 dark:bg-stone-800 p-1 lg:p-2 animate-in zoom-in duration-700">
                     <div className="grid grid-cols-8 overflow-hidden rounded-lg shadow-inner" style={{ width: blockSize * 8, height: blockSize * 8 }}>
