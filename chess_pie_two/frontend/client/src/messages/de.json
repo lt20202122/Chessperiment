@@ -75,6 +75,10 @@
         "share": "Teilen",
         "quickSearch": "Schnellsuche",
         "searchingForGame": "Suche nach Spiel...",
+        "drawOfferDeclined": "Remis-Angebot vom Gegner abgelehnt",
+        "drawOfferDeclinedByYou": "Remis-Angebot von dir abgelehnt",
+        "drawOfferReceived": "Gegner hat Remis angeboten!",
+        "drawAccepted": "Remis angenommen!",
         "playAgainstComputer": "Gegen Computer spielen",
         "selectElo": "Elo auswählen",
         "start": "Starten",
@@ -122,6 +126,11 @@
             "title": "Gestalte dein <accent>Schachbrett</accent>",
             "description": "Erstelle einzigartige Schachbretter mit unserem intuitiven Editor",
             "actionsTitle": "Brett Aktionen",
+            "presets": "Vorlagen",
+            "standardBoard": "Standard Brett",
+            "emptyBoard": "Leeres Brett",
+            "smallBoard": "Kleines Brett (5x5)",
+            "largeBoard": "Großes Brett (10x10)",
             "actionsSub": "Verwende und teile deine Erstellung",
             "publish": "Brett veröffentlichen",
             "publishSub": "Mache es für alle öffentlich",
@@ -214,5 +223,76 @@
     },
     "FAQ": {
         "title": "Brett-Editor FAQ – Alle Antworten"
+    },
+    "LegalNotice": {
+        "title": "Impressum",
+        "providerHeading": "Anbieter",
+        "providerName": "ChessPie",
+        "providerAddress": "Ahlerfeld 29, Grassel, Meine",
+        "contactHeading": "Kontakt",
+        "emailLabel": "E-Mail:",
+        "emailValue": "contact.chesspie@gmail.com",
+        "phoneLabel": "Telefon:",
+        "phoneValue": "+49 1517 4288065",
+        "copyrightHeading": "Urheberrechtshinweis",
+        "copyrightText": "Die auf unserer Internetseite vorhandenen Texte, Bilder, Fotos, Videos oder Grafiken unterliegen in der Regel dem Schutz des Urheberrechts. Jede unberechtigte Verwendung (insbesondere die Vervielfältigung, Bearbeitung oder Verbreitung) dieser urheberrechtsgeschützten Inhalte ist daher untersagt. Wenn Sie beabsichtigen, diese Inhalte oder Teile davon zu verwenden, kontaktieren Sie uns bitte im Voraus unter den oben stehenden Angaben. Soweit wir nicht selbst Inhaber der benötigten urheberrechtlichen Nutzungsrechte sein sollten, bemühen wir uns, einen Kontakt zum Berechtigten zu vermitteln.",
+        "socialMediaHeading": "Social-Media-Profile",
+        "socialMediaText": "Dieses Impressum gilt auch für folgende Social-Media-Profile:",
+        "youtubeLabel": "YouTube:",
+        "otherProfilesLabel": "Sonstige Profile:",
+        "madeWith": "Erstellt mit freundlicher Unterstützung von",
+        "dieterLinkText": "Dieter macht den Datenschutz"
+    },
+    "SEO": {
+        "Footer": {
+            "title": "Häufig gestellte Fragen",
+            "whatIsChessPie": "Was ist ChessPie?",
+            "whatIsChessPieAnswer": "ChessPie ist die ultimative Plattform für individuelles Schach. Du kannst deine eigenen Bretter entwerfen, eigene Figuren Pixel für Pixel erstellen und einzigartige Schachvarianten online mit Freunden spielen.",
+            "isItFree": "Ist ChessPie kostenlos?",
+            "isItFreeAnswer": "Ja, ChessPie ist derzeit komplett kostenlos nutzbar. Du kannst spielen, erstellen und teilen ohne Kosten.",
+            "canIPlayFriends": "Kann ich mit Freunden spielen?",
+            "canIPlayFriendsAnswer": "Absolut! Teile einfach deinen Raumcode oder Link und spiele deine eigenen Varianten sofort im Browser."
+        },
+        "Home": {
+            "title": "ChessPie | Benutzerdefiniertes Schach Spielen & Erstellen",
+            "description": "Die ultimative Plattform für individuelles Schach. Erstelle eigene Schachfiguren, designe Bretter und spiele einzigartige Varianten online.",
+            "h1": "ChessPie - Die Plattform für individuelles Schach",
+            "p": "Gestalte einzigartige Schachsets, passe dein Brett an und spiele Multiplayer-Schachvarianten online."
+        },
+        "Game": {
+            "title": "Schach Online Spielen | Kostenloser Multiplayer | ChessPie",
+            "description": "Spiele Schach online mit Freunden auf eigenen Brettern. Schnell, kostenlos und ohne Registrierung.",
+            "h1": "Schach Online Spielen"
+        },
+        "EditorBoard": {
+            "title": "Schachbrett Editor | Designe 8x8, 10x10 Bretter | ChessPie",
+            "description": "Erstelle eigene Schachbrett-Layouts. Passe Größe, Farben und Startpositionen an. Exportieren oder direkt spielen.",
+            "h1": "Benutzerdefinierter Schachbrett-Editor"
+        },
+        "EditorPiece": {
+            "title": "Pixel Schachfiguren Editor | Eigene Figuren Erstellen | ChessPie",
+            "description": "Designe deine eigenen Schachfiguren mit unserem Pixel-Editor. Erstelle Könige, Damen und Märchenschach-Figuren.",
+            "h1": "Schachfiguren Designer"
+        },
+        "Marketplace": {
+            "title": "ChessPie Marktplatz | Schach-Sets Herunterladen",
+            "description": "Durchsuche und lade von der Community erstellte Schachbretter und Figurensets herunter.",
+            "h1": "Schachvarianten Marktplatz"
+        },
+        "Analyze": {
+            "title": "Schachpartien Analysieren | Stockfish Analyse | ChessPie",
+            "description": "Analysiere deine Schachpartien mit starken Engines. Verbessere deine Strategie und lerne aus Fehlern.",
+            "h1": "Schachpartie Analyse"
+        },
+        "Login": {
+            "title": "Anmelden bei ChessPie",
+            "description": "Melde dich bei ChessPie an, um deine Kreationen zu speichern und auf dein Profil zuzugreifen.",
+            "h1": "Bei ChessPie Anmelden"
+        },
+        "Announcements": {
+            "title": "ChessPie Neuigkeiten & Updates",
+            "description": "Bleib auf dem Laufenden mit den neuesten Funktionen und Updates von ChessPie.",
+            "h1": "Aktuelle Neuigkeiten"
+        }
     }
 }

@@ -1,25 +1,36 @@
 import Btn from "./Buttons"
-import type { Metadata } from "next";
-export const metadata: Metadata = {
-  title: "ChessPie | Custom Chess Board & Piece Creator",
-  description: "Create your own chess world. Design pieces, boards and rules. Play unique chess variants online with friends on ChessPie.",
-  alternates: {
-    canonical: "https://chesspie.org",
-  },
-  openGraph: {
-    title: "ChessPie | Custom Chess Board & Piece Creator",
-    description: "Create your own chess world. Design pieces, boards and rules. Play unique chess variants online.",
-    url: "https://chesspie.org",
-    type: "website",
-    images: [{ url: "/images/seo/og-home.png", width: 1200, height: 630 }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "ChessPie | Custom Chess Board & Piece Creator",
-    description: "Create your own chess world. Design pieces, boards and rules. Play unique chess variants online.",
-    images: ["/images/seo/twitter-image.png"],
-  },
-};
+import { SEOFooter } from "@/components/SEOFooter";
+import { getTranslations } from 'next-intl/server';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'SEO.Home' });
+
+  return {
+    title: t('title'),
+    description: t('description'),
+    alternates: {
+      canonical: "https://chesspie.org",
+      languages: {
+        'en': 'https://chesspie.org/en',
+        'de': 'https://chesspie.org/de'
+      },
+    },
+    openGraph: {
+      title: t('title'),
+      description: t('description'),
+      url: "https://chesspie.org",
+      type: "website",
+      images: [{ url: "/images/seo/og-home.png", width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t('title'),
+      description: t('description'),
+      images: ["/images/seo/twitter-image.png"],
+    },
+  };
+}
 
 const jsonLd_home = {
   "@context": "https://schema.org",
@@ -41,19 +52,28 @@ const jsonLd_home = {
         "@type": "ImageObject",
         "url": "https://chesspie.org/icon.png"
       },
-      "sameAs": [] // Populate when social links exist
+      "sameAs": []
     }
   ]
 };
 
-export default function Home() {
+export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'SEO.Home' });
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd_home).replace(/</g, '\\u003c') }}
       />
+      {/* Hidden H1 for SEO */}
+      <h1 className="sr-only">{t('h1')}</h1>
+      <p className="sr-only">{t('p')}</p>
+
       <Btn />
+
+      <SEOFooter />
     </>
   );
 }

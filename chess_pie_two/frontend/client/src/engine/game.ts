@@ -6,14 +6,14 @@ export class Game {
     private board: BoardClass;
     private validator: ValidatorClass;
 
-    constructor() {
-        this.board = new BoardClass();
+    constructor(customBoard?: BoardClass) {
+        this.board = customBoard || new BoardClass();
         this.validator = new ValidatorClass(this.board);
     }
 
-    makeMove(from: Square, to: Square): boolean {
+    makeMove(from: Square, to: Square, promotion?: string): boolean {
         if (this.validator.isLegal(from, to)) {
-            this.board.movePiece(from, to);
+            this.board.movePiece(from, to, promotion);
             return true;
         }
         return false;
@@ -21,5 +21,9 @@ export class Game {
 
     getBoard(): BoardClass {
         return this.board;
+    }
+
+    getTurn(): "white" | "black" {
+        return this.board.getTurn();
     }
 }

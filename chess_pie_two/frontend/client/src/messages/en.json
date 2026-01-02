@@ -109,6 +109,10 @@
         "share": "Share",
         "quickSearch": "Quick Search",
         "searchingForGame": "Searching for game...",
+        "drawOfferDeclined": "Draw offer declined by opponent",
+        "drawOfferDeclinedByYou": "Draw offer declined by you",
+        "drawOfferReceived": "Opponent offered a draw!",
+        "drawAccepted": "Draw accepted!",
         "playAgainstComputer": "Play against Computer",
         "selectElo": "Select Elo",
         "start": "Start",
@@ -144,6 +148,11 @@
             "title": "Design your \u003caccent\u003eBattlefields\u003c/accent\u003e",
             "description": "Create custom chess configurations. Drag edges to resize, click to toggle squares.",
             "actionsTitle": "Board Actions",
+            "presets": "Presets",
+            "standardBoard": "Standard Board",
+            "emptyBoard": "Empty Board",
+            "smallBoard": "Small Board (5x5)",
+            "largeBoard": "Large Board (10x10)",
             "actionsSub": "Manage and share your creation",
             "publish": "Publish Board",
             "publishSub": "Make it public for everyone",
@@ -241,5 +250,76 @@
     },
     "FAQ": {
         "title": "Board Editor FAQ – All Answers"
+    },
+    "LegalNotice": {
+        "title": "Legal Notice",
+        "providerHeading": "Provider",
+        "providerName": "ChessPie",
+        "providerAddress": "Ahlerfeld 29, Grassel, Meine",
+        "contactHeading": "Contact",
+        "emailLabel": "Email:",
+        "emailValue": "contact.chesspie@gmail.com",
+        "phoneLabel": "Phone:",
+        "phoneValue": "+49 1517 4288065",
+        "copyrightHeading": "Copyright Notice",
+        "copyrightText": "The texts, images, photos, videos, or graphics available on our website are generally subject to copyright protection. Any unauthorized use (in particular reproduction, processing, or distribution) of these copyright-protected contents is therefore prohibited. If you intend to use these contents or parts thereof, please contact us in advance using the details above. If we are not the owner of the required copyright usage rights ourselves, we will endeavor to arrange contact with the entitled party.",
+        "socialMediaHeading": "Social Media Profiles",
+        "socialMediaText": "This legal notice also applies to the following social media profiles:",
+        "youtubeLabel": "YouTube:",
+        "otherProfilesLabel": "Other Profiles:",
+        "madeWith": "Created with the friendly support of",
+        "dieterLinkText": "Dieter macht den Datenschutz"
+    },
+    "SEO": {
+        "Footer": {
+            "title": "Frequently Asked Questions",
+            "whatIsChessPie": "What is ChessPie?",
+            "whatIsChessPieAnswer": "ChessPie is the ultimate platform for custom chess. You can design your own board, create custom pieces pixel-by-pixel, and play unique chess variants with friends online.",
+            "isItFree": "Is ChessPie free?",
+            "isItFreeAnswer": "Yes, ChessPie is currently completely free to use. You can play, create, and share without any cost.",
+            "canIPlayFriends": "Can I play with friends?",
+            "canIPlayFriendsAnswer": "Absolutely! Just share your room code or link and play your custom variants instantly in your browser."
+        },
+        "Home": {
+            "title": "ChessPie | Play, Create & Share Custom Chess Variants",
+            "description": "The ultimate platform for custom chess. Create your own chess pieces, design boards, and play unique chess variants online with friends.",
+            "h1": "ChessPie - The Custom Chess Platform",
+            "p": "Design unique chess sets, customize your board, and play multiplayer chess variants online."
+        },
+        "Game": {
+            "title": "Play Custom Chess Online | Free Multiplayer | ChessPie",
+            "description": "Play chess online with friends using custom boards and pieces. Fast, free, and no registration required for quick play.",
+            "h1": "Play Chess Online"
+        },
+        "EditorBoard": {
+            "title": "Chess Board Editor | Design Custom 8x8, 10x10 Boards | ChessPie",
+            "description": "Create your own chess board layouts. Customize dimensions, colors, and starting positions. Export or play directly.",
+            "h1": "Custom Chess Board Editor"
+        },
+        "EditorPiece": {
+            "title": "Pixel Chess Piece Editor | Create Custom Pieces | ChessPie",
+            "description": "Design your own chess pieces with our pixel art editor. Create unique kings, queens, and custom fairy pieces.",
+            "h1": "Chess Piece Designer"
+        },
+        "Marketplace": {
+            "title": "ChessPie Marketplace | Download Custom Chess Sets",
+            "description": "Browse and download community-created chess boards and piece sets. Enhance your game with unique designs.",
+            "h1": "Chess Variant Marketplace"
+        },
+        "Analyze": {
+            "title": "Analyze Chess Games | Stockfish Analysis | ChessPie",
+            "description": "Analyze your chess games with powerful engines. Improve your strategy and learn from your mistakes.",
+            "h1": "Chess Game Analysis"
+        },
+        "Login": {
+            "title": "Login to ChessPie | Save Your Creations",
+            "description": "Log in to ChessPie to save your custom chess boards and pieces, and access your player profile.",
+            "h1": "Login to ChessPie"
+        },
+        "Announcements": {
+            "title": "ChessPie News & Announcements",
+            "description": "Stay updated with the latest features, updates, and community news from ChessPie.",
+            "h1": "Latest News"
+        }
     }
 }

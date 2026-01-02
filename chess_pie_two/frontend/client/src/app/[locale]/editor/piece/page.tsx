@@ -1,5 +1,6 @@
 import PageClient from "./PageClient";
-import type { Metadata } from "next";
+import { getTranslations } from 'next-intl/server';
+
 const jsonLd_pieceEditor = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -7,36 +8,51 @@ const jsonLd_pieceEditor = {
     "url": "https://chesspie.org/editor/piece",
     "description": "Design and customize chess pieces — shapes, colors, and animations.",
     "applicationCategory": "DesignApplication",
+    "operatingSystem": "Web",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "provider": { "@type": "Organization", "name": "ChessPie", "url": "https://chesspie.org" }
 };
 
-export const metadata: Metadata = {
-    title: "ChessPie | Custom Piece Editor",
-    description: "Design your own chess pieces from scratch. Pixel art editor for custom chess variants.",
-    alternates: {
-        canonical: "https://chesspie.org/editor/piece",
-    },
-    openGraph: {
-        title: "ChessPie | Custom Piece Editor",
-        description: "Design your own chess pieces from scratch. Pixel art editor for custom chess variants.",
-        url: "https://chesspie.org/editor/piece",
-        siteName: "ChessPie",
-        images: [{ url: "/images/seo/og-editor.png", width: 1200, height: 630 }],
-        type: "website",
-    },
-    twitter: {
-        card: "summary_large_image",
-        title: "ChessPie | Custom Piece Editor",
-        description: "Design unique chess pieces for your variants.",
-        images: ["/images/seo/twitter-image.png"],
-    },
-};
-export default function PiecePage() {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'SEO.EditorPiece' });
+    return {
+        title: t('title'),
+        description: t('description'),
+        alternates: {
+            canonical: "https://chesspie.org/editor/piece",
+            languages: {
+                'en': 'https://chesspie.org/en/editor/piece',
+                'de': 'https://chesspie.org/de/editor/piece'
+            }
+        },
+        openGraph: {
+            title: t('title'),
+            description: t('description'),
+            url: "https://chesspie.org/editor/piece",
+            siteName: "ChessPie",
+            images: [{ url: "/images/seo/og-editor.png", width: 1200, height: 630 }],
+            type: "website",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: t('title'),
+            description: t('description'),
+            images: ["/images/seo/twitter-image.png"],
+        },
+    };
+}
+
+export default async function PiecePage({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'SEO.EditorPiece' });
+
     return <>
         <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd_pieceEditor).replace(/</g, '\\u003c') }}
         />
+        <h1 className="sr-only">{t('h1')}</h1>
         <PageClient />
     </>
 }

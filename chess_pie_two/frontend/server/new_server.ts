@@ -12,79 +12,10 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        // origin: [
-        //     "http://localhost:3000",
-        //     "https://chessgamedev-l-ts-projects-95f31583.vercel.app",
-
-        // ],
         origin: "*",
         methods: ["GET", "POST"],
     },
 });
-
-const checkGameStatus = (game: Game) => {
-    if (!game) return;
-    const chess = new Chess(game.board_fen);
-    let gameInfo: string = "";
-    let result: string = "0";
-
-    if (chess.isCheckmate()) {
-        const winner = chess.turn() === "w" ? "Schwarz" : "Weiß";
-        gameInfo = `Schachmatt! ${winner} gewinnt!`
-        result = chess.turn() === "w" ? "b" : "w";
-        game.status = "ended";
-        return { gameInfo, result };
-    }
-
-    if (chess.isStalemate()) {
-        gameInfo = "Patt! Remis durch Patt.";
-        game.status = "ended";
-        return { gameInfo, result: "0" };
-    }
-
-    if (chess.isThreefoldRepetition()) {
-        gameInfo = "Remis durch dreifache Stellungswiederholung.";
-        game.status = "ended";
-        return { gameInfo, result: "0" };
-    }
-
-    if (chess.isInsufficientMaterial()) {
-        gameInfo = "Remis durch unzureichendes Material.";
-        game.status = "ended";
-        return { gameInfo, result: "0" };
-    }
-
-    const history = chess.history({ verbose: true });
-    let halfmoveClock = 0;
-
-    for (let i = history.length - 1; i >= 0; i--) {
-        const move = history[i];
-        if (move.captured || move.piece === "p") {
-            break;
-        }
-        halfmoveClock++;
-    }
-
-    if (halfmoveClock >= 150) {
-        gameInfo = "Remis durch 75-Züge-Regel.";
-        game.status = "ended";
-        return { gameInfo, result: "0" };
-    }
-
-    if (halfmoveClock >= 100) {
-        gameInfo = "50-Züge-Regel erreicht! Remis kann beansprucht werden."
-    } else if (chess.isDraw()) {
-        gameInfo = "Remis!";
-        game.status = "ended"
-        return { gameInfo, result: "0" };
-    } else if (chess.isCheck()) {
-        gameInfo = "Schach!";
-    } else {
-        gameInfo = "";
-    }
-
-    return false;
-};
 
 class Game {
     roomId: string;
@@ -95,6 +26,7 @@ class Game {
     status: "waiting" | "playing" | "ended";
     board_fen: string;
     history: string[];
+    chatMessages: { message: string, playerId: string }[];
     pendingMove: { to: Square, from: Square } | null;
 
     constructor(creatorPlayerId: string) {
@@ -103,6 +35,7 @@ class Game {
         this.status = "waiting";
         this.board_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         this.history = [] as string[];
+        this.chatMessages = [] as { message: string, playerId: string }[];
         this.pendingMove = null;
     }
 
@@ -122,32 +55,96 @@ class Game {
 const games = new Map<string, Game>();
 const playerToRoom = new Map<string, string>();
 const socketToPlayer = new Map<string, string>();
+const playerToSocket = new Map<string, string>(); 
 const searchQueue: string[] = [];
+
+const removeFromQueue = (playerId: string) => {
+    const index = searchQueue.indexOf(playerId);
+    if (index > -1) {
+        searchQueue.splice(index, 1);
+        console.log("Removed player from search queue:", playerId);
+        const sid = playerToSocket.get(playerId);
+        if (sid) io.to(sid).emit("search_cancelled");
+    }
+};
+
+const checkGameStatus = (game: Game) => {
+    try {
+        if (!game) return false;
+        const chess = new Chess(game.board_fen);
+
+        if (chess.isCheckmate()) {
+            const winner = chess.turn() === "w" ? "Black" : "White";
+            game.status = "ended";
+            return { gameInfo: `Checkmate! ${winner} wins!`, result: chess.turn() === "w" ? "b" : "w" };
+        }
+
+        if (chess.isStalemate()) {
+            game.status = "ended";
+            return { gameInfo: "Draw by Stalemate", result: "0" };
+        }
+
+        if (chess.isThreefoldRepetition()) {
+            game.status = "ended";
+            return { gameInfo: "Draw by Repetition", result: "0" };
+        }
+
+        if (chess.isInsufficientMaterial()) {
+            game.status = "ended";
+            return { gameInfo: "Draw by Insufficient Material", result: "0" };
+        }
+
+        if (chess.isDraw()) {
+            game.status = "ended";
+            return { gameInfo: "Draw", result: "0" };
+        }
+
+        if (chess.isCheck()) {
+            return { gameInfo: "Check!", result: "playing" };
+        }
+
+        return false;
+    } catch (e) {
+        console.error("checkGameStatus error:", e);
+        return false;
+    }
+};
 
 io.on("connection", (socket: Socket) => {
     console.log("connected:", socket.id);
 
     socket.on("find_match", () => {
-        console.log("Quick search requested from socket:", socket.id);
         const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) {
-            console.log("❌ Player not registered! Socket:", socket.id, "Available players:", Array.from(socketToPlayer.entries()));
-            return;
-        }
+        if (!playerId) return;
 
+        console.log("Quick search requested from socket:", socket.id);
         console.log("✅ Player entered quick search:", playerId);
 
-        // Avoid duplicates in queue
-        if (searchQueue.includes(playerId)) return;
-
-        searchQueue.push(playerId);
+        if (!searchQueue.includes(playerId)) {
+            searchQueue.push(playerId);
+        }
+        
         socket.emit("quick_search_started");
 
-        if (searchQueue.length >= 2) {
-            const p1 = searchQueue.shift()!;
-            const p2 = searchQueue.shift()!;
+        while (searchQueue.length >= 2) {
+            const p1 = searchQueue[0];
+            const p2 = searchQueue[1];
 
-            console.log("Matching players:", p1, "and", p2);
+            const s1Id = playerToSocket.get(p1);
+            const s2Id = playerToSocket.get(p2);
+
+            const socket1 = s1Id ? io.sockets.sockets.get(s1Id) : null;
+            const socket2 = s2Id ? io.sockets.sockets.get(s2Id) : null;
+
+            if (!socket1) {
+                searchQueue.shift(); continue;
+            }
+            if (!socket2) {
+                searchQueue.splice(1, 1); continue;
+            }
+
+            searchQueue.shift();
+            searchQueue.shift();
 
             const game = new Game(p1);
             game.addPlayer(p2);
@@ -157,459 +154,293 @@ io.on("connection", (socket: Socket) => {
             playerToRoom.set(p1, game.roomId);
             playerToRoom.set(p2, game.roomId);
 
-            // Notify both players
-            const socketsP1 = Array.from(socketToPlayer.entries()).filter(([_, id]) => id === p1).map(([sid]) => sid);
-            const socketsP2 = Array.from(socketToPlayer.entries()).filter(([_, id]) => id === p2).map(([sid]) => sid);
-
-            // Randomize colors
             const p1IsWhite = Math.random() > 0.5;
             if (!p1IsWhite) {
-                // Swap roles in game object if needed, or just emit correctly
                 game.players.white = p2;
                 game.players.black = p1;
             }
 
-            socketsP1.forEach(sid => {
-                const s = io.sockets.sockets.get(sid);
-                if (s) s.join(game.roomId);
-                io.to(sid).emit("match_found", { roomId: game.roomId, color: p1IsWhite ? "white" : "black", fen: game.board_fen });
-            });
+            socket1.join(game.roomId);
+            socket2.join(game.roomId);
 
-            socketsP2.forEach(sid => {
-                const s = io.sockets.sockets.get(sid);
-                if (s) s.join(game.roomId);
-                io.to(sid).emit("match_found", { roomId: game.roomId, color: p1IsWhite ? "black" : "white", fen: game.board_fen });
+            io.to(s1Id!).emit("match_found", { 
+                roomId: game.roomId, 
+                color: p1IsWhite ? "white" : "black", 
+                fen: game.board_fen,
+                status: "playing"
+            });
+            io.to(s2Id!).emit("match_found", { 
+                roomId: game.roomId, 
+                color: p1IsWhite ? "black" : "white", 
+                fen: game.board_fen,
+                status: "playing"
             });
         }
     });
 
     socket.on("cancel_search", () => {
         const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) return;
-        const index = searchQueue.indexOf(playerId);
-        if (index > -1) {
-            searchQueue.splice(index, 1);
-            socket.emit("search_cancelled");
-        }
+        if (playerId) removeFromQueue(playerId);
     });
 
     socket.on("register_player", (data: { playerId: string }) => {
         const playerId = data.playerId;
-        socketToPlayer.set(socket.id, playerId);  // Diese Zeile ist schon da
-        console.log("Player registered:", playerId, "Socket:", socket.id);
+        const oldPlayerId = socketToPlayer.get(socket.id);
 
-        // Wenn Spieler bereits in einem Raum war, rejoin
+        if (oldPlayerId && oldPlayerId !== playerId) {
+            console.log(`🔄 Identity transfer on socket ${socket.id}: ${oldPlayerId} -> ${playerId}`);
+            const roomId = playerToRoom.get(oldPlayerId);
+            if (roomId) {
+                const game = games.get(roomId);
+                if (game) {
+                    if (game.players.white === oldPlayerId) game.players.white = playerId;
+                    if (game.players.black === oldPlayerId) game.players.black = playerId;
+                    playerToRoom.set(playerId, roomId);
+                    playerToRoom.delete(oldPlayerId);
+                }
+            }
+            const qIdx = searchQueue.indexOf(oldPlayerId);
+            if (qIdx > -1) searchQueue[qIdx] = playerId;
+        }
+        
+        const currentActiveSocket = playerToSocket.get(playerId);
+        if (currentActiveSocket && currentActiveSocket !== socket.id) {
+            socketToPlayer.delete(currentActiveSocket);
+        }
+
+        socketToPlayer.set(socket.id, playerId);
+        playerToSocket.set(playerId, socket.id); 
+        console.log(`[Register] Player ${playerId} registered on socket ${socket.id}. Active games: ${games.size}`);
+
         const roomId = playerToRoom.get(playerId);
         if (roomId) {
             const game = games.get(roomId);
             if (game && game.status !== "ended") {
-                socket.join(roomId);  // Stelle sicher, dass der Socket dem Raum beitritt
+                socket.join(roomId);
                 const color = game.getColorForPlayer(playerId);
-
-                if (!color) {
-                    console.log("⚠️ Rejoin Warning: Player", playerId, "is in room", roomId, "but not in game players:", game.players);
-                }
-
+                console.log(`[Rejoin] Found room ${roomId} for player ${playerId}. Color: ${color}`);
                 socket.emit("rejoin_game", {
                     roomId,
-                    color: color === "w" ? "white" : (color === "b" ? "black" : null),
+                    color: color === "w" ? "white" : (color === "b" ? "black" : ""),
                     fen: game.board_fen,
                     status: game.status,
-                    history: game.history
+                    history: game.history,
+                    chatMessages: game.chatMessages
                 });
-                console.log("Player rejoined:", playerId, "Room:", roomId);
             }
         }
+    });
+
+
+    socket.on("offer_draw", () => {
+        const playerId = socketToPlayer.get(socket.id);
+        const roomId = playerId ? playerToRoom.get(playerId) : null;
+        if (roomId) socket.to(roomId).emit("draw_offered", { from: playerId });
+    });
+
+    socket.on("accept_draw", () => {
+        const playerId = socketToPlayer.get(socket.id);
+        const roomId = playerId ? playerToRoom.get(playerId) : null;
+        const game = roomId ? games.get(roomId) : null;
+        if (game && game.status === "playing") {
+            game.status = "ended";
+            io.to(roomId!).emit("game_ended", { reason: "Draw Accepted", result: "0", status: "ended" });
+        }
+    });
+
+    socket.on("decline_draw", () => {
+        const playerId = socketToPlayer.get(socket.id);
+        const roomId = playerId ? playerToRoom.get(playerId) : null;
+        if (roomId) socket.to(roomId).emit("draw_declined");
     });
 
     socket.on("request_fen", () => {
         const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) return;
-        const roomId = playerToRoom.get(playerId);
-        if (!roomId) return;
-        const game = games.get(roomId);
-        if (!game) return;
-        socket.emit("receive_fen", { board_fen: game.board_fen });
+        const roomId = playerId ? playerToRoom.get(playerId) : null;
+        const game = roomId ? games.get(roomId) : null;
+        if (game) socket.emit("receive_fen", { board_fen: game.board_fen });
     });
 
     socket.on("request_history", () => {
         const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) return;
-        const roomId = playerToRoom.get(playerId);
-        if (!roomId) return;
-        const game = games.get(roomId);
-        if (!game) return;
-        socket.emit("receive_history", { history: game.history });
+        const roomId = playerId ? playerToRoom.get(playerId) : null;
+        const game = roomId ? games.get(roomId) : null;
+        if (game) socket.emit("receive_history", { history: game.history });
     });
 
     socket.on("request_game_status", (callback) => {
         const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) return;
-        const roomId = playerToRoom.get(playerId);
-        if (!roomId) return;
-        const game = games.get(roomId);
-        if (!game) return;
-        callback(game.status);
+        const roomId = playerId ? playerToRoom.get(playerId) : null;
+        const game = roomId ? games.get(roomId) : null;
+        if (game) callback(game.status);
     });
 
     socket.on("create_room", () => {
         const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) {
-            socket.emit("error", { message: "Player not registered" });
-            return;
-        }
-
-        console.log("Creating room for player:", playerId);
+        if (!playerId) return;
+        removeFromQueue(playerId);
         const game = new Game(playerId);
-
-        games.set(game.roomId.trim().toUpperCase(), game);
+        games.set(game.roomId.toUpperCase(), game);
         playerToRoom.set(playerId, game.roomId);
         socket.join(game.roomId);
-
         socket.emit("room_created", { roomId: game.roomId, color: "white" });
     });
 
-    socket.on("move", (data: { from: string; to: string; promotion?: string }) => {
-        try {
-            const playerId = socketToPlayer.get(socket.id);
-            if (!playerId) {
-                socket.emit("illegal_move", { reason: "not_registered" });
-                return;
-            }
-
-            const roomId = playerToRoom.get(playerId);
-            if (!roomId) {
-                console.log("❌ not_in_room - playerToRoom:", Array.from(playerToRoom.entries()));
-                socket.emit("illegal_move", { reason: "not_in_room" });
-                return;
-            }
-
-            const game = games.get(roomId);
-            if (!game) {
-                console.log("❌ room_not_found - games:", Array.from(games.keys()));
-                socket.emit("illegal_move", { reason: "room_not_found" });
-                return;
-            }
-
-            const color = game.getColorForPlayer(playerId);
-            if (!color) {
-                socket.emit("illegal_move", { reason: "not_a_player" });
-                return;
-            }
-
-            const chess = new Chess(game.board_fen);
-
-            if (chess.turn() !== color) {
-                socket.emit("illegal_move", { reason: "not_your_turn" });
-                return;
-            }
-
-            const piece = chess.get(data.from as Square);
-            const toRank = parseInt(data.to[1]);
-            const isPawnPromotion =
-                piece && piece.type === "p" &&
-                ((piece.color === "w" && toRank === 8) || (piece.color === "b" && toRank === 1));
-
-            if (isPawnPromotion && !data.promotion) {
-                socket.emit("promotion_needed", { from: data.from, to: data.to });
-                game.pendingMove = { from: data.from as Square, to: data.to as Square };
-                return;
-            }
-
-            const moveObj: any = { from: data.from, to: data.to };
-            if (data.promotion) moveObj.promotion = data.promotion;
-
-            const moveResult = chess.move(moveObj);
-            if (!moveResult) {
-                socket.emit("illegal_move", {
-                    reason: "illegal_move",
-                    from: data.from,
-                    to: data.to
-                });
-                return;
-            }
-
-            game.board_fen = chess.fen();
-            game.history.push(moveResult.san);
-
-            const status = checkGameStatus(game);
-
-            io.to(roomId).emit("move", {
-                from: moveResult.from,
-                to: moveResult.to,
-                promotion: moveResult.promotion ?? null,
-                san: moveResult.san,
-                fen: game.board_fen,
-                gameStatus: game.status,
-            });
-
-            if (game.status === "ended" && status) {
-                io.to(roomId).emit("game_ended", {
-                    reason: status.gameInfo,
-                    result: status.result,
-                    status: "ended"
-                });
-            }
-        } catch (err) {
-            console.error("Server move handler error:", err);
-            socket.emit("illegal_move", { reason: "server_error" });
-        }
-    });
-
-    // In deinem Server Code, ersetze den promotion_done Handler mit diesem:
-
-    socket.on("promotion_done", (data: { promotion: string }) => {
-        const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) {
-            socket.emit("illegal_move", { reason: "not_registered" });
-            return;
-        }
-
-        const roomId = playerToRoom.get(playerId);
-        if (!roomId) {
-            socket.emit("illegal_move", { reason: "not_in_room" });
-            return;
-        }
-
-        const game = games.get(roomId);
-        if (!game) {
-            socket.emit("illegal_move", { reason: "room_not_found" });
-            return;
-        }
-
-        const pendingMove = game.pendingMove;
-        if (!pendingMove) {
-            socket.emit("illegal_move", { reason: "no_pending_move" });
-            return;
-        }
-
-        try {
-            const chess = new Chess(game.board_fen);
-            const moveResult = chess.move({
-                from: pendingMove.from,
-                to: pendingMove.to,
-                promotion: data.promotion,
-            });
-
-            if (!moveResult) {
-                socket.emit("illegal_move", { reason: "illegal_promotion_move" });
-                return;
-            }
-
-            game.board_fen = chess.fen();
-            game.history.push(moveResult.san);
-            game.pendingMove = null;
-
-            const status = checkGameStatus(game);
-
-            io.to(roomId).emit("move", {
-                from: moveResult.from,
-                to: moveResult.to,
-                promotion: moveResult.promotion,
-                san: moveResult.san,
-                fen: game.board_fen,
-                gameStatus: game.status,
-            });
-
-            if (game.status === "ended" && status) {
-                io.to(roomId).emit("game_ended", {
-                    reason: status.gameInfo,
-                    result: status.result,
-                    status: "ended"
-                });
-            }
-        } catch (error) {
-            console.error("Promotion error:", error);
-            socket.emit("illegal_move", { reason: "illegal_promotion_move" });
-        }
-    });
-
-    socket.on("disconnect", () => {
-        const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) return;
-
-        const roomId = playerToRoom.get(playerId);
-        if (!roomId) return;
-
-        const game = games.get(roomId);
-        if (!game) return;
-
-        // Benachrichtige andere Spieler - NICHT das Spiel beenden
-        // socket.to(roomId).emit("opp_disconnected", { playerId });
-
-        // NICHT den Spieler aus dem Spiel entfernen - nur Socket-Disconnect
-        // Spieler kann sich wieder verbinden
-        socketToPlayer.delete(socket.id);
-
-        console.log("disconnected:", socket.id, "Player:", playerId);
-    });
-
     socket.on("join_room", (data) => {
-        console.log("Trying to join room:", data);
-
         const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) {
-            socket.emit("error", { message: "Player not registered" });
+        if (!playerId || !data.roomId) {
+            socket.emit("error", { message: "Player not registered or no room ID provided" });
             return;
         }
-
-        if (!data.roomId) {
-            socket.emit("room_not_found");
-            return;
-        }
-
         const roomId = data.roomId.trim().toUpperCase();
         const game = games.get(roomId);
+        console.log(`[Join Room Request] Room: ${roomId}, Player: ${playerId}. Game found: ${!!game}`);
 
         if (!game) {
-            console.log("Room not found:", roomId, "Available:", Array.from(games.keys()));
-            socket.emit("room_not_found");
+            console.log(`[Join Room] Room ${roomId} not found for player ${playerId}`);
+            socket.emit("room_not_found", { roomId }); 
+            return;
+        }
+
+        const existingColor = game.getColorForPlayer(playerId);
+        if (existingColor) {
+            console.log(`[Join Room] Player ${playerId} already in room ${roomId}. Sending rejoin.`);
+            playerToRoom.set(playerId, roomId);
+            socket.join(roomId);
+            socket.emit("rejoin_game", {
+                roomId,
+                color: existingColor === "w" ? "white" : "black",
+                fen: game.board_fen,
+                status: game.status,
+                history: game.history,
+                chatMessages: game.chatMessages
+            });
             return;
         }
 
         if (game.players.white && game.players.black) {
-            socket.emit("room_full");
-            return;
-        }
-
-        if (game.players.white === playerId || game.players.black === playerId) {
-            socket.emit("already_in_room");
+            console.log(`[Join Room] Room ${roomId} is full. Player ${playerId} joining as spectator.`);
+            socket.join(roomId);
+            socket.emit("rejoin_game", {
+                roomId,
+                color: "",
+                fen: game.board_fen,
+                status: game.status,
+                history: game.history,
+                chatMessages: game.chatMessages
+            });
             return;
         }
 
         game.addPlayer(playerId);
         playerToRoom.set(playerId, roomId);
         socket.join(roomId);
-
-        console.log("Player joined:", playerId, "as black");
-
+        removeFromQueue(playerId);
         socket.emit("joined_room", { roomId, color: "black" });
-
         if (game.players.white && game.players.black) {
             game.status = "playing";
-            console.log("White player:", game.players.white);
-            console.log("Black player:", game.players.black);
-
-            // Finde die Sockets für beide Spieler
-            const whiteSockets = Array.from(socketToPlayer.entries())
-                .filter(([_, pId]) => pId === game.players.white)
-                .map(([sId, _]) => sId);
-            const blackSockets = Array.from(socketToPlayer.entries())
-                .filter(([_, pId]) => pId === game.players.black)
-                .map(([sId, _]) => sId);
-
-            whiteSockets.forEach(socketId => {
-                io.to(socketId).emit("start_game", {
-                    roomId,
-                    fen: game.board_fen,
-                    color: "white"
-                });
-            });
-
-            blackSockets.forEach(socketId => {
-                io.to(socketId).emit("start_game", {
-                    roomId,
-                    fen: game.board_fen,
-                    color: "black"
-                });
-            });
-
-            console.log("Game started in room:", roomId);
+            io.to(roomId).emit("start_game", { roomId, fen: game.board_fen, status: "playing" });
         }
     });
+
+    socket.on("move", (data: { from: string; to: string; promotion?: string }) => {
+        const playerId = socketToPlayer.get(socket.id);
+        const roomId = playerId ? playerToRoom.get(playerId) : null;
+        const game = roomId ? games.get(roomId) : null;
+        if (!game || game.status !== "playing") return;
+        const color = game.getColorForPlayer(playerId!);
+        if (!color) return;
+
+        try {
+            const chess = new Chess(game.board_fen);
+            if (chess.turn() !== color) return;
+
+            const piece = chess.get(data.from as Square);
+            const toRank = parseInt(data.to[1]);
+            const isPawnPromotion = piece && piece.type === "p" && ((piece.color === "w" && toRank === 8) || (piece.color === "b" && toRank === 1));
+
+            console.log(`[Move Request] Room: ${roomId}, Player: ${playerId}, Move: ${data.from}->${data.to}, Promotion: ${data.promotion}, IsPromo: ${isPawnPromotion}`);
+
+            if (isPawnPromotion && !data.promotion) {
+                console.log(`[Promotion Needed] Room: ${roomId}, Move: ${data.from}->${data.to}`);
+                socket.emit("promotion_needed", { from: data.from, to: data.to });
+                game.pendingMove = { from: data.from as Square, to: data.to as Square };
+                return;
+            }
+
+            const moveResult = chess.move({ from: data.from, to: data.to, promotion: data.promotion });
+            if (moveResult) {
+                console.log(`[Move Accepted] Room: ${roomId}, SAN: ${moveResult.san}`);
+                game.board_fen = chess.fen();
+                game.history.push(moveResult.san);
+                game.pendingMove = null; // Clear any pending promotion
+                const status = checkGameStatus(game);
+                io.to(roomId!).emit("move", { 
+                    from: moveResult.from, 
+                    to: moveResult.to, 
+                    promotion: moveResult.promotion, 
+                    san: moveResult.san, 
+                    fen: game.board_fen, 
+                    gameStatus: game.status 
+                });
+                if ((game.status as string) === "ended" && status) {
+                    io.to(roomId!).emit("game_ended", { reason: status.gameInfo, result: status.result, status: "ended" });
+                }
+            } else {
+                console.warn(`[Move Rejected] Invalid move attempted in room ${roomId}: ${data.from}-${data.to}`);
+                socket.emit("error", { message: "Invalid move" });
+                socket.emit("receive_fen", { board_fen: game.board_fen }); // Resync client
+            }
+        } catch (err) { 
+            console.error(`[Move Error] Room ${roomId}:`, err);
+            socket.emit("error", { message: "Legal move validation error" });
+        }
+    });
+
     socket.on("resign", () => {
         const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) return;
-        const roomId = playerToRoom.get(playerId);
-        if (!roomId) return;
-        const game = games.get(roomId);
-        if (!game || game.status !== "playing") return;
-
-        const myColor = game.getColorForPlayer(playerId);
-        if (!myColor) return;
-
-        game.status = "ended";
-        // If I resign, opponent wins
-        const result = myColor === "w" ? "b" : "w";
-
-        io.to(roomId).emit("game_ended", {
-            reason: "Gegner hat aufgegeben",
-            result: result,
-            status: "ended"
-        });
-    });
-
-    socket.on("offer_draw", () => {
-        const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) return;
-        const roomId = playerToRoom.get(playerId);
-        if (!roomId) return;
-        const game = games.get(roomId);
-        if (!game || game.status !== "playing") return;
-
-        // Send ONLY to opponent
-        socket.to(roomId).emit("draw_offered", { from: playerId });
-    });
-
-    socket.on("accept_draw", () => {
-        const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) return;
-        const roomId = playerToRoom.get(playerId);
-        if (!roomId) return;
-        const game = games.get(roomId);
-        if (!game || game.status !== "playing") return;
-
-        game.status = "ended";
-
-        io.to(roomId).emit("game_ended", {
-            reason: "Remis vereinbart",
-            result: "0",
-            status: "ended"
-        });
-    });
-
-    socket.on("reset_game", () => {
-        const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) return;
-
-        const roomId = playerToRoom.get(playerId);
-        if (roomId) {
-            console.log("♻️ Deleting room:", roomId, "requested by player:", playerId);
-
-            // Notify others in room
-            socket.to(roomId).emit("game_ended", {
-                reason: "Das Spiel wurde vom Host zurückgesetzt.",
-                status: "ended"
-            });
-
-            // Cleanup
-            const game = games.get(roomId);
-            if (game) {
-                if (game.players.white) playerToRoom.delete(game.players.white);
-                if (game.players.black) playerToRoom.delete(game.players.black);
-                games.delete(roomId);
-            }
+        const roomId = playerId ? playerToRoom.get(playerId) : null;
+        const game = roomId ? games.get(roomId) : null;
+        if (game && game.status === "playing") {
+            const myColor = game.getColorForPlayer(playerId!);
+            game.status = "ended";
+            io.to(roomId!).emit("game_ended", { reason: "Resigned", result: myColor === "w" ? "b" : "w", status: "ended" });
         }
     });
 
     socket.on("chat_message", (data: { message: string }) => {
         const playerId = socketToPlayer.get(socket.id);
-        if (!playerId) return;
+        const roomId = playerId ? playerToRoom.get(playerId) : null;
+        if (roomId) {
+            const game = games.get(roomId);
+            if (game) game.chatMessages.push({ message: data.message, playerId: playerId! });
+            io.to(roomId).emit("chat_message", { message: data.message, playerId });
+        }
+    });
 
-        const roomId = playerToRoom.get(playerId);
-        if (!roomId) return;
-
-        console.log("Chat Message in room", roomId, ":", data.message);
-
-        // Broadcast to everyone in the room
-        io.to(roomId).emit("chat_message", {
-            message: data.message,
-            playerId: playerId
-        });
+    socket.on("disconnect", () => {
+        const playerId = socketToPlayer.get(socket.id);
+        if (playerId && playerToSocket.get(playerId) === socket.id) {
+            console.log("Active socket disconnected:", playerId);
+        }
+        socketToPlayer.delete(socket.id);
     });
 });
+
+import os from 'os';
 
 const PORT = process.env.PORT || 3002;
 server.listen(PORT as number, "0.0.0.0", () => {
     console.log("Server running on port", PORT);
+    const interfaces = os.networkInterfaces();
+    for (const devName in interfaces) {
+        const iface = interfaces[devName];
+        if (iface) {
+            for (const alias of iface) {
+                if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) {
+                    console.log(`📡 Local Network IP: http://${alias.address}:${PORT}`);
+                }
+            }
+        }
+    }
 });

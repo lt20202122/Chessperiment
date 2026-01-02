@@ -1,0 +1,49 @@
+"use client";
+
+import { useTranslations } from 'next-intl';
+
+export function SEOFooter() {
+    const t = useTranslations('SEO.Footer');
+
+    const faqs = [
+        { q: 'whatIsChessPie', a: 'whatIsChessPieAnswer' },
+        { q: 'isItFree', a: 'isItFreeAnswer' },
+        { q: 'canIPlayFriends', a: 'canIPlayFriendsAnswer' },
+    ];
+
+    return (
+        <footer className="w-full max-w-7xl mx-auto px-4 py-16 mt-20 border-t border-stone-200 dark:border-stone-800">
+            <div className="grid md:grid-cols-2 gap-12">
+                <div>
+                    <h2 className="text-2xl font-bold mb-6 text-stone-900 dark:text-stone-100">{t('title')}</h2>
+                    <div className="space-y-4">
+                        {faqs.map((faq) => (
+                            <details key={faq.q} className="group bg-stone-50 dark:bg-stone-900/50 rounded-lg p-4 cursor-pointer">
+                                <summary className="font-semibold text-stone-800 dark:text-stone-200 list-none flex justify-between items-center">
+                                    {t(faq.q)}
+                                    <span className="transition group-open:rotate-180">
+                                        <svg fill="none" height="24" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                                    </span>
+                                </summary>
+                                <p className="text-stone-600 dark:text-stone-400 mt-4 leading-relaxed animate-in slide-in-from-top-2 duration-200">
+                                    {t(faq.a)}
+                                </p>
+                            </details>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex flex-col justify-between">
+                    {/* Additional footer content, like Sitemap links or Brand info can go here */}
+                    <div className='flex flex-col gap-4'>
+                        <h3 className='font-bold text-stone-900 dark:text-white uppercase tracking-widest text-sm'>ChessPie</h3>
+                        <p className='text-stone-500 text-sm'>
+                            Designed and built for chess enthusiasts. <br />
+                            &copy; {new Date().getFullYear()} ChessPie.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    );
+}

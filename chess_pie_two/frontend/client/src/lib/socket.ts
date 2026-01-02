@@ -18,7 +18,9 @@ function getOrCreatePlayerId(): string {
 
 export function getSocket() {
   if (!socket) {
-    socket = io("http://localhost:3002", {
+    const isBrowser = typeof window !== "undefined";
+    const host = isBrowser ? window.location.hostname : "localhost";
+    socket = io(`http://${host}:3002`, {
       transports: ["websocket"],
     });
 

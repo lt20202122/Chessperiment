@@ -2,6 +2,8 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { Star, Filter, ShoppingCart, Heart } from 'lucide-react';
 import { Header } from "@/components/Header";
+import { getTranslations } from 'next-intl/server';
+import { SEOFooter } from "@/components/SEOFooter";
 
 const MockItems = [
     { id: 1, name: "Crystal Board", type: "Board", price: 15.99, rating: 4.8, image: "/images/marketplace/board1.png" },
@@ -12,17 +14,42 @@ const MockItems = [
     { id: 6, name: "Minimalist", type: "Pieces", price: "Free", rating: 4.6, image: "/images/marketplace/pieces2.png" },
 ];
 
-export default function MarketplacePage() {
-    const t = useTranslations('Marketplace');
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'SEO.Marketplace' });
+    return {
+        title: t('title'),
+        description: t('description'),
+        alternates: {
+            canonical: "https://chesspie.org/marketplace",
+            languages: {
+                'en': 'https://chesspie.org/en/marketplace',
+                'de': 'https://chesspie.org/de/marketplace'
+            }
+        },
+        openGraph: {
+            title: t('title'),
+            description: t('description'),
+            url: "https://chesspie.org/marketplace",
+            type: "website",
+        },
+    };
+}
+
+export default async function MarketplacePage({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'SEO.Marketplace' });
+    const marketT = await getTranslations({ locale, namespace: 'Marketplace' });
 
     return (
         <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100">
+            <h1 className="sr-only">{t('h1')}</h1>
 
             <main className="max-w-7xl mx-auto pt-24 px-4 pb-12">
                 <div className="mb-8 text-center">
-                    <h1 className="text-4xl md:text-5xl font-black mb-4 bg-clip-text text-transparent bg-linear-to-r from-amber-500 to-orange-600">
+                    <h2 className="text-4xl md:text-5xl font-black mb-4 bg-clip-text text-transparent bg-linear-to-r from-amber-500 to-orange-600">
                         ChessPie Marketplace
-                    </h1>
+                    </h2>
                     <p className="text-xl text-stone-500 dark:text-stone-400 max-w-2xl mx-auto">
                         Discover unique boards, stunning piece sets, and exclusive designs created by the community.
                     </p>
@@ -30,11 +57,11 @@ export default function MarketplacePage() {
 
                 <div className="flex flex-col lg:flex-row gap-8 relative">
                     {/* Coming Soon Overlay */}
-                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
-                        <div className="text-center p-8 bg-black/60 backdrop-blur-md rounded-2xl border border-amber-500/30 max-w-md animate-in zoom-in duration-500">
-                            <h2 className="text-3xl font-black text-amber-500 mb-4 uppercase tracking-wider">{t('inProduction') || 'Coming Soon'}</h2>
+                    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden pointer-events-none">
+                        <div className="text-center p-8 bg-black/60 backdrop-blur-md rounded-2xl border border-amber-500/30 max-w-md animate-in zoom-in duration-500 pointer-events-auto">
+                            <h2 className="text-3xl font-black text-amber-500 mb-4 uppercase tracking-wider">{marketT('inProduction') || 'Coming Soon'}</h2>
                             <p className="text-gray-200 font-medium text-lg leading-relaxed">
-                                {t('marketplaceBetaMessage') || 'Our marketplace is currently under heavy development. Stay tuned for unique piece designs and custom boards!'}
+                                {marketT('marketplaceBetaMessage') || 'Our marketplace is currently under heavy development. Stay tuned for unique piece designs and custom boards!'}
                             </p>
                             <div className="mt-8 flex justify-center gap-4">
                                 <div className="h-2 w-2 rounded-full bg-amber-500 animate-bounce" />
@@ -45,7 +72,7 @@ export default function MarketplacePage() {
                     </div>
 
                     {/* Filter Sidebar */}
-                    <aside className="w-full lg:w-64 bg-white dark:bg-stone-900 p-6 rounded-2xl shadow-sm h-fit">
+                    <aside className="w-full lg:w-64 bg-white dark:bg-stone-900 p-6 rounded-2xl shadow-sm h-fit blur-sm">
                         <div className="flex items-center gap-2 font-bold text-lg mb-6">
                             <Filter size={20} /> Filters
                         </div>
@@ -78,7 +105,7 @@ export default function MarketplacePage() {
                     </aside>
 
                     {/* Grid */}
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 blur-sm">
                         {MockItems.map((item) => (
                             <div key={item.id} className="group bg-white dark:bg-stone-900 rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 border border-transparent hover:border-amber-500/20">
                                 <div className="relative aspect-square rounded-xl bg-stone-100 dark:bg-stone-800 mb-4 overflow-hidden">
@@ -112,6 +139,7 @@ export default function MarketplacePage() {
                     </div>
                 </div>
             </main>
+            <SEOFooter />
         </div>
     );
 }

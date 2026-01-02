@@ -5,20 +5,23 @@ import { BoardStateManager } from './state';
 export class BoardClass {
     private stateManager: BoardStateManager;
 
-    constructor() {
-        const initialSquares = this.setupInitialBoard();
-        this.stateManager = new BoardStateManager(initialSquares);
+    constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[]) {
+        const squares = initialPieces || this.setupInitialBoard();
+        this.stateManager = new BoardStateManager(squares, activeSquares);
+    }
+
+    isActive(square: Square): boolean {
+        return this.stateManager.isActive(square);
     }
 
     private setupInitialBoard(): Record<Square, Piece | null> {
         const squares: Partial<Record<Square, Piece>> = {};
 
-        const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
         // Place Pawns
         for (let i = 0; i < 8; i++) {
-            const file = files[i];
-            squares[`${file}2` as Square] = new Pawn(`${file}2_w_pawn`, 'white', `${file}2` as Square);
-            squares[`${file}7` as Square] = new Pawn(`${file}7_b_pawn`, 'black', `${file}7` as Square);
+            const file = String.fromCharCode('a'.charCodeAt(0) + i);
+            squares[`${file}2`] = new Pawn(`${file}2_w_pawn`, 'white', `${file}2`);
+            squares[`${file}7`] = new Pawn(`${file}7_b_pawn`, 'black', `${file}7`);
         }
 
         // Place Rooks, Knights, Bishops
@@ -43,11 +46,11 @@ export class BoardClass {
         squares['e1'] = new King('e1_w_king', 'white', 'e1');
         squares['e8'] = new King('e8_b_king', 'black', 'e8');
 
-        const allSquares: Record<Square, Piece | null> = {} as any;
-        const ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
-        for (const file of files) {
-            for (const rank of ranks) {
-                const square = `${file}${rank}` as Square;
+        // Fill empty squares for 8x8 default
+        const allSquares: Record<Square, Piece | null> = {};
+        for (let col = 0; col < 8; col++) {
+            for (let row = 0; row < 8; row++) {
+                const square = `${String.fromCharCode('a'.charCodeAt(0) + col)}${row + 1}`;
                 allSquares[square] = squares[square] || null;
             }
         }
@@ -58,14 +61,19 @@ export class BoardClass {
         return this.stateManager.getPiece(square) as Piece | null;
     }
 
-    movePiece(from: Square, to: Square): void {
+    movePiece(from: Square, to: Square, promotion?: string): void {
         const piece = this.getPiece(from);
         if (piece) {
-            this.stateManager.setPiece(to, piece);
+            let pieceToMove = piece;
+            if (promotion) {
+                const newPiece = Piece.create(`${piece.id}_promo`, promotion as any, piece.color, to);
+                if (newPiece) pieceToMove = newPiece;
+            }
+            this.stateManager.setPiece(to, pieceToMove);
             this.stateManager.setPiece(from, null);
-            piece.position = to;
-            piece.hasMoved = true;
-            this.stateManager.addMoveToHistory(from, to, piece.id);
+            pieceToMove.position = to;
+            pieceToMove.hasMoved = true;
+            this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
         }
     }
 
@@ -75,6 +83,10 @@ export class BoardClass {
 
     getHistory() {
         return this.stateManager.getHistory();
+    }
+
+    getTurn(): "white" | "black" {
+        return this.stateManager.turn;
     }
 
     clone(): BoardClass {

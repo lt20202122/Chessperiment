@@ -8,6 +8,7 @@ import BoardStyle from '@/app/[locale]/game/BoardStyle';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import CleanUp from '@/components/editor/Cleanup';
+import BoardPresets from './BoardPresets';
 
 interface EditorSidebarProps {
     editMode: EditMode;
@@ -18,11 +19,12 @@ interface EditorSidebarProps {
     setBoardStyle: (style: string) => void;
     generateBoardData: () => string;
     setBoard: any;
+    onPresetChange?: (data: any) => void;
 }
 
 const pieceTypes = ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'];
 
-export default function EditorSidebar({ editMode, setEditMode, selectedPiece, setSelectedPiece, boardStyle, setBoardStyle, generateBoardData, setBoard }: EditorSidebarProps) {
+export default function EditorSidebar({ editMode, setEditMode, selectedPiece, setSelectedPiece, boardStyle, setBoardStyle, generateBoardData, setBoard, onPresetChange }: EditorSidebarProps) {
     const router = useRouter();
     const t = useTranslations('Editor.Board');
     const tg = useTranslations('Game');
@@ -118,6 +120,9 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                     </div>
                 </div>
             )}
+
+            {/* Presets */}
+            {onPresetChange && <BoardPresets onSelectPreset={onPresetChange} />}
 
             {/* Board Style Selector */}
             <div className="mb-8 border-t border-gray-200/20 pt-6 flex justify-around items-center gap-5">

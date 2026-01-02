@@ -15,6 +15,7 @@ export default function PageClient() {
     const [editMode, setEditMode] = useState<EditMode>('shape');
     const [selectedPiece, setSelectedPiece] = useState({ type: 'Pawn', color: 'white' });
     const [boardStyle, setBoardStyle] = useState('v3');
+    const [boardKey, setBoardKey] = useState(0);
     const [board, setBoard] = useState({
         rows: 8,
         cols: 8,
@@ -36,6 +37,23 @@ export default function PageClient() {
         setBoard({ rows, cols, activeSquares, placedPieces });
     }, []);
 
+    const handlePresetChange = (newData: any) => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('rows', newData.rows);
+            localStorage.setItem('cols', newData.cols);
+            localStorage.setItem('activeSquares', JSON.stringify(newData.activeSquares));
+            localStorage.setItem('placedPieces', JSON.stringify(newData.placedPieces));
+        }
+
+        setBoard({
+            rows: newData.rows,
+            cols: newData.cols,
+            activeSquares: new Set(newData.activeSquares),
+            placedPieces: newData.placedPieces
+        });
+        setBoardKey(prev => prev + 1);
+    };
+
     return (
         <>
 
@@ -48,7 +66,8 @@ export default function PageClient() {
                     boardStyle={boardStyle}
                     setBoardStyle={setBoardStyle}
                     generateBoardData={() => generateBoardData(board.rows, board.cols, board.activeSquares, board.placedPieces)}
-                    setBoard={setBoard}
+                    setBoard={setBoard} // keeping for compatibility if needed
+                    onPresetChange={handlePresetChange}
                 />
             }>
 
@@ -67,6 +86,7 @@ export default function PageClient() {
                         </p>
                     </div>
                     <BoardEditor
+                        key={boardKey}
                         editMode={editMode}
                         selectedPiece={selectedPiece}
                         boardStyle={boardStyle}

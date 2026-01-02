@@ -25,7 +25,7 @@ export default function GameLobby({
 
     if (isSearching) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 bg-stone-900/80 backdrop-blur-2xl rounded-[3rem] border border-white/10 shadow-2xl animate-in zoom-in duration-500 max-w-lg w-full">
+            <div className="flex flex-col items-center justify-center p-12 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl rounded-[3rem] border border-gray-200 dark:border-white/10 shadow-2xl animate-in zoom-in duration-500 max-w-lg w-full">
                 <div className="relative mb-10">
                     <div className="w-32 h-32 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -39,8 +39,8 @@ export default function GameLobby({
                         </div>
                     </div>
                 </div>
-                <h2 className="text-4xl font-black text-white mb-3 uppercase tracking-tight">{t('searchingForGame') || 'Finding Game...'}</h2>
-                <p className="text-gray-400 mb-10 font-medium text-lg">Matching you with a worthy opponent...</p>
+                <h2 className="text-4xl font-black text-stone-900 dark:text-white mb-3 uppercase tracking-tight">{t('searchingForGame') || 'Finding Game...'}</h2>
+                <p className="text-stone-500 dark:text-gray-400 mb-10 font-medium text-lg">Matching you with a worthy opponent...</p>
                 <button
                     onClick={onCancelSearch}
                     className="group relative px-10 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-2xl font-bold transition-all border border-red-500/30 overflow-hidden"
@@ -78,7 +78,7 @@ export default function GameLobby({
 
                 <button
                     onClick={onCreateRoom}
-                    className="group relative overflow-hidden bg-stone-900 border border-white/5 p-10 rounded-[2.5rem] shadow-2xl hover:border-amber-500/50 transition-all hover:-translate-y-2 active:scale-[0.98]"
+                    className="group relative overflow-hidden bg-white dark:bg-stone-900 border border-gray-200 dark:border-white/5 p-10 rounded-[2.5rem] shadow-2xl hover:border-amber-500/50 transition-all hover:-translate-y-2 active:scale-[0.98]"
                 >
                     <div className="absolute inset-0 bg-linear-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative z-10 text-left flex items-center justify-between">
@@ -86,24 +86,24 @@ export default function GameLobby({
                             <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mb-6 text-amber-500 border border-amber-500/20 shadow-lg">
                                 <Plus size={32} />
                             </div>
-                            <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Create Private</h3>
-                            <p className="text-stone-400 text-lg">Generate a unique code to invite a friend.</p>
+                            <h3 className="text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight mb-2">Create Private</h3>
+                            <p className="text-stone-500 dark:text-stone-400 text-lg">Generate a unique code to invite a friend.</p>
                         </div>
-                        <Plus className="text-stone-700 group-hover:text-amber-500 group-hover:rotate-90 transition-all duration-500" size={56} strokeWidth={3} />
+                        <Plus className="text-stone-300 dark:text-stone-700 group-hover:text-amber-500 group-hover:rotate-90 transition-all duration-500" size={56} strokeWidth={3} />
                     </div>
                 </button>
             </div>
 
             {/* Join & Computer */}
             <div className="flex flex-col gap-8">
-                <div className="bg-stone-900 border border-white/5 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                <div className="bg-white dark:bg-stone-900 border border-gray-200 dark:border-white/5 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-6 opacity-[0.03] dark:opacity-5 group-hover:opacity-10 transition-opacity text-stone-900 dark:text-white">
                         <LogIn size={100} />
                     </div>
                     <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6 text-blue-500 border border-blue-500/20 shadow-lg">
                         <Users size={32} />
                     </div>
-                    <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-6">{t('joinRoom')}</h3>
+                    <h3 className="text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight mb-6">{t('joinRoom')}</h3>
                     <div className="flex gap-3">
                         <input
                             type="text"
@@ -111,7 +111,7 @@ export default function GameLobby({
                             onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
                             placeholder={t('enterCode')}
                             maxLength={8}
-                            className="flex-1 bg-stone-950/50 border border-white/10 rounded-2xl px-6 py-4 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all uppercase font-mono text-xl tracking-[0.3em] placeholder:tracking-normal placeholder:font-sans placeholder:text-stone-600"
+                            className="flex-1 bg-stone-50 dark:bg-stone-950/50 border border-stone-200 dark:border-white/10 rounded-2xl px-6 py-4 text-stone-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all uppercase font-mono text-xl tracking-[0.3em] placeholder:tracking-normal placeholder:font-sans placeholder:text-stone-400 dark:placeholder:text-stone-600"
                         />
                         <button
                             onClick={() => onJoinRoom(roomInput)}
@@ -122,14 +122,14 @@ export default function GameLobby({
                     </div>
                 </div>
 
-                <div className="bg-stone-900 border border-white/5 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                <div className="bg-white dark:bg-stone-900 border border-gray-200 dark:border-white/5 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-6 opacity-[0.03] dark:opacity-5 group-hover:opacity-10 transition-opacity text-stone-900 dark:text-white">
                         <Monitor size={100} />
                     </div>
                     <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mb-6 text-green-500 border border-green-500/20 shadow-lg">
                         <Monitor size={32} />
                     </div>
-                    <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-6">{t('playAgainstComputer')}</h3>
+                    <h3 className="text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight mb-6">{t('playAgainstComputer')}</h3>
                     <div className="grid grid-cols-2 gap-4">
                         <button
                             onClick={() => onVsComputer(800)}

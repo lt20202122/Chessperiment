@@ -3,37 +3,43 @@ import { Bungee } from "next/font/google"
 import type { Metadata } from "next";
 import { generateHreflangs } from '@/lib/hreflang';
 
-const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.org');
+import { getTranslations } from 'next-intl/server';
 
-export const metadata: Metadata = {
-    title: 'Login – ChessPie',
-    description: 'Access your ChessPie account to manage games, boards, and marketplace items.',
-    openGraph: {
-        title: 'Login – ChessPie',
-        description: 'Access your ChessPie account to manage games, boards, and marketplace items.',
-        url: 'https://chesspie.org/login',
-        siteName: 'ChessPie',
-        images: ['/og-login.png'],
-        type: 'website',
-    },
-    twitter: {
-        card: 'summary_large_image',
-        title: 'Login – ChessPie',
-        description: 'Access your ChessPie account to manage games, boards, and marketplace items.',
-        images: ['/og-login.png'],
-    },
-    alternates: {
-        canonical: "https://chesspie.org/login", // absolute URL
-        languages: hreflangs.reduce((acc, tag) => {
-            acc[tag.hrefLang] = tag.href;
-            return acc;
-        }, {} as Record<string, string>),
-    },
-    robots: {
-        index: false,   // Nicht indexieren
-        follow: true,   // Links dennoch folgen
-    },
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'SEO.Login' });
+    const hreflangs = generateHreflangs('/login', ['de', 'en'], 'en', 'https://chesspie.org');
+
+    return {
+        title: t('title'),
+        description: t('description'),
+        alternates: {
+            canonical: "https://chesspie.org/login",
+            languages: hreflangs.reduce((acc, tag) => {
+                acc[tag.hrefLang] = tag.href;
+                return acc;
+            }, {} as Record<string, string>),
+        },
+        openGraph: {
+            title: t('title'),
+            description: t('description'),
+            url: 'https://chesspie.org/login',
+            siteName: 'ChessPie',
+            images: ['/og-login.png'],
+            type: 'website',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: t('title'),
+            description: t('description'),
+            images: ['/og-login.png'],
+        },
+        robots: {
+            index: false,
+            follow: true,
+        },
+    };
+}
 
 const bungee = Bungee({
     subsets: ["latin"],
@@ -41,6 +47,14 @@ const bungee = Bungee({
     weight: ["400"],
 })
 
-export default function LoginPageServerSide() {
-    return <LoginPage bungee={bungee.className} />
+export default async function LoginPageServerSide({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'SEO.Login' });
+
+    return (
+        <>
+            <h1 className="sr-only">{t('h1')}</h1>
+            <LoginPage bungee={bungee.className} />
+        </>
+    );
 }

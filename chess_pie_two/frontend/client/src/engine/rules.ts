@@ -14,8 +14,8 @@ export class ValidatorClass {
         const squares = board.getSquares();
         for (const s in squares) {
             const piece = squares[s as Square];
-            if (piece && piece.color === attackerColor) {
-                if (piece.isValidMove(s as Square, square, board)) {
+            if (piece && piece.color === attackerColor && board.isActive(s as Square)) {
+                if (piece.canAttack(square, board)) {
                     return true;
                 }
             }
@@ -33,7 +33,7 @@ export class ValidatorClass {
 
     private _isEnPassant(from: Square, to: Square): boolean {
         const piece = this.board.getPiece(from);
-        if (!(piece instanceof Pawn)) {
+        if (!piece || piece.type !== 'pawn') {
             return false;
         }
 
@@ -65,7 +65,7 @@ export class ValidatorClass {
 
     private _isCastling(from: Square, to: Square): boolean {
         const piece = this.board.getPiece(from);
-        if (!(piece instanceof King) || piece.hasMoved) {
+        if (!piece || piece.type !== 'king' || piece.hasMoved) {
             return false;
         }
 
@@ -110,7 +110,11 @@ export class ValidatorClass {
 
     isLegal(from: Square, to: Square): boolean {
         const piece = this.board.getPiece(from);
-        if (!piece) {
+        if (!piece || piece.color !== this.board.getTurn()) {
+            return false;
+        }
+
+        if (!this.board.isActive(to)) {
             return false;
         }
 
@@ -138,7 +142,7 @@ export class ValidatorClass {
         const squares = board.getSquares();
         for (const s in squares) {
             const piece = squares[s as Square];
-            if (piece instanceof King && piece.color === color) {
+            if (piece && piece.type === 'king' && piece.color === color) {
                 return s as Square;
             }
         }

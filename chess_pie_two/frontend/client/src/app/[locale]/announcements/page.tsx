@@ -3,35 +3,32 @@ import { useTranslations } from 'next-intl';
 import announcements from '@/app/announcements';
 import Image from 'next/image';
 import Link from 'next/link'; // Use next/link for client-side navigation
-import type { Metadata } from 'next';
-import { generateHreflangs } from '@/lib/hreflang';
+import { getTranslations } from 'next-intl/server';
+import { SEOFooter } from "@/components/SEOFooter";
 
-const hreflangs = generateHreflangs('/announcements', ['de', 'en'], 'en', 'https://chesspie.org');
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'SEO.Announcements' });
+    return {
+        title: t('title'),
+        description: t('description'),
+        alternates: {
+            canonical: "https://chesspie.org/announcements",
+            languages: {
+                'en': 'https://chesspie.org/en/announcements',
+                'de': 'https://chesspie.org/de/announcements'
+            }
+        },
+        openGraph: {
+            title: t('title'),
+            description: t('description'),
+            url: "https://chesspie.org/announcements",
+            type: "website",
+            images: [{ url: "/images/seo/og-home.png", width: 1200, height: 630 }],
+        },
+    };
+}
 
-export const metadata: Metadata = {
-    title: "ChessPie | Announcements & News",
-    description: "Stay up-to-date with the latest features, improvements, and news from ChessPie.",
-    alternates: {
-        canonical: "https://chesspie.org/announcements",
-        languages: hreflangs.reduce((acc, tag) => {
-            acc[tag.hrefLang] = tag.href;
-            return acc;
-        }, {} as Record<string, string>),
-    },
-    openGraph: {
-        title: "ChessPie | Announcements & News",
-        description: "Stay up-to-date with the latest features, improvements, and news from ChessPie.",
-        url: "https://chesspie.org/announcements",
-        type: "website",
-        images: [{ url: "/images/seo/og-home.png", width: 1200, height: 630 }],
-    },
-    twitter: {
-        card: "summary_large_image",
-        title: "ChessPie | Announcements & News",
-        description: "Stay up-to-date with the latest features, improvements, and news from ChessPie.",
-        images: ["/images/seo/twitter-image.png"],
-    },
-};
 
 export default function AnnouncementsPage({ params: { locale } }: { params: { locale: string } }) {
     const t = useTranslations('Announcements');
@@ -104,6 +101,7 @@ export default function AnnouncementsPage({ params: { locale } }: { params: { lo
                     ))}
                 </div>
             </div>
+            <SEOFooter />
         </div>
     );
 }

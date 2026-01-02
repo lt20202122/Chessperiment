@@ -4,11 +4,18 @@ export class BoardStateManager {
     private squares: Record<Square, PieceState | null>;
     private history: Array<{ from: Square; to: Square; pieceId: string }>;
     public turn: "white" | "black";
+    private activeSquares: Set<Square> | null;
 
-    constructor(initialSquares: Record<Square, PieceState | null>) {
+    constructor(initialSquares: Record<Square, PieceState | null>, activeSquares?: Square[]) {
         this.squares = initialSquares;
         this.history = [];
         this.turn = "white";
+        this.activeSquares = activeSquares ? new Set(activeSquares) : null;
+    }
+
+    isActive(square: Square): boolean {
+        if (!this.activeSquares) return true;
+        return this.activeSquares.has(square);
     }
 
     getPiece(square: Square): PieceState | null {
@@ -46,7 +53,7 @@ export class BoardStateManager {
                 squaresCopy[s as Square] = null;
             }
         }
-        const clonedManager = new BoardStateManager(squaresCopy);
+        const clonedManager = new BoardStateManager(squaresCopy, this.activeSquares ? Array.from(this.activeSquares) : undefined);
         clonedManager.history = [...this.history];
         clonedManager.turn = this.turn;
         return clonedManager;

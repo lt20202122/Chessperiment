@@ -4,6 +4,7 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const nextConfig: NextConfig = {
     // Redirects: www → non-www
     trailingSlash: false,
+    compress: true,
     images: {
         remotePatterns: [
             {
@@ -25,6 +26,11 @@ const nextConfig: NextConfig = {
                 ],
                 destination: 'https://chesspie.org/:path*',
                 permanent: true, // 301 Redirect
+            },
+            {
+                source: '/news',
+                destination: '/announcements',
+                permanent: true,
             },
         ];
     },

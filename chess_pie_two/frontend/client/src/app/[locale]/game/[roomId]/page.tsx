@@ -40,7 +40,6 @@ export default function RoomPage() {
             </div>
         );
     }
-
     if (error) {
         return (
             <div className="min-h-screen w-full flex items-center justify-center bg-stone-100 dark:bg-stone-950">

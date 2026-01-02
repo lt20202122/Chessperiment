@@ -1,54 +1,62 @@
-import { generateHreflangs } from '@/lib/hreflang';
-
-const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.org');
+import { getTranslations } from 'next-intl/server';
 import LobbyPage from "./LobbyPage"
-import type { Metadata } from "next"
 
 // app/game/page.tsx
 const jsonLd_gameIndex = {
     "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": "ChessPie – Games",
-    "description": "Browse public ChessPie games and variants created by users.",
+    "@type": "SoftwareApplication",
+    "name": "ChessPie Games",
     "url": "https://chesspie.org/game",
-    "breadcrumb": {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://chesspie.org/" },
-            { "@type": "ListItem", "position": 2, "name": "Games", "item": "https://chesspie.org/game" }
-        ]
-    }
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "Web",
+    "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+    },
+    "description": "Play custom chess variants online with friends."
 };
 
-export const metadata: Metadata = {
-    title: 'Play ChessPie Games',
-    description: 'Play custom chess boards and figures on ChessPie.',
-    openGraph: {
-        title: 'Play ChessPie Games',
-        description: 'Play custom chess boards and figures on ChessPie.',
-        url: 'https://chesspie.org/game',
-        siteName: 'ChessPie',
-        images: [{ url: '/images/seo/og-game.png', width: 1200, height: 630 }],
-        type: 'website',
-    },
-    twitter: {
-        card: 'summary_large_image',
-        title: 'Play ChessPie Games',
-        description: 'Play custom chess boards and figures on ChessPie.',
-        images: ['/images/seo/twitter-image.png'],
-    },
-    alternates: {
-        canonical: "https://chesspie.org/game",
-    },
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'SEO.Game' });
+    return {
+        title: t('title'),
+        description: t('description'),
+        openGraph: {
+            title: t('title'),
+            description: t('description'),
+            url: 'https://chesspie.org/game',
+            siteName: 'ChessPie',
+            images: [{ url: '/images/seo/og-game.png', width: 1200, height: 630 }],
+            type: 'website',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: t('title'),
+            description: t('description'),
+            images: ['/images/seo/twitter-image.png'],
+        },
+        alternates: {
+            canonical: "https://chesspie.org/game",
+            languages: {
+                'en': 'https://chesspie.org/en/game',
+                'de': 'https://chesspie.org/de/game'
+            }
+        },
+    };
+}
 
-export default function Game() {
+export default async function Game({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'SEO.Game' });
+
     return <>
         <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd_gameIndex).replace(/</g, '\\u003c') }}
         />
+        <h1 className="sr-only">{t('h1')}</h1>
         <LobbyPage />
     </>
-
 }

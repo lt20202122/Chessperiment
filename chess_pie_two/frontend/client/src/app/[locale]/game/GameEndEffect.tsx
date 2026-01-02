@@ -1,15 +1,16 @@
 "use client";
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
-import { Crown, Handshake, ShieldX } from 'lucide-react';
+import { Crown, Handshake, ShieldX, X } from 'lucide-react';
 
 interface GameEndEffectProps {
     result: 'win' | 'loss' | 'draw';
+    onClose?: () => void;
 }
 
 import Confetti from './Confetti';
 
-export default function GameEndEffect({ result }: GameEndEffectProps) {
+export default function GameEndEffect({ result, onClose }: GameEndEffectProps) {
     const t = useTranslations('GameEnd');
 
     const effects = {
@@ -36,13 +37,14 @@ export default function GameEndEffect({ result }: GameEndEffectProps) {
     const { Icon, text, className, shadow } = effects[result];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+        <div className="fixed inset-0 z-200 flex items-center justify-center pointer-events-auto">
             {result === 'win' && <Confetti count={100} />}
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                className="absolute inset-0 bg-black/60 backdrop-blur-md cursor-pointer"
+                onClick={onClose}
             />
 
             <motion.div
@@ -51,7 +53,14 @@ export default function GameEndEffect({ result }: GameEndEffectProps) {
                 exit={{ opacity: 0, scale: 0.5, y: -100 }}
                 className="z-10 relative"
             >
-                <div className={`flex flex-col items-center gap-6 p-12 rounded-3xl bg-linear-to-br shadow-2xl border-4 ${className} ${shadow} max-w-sm mx-auto text-center transform perspective-1000`}>
+                <div className={`flex flex-col items-center gap-6 p-12 rounded-3xl bg-linear-to-br shadow-2xl border-4 ${className} ${shadow} max-w-sm mx-auto text-center transform perspective-1000 relative`}>
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors group"
+                    >
+                        <X size={24} className="group-hover:rotate-90 transition-transform" />
+                    </button>
+
                     <motion.div
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}

@@ -1,14 +1,13 @@
 "use client";
 import Image from "next/image";
-import { pieces, pieceImagesv2, pieceImagesv3, getPieceImage, PieceType } from "./Data";
-import { useState, useEffect, useRef, Fragment, memo, useCallback } from "react";
+import { pieces, getPieceImage, PieceType } from "./Data";
+import { Hand, MessageSquare, Info, History, Shield, Trophy, User, Gamepad2, Settings, ChevronLeft, ChevronRight, X, User2, MonitorOff, UserPlus } from "lucide-react";
+import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import Loading from "@/app/loading";
 import Back from "./Back";
-// import { Chess, type Square } from "chess.js"; // REMOVED
-import SocketComponent from "./SocketComponent";
-import BoardStyle from "./BoardStyle";
 import GameEndEffect from "./GameEndEffect";
+import GameSidebar from "./GameSidebar";
 import {
   DndContext,
   DragEndEvent,
@@ -21,17 +20,14 @@ import {
   PointerSensor,
 } from "@dnd-kit/core";
 import Toast from "./Toast";
-import { History, Share2 } from "lucide-react";
 import "./Board.css";
-import GameSidebar from "./GameSidebar";
-// import { useStockfish } from "@/hooks/useStockfish"; // REMOVED
-import GameLobby from "./GameLobby";
 import { useSocket } from "@/context/SocketContext";
 
 type Square = string;
 
 // Helpers
 const parseFen = (fen: string): PieceType[] => {
+  if (!fen || fen.trim() === "") return pieces;
   const [placement] = fen.split(' ');
   const rows = placement.split('/');
   const newPieces: PieceType[] = [];
@@ -62,40 +58,6 @@ const parseFen = (fen: string): PieceType[] => {
   return newPieces;
 };
 
-const generateFen = (boardPieces: PieceType[], turn: 'w' | 'b'): string => {
-  let fen = "";
-  const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-  for (let i = 0; i < 8; i++) {
-    let empty = 0;
-    for (let j = 0; j < 8; j++) {
-      const pos = `${files[j]}${8 - i}`;
-      const piece = boardPieces.find(p => p.position === pos);
-      if (piece) {
-        if (empty > 0) {
-          fen += empty;
-          empty = 0;
-        }
-        let char = "";
-        switch (piece.type.toLowerCase()) {
-          case 'pawn': char = 'p'; break;
-          case 'rook': char = 'r'; break;
-          case 'knight': char = 'n'; break;
-          case 'bishop': char = 'b'; break;
-          case 'queen': char = 'q'; break;
-          case 'king': char = 'k'; break;
-        }
-        fen += piece.color === 'white' ? char.toUpperCase() : char;
-      } else {
-        empty++;
-      }
-    }
-    if (empty > 0) fen += empty;
-    if (i < 7) fen += "/";
-  }
-  return `${fen} ${turn} - - 0 1`; // Defaulting castling/enpassant/clocks
-};
-
-
 const getGamePieceScale = (type: string) => {
   switch (type.toLowerCase()) {
     case "king": return 0.96;
@@ -107,7 +69,6 @@ const getGamePieceScale = (type: string) => {
     default: return 0.85;
   }
 };
-
 
 const DraggablePiece = memo(function DraggablePiece({
   piece,
@@ -133,13 +94,7 @@ const DraggablePiece = memo(function DraggablePiece({
       id: piece.position,
       data: piece,
     });
-  // ALLOW DRAG if:
-  // 1. It's my turn
-  // 2. It's my color OR I'm in local/computer mode (myColor might be null if local? or set to white)
-  // Let's refine: 
-  // If online, myColor must match.
-  // If vsComputer, I am usually white or chosen color.
-  const isMyPiece = myColor ? piece.color === myColor : true; // Fallback for local testing if myColor null
+  const isMyPiece = myColor ? piece.color === myColor : true;
 
   const canDrag =
     amIAtTurn &&
@@ -168,9 +123,7 @@ const DraggablePiece = memo(function DraggablePiece({
       ref={setNodeRef}
       {...(canDrag ? { ...attributes, ...listeners } : {})}
       style={style}
-      onClick={(e) => {
-        onClick();
-      }}
+      onClick={onClick}
     >
       <Image
         src={getPieceImage(boardStyle, piece.color, piece.type)}
@@ -184,24 +137,11 @@ const DraggablePiece = memo(function DraggablePiece({
       />
     </div>
   );
-}, (prevProps, nextProps) => {
-  return (
-    prevProps.piece.type === nextProps.piece.type &&
-    prevProps.piece.color === nextProps.piece.color &&
-    prevProps.piece.position === nextProps.piece.position &&
-    prevProps.size === nextProps.size &&
-    prevProps.amIAtTurn === nextProps.amIAtTurn &&
-    prevProps.boardStyle === nextProps.boardStyle &&
-    prevProps.isViewingHistory === nextProps.isViewingHistory &&
-    prevProps.gameStatus === nextProps.gameStatus &&
-    prevProps.myColor === nextProps.myColor
-  );
 });
 
 const SquareTile = memo(function SquareTile({
   pos,
   isWhite,
-  eckenKlasse,
   piece,
   blockSize,
   selected,
@@ -218,14 +158,13 @@ const SquareTile = memo(function SquareTile({
 }: {
   pos: string;
   isWhite: boolean;
-  eckenKlasse: string;
   piece?: PieceType;
   blockSize: number;
   selected: boolean;
   isMoveFrom: boolean;
   isMoveTo: boolean;
   onClick: (p: string) => void;
-  onContextMenu: (e: any) => void;
+  onContextMenu: (p: string) => void;
   boardStyle: string;
   isViewingHistory: boolean;
   gameStatus: string;
@@ -244,9 +183,7 @@ const SquareTile = memo(function SquareTile({
     <div
       key={pos}
       ref={combinedRef}
-      className={`  ${isWhite ? "white-square" : "black-square"} ${isMoveFrom ? "move-from" : ""
-        } ${isMoveTo ? "move-to" : ""} m-0 aspect-square relative ${eckenKlasse} flex items-center justify-center ${selected ? "ring-4 ring-blue-500" : ""
-        }`}
+      className={`${isWhite ? "white-square" : "black-square"} ${isMoveFrom ? "move-from" : ""} ${isMoveTo ? "move-to" : ""} m-0 aspect-square relative flex items-center justify-center ${selected ? "ring-4 ring-blue-500" : ""}`}
       style={{
         width: blockSize,
         height: blockSize,
@@ -277,77 +214,55 @@ export default function Board({
   initialRoomId,
   gameModeVar,
   initialFen,
-  onMove,
-  disableValidation,
 }: {
   initialRoomId?: string;
   gameModeVar?: "online" | "computer" | "local";
   initialFen?: string;
-  onMove?: (move: any) => void;
-  disableValidation?: boolean;
 }) {
   const t = useTranslations("Multiplayer");
   const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
-
-  // Sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    })
-  );
+  const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 5 } });
+  const sensors = useSensors(pointerSensor);
   const socket = useSocket();
-  // UI State
+
   const [boardStyle, setBoardStyle] = useState("v3");
   const [blockSize, setBlockSize] = useState(80);
   const [selectedPos, setSelectedPos] = useState<string | null>(null);
-
-  // Game Logic State
   const [gameStatus, setGameStatus] = useState<"waiting" | "playing" | "ended" | "">("");
   const [myColor, setMyColor] = useState<"white" | "black" | null>(null);
-  // const chessRef = useRef(new Chess()); // REMOVED
   const [currentTurn, setCurrentTurn] = useState<'w' | 'b'>('w');
-  const [moveCount, setMoveCount] = useState(0); // Need to track manually?
   const [redMarkedSquares, setRedMarkedSquares] = useState<Set<string>>(new Set());
   const [lastMoveFrom, setLastMoveFrom] = useState<string | null>(null);
   const [lastMoveTo, setLastMoveTo] = useState<string | null>(null);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [isViewingHistory, setIsViewingHistory] = useState(false);
   const [gameResult, setGameResult] = useState<'win' | 'loss' | 'draw' | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const squareRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [activePiece, setActivePiece] = useState<any>(null); // For DragOverlay
+  const [activePiece, setActivePiece] = useState<any>(null);
 
-  // Promotion
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
   const [promotionMove, setPromotionMove] = useState<{ from: string; to: string; } | null>(null);
 
-  // Lifted State (Sidebar)
   const [chatMessages, setChatMessages] = useState<string[]>([]);
-  const [currentRoom, setCurrentRoom] = useState("");
+  const [currentRoom, setCurrentRoom] = useState(initialRoomId || "");
   const [gameInfo, setGameInfo] = useState("");
   const [playerCount, setPlayerCount] = useState(0);
-
-  // New Modes
   const [gameMode, setGameMode] = useState<"online" | "computer" | "local">(gameModeVar || 'local');
-  const [stockfishDifficulty, setStockfishDifficulty] = useState(1300);
   const [isSearching, setIsSearching] = useState(false);
+  const { data: session, status: sessionStatus } = useSession();
+  const [drawOffer, setDrawOffer] = useState<"pending" | "offered" | null>(null);
 
-  // const {
-  //   bestMove,
-  //   evaluation,
-  //   isThinking,
-  //   startSearch,
-  //   stopSearch,
-  //   setDifficulty
-  // } = useStockfish(chessRef.current, stockfishDifficulty); 
-  // REMOVED useStockfish call or commented out
+  const updateBoardState = useCallback((fen: string) => {
+    console.log("[Board] Updating state with FEN:", fen);
+    const newPieces = parseFen(fen);
+    setBoardPieces(newPieces);
+    const parts = fen.split(' ');
+    if (parts[1]) setCurrentTurn(parts[1] as 'w' | 'b');
+  }, []);
 
-  // --- INITIALIZATION ---
-  // Initialize game status when joining a room
   useEffect(() => {
     if (initialRoomId && gameStatus === "") {
       setGameStatus("waiting");
@@ -355,432 +270,468 @@ export default function Board({
   }, [initialRoomId, gameStatus]);
 
   useEffect(() => {
-    if (initialFen) {
-      const parsed = parseFen(initialFen);
-      setBoardPieces(parsed);
-      const parts = initialFen.split(' ');
-      if (parts[1]) setCurrentTurn(parts[1] as 'w' | 'b');
-    }
-  }, [initialFen]);
+    if (!socket || gameMode !== "online") return;
 
-  useEffect(() => {
-    const savedStyle = localStorage.getItem("boardStyle");
-    if (savedStyle === "v2" || savedStyle === "v3") {
-      setBoardStyle(savedStyle);
-    }
-
-    // Resize handler
-    const updateSize = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const isLarge = w >= 1024; // lg breakpoint
-
-      // On desktop, the sidebar takes ~384px (96 * 4) plus some padding
-      const availableWidth = isLarge ? w - 420 : w * 0.95;
-      // On mobile, leave space for header (80px), controls (60px), and sidebar (40vh)
-      const availableHeight = isLarge ? h * 0.85 : h * 0.45;
-
-      const maxBoardSize = Math.min(availableWidth, availableHeight);
-      const newBlockSize = Math.floor(maxBoardSize / 8);
-
-      // Minimum block size of 35px ensures board is playable even on small screens
-      setBlockSize(Math.max(Math.min(newBlockSize, 80), 35));
+    const onMove = (data: any) => {
+      if (data.fen) updateBoardState(data.fen);
+      setLastMoveFrom(data.from);
+      setLastMoveTo(data.to);
+      if (data.san) {
+        setMoveHistory(prev => {
+          const next = [...prev, data.san];
+          setHistoryIndex(next.length - 1);
+          return next;
+        });
+      }
+      if (data.gameStatus) setGameStatus(data.gameStatus);
+      new Audio("/sounds/move-self.mp3").play().catch(() => { });
     };
-    window.addEventListener("resize", updateSize);
-    updateSize();
-    // High-frequency check for mobile layout shifts
-    const timer = setInterval(updateSize, 1000);
+
+    const onGameStateInit = (data: any) => {
+      console.log("[Board] Initializing game state:", data);
+      if (data.fen) {
+        console.log("[Board] Setting FEN:", data.fen);
+        updateBoardState(data.fen);
+      }
+
+      if (data.color !== undefined) {
+        const mappedColor = data.color === "white" ? "white" : (data.color === "black" ? "black" : null);
+        console.log("[Board] Setting color:", mappedColor);
+        setMyColor(mappedColor);
+      }
+
+      const newStatus = data.status || data.gameStatus;
+      if (newStatus) {
+        console.log("[Board] Setting status:", newStatus);
+        setGameStatus(newStatus);
+        if (newStatus === "playing") { setPlayerCount(2); setIsSearching(false); }
+        else if (newStatus === "waiting") { setPlayerCount(1); }
+      }
+
+      if (data.roomId) {
+        console.log("[Board] Setting Room ID:", data.roomId);
+        setCurrentRoom(data.roomId);
+      }
+
+      if (data.history) {
+        console.log("[Board] Restoration: Move history length:", data.history.length);
+        setMoveHistory(data.history);
+        setHistoryIndex(data.history.length - 1);
+      }
+
+      if (data.chatMessages) {
+        console.log("[Board] Restoration: Chat history length:", data.chatMessages.length);
+        setChatMessages(data.chatMessages.map((m: any) => filterMessage(m.message)));
+      }
+    };
+
+    socket.on("move", onMove);
+    socket.on("match_found", (data: any) => {
+      setIsSearching(false);
+      onGameStateInit(data);
+      setGameStatus("playing");
+      setPlayerCount(2);
+    });
+    socket.on("start_game", (data: any) => {
+      onGameStateInit(data);
+      setGameStatus("playing");
+      setPlayerCount(2);
+    });
+    socket.on("rejoin_game", (data: any) => {
+      console.log("[Board] Rejoin successful!", data);
+      onGameStateInit(data);
+    });
+    socket.on("room_created", (data: any) => {
+      console.log("[Board] Room created:", data);
+      setCurrentRoom(data.roomId);
+      setMyColor("white");
+      setGameStatus("waiting");
+      setPlayerCount(1);
+    });
+    socket.on("joined_room", (data: any) => {
+      console.log("[Board] Joined room as player:", data);
+      setCurrentRoom(data.roomId);
+      setMyColor("black");
+      setGameStatus("waiting");
+      setPlayerCount(2);
+    });
+    socket.on("game_ended", (data: any) => {
+      setGameStatus("ended");
+      if (data.result === "0") setGameResult("draw");
+      else {
+        setMyColor(curr => {
+          const iWon = (data.result === "w" && curr === "white") || (data.result === "b" && curr === "black");
+          setGameResult(iWon ? "win" : "loss");
+          return curr;
+        });
+      }
+      setGameInfo(data.reason || "Game Ended");
+      setDrawOffer(null);
+    });
+    socket.on("opp_disconnected", () => {
+      setGameInfo("Opponent disconnected");
+      setPlayerCount(1);
+      setDrawOffer(null);
+    });
+    socket.on("error", (data: any) => {
+      setGameInfo(`Error: ${data.message}`);
+      setToastMessage(`Error: ${data.message}`);
+      setShowToast(true);
+      console.error("[Board] Socket Error:", data);
+    });
+    socket.on("room_not_found", (data: any) => {
+      setGameInfo(`Room ${data?.roomId || ""} not found`);
+      setToastMessage(`Room ${data?.roomId || ""} not found`);
+      setShowToast(true);
+      setGameStatus("ended");
+      console.warn("[Board] Room not found:", data);
+    });
+    socket.on("room_full", () => {
+      setToastMessage("Room is full!");
+      setShowToast(true);
+      setGameStatus("ended");
+    });
+    socket.on("receive_fen", (d: any) => updateBoardState(d.board_fen));
+    socket.on("promotion_needed", (d: any) => {
+      setPromotionMove({ from: d.from, to: d.to });
+      setShowPromotionDialog(true);
+    });
+    socket.on("promotion_done", () => {
+      setShowPromotionDialog(false);
+      setPromotionMove(null);
+    });
+    socket.on("draw_offered", () => {
+      setDrawOffer("pending");
+      setToastMessage(t("drawOfferReceived"));
+      setShowToast(true);
+    });
+    socket.on("draw_declined", () => {
+      setDrawOffer(null);
+      setToastMessage(t("drawOfferDeclined"));
+      setShowToast(true);
+    });
+    socket.on("draw_accepted", () => {
+      setDrawOffer(null);
+      setGameStatus("ended");
+      setGameResult("draw");
+      setGameInfo(t("drawAccepted"));
+      setToastMessage(t("drawAccepted"));
+      setShowToast(true);
+    });
+
     return () => {
-      window.removeEventListener("resize", updateSize);
-      clearInterval(timer);
+      socket.off("move"); socket.off("match_found"); socket.off("start_game");
+      socket.off("rejoin_game"); socket.off("room_created"); socket.off("joined_room");
+      socket.off("game_ended"); socket.off("opp_disconnected"); socket.off("error");
+      socket.off("receive_fen"); socket.off("promotion_needed"); socket.off("promotion_done");
+      socket.off("draw_offered"); socket.off("draw_declined"); socket.off("draw_accepted");
     };
-  }, []);
+  }, [socket, gameMode, updateBoardState, t]);
 
   useEffect(() => {
-    localStorage.setItem("boardStyle", boardStyle);
-  }, [boardStyle]);
+    if (sessionStatus === "loading" || !socket) return;
+    const register = () => {
+      let pId = localStorage.getItem("playerId");
 
-  // --- STOCKFISH (Disabled) ---
-  // Stockfish logic disabled as it depends on chess.js
+      if (!pId && session?.user?.id) {
+        pId = session.user.id;
+        localStorage.setItem("playerId", pId);
+      }
 
+      if (!pId) {
+        pId = Math.random().toString(36).substring(2, 15);
+        localStorage.setItem("playerId", pId);
+      }
 
+      console.log(`[Board] Registering with pId: ${pId} (Session: ${session?.user?.id || 'none'})`);
+      socket.emit("register_player", { playerId: pId });
 
-  // --- GAME LOGIC ---
+      if (initialRoomId) {
+        console.log("[Board] Explicitly joining room on refresh:", initialRoomId);
+        socket.emit("join_room", { roomId: initialRoomId });
+      }
+    };
+    register();
+    socket.on("connect", register);
+    return () => { socket.off("connect", register); };
+  }, [session?.user?.id, sessionStatus, socket, initialRoomId]);
 
-  const checkGameEnd = () => {
-    // No explicit game end checking
-  };
+  useEffect(() => {
+    if (initialFen) updateBoardState(initialFen);
+  }, [initialFen, updateBoardState]);
+
+  const boardContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!boardContainerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width } = entry.contentRect;
+        // Prioritize width to ensure full visibility horizontally. 
+        // Vertically, we allow the page to scroll if the board is taller than the viewport.
+        const minDim = width - 48; // 48px padding for safety (scrollbars, borders)
+        const calculated = Math.floor(minDim / 8);
+
+        // Clamp between 20 and 120px per square
+        setBlockSize(Math.max(Math.min(calculated, 120), 20));
+      }
+    });
+
+    resizeObserver.observe(boardContainerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
 
   const getPieceAt = (pos: string) => boardPieces.find(p => p.position === pos);
 
+  const executePromotion = (type: string) => {
+    if (!promotionMove) return;
+    const promoMap: any = { 'Queen': 'q', 'Rook': 'r', 'Bishop': 'b', 'Knight': 'n' };
+    const code = promoMap[type] || type.toLowerCase();
+
+    console.log(`[Board] Executing promotion: ${type} (${code}) for move: ${promotionMove.from}->${promotionMove.to}`);
+
+    if (gameMode === "online") {
+      if (socket) {
+        console.log("[Board] Emitting promotion move to server");
+        socket.emit("move", { from: promotionMove.from, to: promotionMove.to, promotion: code });
+      }
+    } else {
+      executeMove(promotionMove.from, promotionMove.to, code);
+    }
+    setShowPromotionDialog(false); setPromotionMove(null);
+  };
+
   const executeMove = (from: string, to: string, promotion?: string) => {
-    const movingPiece = getPieceAt(from);
-    if (!movingPiece) return false;
-
-    const targetPiece = getPieceAt(to);
-    const isCapture = !!targetPiece;
-
-    let newPieces = boardPieces.filter(p => p.position !== from && p.position !== to);
-
-    const updatedPiece = { ...movingPiece, position: to };
+    if (gameMode === "online") {
+      if (socket) socket.emit("move", { from, to, promotion });
+      return true;
+    }
+    const piece = getPieceAt(from);
+    if (!piece) return false;
+    let next = boardPieces.filter(p => p.position !== from && p.position !== to);
+    const updated = { ...piece, position: to };
     if (promotion) {
-      const typeMap: Record<string, string> = {
-        'q': 'Queen', 'r': 'Rook', 'b': 'Bishop', 'n': 'Knight',
-        'Q': 'Queen', 'R': 'Rook', 'B': 'Bishop', 'N': 'Knight',
-        'p': 'Pawn', 'P': 'Pawn'
-      };
-      updatedPiece.type = (typeMap[promotion] || 'Queen') as any;
+      const tMap: any = { 'q': 'Queen', 'r': 'Rook', 'b': 'Bishop', 'n': 'Knight' };
+      updated.type = (tMap[promotion.toLowerCase()] || 'Queen') as any;
     }
-    newPieces.push(updatedPiece);
-    setBoardPieces(newPieces);
-
-    const newTurn = currentTurn === 'w' ? 'b' : 'w';
-    setCurrentTurn(newTurn);
-
-    const fen = generateFen(newPieces, newTurn);
-
-    setLastMoveFrom(from);
-    setLastMoveTo(to);
-    setSelectedPos(null);
-    setRedMarkedSquares(new Set());
-
-    const audio = new Audio(isCapture ? "/sounds/capture.mp3" : "/sounds/move-self.mp3");
-    audio.play().catch(() => { });
-
-    if (gameMode === "online" && socket) {
-      socket.emit("move", {
-        roomId: currentRoom,
-        move: { from, to, promotion },
-        fen: fen,
-        history: []
-      });
-    }
-
-    if (onMove) {
-      onMove({ fen });
-    }
-
+    next.push(updated);
+    setBoardPieces(next);
+    setCurrentTurn(currentTurn === 'w' ? 'b' : 'w');
+    setLastMoveFrom(from); setLastMoveTo(to); setSelectedPos(null);
     return true;
   };
 
-
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    setActivePiece(active.id);
-    setSelectedPos(active.id as string);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+  const handleDragStart = (e: DragStartEvent) => { setActivePiece(e.active.id as string); setSelectedPos(e.active.id as string); };
+  const handleDragEnd = (e: DragEndEvent) => {
     setActivePiece(null);
-
+    const { active, over } = e;
     if (over && active.id !== over.id) {
-      const from = active.id as string;
-      const to = over.id as string;
-
-      const piece = getPieceAt(from);
-      const isPromotion = piece?.type === 'Pawn' && (
-        (piece.color === 'white' && to[1] === '8') ||
-        (piece.color === 'black' && to[1] === '1')
-      );
-
-      if (isPromotion) {
-        setPromotionMove({ from, to });
-        setShowPromotionDialog(true);
-        return;
-      }
-
-      executeMove(from, to);
+      const from = active.id as string, to = over.id as string;
+      const p = getPieceAt(from);
+      if (p?.type === 'Pawn' && (to[1] === '8' || to[1] === '1')) {
+        setPromotionMove({ from, to }); setShowPromotionDialog(true);
+      } else executeMove(from, to);
     }
   };
 
-  // Click Fallback
-  const handlePieceSelect = (pos: string) => {
-    if (gameStatus !== "playing") return;
-    if (isViewingHistory) return;
-
+  const handlePieceSelect = useCallback((pos: string) => {
+    if (gameStatus !== "playing" || isViewingHistory) return;
     if (!selectedPos) {
-      const piece = getPieceAt(pos);
-      if (piece) {
-        const pieceTurn = piece.color === 'white' ? 'w' : 'b';
-        if (pieceTurn === currentTurn) {
-          if (!myColor || piece.color === myColor) {
-            setSelectedPos(pos);
-          }
-        }
+      const p = getPieceAt(pos);
+      if (p && (p.color === 'white' ? 'w' : 'b') === currentTurn) {
+        if (!myColor || p.color === myColor) setSelectedPos(pos);
       }
     } else {
-      if (selectedPos === pos) {
-        setSelectedPos(null);
-      } else {
-        const piece = getPieceAt(selectedPos);
-        if (!piece) return;
-
-        const isPromotion = piece.type === 'Pawn' && (
-          (piece.color === 'white' && pos[1] === '8') ||
-          (piece.color === 'black' && pos[1] === '1')
-        );
-
-        if (isPromotion) {
-          setPromotionMove({ from: selectedPos, to: pos });
-          setShowPromotionDialog(true);
+      if (selectedPos === pos) setSelectedPos(null);
+      else {
+        const p = getPieceAt(selectedPos);
+        if (!p) return;
+        if (p.type === 'Pawn' && (pos[1] === '8' || pos[1] === '1')) {
+          setPromotionMove({ from: selectedPos, to: pos }); setShowPromotionDialog(true);
         } else {
           const target = getPieceAt(pos);
-          if (target && target.color === piece.color) {
-            setSelectedPos(pos);
-          } else {
-            executeMove(selectedPos, pos);
-          }
+          if (target && target.color === p.color) setSelectedPos(pos);
+          else executeMove(selectedPos, pos);
         }
       }
     }
+  }, [gameStatus, isViewingHistory, selectedPos, boardPieces, currentTurn, myColor, executeMove]);
+
+  const navigateHistory = (dir: "prev" | "next" | "start" | "end") => {
+    if (moveHistory.length === 0) return;
+    setIsViewingHistory(true);
+    let idx = historyIndex;
+    if (dir === "start") idx = -1;
+    else if (dir === "prev") idx = Math.max(-1, historyIndex - 1);
+    else if (dir === "next") idx = Math.min(moveHistory.length - 1, historyIndex + 1);
+    else if (dir === "end") { idx = moveHistory.length - 1; setIsViewingHistory(false); }
+    setHistoryIndex(idx);
   };
 
+  const exitHistoryView = () => { setIsViewingHistory(false); setHistoryIndex(moveHistory.length - 1); };
+  const startComputerGame = () => { setGameMode("computer"); setGameStatus("playing"); setMyColor("white"); setBoardPieces(parseFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")); setCurrentTurn('w'); };
 
-  const executePromotion = (pieceType: string) => {
-    if (!promotionMove) return;
-    executeMove(promotionMove.from, promotionMove.to, pieceType);
-    setShowPromotionDialog(false);
-    setPromotionMove(null);
+  const handleDeclineDraw = () => { if (socket && drawOffer === "pending") { socket.emit("decline_draw"); setDrawOffer(null); setToastMessage(t("drawOfferDeclinedByYou")); setShowToast(true); } };
+  const handleAcceptDraw = () => { if (socket && drawOffer === "pending") { socket.emit("accept_draw"); setDrawOffer(null); } };
+
+  const offensiveWords = ["fuck", "shit", "bitch", "asshole", "faggot", "retarded", "cunt", "damn", "dick", "pussy", "nigger", "whore", "slut", "bastard", "idiot", "stupid", "kys", "kill yourself", "hitler", "nazi"];
+  const filterMessage = (message: string) => {
+    let filtered = message;
+    offensiveWords.forEach(word => {
+      const regex = new RegExp(`\\b${word}\\b`, 'gi');
+      filtered = filtered.replace(regex, '***');
+    });
+    return filtered;
   };
 
-  const startComputerGame = (elo: number = 1300) => {
-    setGameMode("computer");
-    setStockfishDifficulty(elo);
-    setCurrentRoom("Vs Stockfish");
-    setGameStatus("playing");
-    setMyColor("white");
-    setGameResult(null);
-    setGameInfo(`Playing vs Computer (Elo ${elo})`);
-    setChatMessages(prev => [...prev, `System: Started game against Stockfish (Elo ${elo})`]);
+  useEffect(() => {
+    if (!socket) return;
+    const onChat = (data: any) => setChatMessages(p => [...p, filterMessage(data.message)]);
+    const onSearchStarted = () => setIsSearching(true);
+    const onSearchCancelled = () => setIsSearching(false);
 
-    // Reset board
-    const startFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    setBoardPieces(parseFen(startFen));
-    setCurrentTurn('w');
-  };
+    socket.on("chat_message", onChat);
+    socket.on("quick_search_started", onSearchStarted);
+    socket.on("search_cancelled", onSearchCancelled);
+    return () => {
+      socket.off("chat_message", onChat);
+      socket.off("quick_search_started", onSearchStarted);
+      socket.off("search_cancelled", onSearchCancelled);
+    };
+  }, [socket]);
 
-
-  // --- HISTORY VIEW MODE ---
-  const navigateHistory = (direction: "prev" | "next" | "start" | "end") => {
-    // History navigation disabled in manual mode
-  };
-
-  const exitHistoryView = () => {
-    setIsViewingHistory(false);
-    setHistoryIndex(-1);
-  };
-
-
-  // --- SOCKET HANDLERS ---
-  const handleChatMessage = (msg: string) => {
-    setChatMessages(prev => [...prev, msg]);
-  };
-  const handleRoomInfo = ({ playerCount, room }: { playerCount: number, room: string }) => {
-    setPlayerCount(playerCount);
-    setCurrentRoom(room);
-  };
-  const handleGameInfoUpdate = (info: string) => {
-    setGameInfo(info);
-    if (info === "Game over") setGameStatus("ended"); // Fallback
-  };
-  const handleGameResult = (res: 'win' | 'loss' | 'draw' | null) => {
-    if (res) {
-      setGameResult(res);
-      // Also set status
-      setGameStatus("ended");
-    }
-  };
-
-  const handleSendMessage = (msg: string) => {
-    if (gameMode === "computer") {
-      // Local chat?
-      setChatMessages(prev => [...prev, `You: ${msg}`]);
-      setTimeout(() => setChatMessages(prev => [...prev, `Stockfish: ...`]), 500);
-      return;
-    }
-    socket.emit("chat_message", { message: msg });
-  };
-
-  // --- MULTIPLAYER HANDLERS ---
-  const handleQuickSearch = () => {
-    setIsSearching(true);
-    socket.emit("quick_search");
-  };
-
-  const handleCancelSearch = () => {
-    setIsSearching(false);
-    socket.emit("cancel_search");
-  };
-
-  const handleCreateRoom = () => {
-    setGameInfo(t('creatingRoom'));
-    socket.emit("create_room");
-  };
-
-  const handleJoinRoom = (roomCode: string) => {
-    if (!roomCode) return;
-    setGameInfo(t('joining') || 'Joining...');
-    socket.emit("join_room", { roomId: roomCode });
-  };
-
-  // --- RENDER ---
   const boardContent = [];
-  let isWhite = true;
-  for (let i = 0; i < 8; i++) {
-    for (let a = 0; a < 8; a++) {
-      const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+  const rRange = myColor === "black" ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+  const cRange = myColor === "black" ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+  const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+
+  for (const i of rRange) {
+    for (const a of cRange) {
       const pos = `${files[a]}${8 - i}`;
-      const isTopLeft = myColor === "black" ? i === 0 && a === 7 : i === 7 && a === 0; // Rotated logic omitted for simplicity or keep it?
-      // Keeping assumption: Board always from White perspective for now unless rotation logic added.
-      // Wait, original code had rotation logic based on `myColor`.
-      // Let's stick to standard view for now to minimize bugs, or implement rotation if critical.
-      // User didn't complain about rotation, but sidebar is priority.
-
-      const displayPiece = boardPieces.find((p) => p.position === pos);
-      if (displayPiece) displayPiece.size = blockSize * getGamePieceScale(displayPiece.type);
-
+      const isWhiteSq = (i + a) % 2 === 0;
+      const piece = boardPieces.find(p => p.position === pos);
+      if (piece) piece.size = blockSize * getGamePieceScale(piece.type);
       boardContent.push(
         <SquareTile
-          key={pos}
-          pos={pos}
-          isWhite={isWhite}
-          eckenKlasse=""
-          piece={displayPiece}
-          blockSize={blockSize}
-          selected={selectedPos === pos}
-          isMoveFrom={lastMoveFrom === pos}
-          isMoveTo={lastMoveTo === pos}
-          onClick={handlePieceSelect}
-          onContextMenu={() => { }} // Right click clear
-          boardStyle={boardStyle}
-          isViewingHistory={isViewingHistory}
-          gameStatus={gameStatus}
-          myColor={myColor}
-          amIAtTurn={!isViewingHistory && gameStatus === "playing" && (
-            myColor
-              ? currentTurn === (myColor === "white" ? "w" : "b")
-              : (displayPiece ? (displayPiece.color === "white" ? "w" : "b") === currentTurn : false)
-          )}
+          key={pos} pos={pos} isWhite={isWhiteSq} piece={piece} blockSize={blockSize}
+          selected={selectedPos === pos} isMoveFrom={lastMoveFrom === pos} isMoveTo={lastMoveTo === pos}
+          onClick={handlePieceSelect} onContextMenu={p => setRedMarkedSquares(prev => { const n = new Set(prev); if (n.has(p)) n.delete(p); else n.add(p); return n; })}
+          boardStyle={boardStyle} isViewingHistory={isViewingHistory} gameStatus={gameStatus} myColor={myColor}
+          amIAtTurn={!isViewingHistory && gameStatus === "playing" && (myColor ? currentTurn === (myColor === "white" ? "w" : "b") : gameMode === 'local')}
           squareRefs={squareRefs}
         />
       );
-      isWhite = !isWhite;
     }
-    isWhite = !isWhite;
   }
 
+  const markerOverlay = Array.from(redMarkedSquares).map(pos => {
+    const el = squareRefs.current[pos];
+    if (!el) return null;
+    return <div key={`red-${pos}`} className="absolute z-10 pointer-events-none bg-red-500/40 rounded-sm" style={{ width: blockSize, height: blockSize, left: el.offsetLeft, top: el.offsetTop }} />;
+  });
+
   return (
-    <div className="flex flex-col lg:flex-row min-h-dvh w-full overflow-hidden bg-stone-100 dark:bg-stone-950">
-      <SocketComponent
-        myColor={myColor}
-        setMyColor={setMyColor}
-        gameStatus={gameStatus as any}
-        setGameStatus={setGameStatus}
-        currentRoom={currentRoom}
-        onPlayerJoined={() => setPlayerCount(2)}
-        onChatMessage={handleChatMessage}
-        onRoomInfo={handleRoomInfo}
-        onGameInfo={handleGameInfoUpdate}
-        onGameResult={handleGameResult}
-        onSearchStarted={() => setIsSearching(true)}
-        onSearchCancelled={() => setIsSearching(false)}
-      />
+    <div className="flex flex-col lg:flex-row min-h-dvh w-full bg-stone-50 dark:bg-stone-950">
+      <div className="flex-1 flex flex-col relative bg-stone-100/50 dark:bg-black/20">
+        <div className="flex flex-col w-full h-full">
+          {/* Top/Center content area */}
+          <div className={`flex-1 flex flex-col items-center p-2 lg:p-4 w-full overflow-auto ${gameStatus === "playing" ? "justify-start" : "justify-center"}`}>
 
-      <Toast message={toastMessage} show={showToast} onClose={() => setShowToast(false)} />
-      {gameResult && <GameEndEffect result={gameResult} />}
-
-      {/* --- MAIN CONTENT (BOARD or LOBBY) --- */}
-      <div className="flex-1 min-h-0 min-w-0 flex flex-col items-center justify-center relative p-4 lg:p-10 overflow-y-auto" style={{ touchAction: 'pan-y' }}>
-        {(gameStatus === "" && !isSearching) ? (
-          <GameLobby
-            onQuickSearch={handleQuickSearch}
-            onCancelSearch={handleCancelSearch}
-            onCreateRoom={handleCreateRoom}
-            onJoinRoom={handleJoinRoom}
-            onVsComputer={startComputerGame}
-            isSearching={isSearching}
-          />
-        ) : isSearching ? (
-          <GameLobby
-            onQuickSearch={handleQuickSearch}
-            onCancelSearch={handleCancelSearch}
-            onCreateRoom={handleCreateRoom}
-            onJoinRoom={handleJoinRoom}
-            onVsComputer={startComputerGame}
-            isSearching={isSearching}
-          />
-        ) : (
-          <>
-            <div className="mb-4 flex flex-wrap justify-center gap-4">
-              <button onClick={() => { setGameStatus(""); setIsSearching(false); }} className="flex items-center gap-2 text-gray-500 hover:text-black dark:hover:text-white transition-colors">
-                <Back /> <span className="hidden sm:inline">Lobby</span>
-              </button>
-            </div>
-
-            <div className="relative shadow-2xl rounded-lg border-6 sm:border-12 border-stone-800 bg-stone-800 transition-all duration-300">
-              <div
-                className="grid grid-cols-8"
-                style={{
-                  width: blockSize * 8,
-                  height: blockSize * 8,
-                }}
-              >
-                <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-                  {boardContent}
-                  <DragOverlay dropAnimation={null}>
-                    {activePiece ? (
-                      <div style={{ width: blockSize, height: blockSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {(() => {
-                          const p = boardPieces.find(p => p.position === activePiece);
-                          if (!p) return null;
-                          return <Image src={getPieceImage(boardStyle, p.color, p.type)} alt="" width={blockSize} height={blockSize} unoptimized style={{ pointerEvents: 'none' }} />;
-                        })()}
-                      </div>
-                    ) : null}
-                  </DragOverlay>
-                </DndContext>
+            {(gameStatus === "" && !isSearching) ? (
+              <div className="text-center p-8 lg:p-12 bg-white dark:bg-stone-900 rounded-3xl lg:rounded-[3rem] shadow-2xl border border-stone-200 dark:border-stone-800 max-w-lg w-full animate-in zoom-in duration-500 my-auto">
+                <h1 className="text-4xl lg:text-6xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tighter italic">Chess PIE</h1>
+                <button
+                  onClick={() => { setIsSearching(true); socket.emit("find_match"); }}
+                  className="w-full py-5 lg:py-7 bg-linear-to-r from-amber-500 to-orange-600 text-white rounded-2xl lg:rounded-4xl font-black text-xl shadow-xl hover:shadow-orange-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Quick Play
+                </button>
+                <div className="mt-8 flex flex-col gap-4">
+                  <button onClick={() => socket.emit("create_room")} className="text-stone-500 dark:text-stone-400 font-bold hover:text-amber-500 transition tracking-widest text-xs lg:text-sm uppercase">Create Private Room</button>
+                  <button onClick={() => startComputerGame()} className="text-stone-500 dark:text-stone-400 font-bold hover:text-green-500 transition tracking-widest text-xs lg:text-sm uppercase">vs Stockfish AI</button>
+                </div>
               </div>
-
-              {showPromotionDialog && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-50 rounded">
-                  <div className="bg-white p-4 rounded-xl flex gap-2">
-                    {['q', 'r', 'b', 'n'].map(type => (
-                      <button key={type} onClick={() => executePromotion(type)} className="p-2 hover:bg-gray-100 rounded text-black font-bold">
-                        {type.toUpperCase()}
-                      </button>
-                    ))}
+            ) : isSearching ? (
+              <div className="flex flex-col items-center justify-center p-12 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl rounded-[3rem] border border-gray-200 dark:border-white/10 shadow-2xl max-w-lg w-full my-auto">
+                <div className="w-20 h-20 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-8" />
+                <h2 className="text-2xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tight">Finding Match...</h2>
+                <p className="text-stone-400 text-sm font-medium mb-8">Searching for a worthy opponent</p>
+                <button onClick={() => { setIsSearching(false); socket.emit("cancel_search"); }} className="px-10 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-2xl font-bold transition-all border border-red-500/30">Cancel Search</button>
+              </div>
+            ) : (
+              <>
+                {/* Board Container - Flexible area */}
+                <div
+                  ref={boardContainerRef}
+                  className="w-full flex justify-center p-1 max-w-3xl lg:max-w-[85vh] mx-auto"
+                >
+                  <div className="relative shadow-2xl rounded-xl bg-stone-300 dark:bg-stone-800 p-1 lg:p-2 animate-in zoom-in duration-700">
+                    <div className="grid grid-cols-8 overflow-hidden rounded-lg shadow-inner" style={{ width: blockSize * 8, height: blockSize * 8 }}>
+                      <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+                        {boardContent}
+                        {markerOverlay}
+                        <DragOverlay dropAnimation={null}>
+                          {activePiece ? (
+                            <div style={{ width: blockSize, height: blockSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Image src={getPieceImage(boardStyle, getPieceAt(activePiece)?.color || 'white', getPieceAt(activePiece)?.type || 'Pawn')} alt="" width={blockSize} height={blockSize} unoptimized />
+                            </div>
+                          ) : null}
+                        </DragOverlay>
+                      </DndContext>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {isViewingHistory && (
-              <div className="mt-4 bg-amber-100 text-amber-800 px-4 py-2 rounded-full font-bold flex items-center gap-2 animate-pulse text-sm">
-                <History size={16} /> Replay Mode
-              </div>
+              </>
             )}
-          </>
-        )}
+          </div>
+        </div>
       </div>
 
-      {/* --- SIDEBAR --- */}
-      <div className="h-[40vh] lg:h-full w-full lg:w-96 shrink-0 animate-in slide-in-from-bottom lg:slide-in-from-right duration-500">
-        <GameSidebar
-          myColor={myColor}
-          gameStatus={gameStatus}
-          gameInfo={gameInfo}
-          moveHistory={moveHistory}
-          historyIndex={historyIndex}
-          navigateHistory={navigateHistory}
-          exitHistoryView={exitHistoryView}
-          isViewingHistory={isViewingHistory}
-          chatMessages={chatMessages}
-          onSendMessage={handleSendMessage}
-          currentRoom={currentRoom}
-          playerCount={playerCount}
-        />
-      </div>
+      <GameSidebar
+        myColor={myColor} moveHistory={moveHistory} historyIndex={historyIndex}
+        navigateHistory={navigateHistory} exitHistoryView={exitHistoryView} isViewingHistory={isViewingHistory}
+        chatMessages={chatMessages} onSendMessage={m => socket.emit("chat_message", { message: m })}
+        playerCount={playerCount} currentRoom={currentRoom} gameInfo={gameInfo} gameStatus={gameStatus as any}
+        onResign={() => socket.emit("resign")} onOfferDraw={() => socket.emit("offer_draw")}
+        onStartComputerGame={startComputerGame} gameMode={gameMode} setGameMode={setGameMode}
+        currentTurn={currentTurn} onLeaveGame={() => { setGameStatus(""); setIsSearching(false); }}
+      />
+
+      {showPromotionDialog && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-stone-900 p-10 rounded-[3rem] shadow-2xl border border-stone-200 dark:border-stone-800 max-w-md w-full text-center">
+            <h3 className="text-3xl font-black mb-8 dark:text-white uppercase tracking-tighter">Promotion</h3>
+            <div className="grid grid-cols-2 gap-6">
+              {['Queen', 'Rook', 'Bishop', 'Knight'].map(t => (
+                <button key={t} onClick={() => executePromotion(t)} className="group p-6 bg-stone-100 dark:bg-stone-800/50 rounded-3xl hover:bg-stone-200 transition-all border border-transparent hover:border-amber-500 flex flex-col items-center gap-4">
+                  <div className="w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Image src={getPieceImage(boardStyle, myColor || 'white', t as any)} alt={t} width={80} height={80} unoptimized />
+                  </div>
+                  <span className="text-sm font-black uppercase text-stone-400 group-hover:text-amber-500">{t}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {drawOffer === 'pending' && (
+        <div className="absolute inset-0 z-110 flex items-center justify-center bg-black/40 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white dark:bg-stone-900 p-8 rounded-4xl shadow-2xl border border-blue-100 dark:border-stone-800 text-center max-w-sm mx-4 transform animate-in zoom-in-95">
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600"><Hand size={32} /></div>
+            <h2 className="text-2xl font-black mb-2 dark:text-white">Draw Offered</h2>
+            <p className="text-stone-500 text-sm mb-8">Your opponent has offered a draw. Accept?</p>
+            <div className="flex gap-3">
+              <button onClick={handleDeclineDraw} className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-800 text-stone-600 rounded-2xl font-bold">Decline</button>
+              <button onClick={handleAcceptDraw} className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/20">Accept</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toastMessage && <Toast message={toastMessage} show={showToast} onClose={() => setShowToast(false)} />}
+      {gameResult && <GameEndEffect result={gameResult!} onClose={() => setGameResult(null)} />}
     </div>
   );
 }

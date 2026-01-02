@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { GripVertical, GripHorizontal, Plus, X } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { GripVertical, GripHorizontal, Plus, X, Minus, ZoomIn, ZoomOut } from 'lucide-react';
 import Image from 'next/image';
 import { getPieceImage } from '@/app/[locale]/game/Data';
 import { EditMode } from '@/app/[locale]/editor/board/PageClient';
@@ -11,12 +11,12 @@ const toKey = (x: number, y: number) => `${x},${y}`;
 
 const getPieceScale = (type: string) => {
     switch (type.toLowerCase()) {
-        case 'king': return 0.96;
-        case 'queen': return 0.94;
-        case 'bishop': return 0.88;
-        case 'knight': return 0.88;
+        case 'king': return 0.7;
+        case 'queen': return 0.9;
+        case 'bishop': return 0.45;
+        case 'knight': return 0.78;
         case 'rook': return 0.82;
-        case 'pawn': return 0.78;
+        case 'pawn': return 0.71;
         default: return 0.85;
     }
 };
@@ -28,10 +28,96 @@ interface BoardEditorProps {
     generateBoardData: (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => void;
 }
 
+// --- Memoized Square Component ---
+const EditorSquare = React.memo(({
+    x, y,
+    isActive,
+    isBlackSquare,
+    piece,
+    editMode,
+    selectedPiece,
+    boardStyle,
+    squareSize,
+    onMouseDown,
+    onMouseEnter,
+    onContextMenu
+}: {
+    x: number, y: number,
+    isActive: boolean,
+    isBlackSquare: boolean,
+    piece?: { type: string, color: string },
+    editMode: string,
+    selectedPiece: { type: string, color: string },
+    boardStyle: string,
+    squareSize: number,
+    onMouseDown: (x: number, y: number, e: React.MouseEvent) => void,
+    onMouseEnter: (x: number, y: number) => void,
+    onContextMenu: (x: number, y: number, e: React.MouseEvent) => void
+}) => {
+    return (
+        <div
+            style={{ width: squareSize, height: squareSize }}
+            className={`
+                relative flex items-center justify-center group transition-colors duration-150
+                ${isActive
+                    ? (isBlackSquare ? 'bg-[#779954]' : 'bg-[#e9edcc]')
+                    : 'bg-gray-300/10 border border-gray-400/20 border-dashed hover:border-accent hover:bg-accent/10 cursor-pointer'}
+                ${editMode === 'pieces' && isActive ? 'cursor-cell' : ''}
+            `}
+            onContextMenu={(e) => onContextMenu(x, y, e)}
+            onMouseDown={(e) => onMouseDown(x, y, e)}
+            onMouseEnter={() => onMouseEnter(x, y)}
+        >
+            {/* Piece rendering */}
+            {isActive && piece && (
+                <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
+                    <Image
+                        src={getPieceImage(boardStyle, piece.color, piece.type)}
+                        alt={piece.type}
+                        width={squareSize * getPieceScale(piece.type)}
+                        height={squareSize * getPieceScale(piece.type)}
+                        unoptimized
+                        className="drop-shadow-lg transform transition-transform group-hover:scale-105"
+                        priority
+                    />
+                </div>
+            )}
+
+            {/* Edit Mode HUD overlay */}
+            {editMode === 'shape' && (
+                <>
+                    {!isActive && (
+                        <Plus className="text-accent opacity-0 group-hover:opacity-100 transition-all transform scale-50 group-hover:scale-100" size={24} />
+                    )}
+                    {isActive && !piece && (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-red-500/10 transition-all rounded-sm">
+                            <X className="text-red-500 drop-shadow-md" size={32} strokeWidth={3} />
+                        </div>
+                    )}
+                </>
+            )}
+
+            {editMode === 'pieces' && isActive && !piece && (
+                <div className="opacity-0 group-hover:opacity-60 transition-opacity pointer-events-none">
+                    <Image
+                        src={getPieceImage(boardStyle, selectedPiece.color, selectedPiece.type)}
+                        alt={`${selectedPiece.color} ${selectedPiece.type} preview`}
+                        width={squareSize * getPieceScale(selectedPiece.type)}
+                        height={squareSize * getPieceScale(selectedPiece.type)}
+                        unoptimized
+                        className="bg-transparent"
+                        priority
+                    />
+                </div>
+            )}
+        </div>
+    );
+});
+
 export default function BoardEditor({ editMode, selectedPiece, boardStyle, generateBoardData }: BoardEditorProps) {
     const [rows, setRows] = useState<number>(() => Number(localStorage.getItem('rows') || 8));
     const [cols, setCols] = useState<number>(() => Number(localStorage.getItem('cols') || 8));
-    const [placedPieces, setPlacedPieces] = useState<Record<string, { type: string; color: string }>>(() => {
+    const [placedPieces, setPlacedPieces] = useState<Record<string, { type: string; color: string, size: number }>>(() => {
         try {
             return JSON.parse(localStorage.getItem('placedPieces') || '{}');
         } catch {
@@ -46,7 +132,92 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         } catch { }
         return new Set();
     });
+
+    // --- History for Undo/Redo ---
+    const [history, setHistory] = useState<{
+        placedPieces: Record<string, { type: string; color: string, size: number }>;
+        activeSquares: Set<string>;
+        rows: number;
+        cols: number;
+    }[]>([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
+
+    const saveToHistory = (
+        pPieces: Record<string, { type: string; color: string, size: number }>,
+        aSquares: Set<string>,
+        r: number,
+        c: number
+    ) => {
+        const newState = {
+            placedPieces: JSON.parse(JSON.stringify(pPieces)),
+            activeSquares: new Set(aSquares),
+            rows: r,
+            cols: c
+        };
+
+        setHistory(prev => {
+            const next = prev.slice(0, historyIndex + 1);
+            next.push(newState);
+            if (next.length > 50) next.shift(); // Max 50 undos
+            return next;
+        });
+        setHistoryIndex(prev => {
+            const next = prev + 1;
+            return next > 49 ? 49 : next;
+        });
+    };
+
+    const undo = () => {
+        if (historyIndex <= 0) return;
+        const prevState = history[historyIndex - 1];
+        setPlacedPieces(prevState.placedPieces);
+        setActiveSquares(new Set(prevState.activeSquares));
+        setRows(prevState.rows);
+        setCols(prevState.cols);
+        setHistoryIndex(prev => prev - 1);
+    };
+
+    const redo = () => {
+        if (historyIndex >= history.length - 1) return;
+        const nextState = history[historyIndex + 1];
+        setPlacedPieces(nextState.placedPieces);
+        setActiveSquares(new Set(nextState.activeSquares));
+        setRows(nextState.rows);
+        setCols(nextState.cols);
+        setHistoryIndex(prev => prev + 1);
+    };
+
+    // Initial history
+    useEffect(() => {
+        if (history.length === 0) {
+            saveToHistory(placedPieces, activeSquares, rows, cols);
+        }
+    }, []);
+
+    const [zoom, setZoom] = useState(1);
+    const [isPainting, setIsPainting] = useState(false);
+    const [paintValue, setPaintValue] = useState<boolean | null>(null); // For shape mode: true=activate, false=deactivate
+    const paintValueRef = useRef<boolean | null>(null);
+    const isPaintingRef = useRef(false);
+
+    useEffect(() => { paintValueRef.current = paintValue; }, [paintValue]);
+    useEffect(() => { isPaintingRef.current = isPainting; }, [isPainting]);
+
     const containerRef = useRef<HTMLDivElement>(null);
+
+
+    // Refs for stable state access in event listeners
+    const rowsRef = useRef(rows);
+    const colsRef = useRef(cols);
+    const activeSquaresRef = useRef(activeSquares);
+    const squareSizeRef = useRef(70);
+    const placedPiecesRef = useRef(placedPieces);
+
+    useEffect(() => { rowsRef.current = rows; }, [rows]);
+    useEffect(() => { colsRef.current = cols; }, [cols]);
+    useEffect(() => { activeSquaresRef.current = activeSquares; }, [activeSquares]);
+    // squareSizeRef updated via currentSquareSize effect below
+    useEffect(() => { placedPiecesRef.current = placedPieces; }, [placedPieces]);
 
     useEffect(() => {
         if (activeSquares.size === 0) {
@@ -58,51 +229,69 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
             }
             setActiveSquares(newSet);
         }
-    }, []);
-
+    }, [rows, cols, activeSquares.size]);
 
     useEffect(() => {
-        localStorage.setItem('rows', rows.toString());
-        localStorage.setItem('cols', cols.toString());
-        localStorage.setItem('placedPieces', JSON.stringify(placedPieces));
-        localStorage.setItem('activeSquares', JSON.stringify(Array.from(activeSquares)));
+        const timer = setTimeout(() => {
+            localStorage.setItem('rows', rows.toString());
+            localStorage.setItem('cols', cols.toString());
+            localStorage.setItem('placedPieces', JSON.stringify(placedPieces));
+            localStorage.setItem('activeSquares', JSON.stringify(Array.from(activeSquares)));
 
-        generateBoardData(rows, cols, activeSquares, placedPieces);
+            generateBoardData(rows, cols, activeSquares, placedPieces);
+        }, 500); // 500ms debounce
+
+        return () => clearTimeout(timer);
     }, [rows, cols, placedPieces, activeSquares, generateBoardData]);
 
+    const [windowSize, setWindowSize] = useState({ w: 1000, h: 800 });
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+        const handleResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
-    const [squareSize, setSquareSize] = useState(70);
+    const calculateSquareSize = useCallback((r: number, c: number, z: number, winW: number, winH: number) => {
+        const isLarge = winW >= 1024;
+        const availableWidth = isLarge ? winW - 420 : winW - 48;
+        const availableHeight = isLarge ? winH - 180 : winH * 0.45;
+        const widthBasedSize = Math.floor(availableWidth / (c + 1));
+        const heightBasedSize = Math.floor(availableHeight / (r + 1));
+        return Math.max(28, Math.min(widthBasedSize, heightBasedSize, 70)) * z;
+    }, []);
+
+    const currentSquareSize = calculateSquareSize(rows, cols, zoom, windowSize.w, windowSize.h);
+    const SQUARE_SIZE = currentSquareSize;
 
     useEffect(() => {
-        const updateSize = () => {
-            if (typeof window === 'undefined') return;
+        squareSizeRef.current = currentSquareSize;
+    }, [currentSquareSize]);
 
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            const isLarge = w >= 1024;
-
-            // Robust calculation based on window or container if available
-            const availableWidth = isLarge ? w - 420 : w - 48;
-            const availableHeight = isLarge ? h - 180 : h * 0.45;
-
-            const widthBasedSize = Math.floor(availableWidth / (cols + 1));
-            const heightBasedSize = Math.floor(availableHeight / (rows + 1));
-
-            const newSize = Math.max(28, Math.min(widthBasedSize, heightBasedSize, 70));
-
-            setSquareSize(newSize);
+    // Keybinds for Zoom & Undo/Redo
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                undo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                e.preventDefault();
+                redo();
+            } else if (e.key === '+' || e.key === '=') {
+                setZoom(prev => Math.min(2.5, prev + 0.1));
+            } else if (e.key === '-' || e.key === '_') {
+                setZoom(prev => Math.max(0.3, prev - 0.1));
+            }
         };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [history, historyIndex]); // Depend on history for undo/redo functions to be fresh
 
-        updateSize();
-        const timeout = setTimeout(updateSize, 100); // Small delay for layout stabilization
-        window.addEventListener('resize', updateSize);
-        return () => window.removeEventListener('resize', updateSize);
-    }, [rows, cols]);
 
-    const SQUARE_SIZE = squareSize;
 
     // Resizing logic
-    const resizingRef = useRef<'cols' | 'rows' | null>(null);
+    const resizingRef = useRef<'top' | 'bottom' | 'left' | 'right' | null>(null);
     const startPosRef = useRef<{ x: number, y: number } | null>(null);
     const startDimRef = useRef<{ rows: number, cols: number } | null>(null);
 
@@ -114,7 +303,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         return { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY };
     };
 
-    const handlePointerDown = (type: 'cols' | 'rows', e: React.MouseEvent | React.TouchEvent) => {
+    const handlePointerDown = (type: 'top' | 'bottom' | 'left' | 'right', e: React.MouseEvent | React.TouchEvent) => {
         e.preventDefault();
         resizingRef.current = type;
         const pos = getPointerPosition(e.nativeEvent as any);
@@ -134,46 +323,113 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         const dx = pos.x - startPosRef.current.x;
         const dy = pos.y - startPosRef.current.y;
 
-        if (resizingRef.current === 'cols') {
-            const addedCols = Math.floor(dx / SQUARE_SIZE);
+        if (resizingRef.current === 'right') {
+            const addedCols = Math.floor(dx / squareSizeRef.current);
             const newCols = Math.max(1, Math.min(20, startDimRef.current.cols + addedCols));
-
-            if (newCols > startDimRef.current.cols) {
-                setActiveSquares(prev => {
-                    const next = new Set(prev);
-                    if (startDimRef.current) {
-                        for (let x = startDimRef.current.cols; x < newCols; x++) {
-                            for (let y = 0; y < startDimRef.current.rows; y++) {
-                                next.add(toKey(x, y));
-                            }
+            if (newCols !== colsRef.current) {
+                const diff = newCols - colsRef.current;
+                if (diff === 0) return;
+                if (newCols > colsRef.current) {
+                    // Activate new columns
+                    setActiveSquares(prev => {
+                        const next = new Set(prev);
+                        for (let x = colsRef.current; x < newCols; x++) {
+                            for (let y = 0; y < rowsRef.current; y++) next.add(toKey(x, y));
                         }
-                    }
-                    return next;
-                });
+                        return next;
+                    });
+                }
+                setCols(newCols);
             }
-            setCols(newCols);
-        } else {
-            const addedRows = Math.floor(dy / SQUARE_SIZE);
+        } else if (resizingRef.current === 'bottom') {
+            const addedRows = Math.floor(dy / squareSizeRef.current);
             const newRows = Math.max(1, Math.min(20, startDimRef.current.rows + addedRows));
-
-            if (newRows > startDimRef.current.rows) {
+            if (newRows !== rowsRef.current) {
+                const diff = newRows - rowsRef.current;
+                if (diff === 0) return;
+                if (newRows > rowsRef.current) {
+                    // Activate new rows
+                    setActiveSquares(prev => {
+                        const next = new Set(prev);
+                        for (let y = rowsRef.current; y < newRows; y++) {
+                            for (let x = 0; x < colsRef.current; x++) next.add(toKey(x, y));
+                        }
+                        return next;
+                    });
+                }
+                setRows(newRows);
+            }
+        } else if (resizingRef.current === 'left') {
+            const addedCols = Math.floor(-dx / squareSizeRef.current);
+            const newCols = Math.max(1, Math.min(20, startDimRef.current.cols + addedCols));
+            if (newCols !== colsRef.current) {
+                const diff = newCols - colsRef.current;
+                if (diff === 0) return;
+                setPlacedPieces(prev => {
+                    const next: any = {};
+                    Object.entries(prev).forEach(([key, val]) => {
+                        const [x, y] = key.split(',').map(Number);
+                        const newX = x + diff;
+                        if (newX >= 0 && newX < newCols) next[toKey(newX, y)] = val;
+                    });
+                    return next;
+                });
                 setActiveSquares(prev => {
-                    const next = new Set(prev);
-                    if (startDimRef.current) {
-                        for (let y = startDimRef.current.rows; y < newRows; y++) {
-                            for (let x = 0; x < startDimRef.current.cols; x++) {
-                                next.add(toKey(x, y));
-                            }
+                    const next = new Set<string>();
+                    prev.forEach(key => {
+                        const [x, y] = key.split(',').map(Number);
+                        const newX = x + diff;
+                        if (newX >= 0 && newX < newCols) next.add(toKey(newX, y));
+                    });
+                    if (diff > 0) {
+                        for (let x = 0; x < diff; x++) {
+                            for (let y = 0; y < rowsRef.current; y++) next.add(toKey(x, y));
                         }
                     }
                     return next;
                 });
+                setCols(newCols);
+                startPosRef.current.x -= diff * squareSizeRef.current;
             }
-            setRows(newRows);
+        } else if (resizingRef.current === 'top') {
+            const addedRows = Math.floor(-dy / squareSizeRef.current);
+            const newRows = Math.max(1, Math.min(20, startDimRef.current.rows + addedRows));
+            if (newRows !== rowsRef.current) {
+                const diff = newRows - rowsRef.current;
+                if (diff === 0) return;
+                setPlacedPieces(prev => {
+                    const next: any = {};
+                    Object.entries(prev).forEach(([key, val]) => {
+                        const [x, y] = key.split(',').map(Number);
+                        const newY = y + diff;
+                        if (newY >= 0 && newY < newRows) next[toKey(x, newY)] = val;
+                    });
+                    return next;
+                });
+                setActiveSquares(prev => {
+                    const next = new Set<string>();
+                    prev.forEach(key => {
+                        const [x, y] = key.split(',').map(Number);
+                        const newY = y + diff;
+                        if (newY >= 0 && newY < newRows) next.add(toKey(x, newY));
+                    });
+                    if (diff > 0) {
+                        for (let y = 0; y < diff; y++) {
+                            for (let x = 0; x < colsRef.current; x++) next.add(toKey(x, y));
+                        }
+                    }
+                    return next;
+                });
+                setRows(newRows);
+                startPosRef.current.y -= diff * squareSizeRef.current;
+            }
         }
     };
 
     const handlePointerUp = () => {
+        if (resizingRef.current) {
+            saveToHistory(placedPiecesRef.current, activeSquaresRef.current, rowsRef.current, colsRef.current);
+        }
         resizingRef.current = null;
         startPosRef.current = null;
         startDimRef.current = null;
@@ -183,56 +439,148 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         document.removeEventListener('touchend', handlePointerUp);
     };
 
-    const handleSquareClick = (x: number, y: number, e: React.MouseEvent) => {
-        if (e.button !== 0) return;
+    const handleSquareAction = useCallback((x: number, y: number, isInitialClick: boolean = false) => {
         const key = toKey(x, y);
 
         if (editMode === 'shape') {
-            const newSet = new Set(activeSquares);
-            if (activeSquares.has(key)) {
-                newSet.delete(key);
-                const newPieces = { ...placedPieces };
-                delete newPieces[key];
-                setPlacedPieces(newPieces);
-            } else {
-                newSet.add(key);
+            if (isInitialClick) {
+                const newValue = !activeSquaresRef.current.has(key);
+                setPaintValue(newValue);
+                setActiveSquares(prev => {
+                    const next = new Set(prev);
+                    if (newValue) next.add(key);
+                    else next.delete(key);
+                    return next;
+                });
+                if (!newValue) {
+                    setPlacedPieces(prev => {
+                        const next = { ...prev };
+                        delete next[key];
+                        return next;
+                    });
+                }
+            } else if (paintValueRef.current !== null) {
+                const pv = paintValueRef.current;
+                setActiveSquares(prev => {
+                    const next = new Set(prev);
+                    if (pv) next.add(key);
+                    else next.delete(key);
+                    return next;
+                });
+                if (!pv) {
+                    setPlacedPieces(prev => {
+                        const next = { ...prev };
+                        delete next[key];
+                        return next;
+                    });
+                }
             }
-            setActiveSquares(newSet);
         } else if (editMode === 'pieces') {
-            if (activeSquares.has(key)) {
-                // EXPLICIT COPY to avoid reference issues
+            if (activeSquaresRef.current.has(key)) {
                 const pieceToPlace = {
                     type: String(selectedPiece.type),
-                    color: String(selectedPiece.color)
+                    color: String(selectedPiece.color),
+                    size: squareSizeRef.current * 0.8 // use ref
                 };
 
-                setPlacedPieces(prev => ({
+                setPlacedPieces((prev: any) => ({
                     ...prev,
                     [key]: pieceToPlace
                 }));
             }
         }
+    }, [editMode, selectedPiece.type, selectedPiece.color]);
+
+    const handleMouseDown = useCallback((x: number, y: number, e: React.MouseEvent) => {
+        if (e.button !== 0) return;
+        setIsPainting(true);
+        handleSquareAction(x, y, true);
+    }, [handleSquareAction]);
+
+    const handleMouseEnter = useCallback((x: number, y: number) => {
+        if (isPaintingRef.current) {
+            handleSquareAction(x, y, false);
+        }
+    }, [handleSquareAction]);
+
+    useEffect(() => {
+        const handleGlobalMouseUp = () => {
+            if (isPainting) {
+                saveToHistory(placedPiecesRef.current, activeSquaresRef.current, rowsRef.current, colsRef.current);
+            }
+            setIsPainting(false);
+            setPaintValue(null);
+        };
+        window.addEventListener('mouseup', handleGlobalMouseUp);
+        return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+    }, [isPainting]); // Only need isPainting here now that we use refs for values
+
+    const handleSquareClick = (x: number, y: number, e: React.MouseEvent) => {
+        // We now handle this via mousedown/mouseenter for drag support
     };
 
-    const removePiece = (x: number, y: number, e: React.MouseEvent) => {
+    const removePiece = useCallback((x: number, y: number, e: React.MouseEvent) => {
         e.preventDefault();
         const key = toKey(x, y);
         if (editMode === 'pieces') {
-            const newPieces = { ...placedPieces };
-            delete newPieces[key];
-            setPlacedPieces(newPieces);
-        } else if (editMode === 'shape' && activeSquares.has(key)) {
-            const newSet = new Set(activeSquares);
-            newSet.delete(key);
-            setActiveSquares(newSet);
-            const newPieces = { ...placedPieces };
-            delete newPieces[key];
-            setPlacedPieces(newPieces);
+            setPlacedPieces(prev => {
+                const next = { ...prev };
+                delete next[key];
+                return next;
+            });
+        } else if (editMode === 'shape' && activeSquaresRef.current.has(key)) {
+            setActiveSquares(prev => {
+                const next = new Set(prev);
+                next.delete(key);
+                return next;
+            });
+            setPlacedPieces(prev => {
+                const next = { ...prev };
+                delete next[key];
+                return next;
+            });
         }
-    };
+    }, [editMode]);
 
     return (
         <div ref={containerRef} className="flex flex-col items-center animate-in fade-in zoom-in duration-500 w-full">
+            {/* Controls Overlay */}
+            <div className="flex items-center gap-6 mb-8 px-6 py-3 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl">
+                {/* Board Stats */}
+                <div className="flex items-center gap-3">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Grid Size</span>
+                        <span className="text-xl font-black text-white tabular-nums tracking-tighter">
+                            {cols} <span className="text-accent/60">×</span> {rows}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="w-px h-8 bg-white/10" />
+
+                {/* Zoom Controls */}
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setZoom(prev => Math.max(0.5, prev - 0.1))}
+                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all border border-white/5 active:scale-95"
+                        title="Zoom Out"
+                    >
+                        <Minus size={18} />
+                    </button>
+                    <div className="flex flex-col items-center min-w-12">
+                        <span className="text-[9px] text-white/40 uppercase font-bold mb-0.5">Zoom</span>
+                        <span className="text-sm font-bold text-white tabular-nums">{Math.round(zoom * 100)}%</span>
+                    </div>
+                    <button
+                        onClick={() => setZoom(prev => Math.min(2, prev + 0.1))}
+                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all border border-white/5 active:scale-95"
+                        title="Zoom In"
+                    >
+                        <Plus size={18} />
+                    </button>
+                </div>
+            </div>
+
             {/* Canvas Wrapper */}
             <div
                 className="relative bg-transparent shadow-2xl rounded-sm transition-all duration-200 ease-out select-none"
@@ -247,77 +595,33 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     <div key={y} className="flex">
                         {Array.from({ length: cols }).map((_, x) => {
                             const key = toKey(x, y);
-                            const isActive = activeSquares.has(key);
-                            const isBlackSquare = (x + y) % 2 === 1;
-                            const piece = placedPieces[key];
-
                             return (
-                                <div
+                                <EditorSquare
                                     key={key}
-                                    style={{ width: SQUARE_SIZE, height: SQUARE_SIZE }}
-                                    className={`
-                    relative flex items-center justify-center group
-                    ${isActive
-                                            ? (isBlackSquare ? 'bg-[#779954]' : 'bg-[#e9edcc]')
-                                            : 'bg-gray-300/10 border border-gray-400/20 border-dashed hover:border-accent hover:bg-accent/10 cursor-pointer'}
-                    ${editMode === 'pieces' && isActive ? 'cursor-cell' : ''}
-                  `}
-                                    onContextMenu={(e) => removePiece(x, y, e)}
-                                    onClick={(e) => handleSquareClick(x, y, e)}
-                                >
-                                    {/* Piece rendering */}
-                                    {isActive && piece && (
-                                        <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
-                                            <Image
-                                                src={getPieceImage(boardStyle, piece.color, piece.type)}
-                                                alt={piece.type}
-                                                width={SQUARE_SIZE * getPieceScale(piece.type)}
-                                                height={SQUARE_SIZE * getPieceScale(piece.type)}
-                                                unoptimized
-                                                className="drop-shadow-lg transform transition-transform group-hover:scale-105"
-                                                priority
-                                            />
-                                        </div>
-                                    )}
-
-                                    {/* Edit Mode HUD overlay */}
-                                    {editMode === 'shape' && (
-                                        <>
-                                            {!isActive && (
-                                                <Plus className="text-accent opacity-0 group-hover:opacity-100 transition-all transform scale-50 group-hover:scale-100" size={24} />
-                                            )}
-                                            {isActive && !piece && (
-                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-red-500/10 transition-all rounded-sm">
-                                                    <X className="text-red-500 drop-shadow-md" size={32} strokeWidth={3} />
-                                                </div>
-                                            )}
-                                        </>
-                                    )}
-
-                                    {editMode === 'pieces' && isActive && !piece && (
-                                        <div className="opacity-0 group-hover:opacity-60 transition-opacity pointer-events-none">
-                                            <Image
-                                                src={getPieceImage(boardStyle, selectedPiece.color, selectedPiece.type)}
-                                                alt={`${selectedPiece.color} ${selectedPiece.type} preview`}
-                                                width={SQUARE_SIZE * getPieceScale(selectedPiece.type)}
-                                                height={SQUARE_SIZE * getPieceScale(selectedPiece.type)}
-                                                unoptimized
-                                                className="bg-transparent"
-                                                priority
-                                            />
-                                        </div>
-                                    )}
-                                </div>
+                                    x={x}
+                                    y={y}
+                                    isActive={activeSquares.has(key)}
+                                    isBlackSquare={(x + y) % 2 === 1}
+                                    piece={placedPieces[key]}
+                                    editMode={editMode}
+                                    selectedPiece={selectedPiece}
+                                    boardStyle={boardStyle}
+                                    squareSize={SQUARE_SIZE}
+                                    onMouseDown={handleMouseDown}
+                                    onMouseEnter={handleMouseEnter}
+                                    onContextMenu={removePiece}
+                                />
                             );
                         })}
                     </div>
                 ))}
 
                 {/* --- Resize Handles --- */}
+                {/* RIGHT handle */}
                 <div
                     className="absolute top-0 -right-10 w-10 h-full cursor-e-resize flex items-center justify-center group z-50"
-                    onMouseDown={(e) => handlePointerDown('cols', e)}
-                    onTouchStart={(e) => handlePointerDown('cols', e)}
+                    onMouseDown={(e) => handlePointerDown('right', e)}
+                    onTouchStart={(e) => handlePointerDown('right', e)}
                     style={{ touchAction: 'none' }}
                 >
                     <div className="w-8 h-16 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 group-hover:text-blue-500 group-hover:scale-110 transition-all">
@@ -325,10 +629,35 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     </div>
                 </div>
 
+                {/* LEFT handle */}
+                <div
+                    className="absolute top-0 -left-10 w-10 h-full cursor-w-resize flex items-center justify-center group z-50"
+                    onMouseDown={(e) => handlePointerDown('left', e)}
+                    onTouchStart={(e) => handlePointerDown('left', e)}
+                    style={{ touchAction: 'none' }}
+                >
+                    <div className="w-8 h-16 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 group-hover:text-blue-500 group-hover:scale-110 transition-all">
+                        <GripVertical size={20} />
+                    </div>
+                </div>
+
+                {/* BOTTOM handle */}
                 <div
                     className="absolute -bottom-10 left-0 w-full h-10 cursor-s-resize flex items-center justify-center group z-50"
-                    onMouseDown={(e) => handlePointerDown('rows', e)}
-                    onTouchStart={(e) => handlePointerDown('rows', e)}
+                    onMouseDown={(e) => handlePointerDown('bottom', e)}
+                    onTouchStart={(e) => handlePointerDown('bottom', e)}
+                    style={{ touchAction: 'none' }}
+                >
+                    <div className="h-8 w-16 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 group-hover:text-blue-500 group-hover:scale-110 transition-all">
+                        <GripHorizontal size={20} />
+                    </div>
+                </div>
+
+                {/* TOP handle */}
+                <div
+                    className="absolute -top-10 left-0 w-full h-10 cursor-n-resize flex items-center justify-center group z-50"
+                    onMouseDown={(e) => handlePointerDown('top', e)}
+                    onTouchStart={(e) => handlePointerDown('top', e)}
                     style={{ touchAction: 'none' }}
                 >
                     <div className="h-8 w-16 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 group-hover:text-blue-500 group-hover:scale-110 transition-all">
