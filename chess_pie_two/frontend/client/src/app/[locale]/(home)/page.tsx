@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: t('title'),
     description: t('description'),
     alternates: {
-      canonical: "https://chesspie.org",
+      canonical: "https://chesspie.org/en",
       languages: {
         'en': 'https://chesspie.org/en',
         'de': 'https://chesspie.org/de'
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     openGraph: {
       title: t('title'),
       description: t('description'),
-      url: "https://chesspie.org",
+      url: "https://chesspie.org/en",
       type: "website",
       images: [{ url: "/images/seo/og-home.png", width: 1200, height: 630 }],
     },
@@ -37,17 +37,17 @@ const jsonLd_home = {
   "@graph": [
     {
       "@type": "WebSite",
-      "@id": "https://chesspie.org/#website",
-      "url": "https://chesspie.org/",
+      "@id": "https://chesspie.org/en/#website",
+      "url": "https://chesspie.org/en",
       "name": "ChessPie",
       "description": "The ultimate platform for custom chess creation and play.",
       "inLanguage": "en"
     },
     {
       "@type": "Organization",
-      "@id": "https://chesspie.org/#organization",
+      "@id": "https://chesspie.org/en/#organization",
       "name": "ChessPie",
-      "url": "https://chesspie.org/",
+      "url": "https://chesspie.org/en",
       "logo": {
         "@type": "ImageObject",
         "url": "https://chesspie.org/icon.png"

@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         title: t('title'),
         description: t('description'),
         alternates: {
-            canonical: "https://chesspie.org/login",
+            canonical: "https://chesspie.org/en/login",
             languages: hreflangs.reduce((acc, tag) => {
                 acc[tag.hrefLang] = tag.href;
                 return acc;
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: 'https://chesspie.org/login',
+            url: 'https://chesspie.org/en/login',
             siteName: 'ChessPie',
             images: ['/og-login.png'],
             type: 'website',

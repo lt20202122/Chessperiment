@@ -5,12 +5,12 @@ const jsonLd_pieceEditor = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "ChessPie Piece Editor",
-    "url": "https://chesspie.org/editor/piece",
+    "url": "https://chesspie.org/en/editor/piece",
     "description": "Design and customize chess pieces — shapes, colors, and animations.",
     "applicationCategory": "DesignApplication",
     "operatingSystem": "Web",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "provider": { "@type": "Organization", "name": "ChessPie", "url": "https://chesspie.org" }
+    "provider": { "@type": "Organization", "name": "ChessPie", "url": "https://chesspie.org/en" }
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         title: t('title'),
         description: t('description'),
         alternates: {
-            canonical: "https://chesspie.org/editor/piece",
+            canonical: "https://chesspie.org/en/editor/piece",
             languages: {
                 'en': 'https://chesspie.org/en/editor/piece',
                 'de': 'https://chesspie.org/de/editor/piece'
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: "https://chesspie.org/editor/piece",
+            url: "https://chesspie.org/en/editor/piece",
             siteName: "ChessPie",
             images: [{ url: "/images/seo/og-editor.png", width: 1200, height: 630 }],
             type: "website",

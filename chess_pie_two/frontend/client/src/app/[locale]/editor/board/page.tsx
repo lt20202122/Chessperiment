@@ -5,12 +5,12 @@ const jsonLd_boardEditor = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "ChessPie Board Editor",
-    "url": "https://chesspie.org/editor/board",
+    "url": "https://chesspie.org/en/editor/board",
     "description": "An editor to design custom chess boards on ChessPie.",
     "applicationCategory": "DesignApplication",
     "operatingSystem": "Web",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "provider": { "@type": "Organization", "name": "ChessPie", "url": "https://chesspie.org" },
+    "provider": { "@type": "Organization", "name": "ChessPie", "url": "https://chesspie.org/en" },
     "featureList": ["Grid editor", "Tile coloring", "Custom starting positions"]
 };
 
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         title: t('title'),
         description: t('description'),
         alternates: {
-            canonical: "https://chesspie.org/editor/board",
+            canonical: "https://chesspie.org/en/editor/board",
             languages: {
                 'en': 'https://chesspie.org/en/editor/board',
                 'de': 'https://chesspie.org/de/editor/board'
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: "https://chesspie.org/editor/board",
+            url: "https://chesspie.org/en/editor/board",
             type: "website",
             images: [{ url: "/images/seo/og-editor.png", width: 1200, height: 630 }],
         },

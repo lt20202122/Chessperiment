@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     openGraph: {
         title: 'ChessPie User Profiles',
         description: 'View and manage ChessPie user profiles.',
-        url: 'https://chesspie.org/profile',
+        url: 'https://chesspie.org/en/profile',
         siteName: 'ChessPie',
         images: ['/og-profile.png'],
         type: 'website',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
         images: ['/og-profile.png'],
     },
     alternates: {
-        canonical: "https://chesspie.org/profile", // absolute URL
+        canonical: "https://chesspie.org/en/profile", // absolute URL
         languages: hreflangs.reduce((acc, tag) => {
             acc[tag.hrefLang] = tag.href;
             return acc;

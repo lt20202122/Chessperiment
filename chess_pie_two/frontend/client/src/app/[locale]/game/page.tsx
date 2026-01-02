@@ -6,7 +6,7 @@ const jsonLd_gameIndex = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "ChessPie Games",
-    "url": "https://chesspie.org/game",
+    "url": "https://chesspie.org/en/game",
     "applicationCategory": "GameApplication",
     "operatingSystem": "Web",
     "offers": {
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: 'https://chesspie.org/game',
+            url: 'https://chesspie.org/en/game',
             siteName: 'ChessPie',
             images: [{ url: '/images/seo/og-game.png', width: 1200, height: 630 }],
             type: 'website',
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
             images: ['/images/seo/twitter-image.png'],
         },
         alternates: {
-            canonical: "https://chesspie.org/game",
+            canonical: "https://chesspie.org/en/game",
             languages: {
                 'en': 'https://chesspie.org/en/game',
                 'de': 'https://chesspie.org/de/game'

@@ -70,7 +70,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://chesspie.org",
+    url: "https://chesspie.org/en",
     siteName: "ChessPie",
     title: "ChessPie | Play, Create & Share Custom Chess Variants",
     description: "Design custom chess pieces, create unique boards, and play chess variants with friends.",
@@ -95,7 +95,7 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   alternates: {
-    canonical: 'https://chesspie.org',
+    canonical: 'https://chesspie.org/en',
     languages: {
       'en-US': 'https://chesspie.org/en',
       'de-DE': 'https://chesspie.org/de',

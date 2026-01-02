@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         title: t('title'),
         description: t('description'),
         alternates: {
-            canonical: "https://chesspie.org/announcements",
+            canonical: "https://chesspie.org/en/announcements",
             languages: {
                 'en': 'https://chesspie.org/en/announcements',
                 'de': 'https://chesspie.org/de/announcements'
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: "https://chesspie.org/announcements",
+            url: "https://chesspie.org/en/announcements",
             type: "website",
             images: [{ url: "/images/seo/og-home.png", width: 1200, height: 630 }],
         },

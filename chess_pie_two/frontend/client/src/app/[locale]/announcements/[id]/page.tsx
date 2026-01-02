@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const title = announcement.title[locale as keyof typeof announcement.title];
     const description = announcement.shortDescription[locale as keyof typeof announcement.shortDescription];
-    const imageUrl = `https://chesspie.org${announcement.image}`; // Assuming base URL
+    const imageUrl = `https://chesspie.org/en${announcement.image}`; // Assuming base URL
 
     const hreflangs = generateHreflangs(`/announcements/${id}`, ['de', 'en'], locale as Locale, 'https://chesspie.org');
 
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title: `ChessPie – ${title}`,
         description: description,
         alternates: {
-            canonical: `https://chesspie.org/announcements/${id}`,
+            canonical: `https://chesspie.org/en/announcements/${id}`,
             languages: hreflangs.reduce((acc, tag) => {
                 acc[tag.hrefLang] = tag.href;
                 return acc;
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         openGraph: {
             title: `ChessPie – ${title}`,
             description: description,
-            url: `https://chesspie.org/announcements/${id}`,
+            url: `https://chesspie.org/en/announcements/${id}`,
             images: [
                 {
                     url: imageUrl,
