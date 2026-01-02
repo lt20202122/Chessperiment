@@ -427,7 +427,7 @@ io.on("connection", (socket: Socket) => {
     });
 });
 
-import os from 'os';
+import * as os from 'os';
 
 const PORT = process.env.PORT || 3002;
 server.listen(PORT as number, "0.0.0.0", () => {

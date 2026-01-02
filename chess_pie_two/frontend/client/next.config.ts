@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     },
     async redirects() {
         return [
+
             {
                 source: '/:path*',
                 has: [
@@ -25,7 +26,7 @@ const nextConfig: NextConfig = {
                     },
                 ],
                 destination: 'https://chesspie.org/:path*',
-                permanent: true, // 301 Redirect
+                permanent: true,
             },
             {
                 source: '/news',

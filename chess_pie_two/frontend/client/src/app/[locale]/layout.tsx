@@ -94,6 +94,13 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
     apple: "/apple-icon.png",
   },
+  alternates: {
+    canonical: 'https://chesspie.org',
+    languages: {
+      'en-US': 'https://chesspie.org/en',
+      'de-DE': 'https://chesspie.org/de',
+    },
+  },
 };
 
 export default async function RootLayout({
