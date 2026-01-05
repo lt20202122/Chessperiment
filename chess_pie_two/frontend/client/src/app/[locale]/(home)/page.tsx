@@ -1,6 +1,7 @@
 import Btn from "./Buttons"
 import { SEOFooter } from "@/components/SEOFooter";
 import { getTranslations } from 'next-intl/server';
+import { HelpArticlesAll } from "@/components/help/HelpArticles";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -73,6 +74,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
       <Btn />
 
+      <HelpArticlesAll />
       <SEOFooter />
     </>
   );

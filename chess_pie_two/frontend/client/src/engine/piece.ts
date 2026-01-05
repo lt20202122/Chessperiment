@@ -1,4 +1,4 @@
-import { Square } from './types';
+import { Square, MoveRule } from './types';
 import { toCoords, toSquare } from './utils';
 import { BoardClass } from './board';
 
@@ -21,7 +21,7 @@ export abstract class Piece {
     abstract canAttack(target: Square, board: BoardClass): boolean;
     abstract clone(): Piece;
 
-    static create(id: string, type: string, color: "white" | "black", position: Square): Piece | null {
+    static create(id: string, type: string, color: "white" | "black", position: Square, rules: MoveRule[] = []): Piece {
         switch (type.toLowerCase()) {
             case 'pawn': return new Pawn(id, color, position);
             case 'knight': return new Knight(id, color, position);
@@ -29,8 +29,99 @@ export abstract class Piece {
             case 'rook': return new Rook(id, color, position);
             case 'queen': return new Queen(id, color, position);
             case 'king': return new King(id, color, position);
-            default: return null;
+            default: return new CustomPiece(id, type, color, position, rules);
         }
+    }
+}
+
+export class CustomPiece extends Piece {
+    rules: MoveRule[];
+
+    constructor(id: string, type: string, color: "white" | "black", position: Square, rules: MoveRule[] = []) {
+        super(id, type, color, position);
+        this.rules = rules;
+    }
+
+    isValidMove(from: Square, to: Square, board: BoardClass): boolean {
+        const fromCoords = toCoords(from);
+        const toCoordsCoords = toCoords(to);
+        
+        // Horizontal/Vertical steps
+        const dx = toCoordsCoords[0] - fromCoords[0];
+        const dy = toCoordsCoords[1] - fromCoords[1];
+
+        // Horizontal/Vertical distance (absolute)
+        const adx = Math.abs(dx);
+        const ady = Math.abs(dy);
+
+        // Directions from white's perspective are different for black
+        // However, ΔY in our visual editor usually means "forward" for the color.
+        // Let's adjust dy based on color so that positive is always "forward"
+        const forwardDy = this.color === 'white' ? dy : -dy;
+
+        let isAllowed = false;
+
+        for (const rule of this.rules) {
+            let ruleResult = true; // For AND logic
+            let currentLogic: 'AND' | 'OR' = 'AND';
+
+            for (let i = 0; i < rule.conditions.length; i++) {
+                const cond = rule.conditions[i];
+                let value = 0;
+                switch (cond.variable) {
+                    case 'diffX': value = dx; break;
+                    case 'diffY': value = forwardDy; break; // Use normalized forward direction
+                    case 'absDiffX': value = adx; break;
+                    case 'absDiffY': value = ady; break;
+                }
+
+                let condSatisfied = false;
+                switch (cond.operator) {
+                    case '===': condSatisfied = value === cond.value; break;
+                    case '>': condSatisfied = value > cond.value; break;
+                    case '<': condSatisfied = value < cond.value; break;
+                    case '>=': condSatisfied = value >= cond.value; break;
+                    case '<=': condSatisfied = value <= cond.value; break;
+                }
+
+                if (i === 0) {
+                    ruleResult = condSatisfied;
+                } else {
+                    if (currentLogic === 'AND') {
+                        ruleResult = ruleResult && condSatisfied;
+                    } else {
+                        ruleResult = ruleResult || condSatisfied;
+                    }
+                }
+                
+                // Prepare logic for NEXT condition
+                currentLogic = cond.logic || 'AND';
+            }
+
+            if (ruleResult) {
+                // If a rule is met, it dictates the result
+                if (rule.result === 'allow') {
+                    isAllowed = true;
+                } else {
+                    // If an illegal rule is met, we return false immediately (illegal rules override legal ones)
+                    return false;
+                }
+            }
+        }
+
+        return isAllowed;
+    }
+
+    canAttack(target: Square, board: BoardClass): boolean {
+        // For now, custom pieces attack using their normal move rules
+        // In the future, we might add separate attack rules
+        return this.isValidMove(this.position, target, board);
+    }
+
+    clone(): CustomPiece {
+        const p = new CustomPiece(this.id, this.type, this.color, this.position, this.rules);
+        p.hasMoved = this.hasMoved;
+        return p;
     }
 }
 
@@ -46,7 +137,7 @@ export class Pawn extends Piece {
         const diffY = toCoordsCoords[1] - fromCoords[1];
 
         const direction = this.color === 'white' ? 1 : -1;
-        const startingRank = this.color === 'white' ? 1 : 6;
+        const startingRank = this.color === 'white' ? 1 : board.height - 2;
 
         // Standard one-square move
         if (diffX === 0 && diffY === direction) {

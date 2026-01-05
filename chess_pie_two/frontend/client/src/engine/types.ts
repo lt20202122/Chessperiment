@@ -16,4 +16,18 @@ export interface BoardState {
     meta?: Record<string, any>; // z.B. Regeln, Sonderbedingungen
 }
 
+export interface MoveCondition {
+    id: string;
+    variable: 'diffX' | 'diffY' | 'absDiffX' | 'absDiffY';
+    operator: '===' | '>' | '<' | '>=' | '<=';
+    value: number;
+    logic?: 'AND' | 'OR';
+}
+
+export interface MoveRule {
+    id: string;
+    conditions: MoveCondition[];
+    result: 'allow' | 'disallow';
+}
+
 export type pieces = "pawn" | "knight" | "bishop" | "rook" | "queen" | "king"

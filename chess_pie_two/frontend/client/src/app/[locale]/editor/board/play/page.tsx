@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Board from "./Board";
 import { ArrowLeft, RefreshCcw } from "lucide-react";
 
@@ -46,6 +47,7 @@ export interface CustomBoard {
 
 export default function PlayPage() {
     const router = useRouter();
+    const t = useTranslations("Editor.Board.Play");
 
     const [board, setBoard] = useState<CustomBoard | null>(null);
 
@@ -66,7 +68,7 @@ export default function PlayPage() {
     }, []);
 
     if (!board) {
-        return <div>Loading...</div>;
+        return <div>{t('loading')}</div>;
     }
 
     return (
@@ -76,7 +78,7 @@ export default function PlayPage() {
                     <button onClick={() => router.push('/editor/board')} className="p-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
                         <ArrowLeft size={20} />
                     </button>
-                    <h1 className="text-2xl font-bold">Play vs. Yourself</h1>
+                    <h1 className="text-2xl font-bold">{t('title')}</h1>
                     <button onClick={() => window.location.reload()} className="p-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600">
                         <RefreshCcw size={20} />
                     </button>

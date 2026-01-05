@@ -18,10 +18,14 @@ import {
   useSensor,
   useSensors,
   PointerSensor,
+  TouchSensor,
 } from "@dnd-kit/core";
 import Toast from "./Toast";
 import "./Board.css";
 import { useSocket } from "@/context/SocketContext";
+import filter from "leo-profanity";
+import { Chess } from "chess.js";
+import { useStockfish } from "@/hooks/useStockfish";
 
 type Square = string;
 
@@ -116,6 +120,7 @@ const DraggablePiece = memo(function DraggablePiece({
       ? `translate(${transform.x}px, ${transform.y}px)`
       : "none",
     zIndex: 20,
+    touchAction: "none",
   };
 
   return (
@@ -222,7 +227,8 @@ export default function Board({
   const t = useTranslations("Multiplayer");
   const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
   const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 5 } });
-  const sensors = useSensors(pointerSensor);
+  const touchSensor = useSensor(TouchSensor, { activationConstraint: { distance: 5 } });
+  const sensors = useSensors(pointerSensor, touchSensor);
   const socket = useSocket();
 
   const [boardStyle, setBoardStyle] = useState("v3");
@@ -235,6 +241,8 @@ export default function Board({
   const [lastMoveFrom, setLastMoveFrom] = useState<string | null>(null);
   const [lastMoveTo, setLastMoveTo] = useState<string | null>(null);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  const [historyFens, setHistoryFens] = useState<string[]>([]);
+  const [historyMoves, setHistoryMoves] = useState<{ from: string; to: string }[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [isViewingHistory, setIsViewingHistory] = useState(false);
   const [gameResult, setGameResult] = useState<'win' | 'loss' | 'draw' | null>(null);
@@ -255,6 +263,10 @@ export default function Board({
   const { data: session, status: sessionStatus } = useSession();
   const [drawOffer, setDrawOffer] = useState<"pending" | "offered" | null>(null);
 
+  // --- Stockfish & Local Logic ---
+  const [chess] = useState(() => new Chess());
+  const [difficulty, setDifficulty] = useState(1200);
+
   const updateBoardState = useCallback((fen: string) => {
     console.log("[Board] Updating state with FEN:", fen);
     const newPieces = parseFen(fen);
@@ -263,17 +275,85 @@ export default function Board({
     if (parts[1]) setCurrentTurn(parts[1] as 'w' | 'b');
   }, []);
 
+  const startComputerGame = useCallback((elo = 1200) => {
+    setGameMode("computer");
+    setGameStatus("playing");
+    setMyColor("white");
+    chess.reset();
+    const fen = chess.fen();
+    updateBoardState(fen);
+    setMoveHistory([]);
+    setHistoryFens([]);
+    setHistoryMoves([]);
+    setHistoryIndex(-1);
+    setIsViewingHistory(false);
+    setLastMoveFrom(null);
+    setLastMoveTo(null);
+    setCurrentTurn('w');
+    setDifficulty(elo);
+  }, [chess, updateBoardState]);
+
+  // We need a stable callback for stockfish
+  const onBestMove = useCallback((move: string) => {
+    const from = move.substring(0, 2);
+    const to = move.substring(2, 4);
+    const promotion = move.length > 4 ? move.substring(4, 5) : undefined;
+    try {
+      const result = chess.move({ from, to, promotion: promotion || 'q' });
+      if (result) {
+        const newFen = chess.fen();
+        updateBoardState(newFen);
+        new Audio("/sounds/move-self.mp3").play().catch(() => { });
+
+        setLastMoveFrom(from);
+        setLastMoveTo(to);
+        const san = result.san;
+        setMoveHistory(prev => {
+          const next = [...prev, san];
+          setHistoryIndex(next.length - 1);
+          return next;
+        });
+        setHistoryFens(prev => [...prev, newFen]);
+        setHistoryMoves(prev => [...prev, { from, to, san }]);
+
+        if (chess.isGameOver()) {
+          if (chess.isCheckmate()) {
+            setGameResult(chess.turn() === myColor?.charAt(0) ? 'loss' : 'win');
+            setGameInfo(t("checkmate"));
+          } else {
+            setGameResult('draw');
+            setGameInfo(t("draw"));
+          }
+          setTimeout(() => setGameStatus("ended"), 2000);
+        }
+      }
+    } catch (e) { console.error("SF Move Error", e); }
+  }, [chess, updateBoardState, myColor, t]);
+
+  const { requestMove } = useStockfish(chess, difficulty, onBestMove);
+
   useEffect(() => {
-    if (initialRoomId && gameStatus === "") {
+    // Auto-start computer game if mode is computer and status is empty/waiting
+    if (gameMode === 'computer' && (gameStatus === "" || gameStatus === "waiting")) {
+      let elo = 1200;
+      if (currentRoom && currentRoom.startsWith("computer-")) {
+        const parts = currentRoom.split("-");
+        if (parts[1]) elo = parseInt(parts[1]) || 1200;
+      }
+      startComputerGame(elo);
+    } else if (initialRoomId && gameStatus === "" && gameMode !== 'computer') {
       setGameStatus("waiting");
     }
-  }, [initialRoomId, gameStatus]);
+  }, [initialRoomId, gameStatus, gameMode, currentRoom, startComputerGame]);
 
   useEffect(() => {
     if (!socket || gameMode !== "online") return;
 
     const onMove = (data: any) => {
-      if (data.fen) updateBoardState(data.fen);
+      if (data.fen) {
+        updateBoardState(data.fen);
+        setHistoryFens(prev => [...prev, data.fen]);
+      }
       setLastMoveFrom(data.from);
       setLastMoveTo(data.to);
       if (data.san) {
@@ -282,8 +362,10 @@ export default function Board({
           setHistoryIndex(next.length - 1);
           return next;
         });
+        setHistoryMoves(prev => [...prev, { from: data.from, to: data.to, san: data.san }]);
       }
       if (data.gameStatus) setGameStatus(data.gameStatus);
+      setIsViewingHistory(false);
       new Audio("/sounds/move-self.mp3").play().catch(() => { });
     };
 
@@ -356,7 +438,6 @@ export default function Board({
       setPlayerCount(2);
     });
     socket.on("game_ended", (data: any) => {
-      setGameStatus("ended");
       if (data.result === "0") setGameResult("draw");
       else {
         setMyColor(curr => {
@@ -365,29 +446,32 @@ export default function Board({
           return curr;
         });
       }
-      setGameInfo(data.reason || "Game Ended");
+      setGameInfo(data.reason || t("Multiplayer.gameEnded"));
       setDrawOffer(null);
+      setTimeout(() => {
+        setGameStatus("ended");
+      }, 2000);
     });
     socket.on("opp_disconnected", () => {
-      setGameInfo("Opponent disconnected");
+      setGameInfo(t("opponentDisconnected"));
       setPlayerCount(1);
       setDrawOffer(null);
     });
     socket.on("error", (data: any) => {
-      setGameInfo(`Error: ${data.message}`);
-      setToastMessage(`Error: ${data.message}`);
+      setGameInfo(`${t("error")}${data.message}`);
+      setToastMessage(`${t("error")}${data.message}`);
       setShowToast(true);
       console.error("[Board] Socket Error:", data);
     });
     socket.on("room_not_found", (data: any) => {
-      setGameInfo(`Room ${data?.roomId || ""} not found`);
-      setToastMessage(`Room ${data?.roomId || ""} not found`);
+      setGameInfo(`${t("roomNotFound")}`);
+      setToastMessage(`${t("roomNotFound")}`);
       setShowToast(true);
       setGameStatus("ended");
       console.warn("[Board] Room not found:", data);
     });
     socket.on("room_full", () => {
-      setToastMessage("Room is full!");
+      setToastMessage(t("roomFull"));
       setShowToast(true);
       setGameStatus("ended");
     });
@@ -468,8 +552,12 @@ export default function Board({
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        // Prioritize the smaller dimension to fit safely on screen
-        const minDim = Math.min(width, height) - 24; // 24px padding
+        // Padding for the board container. Higher value ensures no cut-off.
+        const padding = 96;
+        const availW = width - padding;
+        const availH = height - padding;
+        // Ensure non-negative
+        const minDim = Math.max(0, Math.min(availW, availH));
         const calculated = Math.floor(minDim / 8);
 
         // Clamp between 20 and 120px per square
@@ -506,19 +594,47 @@ export default function Board({
       if (socket) socket.emit("move", { from, to, promotion });
       return true;
     }
-    const piece = getPieceAt(from);
-    if (!piece) return false;
-    let next = boardPieces.filter(p => p.position !== from && p.position !== to);
-    const updated = { ...piece, position: to };
-    if (promotion) {
-      const tMap: any = { 'q': 'Queen', 'r': 'Rook', 'b': 'Bishop', 'n': 'Knight' };
-      updated.type = (tMap[promotion.toLowerCase()] || 'Queen') as any;
+
+    // Computer / Local Mode
+    if (gameMode === 'computer' || gameMode === 'local') {
+      try {
+        const moveResult = chess.move({ from, to, promotion: promotion || 'q' });
+        if (moveResult) {
+          const newFen = chess.fen();
+          updateBoardState(newFen);
+          new Audio("/sounds/move-self.mp3").play().catch(() => { });
+
+          const san = moveResult.san;
+          setMoveHistory(prev => {
+            const next = [...prev, san];
+            setHistoryIndex(next.length - 1);
+            return next;
+          });
+          setHistoryFens(prev => [...prev, newFen]);
+          setHistoryMoves(prev => [...prev, { from, to, san }]);
+
+          if (chess.isGameOver()) {
+            if (chess.isCheckmate()) {
+              setGameResult(chess.turn() === myColor?.charAt(0) ? 'loss' : 'win');
+              setGameInfo(t("checkmate"));
+            } else {
+              setGameResult('draw');
+              setGameInfo(t("draw"));
+            }
+            setTimeout(() => setGameStatus("ended"), 2000);
+          } else {
+            if (gameMode === 'computer' && chess.turn() !== (myColor === 'white' ? 'w' : 'b')) {
+              // Trigger AI
+              setTimeout(() => requestMove(), 500);
+            }
+          }
+          setIsViewingHistory(false);
+          setLastMoveFrom(from); setLastMoveTo(to); setSelectedPos(null);
+          return true;
+        }
+      } catch (e) { return false; }
     }
-    next.push(updated);
-    setBoardPieces(next);
-    setCurrentTurn(currentTurn === 'w' ? 'b' : 'w');
-    setLastMoveFrom(from); setLastMoveTo(to); setSelectedPos(null);
-    return true;
+    return false;
   };
 
   const handleDragStart = (e: DragStartEvent) => { setActivePiece(e.active.id as string); setSelectedPos(e.active.id as string); };
@@ -535,6 +651,7 @@ export default function Board({
   };
 
   const handlePieceSelect = useCallback((pos: string) => {
+    setRedMarkedSquares(new Set()); // Clear red highlights on any left-click
     if (gameStatus !== "playing" || isViewingHistory) return;
     if (!selectedPos) {
       const p = getPieceAt(pos);
@@ -569,19 +686,27 @@ export default function Board({
   };
 
   const exitHistoryView = () => { setIsViewingHistory(false); setHistoryIndex(moveHistory.length - 1); };
-  const startComputerGame = () => { setGameMode("computer"); setGameStatus("playing"); setMyColor("white"); setBoardPieces(parseFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")); setCurrentTurn('w'); };
+
+  const onMoveClick = (index: number) => {
+    setIsViewingHistory(true);
+    setHistoryIndex(index);
+  };
+
 
   const handleDeclineDraw = () => { if (socket && drawOffer === "pending") { socket.emit("decline_draw"); setDrawOffer(null); setToastMessage(t("drawOfferDeclinedByYou")); setShowToast(true); } };
   const handleAcceptDraw = () => { if (socket && drawOffer === "pending") { socket.emit("accept_draw"); setDrawOffer(null); } };
 
-  const offensiveWords = ["fuck", "shit", "bitch", "asshole", "faggot", "retarded", "cunt", "damn", "dick", "pussy", "nigger", "whore", "slut", "bastard", "idiot", "stupid", "kys", "kill yourself", "hitler", "nazi"];
   const filterMessage = (message: string) => {
-    let filtered = message;
-    offensiveWords.forEach(word => {
-      const regex = new RegExp(`\\b${word}\\b`, 'gi');
-      filtered = filtered.replace(regex, '***');
-    });
-    return filtered;
+    return filter.clean(message);
+  };
+
+  const handleSendMessage = (message: string) => {
+    if (filter.check(message)) {
+      setToastMessage("Oh no, you can't say that word because it's a bad word.");
+      setShowToast(true);
+      return;
+    }
+    socket.emit("chat_message", { message });
   };
 
   useEffect(() => {
@@ -605,16 +730,24 @@ export default function Board({
   const cRange = myColor === "black" ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
   const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
+  const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? (initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : null);
+  const displayPieces = activeFEN ? parseFen(activeFEN) : boardPieces;
+  const historyMove = isViewingHistory && historyIndex >= 0 ? historyMoves[historyIndex] : null;
+
   for (const i of rRange) {
     for (const a of cRange) {
       const pos = `${files[a]}${8 - i}`;
       const isWhiteSq = (i + a) % 2 === 0;
-      const piece = boardPieces.find(p => p.position === pos);
+      const piece = displayPieces.find(p => p.position === pos);
       if (piece) piece.size = blockSize * getGamePieceScale(piece.type);
+
+      const isMoveFrom = isViewingHistory ? historyMove?.from === pos : lastMoveFrom === pos;
+      const isMoveTo = isViewingHistory ? historyMove?.to === pos : lastMoveTo === pos;
+
       boardContent.push(
         <SquareTile
           key={pos} pos={pos} isWhite={isWhiteSq} piece={piece} blockSize={blockSize}
-          selected={selectedPos === pos} isMoveFrom={lastMoveFrom === pos} isMoveTo={lastMoveTo === pos}
+          selected={selectedPos === pos} isMoveFrom={isMoveFrom} isMoveTo={isMoveTo}
           onClick={handlePieceSelect} onContextMenu={p => setRedMarkedSquares(prev => { const n = new Set(prev); if (n.has(p)) n.delete(p); else n.add(p); return n; })}
           boardStyle={boardStyle} isViewingHistory={isViewingHistory} gameStatus={gameStatus} myColor={myColor}
           amIAtTurn={!isViewingHistory && gameStatus === "playing" && (myColor ? currentTurn === (myColor === "white" ? "w" : "b") : gameMode === 'local')}
@@ -631,8 +764,8 @@ export default function Board({
   });
 
   return (
-    <div className="flex flex-col lg:flex-row h-dvh w-full bg-stone-50 dark:bg-stone-950 overflow-hidden">
-      <div className="flex-1 flex flex-col relative bg-stone-100/50 dark:bg-black/20 overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-dvh w-full overflow-hidden">
+      <div className="flex-1 flex flex-col relative overflow-hidden">
         <div className="flex flex-col w-full h-full">
           {/* Top/Center content area */}
           <div className={`flex-1 flex flex-col items-center p-2 w-full overflow-hidden ${gameStatus === "playing" ? "justify-center" : "justify-center"}`}>
@@ -644,26 +777,26 @@ export default function Board({
                   onClick={() => { setIsSearching(true); socket.emit("find_match"); }}
                   className="w-full py-5 lg:py-7 bg-linear-to-r from-amber-500 to-orange-600 text-white rounded-2xl lg:rounded-4xl font-black text-xl shadow-xl hover:shadow-orange-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  Quick Play
+                  {t("quickPlay")}
                 </button>
                 <div className="mt-8 flex flex-col gap-4">
-                  <button onClick={() => socket.emit("create_room")} className="text-stone-500 dark:text-stone-400 font-bold hover:text-amber-500 transition tracking-widest text-xs lg:text-sm uppercase">Create Private Room</button>
-                  <button onClick={() => startComputerGame()} className="text-stone-500 dark:text-stone-400 font-bold hover:text-green-500 transition tracking-widest text-xs lg:text-sm uppercase">vs Stockfish AI</button>
+                  <button onClick={() => socket.emit("create_room")} className="text-stone-500 dark:text-stone-400 font-bold hover:text-amber-500 transition tracking-widest text-xs lg:text-sm uppercase">{t("createPrivateRoom")}</button>
+                  <button onClick={() => startComputerGame()} className="text-stone-500 dark:text-stone-400 font-bold hover:text-green-500 transition tracking-widest text-xs lg:text-sm uppercase">{t("vsStockfish")}</button>
                 </div>
               </div>
             ) : isSearching ? (
               <div className="flex flex-col items-center justify-center p-12 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl rounded-[3rem] border border-gray-200 dark:border-white/10 shadow-2xl max-w-lg w-full my-auto">
                 <div className="w-20 h-20 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-8" />
-                <h2 className="text-2xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tight">Finding Match...</h2>
-                <p className="text-stone-400 text-sm font-medium mb-8">Searching for a worthy opponent</p>
-                <button onClick={() => { setIsSearching(false); socket.emit("cancel_search"); }} className="px-10 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-2xl font-bold transition-all border border-red-500/30">Cancel Search</button>
+                <h2 className="text-2xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tight">{t("findingMatch")}</h2>
+                <p className="text-stone-400 text-sm font-medium mb-8">{t("searchingText")}</p>
+                <button onClick={() => { setIsSearching(false); socket.emit("cancel_search"); }} className="px-10 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-2xl font-bold transition-all border border-red-500/30">{t("cancelSearch")}</button>
               </div>
             ) : (
-              <>
+              <div className="flex flex-col w-full h-full items-center justify-center p-2 lg:p-4">
                 {/* Board Container - Flexible area */}
                 <div
                   ref={boardContainerRef}
-                  className="w-full h-full flex items-center justify-center min-h-0 p-2"
+                  className="flex-1 w-full h-full flex items-center justify-center min-h-0 overflow-hidden touch-none"
                 >
                   <div className="relative shadow-2xl rounded-xl bg-stone-300 dark:bg-stone-800 p-1 lg:p-2 animate-in zoom-in duration-700">
                     <div className="grid grid-cols-8 overflow-hidden rounded-lg shadow-inner" style={{ width: blockSize * 8, height: blockSize * 8 }}>
@@ -672,7 +805,7 @@ export default function Board({
                         {markerOverlay}
                         <DragOverlay dropAnimation={null}>
                           {activePiece ? (
-                            <div style={{ width: blockSize, height: blockSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: blockSize, height: blockSize, display: 'flex', alignItems: 'center', justifyItems: 'center', pointerEvents: 'none' }}>
                               <Image src={getPieceImage(boardStyle, getPieceAt(activePiece)?.color || 'white', getPieceAt(activePiece)?.type || 'Pawn')} alt="" width={blockSize} height={blockSize} unoptimized />
                             </div>
                           ) : null}
@@ -681,7 +814,7 @@ export default function Board({
                     </div>
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -690,11 +823,12 @@ export default function Board({
       <GameSidebar
         myColor={myColor} moveHistory={moveHistory} historyIndex={historyIndex}
         navigateHistory={navigateHistory} exitHistoryView={exitHistoryView} isViewingHistory={isViewingHistory}
-        chatMessages={chatMessages} onSendMessage={m => socket.emit("chat_message", { message: m })}
+        chatMessages={chatMessages} onSendMessage={handleSendMessage}
         playerCount={playerCount} currentRoom={currentRoom} gameInfo={gameInfo} gameStatus={gameStatus as any}
         onResign={() => socket.emit("resign")} onOfferDraw={() => socket.emit("offer_draw")}
         onStartComputerGame={startComputerGame} gameMode={gameMode} setGameMode={setGameMode}
         currentTurn={currentTurn} onLeaveGame={() => { setGameStatus(""); setIsSearching(false); }}
+        onMoveClick={onMoveClick}
       />
 
       {showPromotionDialog && (

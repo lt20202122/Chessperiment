@@ -28,6 +28,8 @@ export class ValidatorClass {
         if (!piece) {
             return false;
         }
+        // [RESEARCH] This delegates move validation to the individual piece classes.
+        // For CustomPiece, this will trigger the custom rules defined in the Piece Editor.
         return piece.isValidMove(from, to, this.board);
     }
 

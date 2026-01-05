@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import LobbyPage from "./LobbyPage"
+import { GameHelp } from '@/components/help/HelpArticles';
 
 // app/game/page.tsx
 const jsonLd_gameIndex = {
@@ -58,5 +59,6 @@ export default async function Game({ params }: { params: Promise<{ locale: strin
         />
         <h1 className="sr-only">{t('h1')}</h1>
         <LobbyPage />
+        <GameHelp />
     </>
 }

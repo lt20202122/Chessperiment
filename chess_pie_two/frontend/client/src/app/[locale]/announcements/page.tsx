@@ -34,7 +34,7 @@ export default function AnnouncementsPage({ params: { locale } }: { params: { lo
     const t = useTranslations('Announcements');
 
     return (
-        <div className="min-h-screen bg-linear-to-b from-white to-gray-50 dark:from-black dark:to-stone-950 py-16 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-bg py-16 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto space-y-16">
 
                 {/* Header Section */}

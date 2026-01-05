@@ -42,7 +42,7 @@ export default async function MarketplacePage({ params }: { params: Promise<{ lo
     const marketT = await getTranslations({ locale, namespace: 'Marketplace' });
 
     return (
-        <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100">
+        <div className="min-h-screen bg-bg text-stone-900 dark:text-stone-100">
             <h1 className="sr-only">{t('h1')}</h1>
 
             <main className="max-w-7xl mx-auto pt-24 px-4 pb-12">

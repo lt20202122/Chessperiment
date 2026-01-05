@@ -63,7 +63,7 @@ export default function GamePage() {
     };
 
     return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-stone-100 dark:bg-stone-950 p-4">
+        <div className="min-h-screen w-full flex items-center justify-center p-4">
             <GameLobby
                 onQuickSearch={handleQuickSearch}
                 onCancelSearch={handleCancelSearch}

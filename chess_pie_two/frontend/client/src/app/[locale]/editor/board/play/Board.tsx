@@ -1,7 +1,9 @@
 "use client";
 import React, { useState, useEffect, useRef, memo } from "react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Shield, ShieldOff, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import {
     DndContext,
@@ -15,6 +17,7 @@ import {
     PointerSensor,
 } from "@dnd-kit/core";
 import { getPieceImage, PieceType } from "../../../game/Data";
+import PieceRenderer from "@/components/game/PieceRenderer";
 import "../../../game/Board.css";
 import { type Square } from '@/engine/types'
 import { Game } from '@/engine/game'
@@ -73,15 +76,11 @@ const DraggablePiece = memo(function DraggablePiece({
 
     return (
         <div ref={setNodeRef} {...(isTurn ? { ...attributes, ...listeners } : {})} style={style} onClick={onClick}>
-            <Image
-                src={getPieceImage(boardStyle, piece.color, piece.type)}
-                alt={`${piece.color} ${piece.type}`}
-                height={piece.size}
-                width={piece.size}
-                unoptimized
-                className="bg-transparent"
-                style={{ height: size, width: "auto", pointerEvents: "none" }}
-                priority
+            <PieceRenderer
+                type={piece.type}
+                color={piece.color}
+                size={size}
+                boardStyle={boardStyle}
             />
         </div>
     );
@@ -142,16 +141,33 @@ const SquareTile = memo(function SquareTile({
 
 // --- Board Component ---
 export default function Board({ board }: { board: CustomBoard }) {
+    const t = useTranslations("Editor.Board.Play");
     const gameRef = useRef<Game | null>(null);
     const [boardPieces, setBoardPieces] = useState<(PlacedPiece & { position: string })[]>([]);
     const [currentTurn, setCurrentTurn] = useState<"w" | "b">("w");
     const [blockSize, setBlockSize] = useState(80);
     const [selectedPos, setSelectedPos] = useState<string | null>(null);
+    const [customCollection, setCustomCollection] = useState<Record<string, any>>({});
+
+    useEffect(() => {
+        const saved = localStorage.getItem('piece_collection');
+        if (saved) {
+            try {
+                setCustomCollection(JSON.parse(saved));
+            } catch (e) {
+                console.error("Failed to load piece collection", e);
+            }
+        }
+    }, []);
     const [activePiece, setActivePiece] = useState<string | null>(null);
     const [lastMoveFrom, setLastMoveFrom] = useState<string | null>(null);
     const [lastMoveTo, setLastMoveTo] = useState<string | null>(null);
     const [zoom, setZoom] = useState(1);
     const [redMarkedSquares, setRedMarkedSquares] = useState<Set<string>>(new Set());
+    const [validationEnabled, setValidationEnabled] = useState(true);
+    const [promotionPending, setPromotionPending] = useState<{ from: string; to: string } | null>(null);
+    const [showKingWarning, setShowKingWarning] = useState(false);
+    const [isShaking, setIsShaking] = useState(false);
 
     const squareRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -159,30 +175,73 @@ export default function Board({ board }: { board: CustomBoard }) {
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
 
-    const isLegal = (from: Square, to: Square) => {
+    const toEngineSq = (pos: string): Square => {
+        const [col, row] = pos.split(',').map(Number);
+        return `${col},${board.rows - 1 - row}`;
+    };
+
+    const fromEngineSq = (sq: Square): string => {
+        const [col, row] = sq.split(',').map(Number);
+        return `${col},${board.rows - 1 - row}`;
+    };
+
+    const checkMoveLegal = (from: string, to: string) => {
+        if (!validationEnabled) return true;
         if (!gameRef.current) return false;
-        console.log("isLegal called for", from, "to", to);
-        if (gameRef.current.makeMove(from, to)) {
-            console.log("legal move confirmed by engine");
-            return true;
+        const fromSq = toEngineSq(from);
+        const toSq = toEngineSq(to);
+
+        const boardClone = gameRef.current.getBoard().clone();
+        const gameClone = new Game(boardClone);
+        return gameClone.makeMove(fromSq, toSq);
+    };
+
+    const hasKings = () => {
+        const whiteKing = boardPieces.some(p => p.type === 'king' && p.color === 'white');
+        const blackKing = boardPieces.some(p => p.type === 'king' && p.color === 'black');
+        return whiteKing && blackKing;
+    };
+
+    const isPromotionMove = (from: string, to: string) => {
+        const piece = getPieceAt(from);
+        if (!piece || piece.type !== 'pawn') return false;
+        const engineTo = toEngineSq(to);
+        const [_, row] = engineTo.split(',').map(Number);
+        return (piece.color === 'white' && row === board.rows - 1) ||
+            (piece.color === 'black' && row === 0);
+    };
+
+    const toggleValidation = () => {
+        if (!validationEnabled && !hasKings()) {
+            setIsShaking(true);
+            setShowKingWarning(true);
+            setTimeout(() => {
+                setIsShaking(false);
+                setShowKingWarning(false);
+            }, 3000);
+            return;
         }
-        console.log("illegal move flagged by engine");
-        return false;
-    }
+        setValidationEnabled(!validationEnabled);
+    };
 
     useEffect(() => {
         // Convert editor pieces to engine pieces
         const enginePieces: Record<Square, Piece | null> = {};
         Object.entries(board.placedPieces).forEach(([pos, piece]) => {
-            const enginePiece = Piece.create(`${pos}_${piece.color}_${piece.type}`, piece.type as any, piece.color as any, pos as Square);
+            const enginePos = toEngineSq(pos);
+            // Search for rules in customCollection by name
+            const customPieceData = Object.values(customCollection).find(p => p.name === piece.type);
+            const rules = customPieceData?.moves || [];
+
+            const enginePiece = Piece.create(`${pos}_${piece.color}_${piece.type}`, piece.type as any, piece.color as any, enginePos, rules);
             if (enginePiece) {
-                enginePieces[pos] = enginePiece;
+                enginePieces[enginePos] = enginePiece;
             }
         });
 
         // Initialize engine with custom board state and active squares
-        const activeSquaresArr = board.activeSquares.map(s => `${s.col},${s.row}`);
-        const customBoardObj = new BoardClass(enginePieces, activeSquaresArr);
+        const activeSquaresArr = board.activeSquares.map(s => toEngineSq(`${s.col},${s.row}`));
+        const customBoardObj = new BoardClass(enginePieces, activeSquaresArr, board.cols, board.rows);
         gameRef.current = new Game(customBoardObj);
 
         // Update UI state
@@ -191,7 +250,12 @@ export default function Board({ board }: { board: CustomBoard }) {
         );
 
         setBoardPieces(piecesArray);
-    }, [board]);
+
+        // Check if kings are present to determine if validation can be ON
+        const whiteKing = piecesArray.some(p => p.type === 'king' && p.color === 'white');
+        const blackKing = piecesArray.some(p => p.type === 'king' && p.color === 'black');
+        setValidationEnabled(whiteKing && blackKing);
+    }, [board, customCollection]);
 
     // Resize
     useEffect(() => {
@@ -228,12 +292,13 @@ export default function Board({ board }: { board: CustomBoard }) {
         if (!gameRef.current) return;
         const squares = gameRef.current.getBoard().getSquares();
         const newPiecesArray: (PlacedPiece & { position: string })[] = [];
-        for (const [pos, piece] of Object.entries(squares)) {
+        for (const [sq, piece] of Object.entries(squares)) {
             if (piece) {
+                const editorPos = fromEngineSq(sq as Square);
                 newPiecesArray.push({
                     type: piece.type,
                     color: piece.color,
-                    position: pos,
+                    position: editorPos,
                     size: blockSize * 0.8
                 });
             }
@@ -242,14 +307,42 @@ export default function Board({ board }: { board: CustomBoard }) {
         setCurrentTurn(gameRef.current.getTurn() === "white" ? "w" : "b");
     };
 
-    const executeMove = (from: string, to: string) => {
-        syncFromEngine();
-        setLastMoveFrom(from);
-        setLastMoveTo(to);
-        setSelectedPos(null);
+    const executeMove = (from: string, to: string, promotion?: string) => {
+        if (!gameRef.current) return;
 
-        const audio = new Audio("/sounds/move-self.mp3");
-        audio.play().catch(() => { });
+        const engineFrom = toEngineSq(from);
+        const engineTo = toEngineSq(to);
+
+        const isCapture = !!gameRef.current.getBoard().getPiece(engineTo);
+
+        // If validation is disabled, we might need to manually update the board state in the engine
+        // or just use a special flag. For now, since it's "Play vs yourself", 
+        // we can still use makeMove but we skip the validator if validationEnabled is false.
+
+        // Actually, game.makeMove calls validator.isLegal. 
+        // If validation is OFF, we should probably force the move.
+        if (!validationEnabled) {
+            gameRef.current.getBoard().movePiece(engineFrom, engineTo, promotion);
+            syncFromEngine();
+            setLastMoveFrom(from);
+            setLastMoveTo(to);
+            setSelectedPos(null);
+            const sound = isCapture ? "/sounds/capture.mp3" : "/sounds/move-self.mp3";
+            const audio = new Audio(sound);
+            audio.play().catch(() => { });
+            return;
+        }
+
+        if (gameRef.current.makeMove(engineFrom, engineTo, promotion)) {
+            syncFromEngine();
+            setLastMoveFrom(from);
+            setLastMoveTo(to);
+            setSelectedPos(null);
+
+            const sound = isCapture ? "/sounds/capture.mp3" : "/sounds/move-self.mp3";
+            const audio = new Audio(sound);
+            audio.play().catch(() => { });
+        }
     };
 
     const handleDragStart = (event: DragStartEvent) => {
@@ -266,10 +359,15 @@ export default function Board({ board }: { board: CustomBoard }) {
             const piece = getPieceAt(from);
             const target = getPieceAt(to);
 
-            if (piece && (piece.color === "white" ? "w" : "b") === currentTurn) {
-                if (target && target.color === piece.color) return;
-                if (!isLegal(from as Square, to as Square)) return;
-                executeMove(from, to);
+            if (piece && (!validationEnabled || (piece.color === "white" ? "w" : "b") === currentTurn)) {
+                if (target && target.color === piece.color && validationEnabled) return;
+                if (!checkMoveLegal(from, to)) return;
+
+                if (isPromotionMove(from, to)) {
+                    setPromotionPending({ from, to });
+                } else {
+                    executeMove(from, to);
+                }
             }
         }
     };
@@ -279,13 +377,17 @@ export default function Board({ board }: { board: CustomBoard }) {
         if (selectedPos) {
             const piece = getPieceAt(selectedPos);
             const target = getPieceAt(pos);
-            if (piece && (piece.color === "white" ? "w" : "b") === currentTurn) {
-                if (target && target.color === piece.color) return setSelectedPos(pos);
+            if (piece && (!validationEnabled || (piece.color === "white" ? "w" : "b") === currentTurn)) {
+                if (target && target.color === piece.color && validationEnabled) return setSelectedPos(pos);
 
                 // Add validation for click-to-move
-                if (!isLegal(selectedPos as Square, pos as Square)) return;
+                if (!checkMoveLegal(selectedPos, pos)) return;
 
-                executeMove(selectedPos, pos);
+                if (isPromotionMove(selectedPos, pos)) {
+                    setPromotionPending({ from: selectedPos, to: pos });
+                } else {
+                    executeMove(selectedPos, pos);
+                }
             }
         } else {
             const piece = getPieceAt(pos);
@@ -366,7 +468,7 @@ export default function Board({ board }: { board: CustomBoard }) {
                     <Minus size={18} />
                 </button>
                 <div className="flex flex-col items-center min-w-[60px]">
-                    <span className="text-[9px] text-white/40 uppercase font-bold mb-0.5 tracking-widest">Zoom</span>
+                    <span className="text-[9px] text-white/40 uppercase font-bold mb-0.5 tracking-widest">{t('zoom')}</span>
                     <span className="text-sm font-bold text-white tabular-nums">{Math.round(zoom * 100)}%</span>
                 </div>
                 <button
@@ -402,6 +504,98 @@ export default function Board({ board }: { board: CustomBoard }) {
                     </DndContext>
                 </div>
             </div>
+
+            {/* Premium Validation Toggle */}
+            <div className="mt-8 flex flex-col items-center gap-4">
+                <div className="flex items-center gap-4 px-6 py-3 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-linear-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                    <span className={`text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${!validationEnabled ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'text-white/20'}`}>
+                        {t('noValidation')}
+                    </span>
+
+                    <motion.button
+                        onClick={toggleValidation}
+                        animate={isShaking ? { x: [-4, 4, -4, 4, 0] } : {}}
+                        transition={{ duration: 0.4 }}
+                        className={`relative w-16 h-8 rounded-full transition-all duration-500 flex items-center p-1.5 shadow-inner ${validationEnabled ? 'bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.3)]' : 'bg-white/10'}`}
+                    >
+                        <motion.div
+                            animate={{ x: validationEnabled ? 32 : 0 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                            className="w-5 h-5 bg-white rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.2)] flex items-center justify-center relative z-10"
+                        >
+                            {validationEnabled ?
+                                <Shield size={10} className="text-blue-600" /> :
+                                <ShieldOff size={10} className="text-stone-400" />
+                            }
+                        </motion.div>
+                        {validationEnabled && (
+                            <motion.div
+                                layoutId="glow"
+                                className="absolute inset-0 bg-blue-400/20 blur-md rounded-full"
+                            />
+                        )}
+                    </motion.button>
+
+                    <span className={`text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${validationEnabled ? 'text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]' : 'text-white/20'}`}>
+                        {t('validation')}
+                    </span>
+                </div>
+
+                <AnimatePresence>
+                    {showKingWarning && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="flex items-center gap-2 text-red-400 text-[11px] font-medium bg-red-400/10 px-3 py-1.5 rounded-lg border border-red-400/20"
+                        >
+                            <AlertCircle size={14} />
+                            {t('kingWarning')}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* Promotion Modal */}
+            <AnimatePresence>
+                {promotionPending && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            className="bg-[#262421] p-6 rounded-2xl border border-white/10 shadow-2xl flex flex-col items-center gap-6"
+                        >
+                            <h3 className="text-white font-bold text-lg tracking-tight">{t('choosePromotion')}</h3>
+                            <div className="flex gap-4">
+                                {['queen', 'rook', 'bishop', 'knight'].map((type) => (
+                                    <button
+                                        key={type}
+                                        onClick={() => {
+                                            executeMove(promotionPending.from, promotionPending.to, type);
+                                            setPromotionPending(null);
+                                        }}
+                                        className="w-16 h-16 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5 hover:border-white/20 active:scale-95 flex items-center justify-center p-2"
+                                    >
+                                        <PieceRenderer
+                                            type={type}
+                                            color={getPieceAt(promotionPending.from)?.color || "white"}
+                                            size={48}
+                                            boardStyle="v3"
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

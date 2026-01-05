@@ -87,7 +87,7 @@ export default function Btn() {
                     className={`relative block lg:h-[78px] w-full h-[60px] rounded-[10px]
             transition-all duration-400 antialiased lg:text-[2.8rem] text-[2rem]
             leading-5 lg:leading-[30px] shadow-playShadow ${zillaSlab.className}
-            before:absolute before:w-full before:h-full before:left-0 before:top-0 before:bg-[hsla(0,0%,0%,0.5)] before:rounded-[10px] before:z-10 cursor-not-allowed
+            before:absolute before:w-full before:h-full before:left-0 before:top-0 before:bg-white/50 dark:before:bg-black/50 before:backdrop-blur-[2px] before:rounded-[10px] before:z-10 cursor-not-allowed
             group
             `}
                     style={{

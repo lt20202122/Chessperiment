@@ -22,17 +22,18 @@ export function Header() {
     return (
         <>
             <header className={`flex justify-between items-center lg:px-5 pt-2 ${small ? "group" : "pb-10"} bg-bg relative z-50`}>
-                <Link href="/" className={`${bungee.className} [font-variant-caps:small-caps] ml-1.5 lg:ml-0 transition-colors duration-300 ${small ? "text-3xl lg:text-5xl text-amber-400/50 group-hover:text-amber-400" : "text-4xl lg:text-7xl text-yellow-400 dark:text-amber-400"} caret-transparent`}>ChessPie</Link>
+                <Link href="/" className={`${bungee.className} [font-variant-caps:small-caps] ml-1.5 lg:ml-0 transition-colors duration-300 ${small ? "text-3xl lg:text-5xl text-amber-400/50 dark:text-amber-400/50 group-hover:text-amber-400 dark:group-hover:text-amber-400" : "text-4xl lg:text-7xl text-amber-400"} caret-transparent`}>ChessPie</Link>
 
                 {/* Desktop Nav */}
                 <div className={`hidden lg:flex gap-4 items-center`}>
                     <div className="flex gap-2">
-                        <Link href="/game" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('play')}</Link>
-                        <Link href="/editor/board" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('boardEditor')}</Link>
-                        <Link href="/editor/piece" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('pieceEditor')}</Link>
-                        <Link href="/announcements" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('news')}</Link>
-                        <Link href="/marketplace" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('marketplace')}</Link>
-                        <Link href="/login" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('login')}</Link>
+                        <Link href="/game" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('play')}</Link>
+                        <Link href="/editor/board" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('boardEditor')}</Link>
+                        <Link href="/editor/piece" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('pieceEditor')}</Link>
+                        <Link href="/announcements" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('news')}</Link>
+                        <Link href="/marketplace" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('marketplace')}</Link>
+                        <Link href="/library" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('library')}</Link>
+                        <Link href="/login" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('login')}</Link>
                     </div>
                     <div className="flex relative items-center bg-amber-400/10 rounded-full p-1 border border-amber-400/20 ml-4 focus-within:ring-2 focus-within:ring-amber-400/40 outline-none">
                         <div
@@ -70,7 +71,7 @@ export function Header() {
 
                 {/* Mobile Nav Overlay */}
                 {isMenuOpen && (
-                    <div className="fixed inset-0 bg-bg z-[100] flex flex-col items-center justify-start pt-32 px-8 animate-in slide-in-from-top duration-500">
+                    <div className="fixed inset-0 bg-bg z-100 flex flex-col items-center justify-start pt-32 px-8 animate-in slide-in-from-top duration-500">
                         {/* Close button inside overlay */}
                         <button
                             className="absolute top-6 right-6 p-4 text-amber-400 hover:scale-110 transition-transform active:scale-95 bg-amber-400/10 rounded-2xl"
@@ -82,7 +83,7 @@ export function Header() {
                         <div className="flex flex-col gap-6 w-full max-w-sm">
                             <Link
                                 href="/game"
-                                className="group flex items-center justify-between text-3xl font-black text-white hover:text-accent transition-all pl-2"
+                                className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all pl-2"
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 <span>{t('play')}</span>
@@ -90,7 +91,7 @@ export function Header() {
                             </Link>
                             <Link
                                 href="/editor/board"
-                                className="group flex items-center justify-between text-3xl font-black text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
+                                className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 <span>{t('boardEditor')}</span>
@@ -98,7 +99,7 @@ export function Header() {
                             </Link>
                             <Link
                                 href="/editor/piece"
-                                className="group flex items-center justify-between text-3xl font-black text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
+                                className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 <span>{t('pieceEditor')}</span>
@@ -106,7 +107,7 @@ export function Header() {
                             </Link>
                             <Link
                                 href="/announcements"
-                                className="group flex items-center justify-between text-3xl font-black text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
+                                className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 <span>{t('news')}</span>
@@ -114,15 +115,23 @@ export function Header() {
                             </Link>
                             <Link
                                 href="/marketplace"
-                                className="group flex items-center justify-between text-3xl font-black text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
+                                className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 <span>{t('marketplace')}</span>
                                 <div className="w-2 h-2 rounded-full bg-amber-400/20 group-hover:bg-accent group-hover:scale-150 transition-all opacity-0 group-hover:opacity-100" />
                             </Link>
                             <Link
+                                href="/library"
+                                className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
+                                onClick={() => setIsMenuOpen(false)}
+                            >
+                                <span>{t('library')}</span>
+                                <div className="w-2 h-2 rounded-full bg-amber-400/20 group-hover:bg-accent group-hover:scale-150 transition-all opacity-0 group-hover:opacity-100" />
+                            </Link>
+                            <Link
                                 href="/login"
-                                className="group flex items-center justify-between text-3xl font-black text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
+                                className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 <span>{t('login')}</span>
@@ -134,7 +143,7 @@ export function Header() {
                             <Link
                                 href={pathname}
                                 locale="en"
-                                className={`text-xl font-black tracking-tighter ${locale === 'en' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-amber-400/40'}`}
+                                className={`text-xl font-black tracking-tighter ${locale === 'en' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-stone-400 dark:text-stone-600 hover:text-amber-500'}`}
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 {t('english')}
@@ -142,7 +151,7 @@ export function Header() {
                             <Link
                                 href={pathname}
                                 locale="de"
-                                className={`text-xl font-black tracking-tighter ${locale === 'de' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-amber-400/40'}`}
+                                className={`text-xl font-black tracking-tighter ${locale === 'de' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-stone-400 dark:text-stone-600 hover:text-amber-500'}`}
                                 onClick={() => setIsMenuOpen(false)}
                             >
                                 {t('german')}

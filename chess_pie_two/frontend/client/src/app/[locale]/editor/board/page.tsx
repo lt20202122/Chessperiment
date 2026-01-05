@@ -1,5 +1,6 @@
 import PageClient from "./PageClient";
 import { getTranslations } from 'next-intl/server';
+import { BoardEditorHelp } from "@/components/help/HelpArticles";
 
 const jsonLd_boardEditor = {
     "@context": "https://schema.org",
@@ -54,5 +55,6 @@ export default async function Board({ params }: { params: Promise<{ locale: stri
         />
         <h1 className="sr-only">{t('h1')}</h1>
         <PageClient />
+        <BoardEditorHelp />
     </>
 }

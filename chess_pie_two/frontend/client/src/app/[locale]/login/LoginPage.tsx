@@ -1,25 +1,33 @@
 "use client"
 import { useTranslations } from "next-intl"
 import { signIn } from "next-auth/react"
-
+import { useSearchParams } from "next/navigation"
 
 export default function LoginPage({ bungee }: { bungee: any }) {
     const t = useTranslations("Auth")
+    const searchParams = useSearchParams()
+    const error = searchParams.get("error")
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
-            <div className="w-full max-w-md p-8 bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-3xl shadow-2xl animate-in fade-in zoom-in duration-500">
-                <h1 className={`${bungee} text-4xl lg:text-5xl text-yellow-400 text-center mb-8`}>
+            <div className="w-full max-w-md p-8 bg-white/80 dark:bg-bg-secondary/50 backdrop-blur-xl border border-amber-600/20 dark:border-amber-400/20 rounded-3xl shadow-2xl animate-in fade-in zoom-in duration-500 text-stone-900 dark:text-white">
+                <h1 className={`${bungee} text-4xl lg:text-5xl text-amber-600 dark:text-yellow-400 text-center mb-8`}>
                     ChessPie
                 </h1>
 
-                <p className="text-amber-400/60 text-center mb-10 text-lg">
+                {error && (
+                    <div className="mb-6 p-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl text-sm font-bold text-center">
+                        Login Error: {error}
+                    </div>
+                )}
+
+                <p className="text-amber-800/60 dark:text-amber-400/60 text-center mb-10 text-lg font-medium">
                     {t("signInToContinue")}
                 </p>
 
                 <button
                     onClick={() => signIn("google")}
-                    className="w-full flex items-center justify-center gap-4 bg-white text-black py-4 px-6 rounded-2xl font-bold hover:bg-gray-100 transition-all active:scale-[0.98] group shadow-lg"
+                    className="w-full flex items-center justify-center gap-4 bg-stone-900 text-white dark:bg-white dark:text-black py-4 px-6 rounded-2xl font-bold hover:bg-black dark:hover:bg-gray-100 transition-all active:scale-[0.98] group shadow-lg"
                 >
                     <div className="w-6 h-6 flex items-center justify-center">
                         {/* Simple SVG for Google for now if I don't have the component */}

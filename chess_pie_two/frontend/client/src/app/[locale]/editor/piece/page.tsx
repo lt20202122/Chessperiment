@@ -1,5 +1,6 @@
 import PageClient from "./PageClient";
 import { getTranslations } from 'next-intl/server';
+import { PieceEditorHelp } from "@/components/help/HelpArticles";
 
 const jsonLd_pieceEditor = {
     "@context": "https://schema.org",
@@ -54,5 +55,6 @@ export default async function PiecePage({ params }: { params: Promise<{ locale: 
         />
         <h1 className="sr-only">{t('h1')}</h1>
         <PageClient />
+        <PieceEditorHelp />
     </>
 }

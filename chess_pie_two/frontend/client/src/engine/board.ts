@@ -4,8 +4,12 @@ import { BoardStateManager } from './state';
 
 export class BoardClass {
     private stateManager: BoardStateManager;
+    public readonly width: number;
+    public readonly height: number;
 
-    constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[]) {
+    constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[], width: number = 8, height: number = 8) {
+        this.width = width;
+        this.height = height;
         const squares = initialPieces || this.setupInitialBoard();
         this.stateManager = new BoardStateManager(squares, activeSquares);
     }
@@ -90,7 +94,7 @@ export class BoardClass {
     }
 
     clone(): BoardClass {
-        const clonedBoard = new BoardClass();
+        const clonedBoard = new BoardClass(undefined, undefined, this.width, this.height);
         clonedBoard.stateManager = this.stateManager.clone();
         return clonedBoard;
     }

@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, History, Info, Send, User, Monitor, Copy, Check, Share2 } from 'lucide-react';
+import { MessageSquare, History, Info, Send, User, Monitor, Copy, Check, Share2, Swords, Trophy, Ghost } from 'lucide-react';
 
 interface GameSidebarProps {
     myColor: "white" | "black" | null;
@@ -25,6 +25,7 @@ interface GameSidebarProps {
     setGameMode: (mode: "online" | "computer" | "local") => void;
     currentTurn: 'w' | 'b';
     onLeaveGame: () => void;
+    onMoveClick: (index: number) => void;
 }
 
 export default function GameSidebar({
@@ -34,9 +35,10 @@ export default function GameSidebar({
     currentRoom, playerCount,
     onResign, onOfferDraw, onStartComputerGame,
     gameMode, setGameMode,
-    currentTurn, onLeaveGame
+    currentTurn, onLeaveGame,
+    onMoveClick
 }: GameSidebarProps) {
-    const t = useTranslations('GameSidebar');
+    const t = useTranslations();
     const [msgInput, setMsgInput] = useState("");
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState("moves");
@@ -74,8 +76,8 @@ export default function GameSidebar({
     const handleShareRoom = async () => {
         if (!currentRoom) return;
         const shareData = {
-            title: 'Join my ChessPIE game!',
-            text: `Join my chess game with room code: ${currentRoom}`,
+            title: t('Multiplayer.joinMyGameTitle'),
+            text: t('Multiplayer.joinMyGameText', { room: currentRoom }),
             url: `${window.location.origin}/game?room=${currentRoom}`
         };
         if (navigator.share) {
@@ -86,32 +88,48 @@ export default function GameSidebar({
     };
 
     return (
-        <div className="h-[40vh] lg:h-full w-full lg:w-[400px] flex flex-col bg-white dark:bg-stone-900 border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-800 shadow-2xl z-40">
+        <div className="h-[40vh] lg:h-full w-full lg:w-[420px] flex flex-col bg-stone-50/50 dark:bg-stone-900/90 border-t lg:border-t-0 lg:border-l border-stone-200 dark:border-white/10 backdrop-blur-2xl shadow-2xl z-40 transition-colors duration-300">
             <Tabs defaultValue="moves" value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col h-full overflow-hidden">
-                <div className="px-4 pt-4 pb-2 border-b border-gray-100 dark:border-gray-800">
-                    <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-                        <TabsTrigger value="info" className="rounded-lg transition-all"><Info size={18} className="mr-2" /> Info</TabsTrigger>
-                        <TabsTrigger value="moves" className="rounded-lg transition-all"><History size={18} className="mr-2" /> Moves</TabsTrigger>
-                        <TabsTrigger value="chat" className="rounded-lg transition-all relative">
-                            <MessageSquare size={18} className="mr-2" />
-                            Chat
+                <div className="px-6 pt-6 pb-4 border-b border-stone-200 dark:border-white/5 bg-white/30 dark:bg-black/10">
+                    <TabsList className="grid w-full grid-cols-3 bg-stone-200/50 dark:bg-white/5 p-1 rounded-2xl border border-stone-300 dark:border-white/10">
+                        <TabsTrigger value="info" className="rounded-xl transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-lg dark:data-[state=active]:text-amber-400">
+                            <Info size={16} className="mr-2" /> {t('GameSidebar.info')}
+                        </TabsTrigger>
+                        <TabsTrigger value="moves" className="rounded-xl transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-lg dark:data-[state=active]:text-amber-400">
+                            <History size={16} className="mr-2" /> {t('GameSidebar.moves')}
+                        </TabsTrigger>
+                        <TabsTrigger value="chat" className="rounded-xl transition-all relative data-[state=active]:bg-white dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-lg dark:data-[state=active]:text-amber-400">
+                            <MessageSquare size={16} className="mr-2" />
+                            {t('GameSidebar.chat')}
                             {hasUnreadChat && <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-sm shadow-red-500/50" />}
                         </TabsTrigger>
                     </TabsList>
                 </div>
 
-                <TabsContent value="moves" className="flex-1 p-0 m-0 overflow-hidden flex flex-col">
-                    <ScrollArea className="flex-1 p-4">
-                        <div className="flex flex-col gap-y-1 text-sm font-mono">
+                <TabsContent value="moves" className="flex-1 p-0 m-0 overflow-hidden flex flex-col items-stretch">
+                    <ScrollArea className="flex-1 px-6 py-4">
+                        <div className="flex flex-col gap-y-0.5">
                             {Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => (
-                                <div key={i} className="contents group">
-                                    <div className="text-gray-400 text-right pr-2 py-1 select-none border-b border-transparent">{i + 1}.</div>
-                                    <div className="contents">
-                                        <button className={`text-left pl-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors ${historyIndex === (i * 2) && isViewingHistory ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 font-bold' : ''}`}>
+                                <div key={i} className="flex items-center group transition-colors hover:bg-stone-200/30 dark:hover:bg-white/5 rounded-xl p-1 px-2">
+                                    <div className="w-8 text-stone-400 dark:text-stone-500 text-xs font-black tabular-nums">{i + 1}.</div>
+                                    <div className="flex-1 flex gap-2">
+                                        <button
+                                            onClick={() => onMoveClick(i * 2)}
+                                            className={`flex-1 text-left px-3 py-1.5 rounded-lg transition-all text-sm font-medium ${historyIndex === (i * 2) && isViewingHistory
+                                                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 scale-105 z-10'
+                                                : 'text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-white/10'
+                                                }`}
+                                        >
                                             {moveHistory[i * 2]}
                                         </button>
                                         {moveHistory[i * 2 + 1] && (
-                                            <button className={`text-left pl-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors ${historyIndex === (i * 2 + 1) && isViewingHistory ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 font-bold' : ''}`}>
+                                            <button
+                                                onClick={() => onMoveClick(i * 2 + 1)}
+                                                className={`flex-1 text-left px-3 py-1.5 rounded-lg transition-all text-sm font-medium ${historyIndex === (i * 2 + 1) && isViewingHistory
+                                                    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 scale-105 z-10'
+                                                    : 'text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-white/10'
+                                                    }`}
+                                            >
                                                 {moveHistory[i * 2 + 1]}
                                             </button>
                                         )}
@@ -120,96 +138,153 @@ export default function GameSidebar({
                             ))}
                         </div>
                     </ScrollArea>
-                    <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20">
+                    <div className="p-6 border-t border-stone-200 dark:border-white/5 bg-white/20 dark:bg-black/20">
                         <div className="flex gap-2 justify-center">
-                            <button onClick={() => navigateHistory('start')} className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30" disabled={historyIndex < 0}>|&lt;</button>
-                            <button onClick={() => navigateHistory('prev')} className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30" disabled={historyIndex < 0}>&lt;</button>
-                            <button onClick={exitHistoryView} className={`px-4 py-2 rounded-lg font-bold text-xs transition-colors ${isViewingHistory ? 'bg-amber-500 text-white shadow-md' : 'bg-gray-200 text-gray-400'}`}>LIVE</button>
-                            <button onClick={() => navigateHistory('next')} className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30" disabled={!isViewingHistory}>&gt;</button>
-                            <button onClick={() => navigateHistory('end')} className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30" disabled={!isViewingHistory}>&gt;|</button>
+                            <button onClick={() => navigateHistory('start')} className="p-2.5 rounded-xl text-stone-600 dark:text-stone-400 hover:bg-white dark:hover:bg-white/10 hover:text-amber-500 dark:hover:text-amber-400 transition-all disabled:opacity-30 border border-transparent hover:border-stone-200 dark:hover:border-white/10 shadow-sm" disabled={historyIndex < 0}>|&lt;</button>
+                            <button onClick={() => navigateHistory('prev')} className="p-2.5 rounded-xl text-stone-600 dark:text-stone-400 hover:bg-white dark:hover:bg-white/10 hover:text-amber-500 dark:hover:text-amber-400 transition-all disabled:opacity-30 border border-transparent hover:border-stone-200 dark:hover:border-white/10 shadow-sm" disabled={historyIndex < 0}>&lt;</button>
+                            <button onClick={exitHistoryView} className={`px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${isViewingHistory ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30' : 'bg-stone-200 dark:bg-white/5 text-stone-400 dark:text-stone-600'}`}>{t('Multiplayer.live')}</button>
+                            <button onClick={() => navigateHistory('next')} className="p-2.5 rounded-xl text-stone-600 dark:text-stone-400 hover:bg-white dark:hover:bg-white/10 hover:text-amber-500 dark:hover:text-amber-400 transition-all disabled:opacity-30 border border-transparent hover:border-stone-200 dark:hover:border-white/10 shadow-sm" disabled={!isViewingHistory}>&gt;</button>
+                            <button onClick={() => navigateHistory('end')} className="p-2.5 rounded-xl text-stone-600 dark:text-stone-400 hover:bg-white dark:hover:bg-white/10 hover:text-amber-500 dark:hover:text-amber-400 transition-all disabled:opacity-30 border border-transparent hover:border-stone-200 dark:hover:border-white/10 shadow-sm" disabled={!isViewingHistory}>&gt;|</button>
                         </div>
                     </div>
                 </TabsContent>
 
                 <TabsContent value="chat" className="flex-1 p-0 m-0 overflow-hidden flex flex-col">
-                    <ScrollArea className="flex-1 p-4">
-                        <div className="space-y-3">
+                    <ScrollArea className="flex-1 px-6 py-4">
+                        <div className="space-y-4">
+                            {chatMessages.length === 0 && (
+                                <div className="text-center py-10">
+                                    <Ghost size={40} className="mx-auto text-stone-300 dark:text-stone-700 mb-2" />
+                                    <p className="text-xs text-stone-400 dark:text-stone-600 font-bold uppercase tracking-widest">No messages yet</p>
+                                </div>
+                            )}
                             {chatMessages.map((msg, idx) => (
-                                <div key={idx} className="bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none">
-                                    <p className="text-sm text-gray-700 dark:text-gray-300 wrap-break-word">{msg}</p>
+                                <div key={idx} className="group flex flex-col animate-in slide-in-from-bottom-2 duration-300">
+                                    <div className="bg-white dark:bg-stone-800/80 backdrop-blur-sm p-4 rounded-2xl border border-stone-100 dark:border-white/5 shadow-sm group-hover:shadow-md transition-shadow">
+                                        <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed wrap-break-word">{msg}</p>
+                                    </div>
                                 </div>
                             ))}
                             <div ref={chatEndRef} />
                         </div>
                     </ScrollArea>
-                    <div className="p-4 border-t border-gray-100 dark:border-gray-800">
+                    <div className="p-6 border-t border-stone-200 dark:border-white/5 bg-white/10 dark:bg-black/10">
                         <div className="flex gap-2">
-                            <input value={msgInput} onChange={(e) => setMsgInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="Type a message..." className="flex-1 bg-gray-100 dark:bg-gray-800 border-none rounded-xl px-4 py-2 focus:ring-2 focus:ring-amber-500 outline-none" />
-                            <button onClick={handleSend} className="p-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 shadow-lg shadow-amber-500/20"><Send size={20} /></button>
+                            <input
+                                value={msgInput}
+                                onChange={(e) => setMsgInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                placeholder={t('Multiplayer.typeMessage')}
+                                className="flex-1 bg-white dark:bg-stone-800/50 border border-stone-200 dark:border-white/10 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-amber-500/50 outline-none transition-all shadow-inner"
+                            />
+                            <button onClick={handleSend} className="p-3 bg-amber-500 text-white rounded-2xl hover:bg-amber-600 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"><Send size={20} /></button>
                         </div>
                     </div>
                 </TabsContent>
 
-                <TabsContent value="info" className="flex-1 p-6 space-y-4 overflow-y-auto">
-                    <div className="bg-linear-to-br from-amber-50 to-orange-50 dark:from-stone-800 dark:to-stone-900 p-6 rounded-4xl border border-amber-100 dark:border-stone-700">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-500 mb-4">Game Status</h3>
-                        <div className="flex items-center gap-3 mb-4">
-                            <span className={`w-3 h-3 rounded-full ${gameStatus === 'playing' ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                            <span className="font-bold text-lg capitalize">{gameStatus || 'Connecting...'}</span>
-                        </div>
-                        {gameInfo && <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium mb-4">{gameInfo}</div>}
-                        <div className="pt-4 border-t border-dashed border-amber-200 dark:border-stone-700">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Room Code</p>
-                            {currentRoom ? (
-                                <div className="space-y-3">
-                                    <code className="block w-full bg-white dark:bg-black px-4 py-3 rounded-2xl border dark:border-gray-800 font-mono text-2xl font-black text-center tracking-[0.2em] text-amber-600 dark:text-amber-500">{currentRoom}</code>
-                                    <div className="flex gap-2">
-                                        <button onClick={handleCopyRoom} className="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-bold transition-all">{copied ? <><Check size={18} /> Copied</> : <><Copy size={18} /> Copy</>}</button>
-                                        <button onClick={handleShareRoom} className="p-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all"><Share2 size={20} /></button>
-                                    </div>
+                <TabsContent value="info" className="flex-1 p-6 space-y-6 overflow-y-auto bg-white/10 dark:bg-transparent">
+                    {/* Game Status Card */}
+                    <div className="bg-linear-to-br from-amber-500 via-orange-500 to-amber-600 p-px rounded-3xl shadow-xl shadow-amber-500/10">
+                        <div className="bg-white dark:bg-stone-900 p-6 rounded-[23px] space-y-4">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">{t('GameSidebar.gameStatus')}</h3>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-3 h-3 rounded-full ${gameStatus === 'playing' ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)] animate-pulse' : 'bg-stone-300 dark:bg-stone-700'}`} />
+                                    <span className="font-black text-xl text-stone-900 dark:text-white uppercase tracking-tight">{t('Multiplayer.' + (gameStatus || 'connecting'))}</span>
                                 </div>
-                            ) : <div className="text-center text-gray-400 font-mono italic text-sm">No Active Room</div>}
+                                <div className="flex items-center gap-1.5 px-3 py-1 bg-stone-100 dark:bg-white/5 rounded-full border border-stone-200 dark:border-white/10">
+                                    <User size={12} className="text-stone-400" />
+                                    <span className="text-xs font-black tabular-nums">{playerCount}/2</span>
+                                </div>
+                            </div>
+                            {gameInfo && (
+                                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-2xl text-xs font-bold border border-red-100 dark:border-red-900/30">
+                                    <Trophy size={14} /> {gameInfo}
+                                </div>
+                            )}
                         </div>
                     </div>
-                    <div className="bg-gray-50 dark:bg-stone-800/50 p-6 rounded-4xl border border-gray-100 dark:border-stone-800 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Match Details</h3>
-                            <div className="flex items-center gap-1 text-gray-400"><User size={14} /><span className="text-xs font-bold">{playerCount}/2</span></div>
-                        </div>
 
-                        <div className="space-y-3">
-                            {/* Player Info */}
-                            <div className="flex items-center gap-3 bg-white dark:bg-black/20 p-3 rounded-2xl border border-gray-100 dark:border-stone-700/50">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-inner ${myColor === 'white' ? 'bg-white border text-stone-900' : 'bg-stone-950 text-white border border-stone-800'}`}>{myColor === 'white' ? '♔' : '♚'}</div>
-                                <div><p className="font-bold text-sm capitalize">{myColor || 'Spectator'}</p><p className="text-[10px] text-gray-400">Your Side</p></div>
-                            </div>
-
-                            {/* Turn Info */}
-                            <div className="flex items-center gap-3 bg-white dark:bg-black/20 p-3 rounded-2xl border border-gray-100 dark:border-stone-700/50">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-inner ${currentTurn === 'w' ? 'bg-white border text-stone-900 shadow-md' : 'bg-stone-900 border border-stone-800 text-white'}`}>
-                                    {currentTurn === 'w' ? '♔' : '♚'}
-                                </div>
-                                <div>
-                                    <p className="font-bold text-sm">{currentTurn === 'w' ? 'White' : 'Black'}'s Turn</p>
-                                    <p className="text-[10px] text-gray-400">Current Move</p>
+                    {/* Room Code Card */}
+                    <div className="bg-white dark:bg-white/5 p-6 rounded-3xl border border-stone-200 dark:border-white/10 shadow-sm space-y-4">
+                        <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em]">{t('GameSidebar.roomCode')}</p>
+                        {currentRoom ? (
+                            <div className="space-y-4">
+                                <code className="block w-full bg-stone-100 dark:bg-black/40 px-6 py-4 rounded-2xl border border-stone-200 dark:border-white/10 font-mono text-3xl font-black text-center tracking-[0.2em] text-amber-600 dark:text-amber-500 shadow-inner">{currentRoom}</code>
+                                <div className="flex gap-2">
+                                    <button onClick={handleCopyRoom} className="flex-1 flex items-center justify-center gap-2 bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg">{copied ? <><Check size={16} /> {t('Multiplayer.copied')}</> : <><Copy size={16} /> {t('Multiplayer.copy')}</>}</button>
+                                    <button onClick={handleShareRoom} className="p-3.5 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl transition-all shadow-lg active:scale-[0.98]"><Share2 size={20} /></button>
                                 </div>
                             </div>
+                        ) : <div className="text-center py-4 text-stone-400 dark:text-stone-600 font-mono italic text-sm">{t('Multiplayer.noActiveRoom')}</div>}
+                    </div>
+
+                    {/* Match Details */}
+                    <div className="space-y-3">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500 px-2">{t('Multiplayer.matchDetails')}</h3>
+
+                        {/* Opponent Info */}
+                        <div className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${currentTurn === (myColor === 'white' ? 'b' : 'w') ? 'bg-white dark:bg-stone-800 border-amber-500/50 shadow-lg scale-[1.02]' : 'bg-stone-50/50 dark:bg-white/5 border-stone-100 dark:border-white/5'}`}>
+                            <div className="flex items-center gap-4">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${myColor === 'black' ? 'bg-white text-stone-900 border' : 'bg-stone-900 text-white border border-stone-800'}`}>
+                                    {myColor === 'black' ? '♔' : '♚'}
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="font-black text-sm uppercase tracking-tight text-stone-900 dark:text-white italic">
+                                        {gameMode === 'computer' ? t('Multiplayer.stockfish') : (playerCount > 1 ? t('Multiplayer.opponent') : t('Multiplayer.waitingOpponent'))}
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${currentTurn === (myColor === 'white' ? 'b' : 'w') ? 'bg-green-500 animate-pulse shadow-sm shadow-green-500/50' : 'bg-stone-300 dark:bg-stone-700'}`} />
+                                        <p className="text-[10px] text-stone-400 dark:text-stone-500 font-bold uppercase tracking-widest leading-none">
+                                            {t('Multiplayer.opponent')}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <button onClick={onLeaveGame} className="w-full py-3 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 rounded-2xl font-bold transition-all text-sm">
-                            &lt; Return to Lobby
+                        {/* Player Info (You) */}
+                        <div className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${currentTurn === (myColor === 'white' ? 'w' : 'b') ? 'bg-white dark:bg-stone-800 border-amber-500/50 shadow-lg scale-[1.02]' : 'bg-stone-50/50 dark:bg-white/5 border-stone-100 dark:border-white/5'}`}>
+                            <div className="flex items-center gap-4">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${myColor === 'white' ? 'bg-white text-stone-900 border' : 'bg-stone-900 text-white border border-stone-800'}`}>
+                                    {myColor === 'white' ? '♔' : '♚'}
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="font-black text-sm uppercase tracking-tight text-stone-900 dark:text-white italic">
+                                        {t('Multiplayer.you')} ({myColor ? t('Multiplayer.' + myColor) : ""})
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${currentTurn === (myColor === 'white' ? 'w' : 'b') ? 'bg-green-500 animate-pulse shadow-sm shadow-green-500/50' : 'bg-stone-300 dark:bg-stone-700'}`} />
+                                        <p className="text-[10px] text-stone-400 dark:text-stone-500 font-bold uppercase tracking-widest leading-none">
+                                            {t('GameSidebar.yourSide')}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onClick={onLeaveGame} className="w-full py-4 mt-4 bg-stone-200/50 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-stone-400 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border border-transparent hover:border-stone-200 dark:hover:border-white/20">
+                            &lt; {t('Multiplayer.returnToLobby')}
                         </button>
                     </div>
                 </TabsContent>
             </Tabs>
 
-            <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20">
+            {/* Global Actions */}
+            <div className="p-6 border-t border-stone-200 dark:border-white/10 bg-white/30 dark:bg-black/30 backdrop-blur-sm">
                 <div className="grid grid-cols-2 gap-3">
-                    <button onClick={onResign} disabled={gameStatus !== 'playing'} className="py-3 px-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-2xl font-bold transition-all border border-red-500/20 disabled:opacity-30">Resign</button>
-                    <button onClick={onOfferDraw} disabled={gameStatus !== 'playing'} className="py-3 px-4 bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white rounded-2xl font-bold transition-all border border-blue-500/20 disabled:opacity-30">Offer Draw</button>
+                    <button onClick={onResign} disabled={gameStatus !== 'playing'} className="group relative py-4 px-4 bg-red-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:bg-red-600 active:scale-[0.98] disabled:opacity-30 flex items-center justify-center overflow-hidden">
+                        <span className="relative z-10">{t('Multiplayer.resign')}</span>
+                        <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                    <button onClick={onOfferDraw} disabled={gameStatus !== 'playing'} className="group relative py-4 px-4 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-30 border border-transparent hover:shadow-xl flex items-center justify-center overflow-hidden">
+                        <span className="relative z-10">{t('Multiplayer.offerDraw')}</span>
+                        <div className="absolute inset-0 bg-linear-to-t from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
                     {gameMode === 'local' && (
-                        <button onClick={() => onStartComputerGame(1500)} className="col-span-2 py-3 px-4 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white rounded-2xl font-bold transition-all border border-green-500/20 flex items-center justify-center gap-2">
-                            <Monitor size={18} /> Practice vs Computer
+                        <button onClick={() => onStartComputerGame(1500)} className="col-span-2 py-4 px-4 bg-linear-to-r from-amber-500 to-orange-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:shadow-lg shadow-amber-500/20 active:scale-[0.99] flex items-center justify-center gap-3 overflow-hidden group">
+                            <Monitor size={18} className="group-hover:scale-110 transition-transform" />
+                            <span>{t('Multiplayer.practiceVsComputer')}</span>
                         </button>
                     )}
                 </div>

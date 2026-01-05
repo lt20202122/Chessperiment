@@ -18,8 +18,8 @@ export function SEOFooter() {
                     <h2 className="text-2xl font-bold mb-6 text-stone-900 dark:text-stone-100">{t('title')}</h2>
                     <div className="space-y-4">
                         {faqs.map((faq) => (
-                            <details key={faq.q} className="group bg-stone-50 dark:bg-stone-900/50 rounded-lg p-4 cursor-pointer">
-                                <summary className="font-semibold text-stone-800 dark:text-stone-200 list-none flex justify-between items-center">
+                            <details key={faq.q} className="group bg-white/50 dark:bg-stone-900/50 border border-stone-200 dark:border-white/10 rounded-lg p-4 cursor-pointer">
+                                <summary className="font-semibold text-stone-900 dark:text-stone-200 list-none flex justify-between items-center transition-colors">
                                     {t(faq.q)}
                                     <span className="transition group-open:rotate-180">
                                         <svg fill="none" height="24" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>

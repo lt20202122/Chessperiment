@@ -5,6 +5,7 @@ import { GripVertical, GripHorizontal, Plus, X, Minus, ZoomIn, ZoomOut } from 'l
 import Image from 'next/image';
 import { getPieceImage } from '@/app/[locale]/game/Data';
 import { EditMode } from '@/app/[locale]/editor/board/PageClient';
+import PieceRenderer from '@/components/game/PieceRenderer';
 
 // Utils to convert x,y to string key
 const toKey = (x: number, y: number) => `${x},${y}`;
@@ -70,15 +71,13 @@ const EditorSquare = React.memo(({
         >
             {/* Piece rendering */}
             {isActive && piece && (
-                <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
-                    <Image
-                        src={getPieceImage(boardStyle, piece.color, piece.type)}
-                        alt={piece.type}
-                        width={squareSize * getPieceScale(piece.type)}
-                        height={squareSize * getPieceScale(piece.type)}
-                        unoptimized
-                        className="drop-shadow-lg transform transition-transform group-hover:scale-105"
-                        priority
+                <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none transform transition-transform group-hover:scale-105">
+                    <PieceRenderer
+                        type={piece.type}
+                        color={piece.color}
+                        size={squareSize * getPieceScale(piece.type)}
+                        boardStyle={boardStyle}
+                        className="drop-shadow-lg"
                     />
                 </div>
             )}
@@ -99,14 +98,11 @@ const EditorSquare = React.memo(({
 
             {editMode === 'pieces' && isActive && !piece && (
                 <div className="opacity-0 group-hover:opacity-60 transition-opacity pointer-events-none">
-                    <Image
-                        src={getPieceImage(boardStyle, selectedPiece.color, selectedPiece.type)}
-                        alt={`${selectedPiece.color} ${selectedPiece.type} preview`}
-                        width={squareSize * getPieceScale(selectedPiece.type)}
-                        height={squareSize * getPieceScale(selectedPiece.type)}
-                        unoptimized
-                        className="bg-transparent"
-                        priority
+                    <PieceRenderer
+                        type={selectedPiece.type}
+                        color={selectedPiece.color}
+                        size={squareSize * getPieceScale(selectedPiece.type)}
+                        boardStyle={boardStyle}
                     />
                 </div>
             )}
@@ -196,12 +192,15 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
 
     const [zoom, setZoom] = useState(1);
     const [isPainting, setIsPainting] = useState(false);
+    const [isRightClickPainting, setIsRightClickPainting] = useState(false);
     const [paintValue, setPaintValue] = useState<boolean | null>(null); // For shape mode: true=activate, false=deactivate
     const paintValueRef = useRef<boolean | null>(null);
     const isPaintingRef = useRef(false);
+    const isRightClickPaintingRef = useRef(false);
 
     useEffect(() => { paintValueRef.current = paintValue; }, [paintValue]);
     useEffect(() => { isPaintingRef.current = isPainting; }, [isPainting]);
+    useEffect(() => { isRightClickPaintingRef.current = isRightClickPainting; }, [isRightClickPainting]);
 
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -323,14 +322,33 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         const dx = pos.x - startPosRef.current.x;
         const dy = pos.y - startPosRef.current.y;
 
+        // Helper to update active squares when growing
+        const activateNewSquares = (newCols: number, newRows: number) => {
+            setActiveSquares(prev => {
+                const next = new Set(prev);
+                // Add newly visible area
+                for (let x = 0; x < newCols; x++) {
+                    for (let y = 0; y < newRows; y++) {
+                        // If it's outside the old bounds, add it
+                        if (x >= startDimRef.current!.cols || y >= startDimRef.current!.rows || resizingRef.current === 'left' || resizingRef.current === 'top') {
+                            // Ideally, we just ensure everything in range is active if we are expanding?
+                            // But logic specific to direction:
+                        }
+                        // Actually, simplified logic: just ensure the NEW squares are active?
+                        // The original logic was directional. Let's stick to simple "add active" logic based on new bounds? 
+                        // But we want to preserve "inactive" squares.
+                        // Let's use the original logic pattern per direction.
+                    }
+                }
+                return next;
+            });
+        };
+
         if (resizingRef.current === 'right') {
             const addedCols = Math.floor(dx / squareSizeRef.current);
             const newCols = Math.max(1, Math.min(20, startDimRef.current.cols + addedCols));
             if (newCols !== colsRef.current) {
-                const diff = newCols - colsRef.current;
-                if (diff === 0) return;
                 if (newCols > colsRef.current) {
-                    // Activate new columns
                     setActiveSquares(prev => {
                         const next = new Set(prev);
                         for (let x = colsRef.current; x < newCols; x++) {
@@ -345,10 +363,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
             const addedRows = Math.floor(dy / squareSizeRef.current);
             const newRows = Math.max(1, Math.min(20, startDimRef.current.rows + addedRows));
             if (newRows !== rowsRef.current) {
-                const diff = newRows - rowsRef.current;
-                if (diff === 0) return;
                 if (newRows > rowsRef.current) {
-                    // Activate new rows
                     setActiveSquares(prev => {
                         const next = new Set(prev);
                         for (let y = rowsRef.current; y < newRows; y++) {
@@ -360,11 +375,15 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                 setRows(newRows);
             }
         } else if (resizingRef.current === 'left') {
-            const addedCols = Math.floor(-dx / squareSizeRef.current);
+            // Updated: 2x multiplier for centered layout
+            const addedCols = Math.floor(-dx * 2 / squareSizeRef.current);
             const newCols = Math.max(1, Math.min(20, startDimRef.current.cols + addedCols));
+
             if (newCols !== colsRef.current) {
                 const diff = newCols - colsRef.current;
                 if (diff === 0) return;
+
+                // Shift pieces
                 setPlacedPieces(prev => {
                     const next: any = {};
                     Object.entries(prev).forEach(([key, val]) => {
@@ -374,6 +393,8 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     });
                     return next;
                 });
+
+                // Shift active squares
                 setActiveSquares(prev => {
                     const next = new Set<string>();
                     prev.forEach(key => {
@@ -381,6 +402,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                         const newX = x + diff;
                         if (newX >= 0 && newX < newCols) next.add(toKey(newX, y));
                     });
+                    // Fill new column if expanding
                     if (diff > 0) {
                         for (let x = 0; x < diff; x++) {
                             for (let y = 0; y < rowsRef.current; y++) next.add(toKey(x, y));
@@ -389,14 +411,17 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     return next;
                 });
                 setCols(newCols);
-                startPosRef.current.x -= diff * squareSizeRef.current;
+                // REMOVED: startPosRef text adjustment
             }
         } else if (resizingRef.current === 'top') {
-            const addedRows = Math.floor(-dy / squareSizeRef.current);
+            // Updated: 2x multiplier for centered layout
+            const addedRows = Math.floor(-dy * 2 / squareSizeRef.current);
             const newRows = Math.max(1, Math.min(20, startDimRef.current.rows + addedRows));
+
             if (newRows !== rowsRef.current) {
                 const diff = newRows - rowsRef.current;
                 if (diff === 0) return;
+
                 setPlacedPieces(prev => {
                     const next: any = {};
                     Object.entries(prev).forEach(([key, val]) => {
@@ -406,6 +431,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     });
                     return next;
                 });
+
                 setActiveSquares(prev => {
                     const next = new Set<string>();
                     prev.forEach(key => {
@@ -421,7 +447,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     return next;
                 });
                 setRows(newRows);
-                startPosRef.current.y -= diff * squareSizeRef.current;
+                // REMOVED: startPosRef text adjustment
             }
         }
     };
@@ -501,19 +527,28 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         if (isPaintingRef.current) {
             handleSquareAction(x, y, false);
         }
-    }, [handleSquareAction]);
+        if (isRightClickPaintingRef.current && editMode === 'pieces') {
+            const key = toKey(x, y);
+            setPlacedPieces(prev => {
+                const next = { ...prev };
+                delete next[key];
+                return next;
+            });
+        }
+    }, [handleSquareAction, editMode]);
 
     useEffect(() => {
         const handleGlobalMouseUp = () => {
-            if (isPainting) {
+            if (isPainting || isRightClickPainting) {
                 saveToHistory(placedPiecesRef.current, activeSquaresRef.current, rowsRef.current, colsRef.current);
             }
             setIsPainting(false);
+            setIsRightClickPainting(false);
             setPaintValue(null);
         };
         window.addEventListener('mouseup', handleGlobalMouseUp);
         return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
-    }, [isPainting]); // Only need isPainting here now that we use refs for values
+    }, [isPainting, isRightClickPainting]);
 
     const handleSquareClick = (x: number, y: number, e: React.MouseEvent) => {
         // We now handle this via mousedown/mouseenter for drag support
@@ -522,7 +557,10 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     const removePiece = useCallback((x: number, y: number, e: React.MouseEvent) => {
         e.preventDefault();
         const key = toKey(x, y);
+
+        // Start right-click painting mode for pieces
         if (editMode === 'pieces') {
+            setIsRightClickPainting(true);
             setPlacedPieces(prev => {
                 const next = { ...prev };
                 delete next[key];
@@ -545,35 +583,35 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     return (
         <div ref={containerRef} className="flex flex-col items-center animate-in fade-in zoom-in duration-500 w-full">
             {/* Controls Overlay */}
-            <div className="flex items-center gap-6 mb-8 px-6 py-3 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl">
+            <div className="flex items-center gap-6 mb-8 px-6 py-3 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-2xl border border-stone-200 dark:border-white/10 shadow-xl">
                 {/* Board Stats */}
                 <div className="flex items-center gap-3">
                     <div className="flex flex-col">
-                        <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Grid Size</span>
-                        <span className="text-xl font-black text-white tabular-nums tracking-tighter">
+                        <span className="text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold">Grid Size</span>
+                        <span className="text-xl font-black text-stone-900 dark:text-white tabular-nums tracking-tighter">
                             {cols} <span className="text-accent/60">×</span> {rows}
                         </span>
                     </div>
                 </div>
 
-                <div className="w-px h-8 bg-white/10" />
+                <div className="w-px h-8 bg-stone-900/10 dark:bg-white/10" />
 
                 {/* Zoom Controls */}
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setZoom(prev => Math.max(0.5, prev - 0.1))}
-                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all border border-white/5 active:scale-95"
+                        className="p-2 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-white/60 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-white/5 active:scale-95"
                         title="Zoom Out"
                     >
                         <Minus size={18} />
                     </button>
                     <div className="flex flex-col items-center min-w-12">
-                        <span className="text-[9px] text-white/40 uppercase font-bold mb-0.5">Zoom</span>
-                        <span className="text-sm font-bold text-white tabular-nums">{Math.round(zoom * 100)}%</span>
+                        <span className="text-[9px] text-stone-500 dark:text-white/40 uppercase font-bold mb-0.5">Zoom</span>
+                        <span className="text-sm font-bold text-stone-900 dark:text-white tabular-nums">{Math.round(zoom * 100)}%</span>
                     </div>
                     <button
                         onClick={() => setZoom(prev => Math.min(2, prev + 0.1))}
-                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all border border-white/5 active:scale-95"
+                        className="p-2 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-white/60 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-white/5 active:scale-95"
                         title="Zoom In"
                     >
                         <Plus size={18} />

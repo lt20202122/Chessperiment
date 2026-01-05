@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@config "../../tailwind.config.js";
+@variant dark (&:where(.dark, .dark *));
 @import "tw-animate-css";
 @plugin "tailwindcss-animate";
 
@@ -11,10 +13,10 @@
 }
 
 :root {
-  --bg: oklch(96% 0.008 240);      /* Softer, less harsh background */
+  --bg: oklch(96% 0.008 240); /* Softer, less harsh background */
   --islands: oklch(92% 0.015 240); /* More subtle elevation */
-  --text: oklch(20% 0.03 240);     /* Slightly lighter for better readability */
-  --accent: oklch(58% 0.18 250);   /* Slightly muted accent */
+  --text: oklch(20% 0.03 240); /* Slightly lighter for better readability */
+  --accent: oklch(58% 0.18 250); /* Slightly muted accent */
   --accent-hover: oklch(53% 0.18 250);
 }
 
@@ -31,10 +33,20 @@
 
 body {
   background-color: var(--bg);
-  background-image: 
-    radial-gradient(circle at center, transparent 0%, var(--bg) 100%),
-    linear-gradient(color-mix(in srgb, var(--islands) 30%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--islands) 30%, transparent) 1px, transparent 1px);
+  background-image: radial-gradient(
+      circle at center,
+      transparent 0%,
+      var(--bg) 100%
+    ),
+    linear-gradient(
+      color-mix(in srgb, var(--islands) 30%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--islands) 30%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 100% 100%, 40px 40px, 40px 40px;
   background-attachment: fixed;
 }

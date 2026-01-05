@@ -40,7 +40,7 @@ export default function GameLobby({
                     </div>
                 </div>
                 <h2 className="text-4xl font-black text-stone-900 dark:text-white mb-3 uppercase tracking-tight">{t('searchingForGame') || 'Finding Game...'}</h2>
-                <p className="text-stone-500 dark:text-gray-400 mb-10 font-medium text-lg">Matching you with a worthy opponent...</p>
+                <p className="text-stone-500 dark:text-gray-400 mb-10 font-medium text-lg">{t('matchingOpponent')}</p>
                 <button
                     onClick={onCancelSearch}
                     className="group relative px-10 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-2xl font-bold transition-all border border-red-500/30 overflow-hidden"
@@ -72,7 +72,7 @@ export default function GameLobby({
                             <Sparkles size={32} />
                         </div>
                         <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">{t('quickSearch')}</h3>
-                        <p className="text-white/90 text-lg font-medium">Jump into a match instantly with global players.</p>
+                        <p className="text-white/90 text-lg font-medium">{t('jumpIntoMatch')}</p>
                     </div>
                 </button>
 
@@ -86,8 +86,8 @@ export default function GameLobby({
                             <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mb-6 text-amber-500 border border-amber-500/20 shadow-lg">
                                 <Plus size={32} />
                             </div>
-                            <h3 className="text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight mb-2">Create Private</h3>
-                            <p className="text-stone-500 dark:text-stone-400 text-lg">Generate a unique code to invite a friend.</p>
+                            <h3 className="text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight mb-2">{t('createPrivate')}</h3>
+                            <p className="text-stone-500 dark:text-stone-400 text-lg">{t('generateCode')}</p>
                         </div>
                         <Plus className="text-stone-300 dark:text-stone-700 group-hover:text-amber-500 group-hover:rotate-90 transition-all duration-500" size={56} strokeWidth={3} />
                     </div>
@@ -135,19 +135,19 @@ export default function GameLobby({
                             onClick={() => onVsComputer(800)}
                             className="py-4 px-6 bg-green-500/5 hover:bg-green-500/20 text-green-500 rounded-2xl border border-green-500/20 transition-all font-black uppercase tracking-wider text-sm hover:translate-y-[-2px] active:translate-y-0"
                         >
-                            Easy
+                            {t('easy')}
                         </button>
                         <button
                             onClick={() => onVsComputer(1500)}
                             className="py-4 px-6 bg-yellow-500/5 hover:bg-yellow-500/20 text-yellow-500 rounded-2xl border border-yellow-500/20 transition-all font-black uppercase tracking-wider text-sm hover:translate-y-[-2px] active:translate-y-0"
                         >
-                            Medium
+                            {t('medium')}
                         </button>
                         <button
                             onClick={() => onVsComputer(2500)}
                             className="py-4 px-6 bg-red-500/5 hover:bg-red-500/20 text-red-500 rounded-2xl border border-red-500/20 transition-all font-black uppercase tracking-wider text-sm hover:translate-y-[-2px] active:translate-y-0 col-span-2"
                         >
-                            Grandmaster
+                            {t('grandmaster')}
                         </button>
                     </div>
                 </div>
