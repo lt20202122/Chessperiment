@@ -1,12 +1,13 @@
 import { auth } from "@/auth";
-import { getBoardAction, getCustomPieceAction } from "@/app/actions/library";
+import { getBoardAction, getCustomPieceAction, getPieceSetAction, getSetPiecesAction } from "@/app/actions/library";
 import { getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
 import BoardDetailClient from "@/components/editor/BoardDetailClient";
 import PieceDetailClient from "@/components/editor/PieceDetailClient";
-import { CustomPiece as CustomPieceType } from "@/lib/firestore";
+import SetDetailClient from "@/components/editor/SetDetailClient";
+import { CustomPiece as CustomPieceType, PieceSet } from "@/lib/firestore";
 
-export default async function BoardDetailPage({ params }: { params: Promise<{ locale: string, id: string }> }) {
+export default async function LibraryDetailPage({ params }: { params: Promise<{ locale: string, id: string }> }) {
     const { locale, id } = await params;
     const session = await auth();
     const t = await getTranslations('Library');
@@ -17,13 +18,27 @@ export default async function BoardDetailPage({ params }: { params: Promise<{ lo
 
     let board = await getBoardAction(id);
     let piece: CustomPieceType | null = null;
+    let set: PieceSet | null = null;
+    let setPieces: CustomPieceType[] = [];
 
     if (!board) {
         piece = await getCustomPieceAction(id);
         if (!piece) {
-            notFound();
+            set = await getPieceSetAction(id);
+            if (set) {
+                setPieces = await getSetPiecesAction(id);
+            } else {
+                notFound();
+            }
         }
     }
+
+    const commonTranslations = {
+        details: t('details'),
+        lastUpdated: t('lastUpdated'),
+        edit: t('edit'),
+        backToLibrary: t('backToLibrary')
+    };
 
     return (
         <main className="min-h-screen bg-bg lg:px-20 lg:py-16 p-6">
@@ -36,23 +51,22 @@ export default async function BoardDetailPage({ params }: { params: Promise<{ lo
                         translations={{
                             play: t('play'),
                             publish: t('publish'),
-                            details: t('details'),
+                            ...commonTranslations,
                             size: t('size'),
-                            lastUpdated: t('lastUpdated'),
-                            edit: t('edit'),
-                            backToLibrary: t('backToLibrary')
                         }}
+                    />
+                ) : set ? (
+                    <SetDetailClient
+                        set={JSON.parse(JSON.stringify(set))}
+                        pieces={JSON.parse(JSON.stringify(setPieces))}
+                        locale={locale}
+                        translations={commonTranslations}
                     />
                 ) : (
                     <PieceDetailClient
                         piece={JSON.parse(JSON.stringify(piece))}
                         locale={locale}
-                        translations={{
-                            details: t('details'),
-                            lastUpdated: t('lastUpdated'),
-                            edit: t('edit'),
-                            backToLibrary: t('backToLibrary')
-                        }}
+                        translations={commonTranslations}
                     />
                 )}
             </div>

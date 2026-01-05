@@ -146,13 +146,13 @@ export default function PixelCanvas({ gridSize, pixels, setPixels, commitPixels,
     return (
         <div className="flex flex-col items-center gap-8">
             {/* Toolbar */}
-            <div className="flex items-center gap-4 p-4 bg-stone-900/50 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl">
+            <div className="flex items-center gap-4 p-4 bg-white/80 dark:bg-stone-900/50 backdrop-blur-md border border-stone-200 dark:border-white/10 rounded-2xl shadow-xl">
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setTool('brush')}
                         className={`p-2.5 rounded-xl transition-all ${tool === 'brush'
                             ? 'bg-amber-500 text-bg shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                            : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
+                            : 'bg-stone-100 dark:bg-white/5 text-stone-500 dark:text-white/60 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-white/10'
                             }`}
                         title="Brush"
                     >
@@ -162,7 +162,7 @@ export default function PixelCanvas({ gridSize, pixels, setPixels, commitPixels,
                         onClick={() => setTool('eraser')}
                         className={`p-2.5 rounded-xl transition-all ${tool === 'eraser'
                             ? 'bg-amber-500 text-bg shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                            : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
+                            : 'bg-stone-100 dark:bg-white/5 text-stone-500 dark:text-white/60 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-white/10'
                             }`}
                         title="Eraser"
                     >
@@ -170,7 +170,7 @@ export default function PixelCanvas({ gridSize, pixels, setPixels, commitPixels,
                     </button>
                 </div>
 
-                <div className="w-px h-8 bg-white/10"></div>
+                <div className="w-px h-8 bg-stone-200 dark:bg-white/10"></div>
 
                 {/* Brush Size Slider */}
                 <div className="flex items-center gap-3 px-2">
@@ -183,30 +183,30 @@ export default function PixelCanvas({ gridSize, pixels, setPixels, commitPixels,
                             onChange={(e) => setBrushSize(parseInt(e.target.value))}
                             className="w-24 accent-amber-500 cursor-pointer"
                         />
-                        <div className="flex justify-between text-[10px] text-white/40 font-bold uppercase tracking-tighter">
+                        <div className="flex justify-between text-[10px] text-stone-500 dark:text-white/40 font-bold uppercase tracking-tighter">
                             <span>Size</span>
                             <span>{brushSize}px</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="w-px h-8 bg-white/10"></div>
+                <div className="w-px h-8 bg-stone-200 dark:bg-white/10"></div>
 
                 <div className="relative group">
                     <input
                         type="color"
                         value={currentColor}
                         onChange={(e) => setCurrentColor(e.target.value)}
-                        className="w-10 h-10 rounded-xl cursor-pointer bg-white/5 p-1 border border-white/10 transition-transform active:scale-95"
+                        className="w-10 h-10 rounded-xl cursor-pointer bg-stone-100 dark:bg-white/5 p-1 border border-stone-200 dark:border-white/10 transition-transform active:scale-95"
                     />
                 </div>
 
-                <div className="w-px h-8 bg-white/10"></div>
+                <div className="w-px h-8 bg-stone-200 dark:bg-white/10"></div>
 
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => setZoom(Math.max(0.5, zoom - 0.25))}
-                        className="p-2.5 rounded-xl bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-all"
+                        className="p-2.5 rounded-xl bg-stone-100 dark:bg-white/5 text-stone-500 dark:text-white/60 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-white/10 transition-all shadow-sm"
                     >
                         <ZoomOut size={18} />
                     </button>
@@ -215,13 +215,13 @@ export default function PixelCanvas({ gridSize, pixels, setPixels, commitPixels,
                     </span>
                     <button
                         onClick={() => setZoom(Math.min(4, zoom + 0.25))}
-                        className="p-2.5 rounded-xl bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-all"
+                        className="p-2.5 rounded-xl bg-stone-100 dark:bg-white/5 text-stone-500 dark:text-white/60 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-white/10 transition-all shadow-sm"
                     >
                         <ZoomIn size={18} />
                     </button>
                 </div>
 
-                <div className="w-px h-8 bg-white/10"></div>
+                <div className="w-px h-8 bg-stone-200 dark:bg-white/10"></div>
 
                 <button
                     onClick={handleClear}
@@ -233,7 +233,7 @@ export default function PixelCanvas({ gridSize, pixels, setPixels, commitPixels,
             </div>
 
             {/* Canvas Container */}
-            <div className="group relative p-1 bg-white/5 border border-white/10 rounded-3xl shadow-2xl">
+            <div className="group relative p-1 bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-3xl shadow-2xl">
                 <div className="relative overflow-hidden rounded-2xl bg-[#1c1c1c]">
                     {/* Background Pattern */}
                     <div className="absolute inset-0 opacity-10 pointer-events-none"

@@ -17,10 +17,10 @@ export function BoardEditorHelp() {
                     <div>
                         <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">What is the Board Editor?</h3>
                         <p>
-                            The Board Editor is the tool used to create custom game boards for ChessPie. A board defines the playing area: its size, squares, starting positions, and special properties. You can recreate classic chessboards or design entirely new variations.
+                            The Board Editor is the tool you use to create custom game boards for ChessPie. A board defines the playing field: its size, which squares are playable, starting positions, and board-level rules.
                         </p>
                         <p className="mt-2 font-medium italic">
-                            In short: The Board Editor defines the structure of your game.
+                            In short: the Board Editor defines the structure of the game.
                         </p>
                     </div>
 
@@ -28,42 +28,42 @@ export function BoardEditorHelp() {
                         <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">How does the Board Editor work?</h3>
                         <ol className="list-decimal list-inside space-y-4 ml-2">
                             <li>
-                                <span className="font-bold">Set Board Size</span><br />
-                                First, determine the dimensions of your board (e.g., 8×8, 10×10, or custom sizes) by dragging and resizing the grid.
+                                <span className="font-bold">Set the board size</span><br />
+                                First, you define the dimensions of the board (e.g. 8×8, 10×10, or any custom size) by resizing the grid.
                             </li>
                             <li>
-                                <span className="font-bold">Edit Squares</span><br />
-                                Individual squares can be configured easily. Currently, there is one main setting per square:
+                                <span className="font-bold">Edit squares</span><br />
+                                Individual squares are intentionally kept simple. Each square currently has exactly one configurable property:
                                 <ul className="list-disc list-inside ml-6 mt-1">
-                                    <li>Active / Inactive (playable or blocked)</li>
+                                    <li>Active / inactive (playable or blocked)</li>
                                 </ul>
-                                Inactive squares are not part of the playing area and cannot be entered or occupied.
+                                Inactive squares are not part of the playing field and cannot be entered or occupied by pieces.
                             </li>
                             <li>
-                                <span className="font-bold">Set Starting Positions</span><br />
-                                Decide which pieces start on which squares. These positions serve as the initial state for new games on this board.
+                                <span className="font-bold">Set starting positions</span><br />
+                                Define which pieces start on which squares. These positions are used as the initial setup for new games played on this board.
                             </li>
                             <li>
-                                <span className="font-bold">Board-Level Rules</span><br />
-                                Some rules depend on the board itself rather than the pieces (e.g., forbidden zones or special areas).
+                                <span className="font-bold">Board-level rules</span><br />
+                                Some rules apply to the board itself rather than to individual pieces (for example: blocked areas or special zones).
                             </li>
                             <li>
-                                <span className="font-bold">Save & Test</span><br />
-                                Your board can be saved at any time and tested directly in game mode—even against yourself. Check your library!
+                                <span className="font-bold">Save & test</span><br />
+                                Your board can be saved at any time and tested directly in game mode — even by playing against yourself. You can find it in your library.
                             </li>
                         </ol>
                     </div>
 
                     <div className="bg-stone-100 dark:bg-white/5 p-6 rounded-2xl border border-stone-200 dark:border-white/10">
-                        <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Finished? Here is what you can do:</h3>
+                        <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">You&apos;re done – what can you do with the board?</h3>
                         <ul className="list-disc list-inside space-y-2">
-                            <li>Test the board against yourself</li>
-                            <li>Play against others online</li>
-                            <li>Share it with the community</li>
-                            <li>Edit or expand it later</li>
+                            <li>test the board by playing against yourself</li>
+                            <li>play on it with others</li>
+                            <li>share it with other players</li>
+                            <li>edit or extend it later</li>
                         </ul>
                         <p className="mt-4 text-sm opacity-80">
-                            The Board Editor is intentionally flexible: we want you to experiment without feeling locked in.
+                            The Board Editor is intentionally flexible. You are encouraged to experiment without having to commit to a final design immediately.
                         </p>
                     </div>
                 </div>
@@ -147,20 +147,20 @@ export function PieceEditorHelp() {
                     <div>
                         <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">What is the Piece Editor?</h3>
                         <p>
-                            The Piece Editor is the counterpart to the Board Editor. While the board defines the field, pieces define the behavior: how they move, capture, and interact.
+                            The Piece Editor is the counterpart to the Board Editor. While the board defines the playing field, pieces define how the game is played: how they move, capture, and interact with the board and other pieces.
                         </p>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-8">
                         <div>
                             <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Design</h3>
-                            <p className="mb-4">This section handles the visual appearance of a piece:</p>
+                            <p className="mb-4">This section focuses on the visual appearance of a piece:</p>
                             <ul className="list-disc list-inside space-y-2">
-                                <li>Icons or Graphics</li>
-                                <li>Color / Variations</li>
-                                <li>Orientation (e.g., player-dependent)</li>
+                                <li>Icon or graphic</li>
+                                <li>Color / variants</li>
+                                <li>Orientation (e.g. depending on the player)</li>
                             </ul>
-                            <p className="mt-4 text-sm italic">Design doesn't affect rules but ensures clarity and recognition.</p>
+                            <p className="mt-4 text-sm italic">Design has no influence on the rules, but it is essential for clarity and recognition.</p>
                         </div>
 
                         <div>
@@ -171,15 +171,15 @@ export function PieceEditorHelp() {
                                     <ul className="list-disc list-inside text-sm">
                                         <li>Can it move?</li>
                                         <li>Can it capture?</li>
-                                        <li>Neutral or Player-bound?</li>
+                                        <li>Does it belong to a player or is it neutral?</li>
                                     </ul>
                                 </div>
                                 <div>
                                     <h4 className="font-bold text-stone-700 dark:text-stone-300">Detailed</h4>
                                     <ul className="list-disc list-inside text-sm">
                                         <li>Movement patterns (directions, range)</li>
-                                        <li>Conditions (e.g., first move only)</li>
-                                        <li>Special rules (transformation, blockades)</li>
+                                        <li>Conditions (e.g. only on the first move)</li>
+                                        <li>Special rules (transformations, blocking, dependencies on specific squares)</li>
                                     </ul>
                                 </div>
                             </div>
@@ -187,17 +187,15 @@ export function PieceEditorHelp() {
                     </div>
 
                     <div className="bg-amber-500/10 border border-amber-500/20 p-6 rounded-2xl">
-                        <h3 className="text-xl font-bold mb-2 text-amber-600 dark:text-amber-400">Pro Tip</h3>
-                        <p className="font-bold">Pieces can only be added to a game within the Board Editor!</p>
-                        <p className="mt-4">
-                            A piece is truly complete when its design and rules work together seamlessly. The goal is to make every piece intuitive and consistent.
-                        </p>
+                        <h3 className="text-xl font-bold mb-2 text-amber-600 dark:text-amber-400">At the end</h3>
+                        <p className="font-bold italic">A piece is only complete when design and rules work together cleanly. The goal is for every piece to be clear, consistent, and predictable.</p>
+                        <p className="mt-4 font-black text-red-500 uppercase tracking-tighter">!Pieces can only be placed via the Board Editor!</p>
                     </div>
 
                     <div>
                         <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Sets</h3>
                         <p>
-                            Group related pieces into a "Set". These sets can then be imported into the Board Editor, allowing you to deploy entire armies or themes at once.
+                            Group related pieces into a set. These sets can later be imported into the Board Editor.
                         </p>
                     </div>
                 </div>
@@ -284,38 +282,40 @@ export function GameHelp() {
                 <div className="grid md:grid-cols-2 gap-12 text-stone-600 dark:text-stone-400 leading-relaxed">
                     <div className="space-y-6">
                         <div>
-                            <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Stockfish Engine</h3>
+                            <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Stockfish</h3>
                             <p>
-                                ChessPie uses the Stockfish engine for analysis and as an AI opponent. Stockfish analyzes complex positions and enables:
+                                ChessPie can use Stockfish as an engine. Stockfish allows:
                             </p>
                             <ul className="list-disc list-inside mt-4 space-y-2">
-                                <li>Playing against an AI</li>
-                                <li>Detailed position analysis</li>
-                                <li>Comparing different boards and rules</li>
+                                <li>playing against an AI</li>
+                                <li>position analysis</li>
+                                <li>comparing different boards and rule sets</li>
                             </ul>
+                            <p className="mt-4 text-sm opacity-80 italic">Depending on the complexity of the rules, engine behavior may vary.</p>
                         </div>
 
                         <div>
-                            <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Room Codes</h3>
+                            <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Room Code</h3>
                             <p>
-                                Share your games and experiments using a Room Code. This ensure all players are using the exact same rules, boards, and pieces.
+                                A room code lets you share games easily: other players can join directly, making it ideal for private matches or testing.
                             </p>
+                            <p className="mt-2 text-sm opacity-80 italic">The code ensures that all players use the same rules, boards, and pieces.</p>
                         </div>
                     </div>
 
                     <div className="space-y-6">
                         <div className="bg-stone-100 dark:bg-white/5 p-6 rounded-2xl border border-stone-200 dark:border-white/10">
-                            <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Rules & Concepts</h3>
+                            <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Chess rules</h3>
                             <p>
-                                ChessPie is conceptually based on Chess, but expands it radically:
+                                ChessPie is conceptually based on chess, but extends it:
                             </p>
                             <ul className="list-disc list-inside mt-4 space-y-3">
-                                <li className="font-medium text-amber-600 dark:text-amber-400">Classic rules only apply if you define them that way</li>
-                                <li>Deviations are expressly allowed</li>
-                                <li>Your custom rule sets take priority over standard chess</li>
+                                <li className="font-medium text-amber-600 dark:text-amber-400">classical rules only apply if you define them</li>
+                                <li>deviations are explicitly allowed</li>
+                                <li>custom rule sets override standard chess</li>
                             </ul>
                             <p className="mt-6 text-sm italic">
-                                The game system is rule-driven: "Chess" is not the fixed standard; what you configure is.
+                                The system is rule-driven: “chess” is not the default — your configuration is.
                             </p>
                         </div>
                     </div>

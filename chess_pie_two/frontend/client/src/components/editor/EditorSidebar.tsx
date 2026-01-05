@@ -40,6 +40,9 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
     const [isSaving, setIsSaving] = React.useState(false);
     const [saveStatus, setSaveStatus] = React.useState<'idle' | 'success' | 'error'>('idle');
     const [customCollection, setCustomCollection] = React.useState<Record<string, { name: string, color: 'white' | 'black', pixels: string[][], moves: any[] }>>({});
+    const [isSetImportOpen, setIsSetImportOpen] = React.useState(false);
+    const [userSets, setUserSets] = React.useState<(any & { id: string })[]>([]);
+    const [loadingSets, setLoadingSets] = React.useState(false);
 
     React.useEffect(() => {
         const saved = localStorage.getItem('piece_collection');
@@ -181,32 +184,27 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
 
                     {/* Custom Pieces Section Header */}
                     <div className="mt-8 flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-semibold uppercase tracking-wider opacity-80 flex items-center gap-2">
+                        <h3 className="text-sm font-semibold uppercase tracking-wider opacity-80 flex items-center gap-2 text-stone-900 dark:text-stone-100">
                             <Star size={14} className="text-amber-500" />
                             {t('customPieces' as any)}
                         </h3>
                         <button
                             onClick={async () => {
-                                const libraryPieces = await getUserCustomPiecesAction();
-                                if (libraryPieces.length > 0) {
-                                    const collection = JSON.parse(localStorage.getItem('piece_collection') || '{}');
-                                    libraryPieces.forEach(p => {
-                                        if (!collection[p.id!]) {
-                                            collection[p.id!] = {
-                                                name: p.name,
-                                                color: p.color,
-                                                pixels: p.pixels,
-                                                moves: p.moves || []
-                                            };
-                                        }
-                                    });
-                                    localStorage.setItem('piece_collection', JSON.stringify(collection));
-                                    setCustomCollection(collection);
+                                setLoadingSets(true);
+                                setIsSetImportOpen(true);
+                                try {
+                                    const { getUserPieceSetsAction } = await import('@/app/actions/library');
+                                    const sets = await getUserPieceSetsAction();
+                                    setUserSets(sets as any);
+                                } catch (e) {
+                                    console.error("Failed to load sets", e);
+                                } finally {
+                                    setLoadingSets(false);
                                 }
                             }}
                             className="text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 flex items-center gap-1 bg-amber-500/10 px-2 py-1 rounded-lg transition-all"
                         >
-                            <Plus size={10} /> {t('import' as any)}
+                            <Library size={10} /> {t('import' as any)}
                         </button>
                     </div>
 
@@ -237,12 +235,90 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                             ))}
                         </div>
                     ) : (
-                        <div className="p-4 rounded-xl border border-dashed border-white/5 text-center">
-                            <p className="text-[10px] text-white/20 uppercase font-black tracking-widest">{t('noCustomPieces' as any)}</p>
+                        <div className="p-4 rounded-xl border border-dashed border-stone-200 dark:border-white/5 text-center">
+                            <p className="text-[10px] text-stone-400 dark:text-white/20 uppercase font-black tracking-widest">{t('noCustomPieces' as any)}</p>
                         </div>
                     )}
                 </div>
             )}
+
+            {/* Set Import Modal */}
+            <AnimatePresence>
+                {isSetImportOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 p-6 rounded-3xl w-full max-w-lg shadow-2xl relative"
+                        >
+                            <button
+                                onClick={() => setIsSetImportOpen(false)}
+                                className="absolute top-4 right-4 p-2 rounded-full hover:bg-stone-100 dark:hover:bg-white/10 transition-colors text-stone-400 dark:text-white/40 hover:text-stone-900 dark:hover:text-white"
+                            >
+                                <CloseIcon size={20} />
+                            </button>
+
+                            <h3 className="text-2xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tight">Import Pieces</h3>
+                            <p className="text-stone-500 dark:text-white/60 text-sm mb-6 font-bold uppercase tracking-widest">Select a set to import</p>
+
+                            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                {loadingSets ? (
+                                    <div className="text-center py-10">
+                                        <div className="w-8 h-8 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mx-auto mb-4" />
+                                        <p className="text-stone-400 text-xs font-black uppercase">Loading your collection...</p>
+                                    </div>
+                                ) : userSets.length > 0 ? (
+                                    userSets.map(set => (
+                                        <button
+                                            key={set.id}
+                                            onClick={async () => {
+                                                try {
+                                                    const { getSetPiecesAction } = await import('@/app/actions/library');
+                                                    const pieces = await getSetPiecesAction(set.id);
+                                                    const collection = { ...customCollection };
+                                                    pieces.forEach(p => {
+                                                        collection[p.id!] = {
+                                                            name: p.name,
+                                                            color: p.color,
+                                                            pixels: p.pixels,
+                                                            moves: p.moves || []
+                                                        };
+                                                    });
+                                                    localStorage.setItem('piece_collection', JSON.stringify(collection));
+                                                    setCustomCollection(collection);
+                                                    setIsSetImportOpen(false);
+                                                } catch (e) {
+                                                    console.error("Failed to import set", e);
+                                                }
+                                            }}
+                                            className="w-full text-left p-4 bg-stone-50 dark:bg-white/5 border border-stone-200 dark:border-white/5 rounded-2xl hover:border-amber-500/50 hover:bg-stone-100 dark:hover:bg-white/10 transition-all group"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <h4 className="font-black text-stone-900 dark:text-white uppercase tracking-tight group-hover:text-amber-500 transition-colors">{set.name}</h4>
+                                                    <p className="text-[10px] text-stone-400 dark:text-white/30 font-bold uppercase tracking-widest mt-1">{set.description || "No description"}</p>
+                                                </div>
+                                                <Plus size={20} className="text-stone-300 dark:text-white/10 group-hover:text-amber-500 group-hover:scale-125 transition-all" />
+                                            </div>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-10 bg-stone-50 dark:bg-white/5 rounded-2xl border border-dashed border-stone-200 dark:border-white/10">
+                                        <p className="text-stone-400 text-xs font-black uppercase">No sets found in your library</p>
+                                        <button
+                                            onClick={() => router.push('/editor/piece')}
+                                            className="mt-4 text-amber-500 text-xs font-bold hover:underline"
+                                        >
+                                            Create your first piece set
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Presets */}
             {onPresetChange && <BoardPresets onSelectPreset={onPresetChange} />}

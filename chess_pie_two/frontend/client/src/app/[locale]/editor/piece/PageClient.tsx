@@ -3,10 +3,12 @@ import EditorLayout from '@/components/editor/EditorLayout';
 import PieceEditorSidebar from '@/components/editor/PieceEditorSidebar';
 import PixelCanvas from '@/components/editor/PixelCanvas';
 import VisualMoveEditor from '@/components/editor/VisualMoveEditor';
-import { Palette } from 'lucide-react';
+import SaveToSetModal from '@/components/editor/SaveToSetModal';
+import { Palette, Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
-import { getUserPieceSetsAction, getCustomPieceAction, savePieceSetAction, saveCustomPieceAction, getSetPiecesAction } from '@/app/actions/library';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getUserPieceSetsAction, getCustomPieceAction, savePieceSetAction, saveCustomPieceAction, getSetPiecesAction, deleteCustomPieceAction } from '@/app/actions/library';
 import { PieceSet, CustomPiece } from '@/lib/firestore';
 
 export default function PageClient() {
@@ -36,6 +38,8 @@ export default function PageClient() {
     const [historyIndex, setHistoryIndex] = useState(-1);
     const [gridSize] = useState(64);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
     // Load sets and check for edit mode
     useEffect(() => {
@@ -52,22 +56,15 @@ export default function PageClient() {
     const loadSets = async () => {
         try {
             const loadedSets = await getUserPieceSetsAction();
-            if (loadedSets.length === 0) {
-                // Create default set
-                const defaultSetId = await savePieceSetAction({
-                    name: 'My First Set',
-                    description: 'Your first piece collection',
-                    isStarred: false
-                });
-                const newSet = { id: defaultSetId, name: 'My First Set', description: 'Your first piece collection', isStarred: false, userId: '', createdAt: new Date(), updatedAt: new Date() };
-                setSets([newSet]);
-                setCurrentSetId(defaultSetId);
-                setSetName('My First Set');
-            } else {
-                setSets(loadedSets as any);
-                setCurrentSetId(loadedSets[0].id!);
-                setSetName(loadedSets[0].name);
-                loadSetPieces(loadedSets[0].id!);
+            setSets(loadedSets as any);
+            // Don't auto-select or create if we just arrived
+            // Let the user start painting immediately
+            if (loadedSets.length > 0) {
+                // If there are sets, maybe load the first one's pieces for the sidebar, 
+                // but don't force a piece selection yet if we want a "fresh" start.
+                const loadedPieces = await getSetPiecesAction(loadedSets[0].id!);
+                setPieces(loadedPieces as any);
+                // We keep currentSetId null if we want the "New Piece" from scratch feel
             }
         } catch (error) {
             console.error('Failed to load sets:', error);
@@ -118,6 +115,8 @@ export default function PageClient() {
             setCurrentName(piece.name);
             setCurrentColor(piece.color);
             setEditingPieceId(pieceId);
+            // Ensure we update currentSetId when selecting a piece from the set
+            if (piece.setId) setCurrentSetId(piece.setId);
         }
     };
 
@@ -130,33 +129,82 @@ export default function PageClient() {
         setCurrentColor('white');
     };
 
-    const handleSavePiece = async () => {
-        if (!currentSetId) return;
+    const handleSavePiece = async (overrides?: { pixels?: string[][], moves?: any[], name?: string, color?: 'white' | 'black' }) => {
+        // If no set is selected, and this is NOT an auto-save, open the modal
+        if (!currentSetId) {
+            if (!overrides) {
+                setIsSaveModalOpen(true);
+            }
+            return;
+        }
 
         setIsSaving(true);
+        setSaveStatus('idle');
         try {
             const pieceData: Omit<CustomPiece, 'userId' | 'createdAt' | 'updatedAt'> = {
                 id: editingPieceId || undefined,
                 setId: currentSetId,
+                name: overrides?.name ?? currentName,
+                color: overrides?.color ?? currentColor,
+                pixels: overrides?.pixels ?? currentPixels,
+                moves: overrides?.moves ?? currentMoves
+            };
+
+            const savedId = await saveCustomPieceAction(pieceData);
+
+            // Reload pieces 
+            const loadedPieces = await getSetPiecesAction(currentSetId);
+            setPieces(loadedPieces as any);
+
+            setEditingPieceId(savedId);
+            setSelectedPieceId(savedId);
+            setSaveStatus('success');
+            setTimeout(() => setSaveStatus('idle'), 3000);
+
+            console.log('✅ Piece saved successfully');
+        } catch (error) {
+            console.error('Failed to save piece:', error);
+            setSaveStatus('error');
+            if (!overrides) alert(t('errorSaving'));
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSelectSetAndSave = async (setId: string) => {
+        setCurrentSetId(setId);
+        setIsSaveModalOpen(false);
+        setIsSaving(true);
+        try {
+            const pieceData: Omit<CustomPiece, 'userId' | 'createdAt' | 'updatedAt'> = {
+                id: editingPieceId || undefined,
+                setId: setId,
                 name: currentName,
                 color: currentColor,
                 pixels: currentPixels,
                 moves: currentMoves
             };
-
             const savedId = await saveCustomPieceAction(pieceData);
-
-            // Reload pieces
-            await loadSetPieces(currentSetId);
+            const loadedPieces = await getSetPiecesAction(setId);
+            setPieces(loadedPieces as any);
             setEditingPieceId(savedId);
             setSelectedPieceId(savedId);
-
-            console.log('✅ Piece saved successfully');
+            await loadSets();
         } catch (error) {
-            console.error('Failed to save piece:', error);
-            alert(t('errorSaving'));
+            console.error('Failed to save piece to selected set:', error);
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleDeletePiece = async (pieceId: string) => {
+        if (!confirm('Are you sure you want to delete this piece?')) return;
+        try {
+            await deleteCustomPieceAction(pieceId);
+            if (currentSetId) loadSetPieces(currentSetId);
+            if (selectedPieceId === pieceId) createNewPiece();
+        } catch (error) {
+            console.error('Failed to delete piece:', error);
         }
     };
 
@@ -215,14 +263,14 @@ export default function PageClient() {
         console.log('✅ commitPixels called');
         setCurrentPixels(finalPixels);
         addToHistory(finalPixels);
-        // Auto-save after commit
-        setTimeout(() => handleSavePiece(), 500);
+        // Auto-save after commit with the NEW pixels
+        setTimeout(() => handleSavePiece({ pixels: finalPixels }), 100);
     };
 
     const updateCurrentMoves = (newMoves: any[]) => {
         setCurrentMoves(newMoves);
-        // Auto-save moves
-        setTimeout(() => handleSavePiece(), 500);
+        // Auto-save moves with the NEW moves
+        setTimeout(() => handleSavePiece({ moves: newMoves }), 100);
     };
 
     return (
@@ -250,6 +298,7 @@ export default function PageClient() {
                 redo={redo}
                 canUndo={historyIndex > 0}
                 canRedo={historyIndex < history.length - 1}
+                onDeletePiece={handleDeletePiece}
             />
         }>
             <div className="flex flex-col items-center w-full relative">
@@ -257,14 +306,27 @@ export default function PageClient() {
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 text-amber-500 text-xs font-semibold uppercase tracking-widest mb-4 border border-amber-400/20">
                         <Palette size={14} /> {t('badge')}
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
+                    <h1 className="text-4xl md:text-5xl font-black text-stone-900 dark:text-white mb-4 tracking-tight">
                         {t.rich('title', {
                             accent: (chunks) => <span className="text-amber-500 underline decoration-wavy decoration-2 underline-offset-4">{chunks}</span>
                         })}
                     </h1>
-                    <p className="text-white/60 text-lg leading-relaxed max-w-lg mx-auto">
+                    <p className="text-stone-500 dark:text-white/60 text-lg leading-relaxed max-w-lg mx-auto">
                         {t('description')}
                     </p>
+
+                    <AnimatePresence>
+                        {saveStatus === 'success' && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0 }}
+                                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-500 text-sm font-bold border border-emerald-500/20"
+                            >
+                                <Check size={16} /> {t('saved')}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {mode === 'design' ? (
@@ -282,6 +344,13 @@ export default function PageClient() {
                     />
                 )}
             </div>
+
+            <SaveToSetModal
+                isOpen={isSaveModalOpen}
+                onClose={() => setIsSaveModalOpen(false)}
+                onSelectSet={handleSelectSetAndSave}
+                currentPieceName={currentName}
+            />
         </EditorLayout>
     );
 }

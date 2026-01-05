@@ -61,16 +61,16 @@ function ExplanationModal({ variable, onClose }: { variable: keyof typeof VAR_MA
             <motion.div
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
-                className="bg-white/10 border border-white/20 rounded-3xl p-8 max-w-md w-full shadow-2xl"
+                className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl"
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex items-center gap-3 mb-6">
                     <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500 font-black text-xl">
                         {info.math}
                     </div>
-                    <h3 className="text-xl font-black text-white">{info.label}</h3>
+                    <h3 className="text-xl font-black text-stone-900 dark:text-white">{info.label}</h3>
                 </div>
-                <p className="text-white/60 leading-relaxed mb-8">
+                <p className="text-stone-500 dark:text-white/60 leading-relaxed mb-8">
                     {info.desc}
                 </p>
                 <button
@@ -124,7 +124,7 @@ function SortableRule({
         <div
             ref={setNodeRef}
             style={style}
-            className="bg-white/5 border border-white/10 rounded-3xl p-6 relative group overflow-hidden mb-4"
+            className="bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-3xl p-6 relative group overflow-hidden mb-4 shadow-sm"
         >
             <AnimatePresence>
                 {explaining && <ExplanationModal variable={explaining} onClose={() => setExplaining(null)} />}
@@ -149,11 +149,11 @@ function SortableRule({
                 </div>
 
                 <div className="flex-1 flex flex-wrap items-center gap-3">
-                    <span className="text-sm font-bold text-white/40">{t('if')}</span>
+                    <span className="text-sm font-bold text-stone-900/40 dark:text-white/40">{t('if')}</span>
 
                     {rule.conditions.map((cond, cIdx) => (
                         <div key={cond.id} className="flex items-center gap-2">
-                            <div className="flex items-center bg-white/5 border border-white/10 rounded-xl p-1 gap-1">
+                            <div className="flex items-center bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-xl p-1 gap-1 shadow-sm">
                                 <div
                                     className="relative flex items-center"
                                     onClick={() => setExplaining(cond.variable)}
@@ -161,7 +161,7 @@ function SortableRule({
                                     <select
                                         value={cond.variable}
                                         onChange={(e) => onUpdateCondition(rule.id, cond.id, { variable: e.target.value as any })}
-                                        className="bg-[#1c1c1c] text-sm font-bold text-amber-500 pl-2 pr-6 py-1 outline-none appearance-none cursor-pointer hover:bg-white/5 rounded-lg transition-colors border-none"
+                                        className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-amber-500 pl-2 pr-6 py-1 outline-none appearance-none cursor-pointer hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
                                     >
                                         {Object.entries(VAR_MAP).map(([key, info]) => (
                                             <option key={key} value={key}>{info.label} ({info.math})</option>
@@ -175,7 +175,7 @@ function SortableRule({
                                 <select
                                     value={cond.operator}
                                     onChange={(e) => onUpdateCondition(rule.id, cond.id, { operator: e.target.value as any })}
-                                    className="bg-[#1c1c1c] text-sm font-bold text-white/60 px-2 py-1 outline-none appearance-none cursor-pointer hover:bg-white/5 rounded-lg transition-colors border-none"
+                                    className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-stone-900/60 dark:text-white/60 px-2 py-1 outline-none appearance-none cursor-pointer hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
                                 >
                                     <option value="===">=</option>
                                     <option value=">">&gt;</option>
@@ -188,7 +188,7 @@ function SortableRule({
                                     type="number"
                                     value={cond.value}
                                     onChange={(e) => onUpdateCondition(rule.id, cond.id, { value: parseInt(e.target.value) || 0 })}
-                                    className="bg-[#1c1c1c] text-sm font-bold text-white w-12 px-2 py-1 outline-none text-center hover:bg-white/5 rounded-lg transition-colors border-none"
+                                    className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-stone-900 dark:text-white w-12 px-2 py-1 outline-none text-center hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
                                 />
 
                                 {rule.conditions.length > 1 && (
@@ -341,12 +341,12 @@ export default function VisualMoveEditor({ moves, onUpdate }: VisualMoveEditorPr
         <div className="w-full max-w-5xl mx-auto space-y-8 p-4">
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h2 className="text-2xl font-black text-white tracking-tight">{t('visualLogicTitle')}</h2>
-                    <p className="text-white/40 text-sm">{t('visualLogicDescription')}</p>
+                    <h2 className="text-2xl font-black text-stone-900 dark:text-white tracking-tight">{t('visualLogicTitle')}</h2>
+                    <p className="text-stone-500 dark:text-white/40 text-sm">{t('visualLogicDescription')}</p>
                 </div>
                 <button
                     onClick={addRule}
-                    className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-bg font-black rounded-2xl hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 active:scale-95"
+                    className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white dark:text-bg font-black rounded-2xl hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 active:scale-95"
                 >
                     <Plus size={20} /> {t('addRule')}
                 </button>
