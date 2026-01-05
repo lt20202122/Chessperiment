@@ -227,7 +227,7 @@ export default function ProfilePage() {
                     </TabsContent>
 
                     <TabsContent value="library" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <LibraryGrid initialBoards={boards} />
+                        <LibraryGrid initialBoards={boards} initialSets={[]} />
                     </TabsContent>
                 </Tabs>
             </div>

@@ -9,11 +9,13 @@ import { useRouter } from 'next/navigation';
 
 type LibraryItem = (SavedBoard & { _type: 'board' }) | (PieceSet & { _type: 'set' });
 
-export default function LibraryGrid({ initialBoards, initialSets }: { initialBoards: SavedBoard[], initialSets: PieceSet[] }) {
+// export default function LibraryGrid({ initialBoards, initialSets }: { initialBoards: SavedBoard[], initialSets: PieceSet[] }) {
+export default function LibraryGrid({ initialBoards, initialSets }: { initialBoards: SavedBoard[], initialSets: any }) {
+
     const t = useTranslations('Library');
     const [items, setItems] = useState<LibraryItem[]>([
         ...initialBoards.map(b => ({ ...b, _type: 'board' as const })),
-        ...initialSets.map(s => ({ ...s, _type: 'set' as const }))
+        ...initialSets.map((s: any) => ({ ...s, _type: 'set' as const }))
     ].sort((a, b) => {
         const dateA = new Date(a.updatedAt).getTime();
         const dateB = new Date(b.updatedAt).getTime();
