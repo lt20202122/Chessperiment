@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
-import { getGameHistory } from "@/lib/firestore"
+import { getUserGameHistory } from "@/lib/firestore"
 
 export async function GET(request: NextRequest) {
     try {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url)
         const limit = parseInt(searchParams.get("limit") || "10")
 
-        const history = await getGameHistory(session.user.id, limit)
+        const history = await getUserGameHistory(session.user.id, limit)
 
         return NextResponse.json(history)
     } catch (error) {

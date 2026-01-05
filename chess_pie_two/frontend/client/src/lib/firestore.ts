@@ -25,6 +25,7 @@ export interface GameResult {
     opponent?: string
     timestamp: Date
     roomId?: string
+    id?: string
 }
 
 export interface UserStats {
@@ -134,10 +135,14 @@ export async function getUserGameHistory(userId: string, limit: number = 10) {
         .limit(limit)
         .get()
 
-    return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-    })) as GameResult[]
+    return snapshot.docs.map((doc) => {
+        const data = doc.data()
+        return {
+            id: doc.id,
+            ...data,
+            timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : data.timestamp,
+        }
+    }) as GameResult[]
 }
 
 export async function saveBoard(board: SavedBoard) {
@@ -169,14 +174,19 @@ export async function getUserBoards(userId: string): Promise<SavedBoard[]> {
         .where("userId", "==", userId)
         .get()
 
-    const boards = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-    } as SavedBoard))
+    const boards = snapshot.docs.map(doc => {
+        const data = doc.data()
+        return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
+        } as SavedBoard
+    })
 
     return boards.sort((a, b) => {
-        const dateA = a.updatedAt instanceof Date ? a.updatedAt.getTime() : (a.updatedAt as any).toDate?.().getTime() || 0
-        const dateB = b.updatedAt instanceof Date ? b.updatedAt.getTime() : (b.updatedAt as any).toDate?.().getTime() || 0
+        const dateA = a.updatedAt instanceof Date ? a.updatedAt.getTime() : 0
+        const dateB = b.updatedAt instanceof Date ? b.updatedAt.getTime() : 0
         return dateB - dateA
     })
 }
@@ -220,9 +230,12 @@ export async function getBoard(boardId: string, userId: string): Promise<SavedBo
         return null
     }
 
+    const data = doc.data()
     return {
         id: doc.id,
-        ...doc.data(),
+        ...data,
+        createdAt: data?.createdAt?.toDate ? data.createdAt.toDate() : data?.createdAt,
+        updatedAt: data?.updatedAt?.toDate ? data.updatedAt.toDate() : data?.updatedAt,
     } as SavedBoard
 }
 
@@ -266,13 +279,15 @@ export async function getUserCustomPieces(userId: string): Promise<CustomPiece[]
         return {
             id: doc.id,
             ...data,
-            pixels: typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels
+            pixels: typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
         } as CustomPiece
     })
 
     return pieces.sort((a, b) => {
-        const dateA = a.updatedAt instanceof Date ? a.updatedAt.getTime() : (a.updatedAt as any).toDate?.().getTime() || 0
-        const dateB = b.updatedAt instanceof Date ? b.updatedAt.getTime() : (b.updatedAt as any).toDate?.().getTime() || 0
+        const dateA = a.updatedAt instanceof Date ? a.updatedAt.getTime() : 0
+        const dateB = b.updatedAt instanceof Date ? b.updatedAt.getTime() : 0
         return dateB - dateA
     })
 }
@@ -292,7 +307,9 @@ export async function getCustomPiece(pieceId: string, userId: string): Promise<C
     return {
         id: doc.id,
         ...data,
-        pixels: typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels
+        pixels: typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
     } as CustomPiece
 }
 
@@ -339,14 +356,19 @@ export async function getUserPieceSets(userId: string): Promise<PieceSet[]> {
         .where("userId", "==", userId)
         .get()
 
-    const sets = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-    } as PieceSet))
+    const sets = snapshot.docs.map(doc => {
+        const data = doc.data()
+        return {
+            id: doc.id,
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
+        } as PieceSet
+    })
 
     return sets.sort((a, b) => {
-        const dateA = a.updatedAt instanceof Date ? a.updatedAt.getTime() : (a.updatedAt as any).toDate?.().getTime() || 0
-        const dateB = b.updatedAt instanceof Date ? b.updatedAt.getTime() : (b.updatedAt as any).toDate?.().getTime() || 0
+        const dateA = a.updatedAt instanceof Date ? a.updatedAt.getTime() : 0
+        const dateB = b.updatedAt instanceof Date ? b.updatedAt.getTime() : 0
         return dateB - dateA
     })
 }
@@ -362,9 +384,12 @@ export async function getPieceSet(setId: string, userId: string): Promise<PieceS
         return null
     }
 
+    const data = doc.data()
     return {
         id: doc.id,
-        ...doc.data()
+        ...data,
+        createdAt: data?.createdAt?.toDate ? data.createdAt.toDate() : data?.createdAt,
+        updatedAt: data?.updatedAt?.toDate ? data.updatedAt.toDate() : data?.updatedAt,
     } as PieceSet
 }
 
@@ -380,13 +405,15 @@ export async function getSetPieces(setId: string, userId: string): Promise<Custo
         return {
             id: doc.id,
             ...data,
-            pixels: typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels
+            pixels: typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
         } as CustomPiece
     })
 
     return pieces.sort((a, b) => {
-        const dateA = a.createdAt instanceof Date ? a.createdAt.getTime() : (a.createdAt as any).toDate?.().getTime() || 0
-        const dateB = b.createdAt instanceof Date ? b.createdAt.getTime() : (b.createdAt as any).toDate?.().getTime() || 0
+        const dateA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0
+        const dateB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0
         return dateA - dateB // Oldest first
     })
 }

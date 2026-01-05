@@ -13,6 +13,7 @@ interface PieceEditorSidebarProps {
     selectedPieceId: string | null;
     setSelectedPieceId: (id: string) => void;
     onCreateNewPiece: () => void;
+    onCreateNewSet: () => void;
     onSavePiece: () => void;
     isSaving: boolean;
     currentName: string;
@@ -36,6 +37,7 @@ export default function PieceEditorSidebar({
     selectedPieceId,
     setSelectedPieceId,
     onCreateNewPiece,
+    onCreateNewSet,
     onSavePiece,
     isSaving,
     currentName,
@@ -72,29 +74,31 @@ export default function PieceEditorSidebar({
                             <ChevronDown size={14} className="group-hover/sets:rotate-180 transition-transform" />
                         </button>
 
-                        {/* Dropdown Menu */}
-                        <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-2xl shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover/sets:opacity-100 group-hover/sets:translate-y-0 group-hover/sets:pointer-events-auto transition-all z-50 overflow-hidden">
-                            <div className="p-4 border-b border-stone-100 dark:border-white/10">
-                                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Select Collection</p>
-                            </div>
-                            <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                                {sets.map(set => (
+                        {/* Dropdown Menu - now stays open when hovering over it */}
+                        <div className="absolute right-0 top-full pt-2 w-64 opacity-0 translate-y-2 pointer-events-none group-hover/sets:opacity-100 group-hover/sets:translate-y-0 group-hover/sets:pointer-events-auto transition-all z-50">
+                            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                                <div className="p-4 border-b border-stone-100 dark:border-white/10">
+                                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Select Collection</p>
+                                </div>
+                                <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                                    {sets.map(set => (
+                                        <button
+                                            key={set.id}
+                                            onClick={() => setCurrentSetId(set.id)}
+                                            className={`w-full flex items-center justify-between px-4 py-3 hover:bg-stone-50 dark:hover:bg-white/5 transition-colors text-left ${currentSetId === set.id ? 'bg-amber-500/10 text-amber-500' : 'text-stone-900 dark:text-white'}`}
+                                        >
+                                            <span className="text-sm font-bold truncate">{set.name}</span>
+                                            {currentSetId === set.id && <Check size={14} />}
+                                        </button>
+                                    ))}
                                     <button
-                                        key={set.id}
-                                        onClick={() => setCurrentSetId(set.id)}
-                                        className={`w-full flex items-center justify-between px-4 py-3 hover:bg-stone-50 dark:hover:bg-white/5 transition-colors text-left ${currentSetId === set.id ? 'bg-amber-500/10 text-amber-500' : 'text-stone-900 dark:text-white'}`}
+                                        onClick={onCreateNewSet}
+                                        className="w-full flex items-center gap-2 px-4 py-3 text-amber-500 hover:bg-amber-500/10 transition-colors border-t border-stone-100 dark:border-white/10"
                                     >
-                                        <span className="text-sm font-bold truncate">{set.name}</span>
-                                        {currentSetId === set.id && <Check size={14} />}
+                                        <Plus size={16} />
+                                        <span className="text-sm font-black uppercase tracking-widest">New Set</span>
                                     </button>
-                                ))}
-                                <button
-                                    onClick={() => setCurrentSetId('')}
-                                    className="w-full flex items-center gap-2 px-4 py-3 text-amber-500 hover:bg-amber-500/10 transition-colors border-t border-stone-100 dark:border-white/10"
-                                >
-                                    <Plus size={16} />
-                                    <span className="text-sm font-black uppercase tracking-widest">New Set</span>
-                                </button>
+                                </div>
                             </div>
                         </div>
                     </div>

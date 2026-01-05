@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     DndContext,
     useSensor,
-    useSensors,
-    PointerSensor,
-    DragOverlay,
-    DragStartEvent,
     DragEndEvent,
-    DragOverEvent
+    DragOverEvent,
+    DragStartEvent,
+    DragOverlay,
+    useSensors,
+    PointerSensor
 } from '@dnd-kit/core';
 
 // Types
@@ -104,7 +104,7 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'Effects',
         color: '#9370DB',
         description: 'Immediately removes the piece from play.',
-        width: 120
+        width: 140 // Standardized smaller width
     }
 ];
 
@@ -200,62 +200,72 @@ export default function PageClient() {
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over, delta } = event;
 
-        const activator = event.activatorEvent as MouseEvent | TouchEvent;
-        const clientX = 'clientX' in activator ? activator.clientX : (activator as TouchEvent).touches[0].clientX;
-        const clientY = 'clientY' in activator ? activator.clientY : (activator as TouchEvent).touches[0].clientY;
+        // Capture current template and ghost before clearing state
+        const currentTemplate = activeDragTemplate || activeTemplateRef.current;
+        const currentGhost = ghost;
+
+        // Clear all drag states
+        setActiveDragId(null);
+        setActiveDragTemplate(null);
+        activeTemplateRef.current = null;
+        setGhost(null);
+
+        if (!currentTemplate) return;
 
         const canvasElement = document.getElementById('canvas');
-        if (!canvasElement) {
-            setActiveDragId(null);
-            setActiveDragTemplate(null);
-            activeTemplateRef.current = null;
+        if (!canvasElement) return;
+
+        const canvasRect = canvasElement.getBoundingClientRect();
+        const activator = event.activatorEvent as MouseEvent | TouchEvent;
+
+        // Get the starting mouse position
+        const startX = 'clientX' in activator ? activator.clientX : (activator as TouchEvent).touches[0].clientX;
+        const startY = 'clientY' in activator ? activator.clientY : (activator as TouchEvent).touches[0].clientY;
+
+        // Calculate current mouse position using delta
+        const currentMouseX = startX + (delta?.x || 0);
+        const currentMouseY = startY + (delta?.y || 0);
+
+        // Convert to canvas coordinates (same calculation as handleDragOver)
+        const canvasX = currentMouseX - canvasRect.left + canvasElement.scrollLeft;
+        const canvasY = currentMouseY - canvasRect.top + canvasElement.scrollTop;
+
+        // Check if dropped within canvas boundaries
+        if (currentMouseX < canvasRect.left || currentMouseX > canvasRect.right ||
+            currentMouseY < canvasRect.top || currentMouseY > canvasRect.bottom) {
             return;
         }
 
-        const rect = canvasElement.getBoundingClientRect();
 
-        // Calculate the actual mouse position at drop relative to the viewport
-        const dropPointX = clientX + (delta?.x || 0);
-        const dropPointY = clientY + (delta?.y || 0);
-
-        // Calculate position relative to the canvas content (including scrolling)
-        const dragX = dropPointX - rect.left + canvasElement.scrollLeft - ((activeDragTemplate?.width || 200) / 2);
-        const dragY = dropPointY - rect.top + canvasElement.scrollTop - 25;
-
-        const currentTemplate = activeDragTemplate || activeTemplateRef.current;
-
-        if (ghost) {
+        if (currentGhost) {
+            // Snapped to another block
             const newInstanceId = `instance-${Date.now()}`;
             const newBlock: BlockInstance = {
-                ...ghost.template,
+                ...currentGhost.template,
                 instanceId: newInstanceId,
-                position: { x: ghost.x, y: ghost.y },
+                position: { x: currentGhost.x, y: currentGhost.y },
                 socketValues: {},
-                parentId: ghost.parentId
+                parentId: currentGhost.parentId
             };
 
             setCanvasBlocks(prev => {
-                const updated = prev.map(b => b.instanceId === ghost.parentId ? { ...b, childId: newInstanceId } : b);
+                const updated = prev.map(b => b.instanceId === currentGhost.parentId ? { ...b, childId: newInstanceId } : b);
                 return [...updated, newBlock];
             });
-        } else if (currentTemplate) {
-            // Drop anywhere on canvas if not snapped
+        } else {
+            // Free placement - place block centered on mouse cursor
+            const blockWidth = currentTemplate.width || 200;
             const newBlock: BlockInstance = {
                 ...currentTemplate,
                 instanceId: `instance-${Date.now()}`,
                 position: {
-                    x: dragX,
-                    y: dragY
+                    x: canvasX - (blockWidth / 2),
+                    y: canvasY - 25  // Center vertically (block height is 50)
                 },
                 socketValues: {}
             };
             setCanvasBlocks(prev => [...prev, newBlock]);
         }
-
-        setGhost(null);
-        setActiveDragId(null);
-        setActiveDragTemplate(null);
-        activeTemplateRef.current = null;
     };
 
     const createVariable = () => {
@@ -345,10 +355,19 @@ export default function PageClient() {
                                 </AnimatePresence>
                             </>
                         ) : (
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar flex flex-col items-start">
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar flex flex-col items-start">
                                 {BLOCK_TEMPLATES.filter(t => t.category === activeCategory).map(template => (
-                                    <div key={template.id} className="w-full">
-                                        <BlockTemplateItem template={template} />
+                                    <div key={template.id} className="relative w-full h-[50px] group">
+                                        {/* Background placeholder that always stays in the sidebar */}
+                                        <div className="absolute inset-x-0 top-0 opacity-20 pointer-events-none transition-opacity group-hover:opacity-40">
+                                            <BlockComponent
+                                                block={{ ...template, instanceId: 'bg', position: { x: 0, y: 0 }, socketValues: {} }}
+                                            />
+                                        </div>
+                                        {/* The actual draggable item */}
+                                        <div className="absolute inset-x-0 top-0 z-10">
+                                            <BlockTemplateItem template={template} />
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -407,7 +426,7 @@ function Canvas({
         <div
             id="canvas"
             ref={setNodeRef}
-            className="flex-1 relative overflow-auto bg-[radial-gradient(#ffffff08_1px,transparent_1px)] bg-size-[32px_32px] bg-[#0f1115] custom-scrollbar"
+            className="flex-1 relative overflow-auto bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] bg-size-[32px_32px] bg-[#0c0e12] custom-scrollbar"
         >
             <div className="absolute top-0 left-0 w-[5000px] h-[5000px] pointer-events-none" />
             <div className="sticky top-0 left-0 w-full h-full pointer-events-none z-40">
@@ -504,9 +523,11 @@ function BlockTemplateItem({ template }: { template: BlockTemplate }) {
     });
 
     return (
-        <div ref={setNodeRef}            {...listeners}
+        <div
+            ref={setNodeRef}
+            {...listeners}
             {...attributes}
-            className={`cursor-grab active:cursor-grabbing transition-opacity ${isDragging ? 'opacity-40' : 'opacity-100'}`}
+            className="cursor-grab active:cursor-grabbing w-full"
         >
             <BlockComponent block={{ ...template, instanceId: 'template', position: { x: 0, y: 0 }, socketValues: {} }} />
         </div>
@@ -565,7 +586,10 @@ function BlockComponent({
     };
 
     const width = block.width || (block.type === 'variable' ? 140 : 200);
-    const notchPadding = block.type === 'variable' ? 0 : 35; // The text should center after the notch area
+
+    // Calculate the visual center offset for blocks with notches
+    const hasNotch = block.type !== 'variable';
+    const notchOffset = hasNotch ? 18 : 0; // Half of notch width to center content after notch
 
     return (
         <div
@@ -585,13 +609,13 @@ function BlockComponent({
                     d={getPath()}
                     fill={isGhost ? '#333' : block.color}
                     stroke={isGhost ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.2)'}
-                    strokeWidth="2"
+                    strokeWidth="1.5"
                 />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                 <div
-                    className="flex items-center gap-2 justify-center"
-                    style={{ paddingLeft: `${notchPadding}px` }}
+                    className="flex items-center gap-2.5 justify-center w-full"
+                    style={{ marginLeft: `${notchOffset}px` }}
                 >
                     <span className="font-bold text-white text-[14px] shadow-sm tracking-tight whitespace-nowrap">{block.label}</span>
                     <div className="flex items-center gap-2">

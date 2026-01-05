@@ -286,6 +286,7 @@ export default function PageClient() {
                 selectedPieceId={selectedPieceId}
                 setSelectedPieceId={selectPiece}
                 onCreateNewPiece={createNewPiece}
+                onCreateNewSet={() => setIsSaveModalOpen(true)}
                 onSavePiece={handleSavePiece}
                 isSaving={isSaving}
                 currentName={currentName}

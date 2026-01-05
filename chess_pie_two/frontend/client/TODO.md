@@ -23,6 +23,8 @@ chess variants
 custom pieces
 Also, maybe implement them in h1s. Don't do keyword stuffing. Nowhere.
 
+You should also be able to drag tiles once they are on the canvas. Once they're on the canvas, you just take them and you can grab them anywhere else.
+
 ## Marketplace (Upcoming)
 
 - [ ] Add a way to rate and review the boards, pieces and designs.
