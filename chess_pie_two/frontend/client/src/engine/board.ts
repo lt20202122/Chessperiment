@@ -1,5 +1,5 @@
 import { Square } from './types';
-import { Piece, Pawn, Rook, Knight, Bishop, Queen, King } from './piece';
+import { Piece, Pawn, Rook, Knight, Bishop, Queen, King, CustomPiece } from './piece';
 import { BoardStateManager } from './state';
 
 export class BoardClass {
@@ -68,6 +68,9 @@ export class BoardClass {
     movePiece(from: Square, to: Square, promotion?: string): void {
         const piece = this.getPiece(from);
         if (piece) {
+            const destinationPiece = this.getPiece(to);
+            const isCapture = destinationPiece !== null && destinationPiece.color !== piece.color;
+
             let pieceToMove = piece;
             if (promotion) {
                 const newPiece = Piece.create(`${piece.id}_promo`, promotion as any, piece.color, to);
@@ -78,7 +81,19 @@ export class BoardClass {
             pieceToMove.position = to;
             pieceToMove.hasMoved = true;
             this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
+
+            if (pieceToMove instanceof CustomPiece) {
+                pieceToMove.executeLogic('on-move', { from, to, capturedPiece: isCapture ? destinationPiece : null }, this);
+                
+                if (isCapture) {
+                    pieceToMove.executeLogic('on-capture', { from, to, capturedPiece: destinationPiece }, this);
+                }
+            }
         }
+    }
+
+    setPiece(square: Square, piece: Piece | null): void {
+        this.stateManager.setPiece(square, piece);
     }
 
     getSquares(): Record<Square, Piece | null> {

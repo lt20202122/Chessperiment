@@ -13,9 +13,7 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "plugins": [
-      { "name": "next" }
-    ],
+    "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"]
     }
@@ -27,7 +25,8 @@
     ".next/types/**/*.ts",
     "src/types/*.d.ts",
     "src/app/home/@mixed/Data.js",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "src/components/ClickSpark.jsx"
   ],
   "exclude": ["node_modules"]
 }

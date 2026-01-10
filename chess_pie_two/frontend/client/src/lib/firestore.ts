@@ -68,9 +68,12 @@ export interface CustomPiece {
     color: 'white' | 'black'
     pixels: string[][] // Grid of colors
     moves: any[] // Move logic
+    logic?: any // Logic blocks (triggers/effects)
+    sourceId?: string // Reference to inverted counterpart
     createdAt: Date
     updatedAt: Date
 }
+
 
 export async function saveGameResult(gameResult: GameResult) {
     if (!db) throw new Error("Firestore not initialized")
@@ -244,9 +247,15 @@ export async function saveCustomPiece(piece: CustomPiece) {
     const piecesRef = db.collection("customPieces")
     
     // Firestore doesn't allow nested arrays, so we serialize pixels
-    const serializedPiece = {
+    // Also, Firestore doesn't allow undefined values, so we exclude undefined fields
+    const serializedPiece: any = {
         ...piece,
-        pixels: JSON.stringify(piece.pixels)
+        pixels: JSON.stringify(piece.pixels),
+    }
+    
+    // Only include logic if it exists (not undefined)
+    if (piece.logic !== undefined) {
+        serializedPiece.logic = JSON.stringify(piece.logic)
     }
 
     if (piece.id) {
@@ -280,6 +289,7 @@ export async function getUserCustomPieces(userId: string): Promise<CustomPiece[]
             id: doc.id,
             ...data,
             pixels: typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels,
+            logic: typeof data.logic === 'string' ? JSON.parse(data.logic) : data.logic,
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
             updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
         } as CustomPiece
@@ -308,6 +318,7 @@ export async function getCustomPiece(pieceId: string, userId: string): Promise<C
         id: doc.id,
         ...data,
         pixels: typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels,
+        logic: typeof data.logic === 'string' ? JSON.parse(data.logic) : data.logic,
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
         updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
     } as CustomPiece
@@ -406,6 +417,7 @@ export async function getSetPieces(setId: string, userId: string): Promise<Custo
             id: doc.id,
             ...data,
             pixels: typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels,
+            logic: typeof data.logic === 'string' ? JSON.parse(data.logic) : data.logic,
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
             updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
         } as CustomPiece

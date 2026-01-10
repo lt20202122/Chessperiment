@@ -139,7 +139,6 @@ export default async function MarketplacePage({ params }: { params: Promise<{ lo
                     </div>
                 </div>
             </main>
-            <SEOFooter />
         </div>
     );
 }

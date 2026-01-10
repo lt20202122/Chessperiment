@@ -4,7 +4,7 @@ import EditorSidebar from '@/components/editor/EditorSidebar';
 import BoardEditor from '@/components/editor/BoardEditor';
 import { Grid3x3 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 export type EditMode = 'shape' | 'pieces';
 
 
@@ -22,6 +22,21 @@ export default function PageClient() {
         placedPieces: {},
         activeSquares: new Set<string>(),
     });
+
+    const [customCollection, setCustomCollection] = useState<Record<string, any>>({});
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('piece_collection');
+            if (saved) {
+                try {
+                    setCustomCollection(JSON.parse(saved));
+                } catch (e) {
+                    console.error("Failed to parse custom collection", e);
+                }
+            }
+        }
+    }, []);
 
     const generateBoardData = useCallback((rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => {
         const boardData = {
@@ -68,6 +83,8 @@ export default function PageClient() {
                     generateBoardData={() => generateBoardData(board.rows, board.cols, board.activeSquares, board.placedPieces)}
                     setBoard={setBoard} // keeping for compatibility if needed
                     onPresetChange={handlePresetChange}
+                    customCollection={customCollection}
+                    setCustomCollection={setCustomCollection}
                 />
             }>
 
@@ -91,6 +108,7 @@ export default function PageClient() {
                         selectedPiece={selectedPiece}
                         boardStyle={boardStyle}
                         generateBoardData={setBoardCallback}
+                        customCollection={customCollection}
                     />
 
                 </div>

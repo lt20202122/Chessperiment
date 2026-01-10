@@ -25,11 +25,13 @@ interface EditorSidebarProps {
     generateBoardData: () => string;
     setBoard: any;
     onPresetChange?: (data: any) => void;
+    customCollection: Record<string, { name: string, color: 'white' | 'black', pixels: string[][], moves: any[] }>;
+    setCustomCollection: (collection: Record<string, { name: string, color: 'white' | 'black', pixels: string[][], moves: any[] }>) => void;
 }
 
 const pieceTypes = ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'];
 
-export default function EditorSidebar({ editMode, setEditMode, selectedPiece, setSelectedPiece, boardStyle, setBoardStyle, generateBoardData, setBoard, onPresetChange }: EditorSidebarProps) {
+export default function EditorSidebar({ editMode, setEditMode, selectedPiece, setSelectedPiece, boardStyle, setBoardStyle, generateBoardData, setBoard, onPresetChange, customCollection, setCustomCollection }: EditorSidebarProps) {
     const router = useRouter();
     const t = useTranslations('Editor.Board');
     const tg = useTranslations('Game');
@@ -39,21 +41,9 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
     const [boardName, setBoardName] = React.useState('');
     const [isSaving, setIsSaving] = React.useState(false);
     const [saveStatus, setSaveStatus] = React.useState<'idle' | 'success' | 'error'>('idle');
-    const [customCollection, setCustomCollection] = React.useState<Record<string, { name: string, color: 'white' | 'black', pixels: string[][], moves: any[] }>>({});
     const [isSetImportOpen, setIsSetImportOpen] = React.useState(false);
     const [userSets, setUserSets] = React.useState<(any & { id: string })[]>([]);
     const [loadingSets, setLoadingSets] = React.useState(false);
-
-    React.useEffect(() => {
-        const saved = localStorage.getItem('piece_collection');
-        if (saved) {
-            try {
-                setCustomCollection(JSON.parse(saved));
-            } catch (e) {
-                console.error("Failed to parse custom collection", e);
-            }
-        }
-    }, []);
 
     const handlePieceSelect = (type: string, color: string) => {
         setSelectedPiece({ type, color });
@@ -186,7 +176,7 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                     <div className="mt-8 flex items-center justify-between mb-4">
                         <h3 className="text-sm font-semibold uppercase tracking-wider opacity-80 flex items-center gap-2 text-stone-900 dark:text-stone-100">
                             <Star size={14} className="text-amber-500" />
-                            {t('customPieces' as any)}
+                            {t('customPieces')}
                         </h3>
                         <button
                             onClick={async () => {
@@ -204,7 +194,7 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                             }}
                             className="text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 flex items-center gap-1 bg-amber-500/10 px-2 py-1 rounded-lg transition-all"
                         >
-                            <Library size={10} /> {t('import' as any)}
+                            <Library size={10} /> {t('import')}
                         </button>
                     </div>
 
@@ -214,8 +204,8 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                             {Object.entries(customCollection).map(([id, piece]) => (
                                 <button
                                     key={id}
-                                    onClick={() => handlePieceSelect(piece.name, piece.color)}
-                                    className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${selectedPiece.type === piece.name && selectedPiece.color === piece.color
+                                    onClick={() => handlePieceSelect(id, piece.color)}
+                                    className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${selectedPiece.type === id && selectedPiece.color === piece.color
                                         ? 'bg-amber-500/20 border-amber-500 shadow-sm'
                                         : 'bg-white dark:bg-bg/20 border-stone-200 dark:border-gray-200/10 hover:border-amber-500/40 hover:bg-amber-500/5'
                                         }`}
@@ -236,7 +226,7 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                         </div>
                     ) : (
                         <div className="p-4 rounded-xl border border-dashed border-stone-200 dark:border-white/5 text-center">
-                            <p className="text-[10px] text-stone-400 dark:text-white/20 uppercase font-black tracking-widest">{t('noCustomPieces' as any)}</p>
+                            <p className="text-[10px] text-stone-400 dark:text-white/20 uppercase font-black tracking-widest">{t('noCustomPieces')}</p>
                         </div>
                     )}
                 </div>
@@ -259,14 +249,14 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                                 <CloseIcon size={20} />
                             </button>
 
-                            <h3 className="text-2xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tight">Import Pieces</h3>
-                            <p className="text-stone-500 dark:text-white/60 text-sm mb-6 font-bold uppercase tracking-widest">Select a set to import</p>
+                            <h3 className="text-2xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tight">{t('importPieces')}</h3>
+                            <p className="text-stone-500 dark:text-white/60 text-sm mb-6 font-bold uppercase tracking-widest">{t('selectSetToImport')}</p>
 
                             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                                 {loadingSets ? (
                                     <div className="text-center py-10">
                                         <div className="w-8 h-8 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mx-auto mb-4" />
-                                        <p className="text-stone-400 text-xs font-black uppercase">Loading your collection...</p>
+                                        <p className="text-stone-400 text-xs font-black uppercase">{t('loadingCollection')}</p>
                                     </div>
                                 ) : userSets.length > 0 ? (
                                     userSets.map(set => (
@@ -305,12 +295,12 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                                     ))
                                 ) : (
                                     <div className="text-center py-10 bg-stone-50 dark:bg-white/5 rounded-2xl border border-dashed border-stone-200 dark:border-white/10">
-                                        <p className="text-stone-400 text-xs font-black uppercase">No sets found in your library</p>
+                                        <p className="text-stone-400 text-xs font-black uppercase">{t('noSetsFound')}</p>
                                         <button
                                             onClick={() => router.push('/editor/piece')}
                                             className="mt-4 text-amber-500 text-xs font-bold hover:underline"
                                         >
-                                            Create your first piece set
+                                            {t('createFirstSet')}
                                         </button>
                                     </div>
                                 )}
@@ -379,7 +369,7 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                 />
                 <ActionButton
                     icon={<Library size={18} />}
-                    label={saveStatus === 'success' ? t('saveSuccess' as any) : t('addToLibrary')}
+                    label={saveStatus === 'success' ? t('saveSuccess') : t('addToLibrary')}
                     sub={t('addToLibrarySub')}
                     className="bg-linear-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-md border border-amber-400/20"
                     onClick={handleSaveToLibrary}
@@ -435,11 +425,11 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                                     {isSaving ? (
                                         <div className="w-5 h-5 border-2 border-bg/30 border-t-bg rounded-full animate-spin" />
                                     ) : saveStatus === 'success' ? (
-                                        t('saveSuccess' as any)
+                                        t('saveSuccess')
                                     ) : (
                                         <>
                                             <Plus size={18} />
-                                            {t('saveBoard' as any)}
+                                            {t('saveBoard')}
                                         </>
                                     )}
                                 </button>

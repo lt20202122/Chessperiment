@@ -27,6 +27,7 @@ interface BoardEditorProps {
     selectedPiece: { type: string, color: string };
     boardStyle: string;
     generateBoardData: (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => void;
+    customCollection: Record<string, any>;
 }
 
 // --- Memoized Square Component ---
@@ -41,7 +42,8 @@ const EditorSquare = React.memo(({
     squareSize,
     onMouseDown,
     onMouseEnter,
-    onContextMenu
+    onContextMenu,
+    customCollection
 }: {
     x: number, y: number,
     isActive: boolean,
@@ -53,8 +55,12 @@ const EditorSquare = React.memo(({
     squareSize: number,
     onMouseDown: (x: number, y: number, e: React.MouseEvent) => void,
     onMouseEnter: (x: number, y: number) => void,
-    onContextMenu: (x: number, y: number, e: React.MouseEvent) => void
+    onContextMenu: (x: number, y: number, e: React.MouseEvent) => void,
+    customCollection?: Record<string, any>
 }) => {
+    const customPiece = piece ? (customCollection?.[piece.type] || Object.values(customCollection || {}).find((p: any) => p.name === piece.type)) : undefined;
+    const pixels = customPiece?.pixels;
+
     return (
         <div
             style={{ width: squareSize, height: squareSize }}
@@ -73,11 +79,12 @@ const EditorSquare = React.memo(({
             {isActive && piece && (
                 <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none transform transition-transform group-hover:scale-105">
                     <PieceRenderer
-                        type={piece.type}
+                        type={customPiece ? customPiece.name : piece.type}
                         color={piece.color}
                         size={squareSize * getPieceScale(piece.type)}
                         boardStyle={boardStyle}
                         className="drop-shadow-lg"
+                        pixels={pixels}
                     />
                 </div>
             )}
@@ -110,7 +117,7 @@ const EditorSquare = React.memo(({
     );
 });
 
-export default function BoardEditor({ editMode, selectedPiece, boardStyle, generateBoardData }: BoardEditorProps) {
+export default function BoardEditor({ editMode, selectedPiece, boardStyle, generateBoardData, customCollection }: BoardEditorProps) {
     const [rows, setRows] = useState<number>(() => Number(localStorage.getItem('rows') || 8));
     const [cols, setCols] = useState<number>(() => Number(localStorage.getItem('cols') || 8));
     const [placedPieces, setPlacedPieces] = useState<Record<string, { type: string; color: string, size: number }>>(() => {
@@ -648,6 +655,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                                     onMouseDown={handleMouseDown}
                                     onMouseEnter={handleMouseEnter}
                                     onContextMenu={removePiece}
+                                    customCollection={customCollection}
                                 />
                             );
                         })}

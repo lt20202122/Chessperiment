@@ -21,7 +21,7 @@ export abstract class Piece {
     abstract canAttack(target: Square, board: BoardClass): boolean;
     abstract clone(): Piece;
 
-    static create(id: string, type: string, color: "white" | "black", position: Square, rules: MoveRule[] = []): Piece {
+    static create(id: string, type: string, color: "white" | "black", position: Square, rules: MoveRule[] = [], logic: any[] = []): Piece {
         switch (type.toLowerCase()) {
             case 'pawn': return new Pawn(id, color, position);
             case 'knight': return new Knight(id, color, position);
@@ -29,17 +29,90 @@ export abstract class Piece {
             case 'rook': return new Rook(id, color, position);
             case 'queen': return new Queen(id, color, position);
             case 'king': return new King(id, color, position);
-            default: return new CustomPiece(id, type, color, position, rules);
+            default: return new CustomPiece(id, type, color, position, rules, logic);
         }
     }
 }
 
 export class CustomPiece extends Piece {
     rules: MoveRule[];
+    logic: any[];
+    variables: Record<string, number> = {};
 
-    constructor(id: string, type: string, color: "white" | "black", position: Square, rules: MoveRule[] = []) {
+    constructor(id: string, type: string, color: "white" | "black", position: Square, rules: MoveRule[] = [], logic: any[] = []) {
         super(id, type, color, position);
         this.rules = rules;
+        this.logic = logic;
+    }
+
+    executeLogic(triggerType: string, context: any, board: BoardClass) {
+        if (!this.logic || !Array.isArray(this.logic)) return;
+
+        // Find relevant triggers
+        // The ID of trigger blocks matches the triggerType ('on-move', 'on-capture', etc.)
+        const triggers = this.logic.filter((b: any) => b.type === 'trigger' && b.id === triggerType);
+
+        for (const trigger of triggers) {
+            let conditionsMet = true;
+            const vals = trigger.socketValues || {};
+
+            if (triggerType === 'on-capture') {
+                // Socket: 'by' -> 'Any', 'Pawn', etc.
+                if (vals.by && vals.by !== 'Any') {
+                    if (context.capturedPiece && context.capturedPiece.type.toLowerCase() !== vals.by.toLowerCase()) {
+                        conditionsMet = false;
+                    }
+                }
+            } else if (triggerType === 'on-move') {
+                 // Socket: 'by' -> 'Any', ... (usually redundant if on-move is triggered by self moving)
+                 // But maybe we want specific move types? For now ignore.
+            }
+
+            if (conditionsMet && trigger.childId) {
+                this.runBlock(trigger.childId, context, board);
+            }
+        }
+    }
+
+    private runBlock(blockId: string, context: any, board: BoardClass) {
+        const block = this.logic.find((b: any) => b.instanceId === blockId);
+        if (!block) return;
+
+        const vals = block.socketValues || {};
+
+        switch (block.id) {
+            case 'kill':
+                if (board.getPiece(this.position)?.id === this.id) {
+                     board.setPiece(this.position, null);
+                }
+                break;
+            case 'transformation':
+                if (vals.target) {
+                    // Create new piece of target type
+                    // Preserving ID for continuity, or new ID? Usually transform keeps identity or creates new.
+                    // Let's create new piece instance
+                    const newPiece = Piece.create(this.id, vals.target, this.color, this.position);
+                    newPiece.hasMoved = this.hasMoved;
+                    board.setPiece(this.position, newPiece);
+                }
+                break;
+            case 'modify-var':
+                if (vals.varName && vals.op && vals.value !== undefined) {
+                    const current = this.variables[vals.varName] || 0;
+                    let next = current;
+                    const v = Number(vals.value);
+                    if (vals.op === '+=') next += v;
+                    else if (vals.op === '-=') next -= v;
+                    else if (vals.op === '=') next = v;
+                    this.variables[vals.varName] = next;
+                }
+                break;
+             // Add more effects as needed
+        }
+
+        if (block.childId) {
+            this.runBlock(block.childId, context, board);
+        }
     }
 
     isValidMove(from: Square, to: Square, board: BoardClass): boolean {

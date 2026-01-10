@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from 'react';
-import { Save, Plus, Trash2, Undo2, Redo2, Type, Box, Loader2, Palette, ChevronDown, Check, Move } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Save, Plus, Trash2, Undo2, Redo2, Type, Box, Loader2, Palette, ChevronDown, Check, Move, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { PieceSet, CustomPiece } from '@/lib/firestore';
 import PieceRenderer from '@/components/game/PieceRenderer';
@@ -27,6 +27,7 @@ interface PieceEditorSidebarProps {
     canUndo: boolean;
     canRedo: boolean;
     onDeletePiece: (id: string) => void;
+    onGenerateInvertedPiece: () => void;
 }
 
 export default function PieceEditorSidebar({
@@ -50,12 +51,41 @@ export default function PieceEditorSidebar({
     redo,
     canUndo,
     canRedo,
-    onDeletePiece
+    onDeletePiece,
+    onGenerateInvertedPiece
 }: PieceEditorSidebarProps) {
     const t = useTranslations('Editor.Piece');
     const [isDeleting, setIsDeleting] = useState(false);
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; pieceId: string } | null>(null);
 
     const activeSet = sets.find(s => s.id === currentSetId);
+
+    // Close context menu when clicking outside
+    useEffect(() => {
+        const handleClick = () => setContextMenu(null);
+        if (contextMenu) {
+            document.addEventListener('click', handleClick);
+            return () => document.removeEventListener('click', handleClick);
+        }
+    }, [contextMenu]);
+
+    // Keyboard shortcut for deleting selected piece
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedPieceId && !isDeleting) {
+                e.preventDefault();
+                setIsDeleting(true);
+                setTimeout(() => setIsDeleting(false), 3000);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedPieceId, isDeleting]);
+
+    const handleContextMenu = (e: React.MouseEvent, pieceId: string) => {
+        e.preventDefault();
+        setContextMenu({ x: e.clientX, y: e.clientY, pieceId });
+    };
 
     return (
         <div className="flex flex-col h-full bg-islands dark:bg-stone-900 overflow-y-auto custom-scrollbar p-8">
@@ -141,9 +171,23 @@ export default function PieceEditorSidebar({
                 </div>
 
                 <div className="space-y-4">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-stone-900 dark:text-white/30 ml-1">
-                        Piece Color
-                    </label>
+                    <div className="flex items-center justify-between">
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-stone-900 dark:text-white/30 ml-1">
+                            Piece Color
+                        </label>
+                        {selectedPieceId && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onGenerateInvertedPiece();
+                                }}
+                                className="text-[9px] font-black text-amber-500 hover:text-amber-600 uppercase tracking-widest flex items-center gap-1 transition-colors px-2 py-1 rounded-md hover:bg-amber-500/10"
+                                title="Generate inverted piece (black from white or vice versa)"
+                            >
+                                <RefreshCw size={10} /> Invert
+                            </button>
+                        )}
+                    </div>
                     <div className="flex p-1.5 bg-stone-100 dark:bg-white/5 rounded-2xl border border-stone-200 dark:border-white/10 shadow-inner">
                         <button
                             onClick={() => setCurrentColor('white')}
@@ -221,24 +265,38 @@ export default function PieceEditorSidebar({
 
                 <div className="grid grid-cols-3 gap-3 overflow-y-auto pr-1 custom-scrollbar pb-6">
                     {pieces.map((piece) => (
-                        <button
-                            key={piece.id}
-                            onClick={() => setSelectedPieceId(piece.id!)}
-                            className={`group aspect-square relative flex items-center justify-center rounded-2xl border transition-all overflow-hidden ${selectedPieceId === piece.id
-                                ? 'bg-amber-500/10 border-amber-500 shadow-md'
-                                : 'bg-white dark:bg-white/5 border-stone-200 dark:border-white/10 hover:border-amber-500/50'
-                                }`}
-                        >
-                            <div className="transform group-hover:scale-110 transition-transform duration-500">
-                                <PieceRenderer
-                                    type={piece.name}
-                                    color={piece.color}
-                                    size={32}
-                                    pixels={piece.pixels}
-                                />
+                        <div key={piece.id} className="flex flex-col gap-1.5">
+                            <button
+                                onClick={() => setSelectedPieceId(piece.id!)}
+                                onContextMenu={(e) => handleContextMenu(e, piece.id!)}
+                                className={`group aspect-square relative flex items-center justify-center rounded-2xl border transition-all overflow-hidden ${selectedPieceId === piece.id
+                                    ? 'bg-amber-500/10 border-amber-500 shadow-md'
+                                    : 'bg-white dark:bg-white/5 border-stone-200 dark:border-white/10 hover:border-amber-500/50'
+                                    }`}
+                            >
+                                <div className="transform group-hover:scale-110 transition-transform duration-500">
+                                    <PieceRenderer
+                                        type={piece.name}
+                                        color={piece.color}
+                                        size={32}
+                                        pixels={piece.pixels}
+                                    />
+                                </div>
+                                <div className={`absolute bottom-0 inset-x-0 h-1 transition-colors ${selectedPieceId === piece.id ? 'bg-amber-500' : 'bg-transparent group-hover:bg-amber-500/30'}`} />
+                                {/* Color indicator badge */}
+                                <div className={`absolute top-1 right-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-sm ${piece.color === 'white'
+                                    ? 'bg-white text-stone-900 border border-stone-300'
+                                    : 'bg-stone-900 text-white border border-stone-700'}`}>
+                                    {piece.color === 'white' ? 'W' : 'B'}
+                                </div>
+                            </button>
+                            {/* Name tag below piece */}
+                            <div className="text-center px-1 pb-1">
+                                <p className="text-[10px] font-black text-stone-400 dark:text-white/20 truncate uppercase tracking-tight group-hover:text-amber-500 transition-colors">
+                                    {piece.name}
+                                </p>
                             </div>
-                            <div className={`absolute bottom-0 inset-x-0 h-1 transition-colors ${selectedPieceId === piece.id ? 'bg-amber-500' : 'bg-transparent group-hover:bg-amber-500/30'}`} />
-                        </button>
+                        </div>
                     ))}
 
                     {pieces.length === 0 && (
@@ -285,6 +343,27 @@ export default function PieceEditorSidebar({
                     </button>
                 )}
             </div>
+
+            {/* Context Menu */}
+            {contextMenu && (
+                <div
+                    className="fixed bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-9999"
+                    style={{ left: contextMenu.x, top: contextMenu.y }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <button
+                        onClick={() => {
+                            onDeletePiece(contextMenu.pieceId);
+                            setContextMenu(null);
+                        }}
+                        className="w-full px-4 py-3 text-left text-sm font-bold text-red-500 hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                    >
+                        <Trash2 size={14} />
+                        Delete
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
+

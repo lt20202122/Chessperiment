@@ -1,9 +1,10 @@
 "use client";
-import React, { useState, useEffect, useRef, memo } from "react";
+import React, { useState, useEffect, useRef, memo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { Minus, Plus, Shield, ShieldOff, AlertCircle } from "lucide-react";
+import { Minus, Plus, Shield, ShieldOff, AlertCircle, History, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import {
     DndContext,
@@ -23,6 +24,7 @@ import { type Square } from '@/engine/types'
 import { Game } from '@/engine/game'
 import { BoardClass } from "@/engine/board";
 import { Piece } from "@/engine/piece";
+
 export interface Coord {
     col: number;
     row: number;
@@ -43,6 +45,13 @@ export interface CustomBoard {
     placedPieces: PlacedPieces;
 }
 
+interface MoveRecord {
+    from: string;
+    to: string;
+    promotion?: string;
+    notation: string;
+}
+
 // --- DraggablePiece ---
 const DraggablePiece = memo(function DraggablePiece({
     piece,
@@ -58,7 +67,7 @@ const DraggablePiece = memo(function DraggablePiece({
     boardStyle?: string;
 }) {
     const { attributes, listeners, setNodeRef, transform, isDragging } =
-        useDraggable({ id: piece.position, data: piece });
+        useDraggable({ id: piece.position, data: piece, disabled: !isTurn });
 
     const style: React.CSSProperties = {
         fontSize: size,
@@ -140,7 +149,7 @@ const SquareTile = memo(function SquareTile({
 });
 
 // --- Board Component ---
-export default function Board({ board }: { board: CustomBoard }) {
+export default function Board({ board, headerContent }: { board: CustomBoard, headerContent?: React.ReactNode }) {
     const t = useTranslations("Editor.Board.Play");
     const gameRef = useRef<Game | null>(null);
     const [boardPieces, setBoardPieces] = useState<(PlacedPiece & { position: string })[]>([]);
@@ -148,6 +157,10 @@ export default function Board({ board }: { board: CustomBoard }) {
     const [blockSize, setBlockSize] = useState(80);
     const [selectedPos, setSelectedPos] = useState<string | null>(null);
     const [customCollection, setCustomCollection] = useState<Record<string, any>>({});
+
+    // History State
+    const [moveHistory, setMoveHistory] = useState<MoveRecord[]>([]);
+    const [historyIndex, setHistoryIndex] = useState<number>(-1); // -1 = Start (no moves applied/viewed)
 
     useEffect(() => {
         const saved = localStorage.getItem('piece_collection');
@@ -175,6 +188,8 @@ export default function Board({ board }: { board: CustomBoard }) {
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
     );
 
+    const getPieceAt = (pos: string) => boardPieces.find((p) => p.position === pos);
+
     const toEngineSq = (pos: string): Square => {
         const [col, row] = pos.split(',').map(Number);
         return `${col},${board.rows - 1 - row}`;
@@ -197,14 +212,14 @@ export default function Board({ board }: { board: CustomBoard }) {
     };
 
     const hasKings = () => {
-        const whiteKing = boardPieces.some(p => p.type === 'king' && p.color === 'white');
-        const blackKing = boardPieces.some(p => p.type === 'king' && p.color === 'black');
+        const whiteKing = boardPieces.some(p => p.type.toLowerCase() === 'king' && p.color === 'white');
+        const blackKing = boardPieces.some(p => p.type.toLowerCase() === 'king' && p.color === 'black');
         return whiteKing && blackKing;
     };
 
     const isPromotionMove = (from: string, to: string) => {
         const piece = getPieceAt(from);
-        if (!piece || piece.type !== 'pawn') return false;
+        if (!piece || piece.type.toLowerCase() !== 'pawn') return false;
         const engineTo = toEngineSq(to);
         const [_, row] = engineTo.split(',').map(Number);
         return (piece.color === 'white' && row === board.rows - 1) ||
@@ -224,16 +239,17 @@ export default function Board({ board }: { board: CustomBoard }) {
         setValidationEnabled(!validationEnabled);
     };
 
-    useEffect(() => {
+    const initGame = useCallback(() => {
         // Convert editor pieces to engine pieces
         const enginePieces: Record<Square, Piece | null> = {};
         Object.entries(board.placedPieces).forEach(([pos, piece]) => {
             const enginePos = toEngineSq(pos);
-            // Search for rules in customCollection by name
-            const customPieceData = Object.values(customCollection).find(p => p.name === piece.type);
+            // Search for rules in customCollection - first by ID, then by name
+            const customPieceData = customCollection[piece.type] || Object.values(customCollection).find(p => p.name === piece.type);
             const rules = customPieceData?.moves || [];
+            const logic = customPieceData?.logic || []; // Load logic
 
-            const enginePiece = Piece.create(`${pos}_${piece.color}_${piece.type}`, piece.type as any, piece.color as any, enginePos, rules);
+            const enginePiece = Piece.create(`${pos}_${piece.color}_${piece.type}`, piece.type as any, piece.color as any, enginePos, rules, logic);
             if (enginePiece) {
                 enginePieces[enginePos] = enginePiece;
             }
@@ -243,6 +259,10 @@ export default function Board({ board }: { board: CustomBoard }) {
         const activeSquaresArr = board.activeSquares.map(s => toEngineSq(`${s.col},${s.row}`));
         const customBoardObj = new BoardClass(enginePieces, activeSquaresArr, board.cols, board.rows);
         gameRef.current = new Game(customBoardObj);
+    }, [board, customCollection]);
+
+    useEffect(() => {
+        initGame();
 
         // Update UI state
         const piecesArray: (PlacedPiece & { position: string })[] = Object.entries(board.placedPieces).map(
@@ -252,10 +272,24 @@ export default function Board({ board }: { board: CustomBoard }) {
         setBoardPieces(piecesArray);
 
         // Check if kings are present to determine if validation can be ON
-        const whiteKing = piecesArray.some(p => p.type === 'king' && p.color === 'white');
-        const blackKing = piecesArray.some(p => p.type === 'king' && p.color === 'black');
+        // Need to check both by direct type and by looking up in customCollection
+        const whiteKing = piecesArray.some(p => {
+            const customPiece = customCollection[p.type] || Object.values(customCollection).find((cp: any) => cp.name === p.type);
+            const actualType = customPiece ? customPiece.name : p.type;
+            return actualType.toLowerCase() === 'king' && p.color === 'white';
+        });
+        const blackKing = piecesArray.some(p => {
+            const customPiece = customCollection[p.type] || Object.values(customCollection).find((cp: any) => cp.name === p.type);
+            const actualType = customPiece ? customPiece.name : p.type;
+            return actualType.toLowerCase() === 'king' && p.color === 'black';
+        });
         setValidationEnabled(whiteKing && blackKing);
-    }, [board, customCollection]);
+        setMoveHistory([]);
+        setHistoryIndex(-1);
+        setLastMoveFrom(null);
+        setLastMoveTo(null);
+
+    }, [board, customCollection, initGame]);
 
     // Resize
     useEffect(() => {
@@ -273,20 +307,7 @@ export default function Board({ board }: { board: CustomBoard }) {
         return () => window.removeEventListener("resize", updateSize);
     }, [board.cols, zoom]);
 
-    // Keyboard Shortcuts for Zoom
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "+" || e.key === "=") {
-                setZoom(prev => Math.min(2.5, prev + 0.1));
-            } else if (e.key === "-" || e.key === "_") {
-                setZoom(prev => Math.max(0.3, prev - 0.1));
-            }
-        };
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, []);
 
-    const getPieceAt = (pos: string) => boardPieces.find((p) => p.position === pos);
 
     const syncFromEngine = () => {
         if (!gameRef.current) return;
@@ -295,11 +316,16 @@ export default function Board({ board }: { board: CustomBoard }) {
         for (const [sq, piece] of Object.entries(squares)) {
             if (piece) {
                 const editorPos = fromEngineSq(sq as Square);
+                // For custom pieces, we need to preserve the ID for rendering
+                // The piece.id contains the original position and type, extract the type part
+                const idParts = piece.id.split('_');
+                const originalType = idParts.length >= 3 ? idParts.slice(2).join('_') : piece.type;
+
                 newPiecesArray.push({
-                    type: piece.type,
+                    type: originalType, // Use the original ID/type for lookup
                     color: piece.color,
                     position: editorPos,
-                    size: blockSize * 0.8
+                    size: blockSize * 0.8,
                 });
             }
         }
@@ -307,37 +333,117 @@ export default function Board({ board }: { board: CustomBoard }) {
         setCurrentTurn(gameRef.current.getTurn() === "white" ? "w" : "b");
     };
 
+    const getNotation = (from: string, to: string, pieceType: string) => {
+        // Simple conversion to e.g. "Pe2-e4" or just "e2-e4"
+        const colMap = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p'];
+        const [fC, fR] = from.split(',').map(Number);
+        const [tC, tR] = to.split(',').map(Number);
+
+        // My engine coords are: (col, rows-1-row). Wait.
+        // let's use UI coords for display "Col,Row" -> "Col,Row" is clearest for custom boards.
+        // Or "a1" style if Standard 8x8.
+        if (board.cols <= 16 && board.rows <= 16) {
+            const fromS = String(colMap[fC] || fC) + (board.rows - fR);
+            const toS = String(colMap[tC] || tC) + (board.rows - tR);
+            return `${pieceType[0].toUpperCase()} ${fromS}→${toS}`;
+        }
+
+        return `${from} → ${to}`;
+    }
+
+    const navigateToMove = useCallback((index: number) => {
+        if (index < -1 || index >= moveHistory.length) return;
+
+        // 1. Re-initialize Game to start state
+        initGame();
+
+        // 2. Replay moves up to index
+        // index -1 means start state (no moves)
+        let lastMove = null;
+
+        for (let i = 0; i <= index; i++) {
+            const m = moveHistory[i];
+            const eFrom = toEngineSq(m.from);
+            const eTo = toEngineSq(m.to);
+            if (!gameRef.current) break; // Should not happen
+
+            gameRef.current.getBoard().movePiece(eFrom, eTo, m.promotion);
+            lastMove = m;
+        }
+
+        // 3. Sync UI
+        syncFromEngine();
+        setHistoryIndex(index);
+
+        if (lastMove) {
+            setLastMoveFrom(lastMove.from);
+            setLastMoveTo(lastMove.to);
+        } else {
+            setLastMoveFrom(null);
+            setLastMoveTo(null);
+        }
+
+        setSelectedPos(null);
+    }, [initGame, moveHistory, blockSize]);
+
+    // Keyboard Shortcuts for Zoom & History
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "+" || e.key === "=") {
+                setZoom(prev => Math.min(2.5, prev + 0.1));
+            } else if (e.key === "-" || e.key === "_") {
+                setZoom(prev => Math.max(0.3, prev - 0.1));
+            } else if (e.key === "ArrowLeft") {
+                navigateToMove(historyIndex - 1);
+            } else if (e.key === "ArrowRight") {
+                navigateToMove(historyIndex + 1);
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [historyIndex, navigateToMove]);
+
     const executeMove = (from: string, to: string, promotion?: string) => {
         if (!gameRef.current) return;
+
+        // --- BRANCHING LOGIC ---
+        // If we are not at the end of history, we must branch (truncate history)
+        let currentHist = moveHistory;
+        if (historyIndex < moveHistory.length - 1) {
+            // Truncate
+            currentHist = moveHistory.slice(0, historyIndex + 1);
+            setMoveHistory(currentHist);
+        }
 
         const engineFrom = toEngineSq(from);
         const engineTo = toEngineSq(to);
 
         const isCapture = !!gameRef.current.getBoard().getPiece(engineTo);
+        const piece = getPieceAt(from);
+        const notation = getNotation(from, to, piece?.type || "");
 
-        // If validation is disabled, we might need to manually update the board state in the engine
-        // or just use a special flag. For now, since it's "Play vs yourself", 
-        // we can still use makeMove but we skip the validator if validationEnabled is false.
+        // If validation disabled or move valid
+        let moveSuccessful = false;
 
-        // Actually, game.makeMove calls validator.isLegal. 
-        // If validation is OFF, we should probably force the move.
         if (!validationEnabled) {
             gameRef.current.getBoard().movePiece(engineFrom, engineTo, promotion);
-            syncFromEngine();
-            setLastMoveFrom(from);
-            setLastMoveTo(to);
-            setSelectedPos(null);
-            const sound = isCapture ? "/sounds/capture.mp3" : "/sounds/move-self.mp3";
-            const audio = new Audio(sound);
-            audio.play().catch(() => { });
-            return;
+            moveSuccessful = true;
+        } else {
+            if (gameRef.current.makeMove(engineFrom, engineTo, promotion)) {
+                moveSuccessful = true;
+            }
         }
 
-        if (gameRef.current.makeMove(engineFrom, engineTo, promotion)) {
+        if (moveSuccessful) {
             syncFromEngine();
             setLastMoveFrom(from);
             setLastMoveTo(to);
             setSelectedPos(null);
+
+            // Record Move
+            const newMove: MoveRecord = { from, to, promotion, notation };
+            setMoveHistory([...currentHist, newMove]);
+            setHistoryIndex(currentHist.length);
 
             const sound = isCapture ? "/sounds/capture.mp3" : "/sounds/move-self.mp3";
             const audio = new Audio(sound);
@@ -361,6 +467,8 @@ export default function Board({ board }: { board: CustomBoard }) {
 
             if (piece && (!validationEnabled || (piece.color === "white" ? "w" : "b") === currentTurn)) {
                 if (target && target.color === piece.color && validationEnabled) return;
+
+                // If viewing history, we check based on CURRENT visual board (which is synced to Game state of that history point)
                 if (!checkMoveLegal(from, to)) return;
 
                 if (isPromotionMove(from, to)) {
@@ -380,7 +488,6 @@ export default function Board({ board }: { board: CustomBoard }) {
             if (piece && (!validationEnabled || (piece.color === "white" ? "w" : "b") === currentTurn)) {
                 if (target && target.color === piece.color && validationEnabled) return setSelectedPos(pos);
 
-                // Add validation for click-to-move
                 if (!checkMoveLegal(selectedPos, pos)) return;
 
                 if (isPromotionMove(selectedPos, pos)) {
@@ -459,103 +566,190 @@ export default function Board({ board }: { board: CustomBoard }) {
     });
 
     return (
-        <div className="flex flex-col items-center justify-center p-4">
-            <div className="flex items-center gap-4 mb-6 px-6 py-3 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl">
-                <button
-                    onClick={() => setZoom(prev => Math.max(0.3, prev - 0.1))}
-                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all border border-white/5 active:scale-95"
-                >
-                    <Minus size={18} />
-                </button>
-                <div className="flex flex-col items-center min-w-[60px]">
-                    <span className="text-[9px] text-white/40 uppercase font-bold mb-0.5 tracking-widest">{t('zoom')}</span>
-                    <span className="text-sm font-bold text-white tabular-nums">{Math.round(zoom * 100)}%</span>
-                </div>
-                <button
-                    onClick={() => setZoom(prev => Math.min(2.5, prev + 0.1))}
-                    className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all border border-white/5 active:scale-95"
-                >
-                    <Plus size={18} />
-                </button>
-            </div>
+        <div className="flex flex-col xl:flex-row items-start justify-center gap-8 w-full max-w-[1800px]">
+            {/* Board Card - Contains Header & Board */}
+            <div className="flex flex-col items-center bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-xl border border-stone-200 dark:border-white/10 w-full max-w-3xl">
+                {headerContent}
 
-            <div className="relative shadow-2xl rounded-lg border-6 border-stone-800 bg-stone-800">
-                <div
-                    className="grid"
-                    style={{
-                        gridTemplateColumns: `repeat(${board.cols}, ${blockSize}px)`,
-                        gridTemplateRows: `repeat(${board.rows}, ${blockSize}px)`,
-                    }}
-                >
-                    <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-                        {boardContent}
-                        {markerOverlay}
-                        <DragOverlay dropAnimation={null}>
-                            {activePiece && (() => {
-                                const p = getPieceAt(activePiece);
-                                if (!p) return null;
-                                return (
-                                    <div style={{ width: blockSize, height: blockSize, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                        <Image src={getPieceImage("v3", p.color, p.type)} alt="" width={blockSize} height={blockSize} unoptimized style={{ pointerEvents: "none" }} />
-                                    </div>
-                                );
-                            })()}
-                        </DragOverlay>
-                    </DndContext>
-                </div>
-            </div>
-
-            {/* Premium Validation Toggle */}
-            <div className="mt-8 flex flex-col items-center gap-4">
-                <div className="flex items-center gap-4 px-6 py-3 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-linear-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                    <span className={`text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${!validationEnabled ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'text-white/20'}`}>
-                        {t('noValidation')}
-                    </span>
-
-                    <motion.button
-                        onClick={toggleValidation}
-                        animate={isShaking ? { x: [-4, 4, -4, 4, 0] } : {}}
-                        transition={{ duration: 0.4 }}
-                        className={`relative w-16 h-8 rounded-full transition-all duration-500 flex items-center p-1.5 shadow-inner ${validationEnabled ? 'bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.3)]' : 'bg-white/10'}`}
+                <div className="flex items-center gap-4 mb-6 px-6 py-3 bg-stone-100 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-stone-200 dark:border-white/10 shadow-sm">
+                    <button
+                        onClick={() => setZoom(prev => Math.max(0.3, prev - 0.1))}
+                        className="p-2 rounded-xl bg-white/50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 text-stone-600 dark:text-white/60 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-white/5 active:scale-95"
                     >
-                        <motion.div
-                            animate={{ x: validationEnabled ? 32 : 0 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                            className="w-5 h-5 bg-white rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.2)] flex items-center justify-center relative z-10"
-                        >
-                            {validationEnabled ?
-                                <Shield size={10} className="text-blue-600" /> :
-                                <ShieldOff size={10} className="text-stone-400" />
-                            }
-                        </motion.div>
-                        {validationEnabled && (
-                            <motion.div
-                                layoutId="glow"
-                                className="absolute inset-0 bg-blue-400/20 blur-md rounded-full"
-                            />
-                        )}
-                    </motion.button>
-
-                    <span className={`text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${validationEnabled ? 'text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]' : 'text-white/20'}`}>
-                        {t('validation')}
-                    </span>
+                        <Minus size={18} />
+                    </button>
+                    <div className="flex flex-col items-center min-w-[60px]">
+                        <span className="text-[9px] text-stone-400 dark:text-white/40 uppercase font-bold mb-0.5 tracking-widest">{t('zoom')}</span>
+                        <span className="text-sm font-bold text-stone-900 dark:text-white tabular-nums">{Math.round(zoom * 100)}%</span>
+                    </div>
+                    <button
+                        onClick={() => setZoom(prev => Math.min(2.5, prev + 0.1))}
+                        className="p-2 rounded-xl bg-white/50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 text-stone-600 dark:text-white/60 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-white/5 active:scale-95"
+                    >
+                        <Plus size={18} />
+                    </button>
                 </div>
 
-                <AnimatePresence>
-                    {showKingWarning && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            className="flex items-center gap-2 text-red-400 text-[11px] font-medium bg-red-400/10 px-3 py-1.5 rounded-lg border border-red-400/20"
+                <div className="relative shadow-2xl rounded-lg border-6 border-stone-800 bg-stone-800">
+                    <div
+                        className="grid"
+                        style={{
+                            gridTemplateColumns: `repeat(${board.cols}, ${blockSize}px)`,
+                            gridTemplateRows: `repeat(${board.rows}, ${blockSize}px)`,
+                        }}
+                    >
+                        <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+                            {boardContent}
+                            {markerOverlay}
+                            <DragOverlay dropAnimation={null}>
+                                {activePiece && (() => {
+                                    const p = getPieceAt(activePiece);
+                                    if (!p) return null;
+                                    return (
+                                        <div style={{ width: blockSize, height: blockSize, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            <PieceRenderer type={p.type} color={p.color} size={blockSize} boardStyle="v3" />
+                                        </div>
+                                    );
+                                })()}
+                            </DragOverlay>
+                        </DndContext>
+                    </div>
+                </div>
+
+                {/* Premium Validation Toggle */}
+                <div className="mt-8 flex flex-col items-center gap-4">
+                    <div className="flex items-center gap-4 px-6 py-3 bg-stone-100 dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-stone-200 dark:border-white/10 shadow-lg relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-linear-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                        <span className={`text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${!validationEnabled ? 'text-stone-900 dark:text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'text-stone-400 dark:text-white/20'}`}>
+                            {t('noValidation')}
+                        </span>
+
+                        <motion.button
+                            onClick={toggleValidation}
+                            animate={isShaking ? { x: [-4, 4, -4, 4, 0] } : {}}
+                            transition={{ duration: 0.4 }}
+                            className={`relative w-16 h-8 rounded-full transition-all duration-500 flex items-center p-1.5 shadow-inner ${validationEnabled ? 'bg-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.3)]' : 'bg-white/10'}`}
                         >
-                            <AlertCircle size={14} />
-                            {t('kingWarning')}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            <motion.div
+                                animate={{ x: validationEnabled ? 32 : 0 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                                className="w-5 h-5 bg-white dark:bg-white rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.2)] flex items-center justify-center relative z-10"
+                            >
+                                {validationEnabled ?
+                                    <Shield size={10} className="text-blue-600" /> :
+                                    <ShieldOff size={10} className="text-stone-400" />
+                                }
+                            </motion.div>
+                            {validationEnabled && (
+                                <motion.div
+                                    layoutId="glow"
+                                    className="absolute inset-0 bg-blue-400/20 blur-md rounded-full"
+                                />
+                            )}
+                        </motion.button>
+
+                        <span className={`text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${validationEnabled ? 'text-blue-500 dark:text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]' : 'text-stone-400 dark:text-white/20'}`}>
+                            {t('validation')}
+                        </span>
+                    </div>
+
+                    <AnimatePresence>
+                        {showKingWarning && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                className="flex items-center gap-2 text-red-400 text-[11px] font-medium bg-red-400/10 px-3 py-1.5 rounded-lg border border-red-400/20"
+                            >
+                                <AlertCircle size={14} />
+                                {t('kingWarning')}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </div>
+
+            {/* History Sidebar */}
+            <div className="w-full xl:w-[320px] xl:min-w-[320px] shrink-0 h-fit max-h-[600px] flex flex-col bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl border border-stone-200 dark:border-white/10 shadow-xl overflow-hidden self-start xl:mt-0">
+                <div className="p-4 border-b border-stone-200 dark:border-white/5 bg-stone-50 dark:bg-black/10 flex items-center gap-2">
+                    <History size={16} className="text-amber-500" />
+                    <span className="text-xs font-black uppercase tracking-widest text-stone-600 dark:text-white/60">Move History</span>
+                </div>
+
+                <ScrollArea className="flex-1 h-[300px] p-4">
+                    <div className="space-y-1">
+                        {moveHistory.length === 0 && (
+                            <div className="text-center py-10 text-stone-400 dark:text-white/20 text-xs font-bold uppercase tracking-widest">
+                                Start moving to create history
+                            </div>
+                        )}
+                        {/* Linear List for Custom Board flexibility */}
+                        {Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => (
+                            <div key={i} className="flex items-center group rounded-lg overflow-hidden">
+                                <div className="w-8 py-2 text-center text-[10px] font-black text-stone-400 dark:text-white/30 bg-stone-100 dark:bg-white/5 tabular-nums">
+                                    {i + 1}.
+                                </div>
+                                <div className="flex-1 grid grid-cols-2 gap-px bg-stone-100 dark:bg-white/5">
+                                    <button
+                                        onClick={() => navigateToMove(i * 2)}
+                                        className={`px-3 py-2 text-left text-xs font-bold transition-all ${historyIndex === i * 2
+                                            ? 'bg-amber-500 text-white shadow-inner'
+                                            : 'text-stone-600 dark:text-white/70 hover:bg-stone-200 dark:hover:bg-white/10'
+                                            }`}
+                                    >
+                                        {moveHistory[i * 2].notation}
+                                    </button>
+
+                                    {moveHistory[i * 2 + 1] ? (
+                                        <button
+                                            onClick={() => navigateToMove(i * 2 + 1)}
+                                            className={`px-3 py-2 text-left text-xs font-bold transition-all ${historyIndex === i * 2 + 1
+                                                ? 'bg-amber-500 text-white shadow-inner'
+                                                : 'text-stone-600 dark:text-white/70 hover:bg-stone-200 dark:hover:bg-white/10'
+                                                }`}
+                                        >
+                                            {moveHistory[i * 2 + 1].notation}
+                                        </button>
+                                    ) : (
+                                        <div className="bg-transparent" />
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </ScrollArea>
+
+                <div className="p-4 border-t border-stone-200 dark:border-white/5 bg-stone-50 dark:bg-black/20 grid grid-cols-4 gap-2">
+                    <button
+                        onClick={() => navigateToMove(-1)}
+                        disabled={historyIndex < 0}
+                        className="flex items-center justify-center p-2 rounded-lg bg-stone-200 dark:bg-white/5 hover:bg-stone-300 dark:hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-stone-200 dark:disabled:hover:bg-white/5 transition-all text-stone-600 dark:text-white/70 hover:text-stone-900 dark:hover:text-white"
+                    >
+                        <ChevronsLeft size={16} />
+                    </button>
+                    <button
+                        onClick={() => navigateToMove(historyIndex - 1)}
+                        disabled={historyIndex < 0}
+                        className="flex items-center justify-center p-2 rounded-lg bg-stone-200 dark:bg-white/5 hover:bg-stone-300 dark:hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-stone-200 dark:disabled:hover:bg-white/5 transition-all text-stone-600 dark:text-white/70 hover:text-stone-900 dark:hover:text-white"
+                    >
+                        <ChevronLeft size={16} />
+                    </button>
+                    <button
+                        onClick={() => navigateToMove(historyIndex + 1)}
+                        disabled={historyIndex >= moveHistory.length - 1}
+                        className="flex items-center justify-center p-2 rounded-lg bg-stone-200 dark:bg-white/5 hover:bg-stone-300 dark:hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-stone-200 dark:disabled:hover:bg-white/5 transition-all text-stone-600 dark:text-white/70 hover:text-stone-900 dark:hover:text-white"
+                    >
+                        <ChevronRight size={16} />
+                    </button>
+                    <button
+                        onClick={() => navigateToMove(moveHistory.length - 1)}
+                        disabled={historyIndex >= moveHistory.length - 1}
+                        className="flex items-center justify-center p-2 rounded-lg bg-stone-200 dark:bg-white/5 hover:bg-stone-300 dark:hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-stone-200 dark:disabled:hover:bg-white/5 transition-all text-stone-600 dark:text-white/70 hover:text-stone-900 dark:hover:text-white"
+                    >
+                        <ChevronsRight size={16} />
+                    </button>
+                </div>
             </div>
 
             {/* Promotion Modal */}

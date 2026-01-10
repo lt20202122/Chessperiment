@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 
 export function SEOFooter() {
     const t = useTranslations('SEO.Footer');
@@ -34,13 +35,29 @@ export function SEOFooter() {
                 </div>
 
                 <div className="flex flex-col justify-between">
-                    {/* Additional footer content, like Sitemap links or Brand info can go here */}
-                    <div className='flex flex-col gap-4'>
-                        <h3 className='font-bold text-stone-900 dark:text-white uppercase tracking-widest text-sm'>ChessPie</h3>
-                        <p className='text-stone-500 text-sm'>
-                            Designed and built for chess enthusiasts. <br />
-                            &copy; {new Date().getFullYear()} ChessPie.
-                        </p>
+                    <div className='flex flex-col gap-8'>
+                        <div>
+                            <h3 className='font-bold text-stone-900 dark:text-white uppercase tracking-widest text-sm mb-4'>{t('legal')}</h3>
+                            <ul className='space-y-2'>
+                                <li>
+                                    <Link href="/privacy-policy" className="text-stone-500 hover:text-accent transition-colors text-sm">
+                                        {t('privacyPolicy')}
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href="/legal-notice" className="text-stone-500 hover:text-accent transition-colors text-sm">
+                                        {t('legalNotice')}
+                                    </Link>
+                                </li>
+                            </ul>
+                        </div>
+                        <div className='flex flex-col gap-2'>
+                            <h3 className='font-bold text-stone-900 dark:text-white uppercase tracking-widest text-sm'>ChessPie</h3>
+                            <p className='text-stone-500 text-sm'>
+                                Designed and built for chess enthusiasts. <br />
+                                &copy; {new Date().getFullYear()} ChessPie.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

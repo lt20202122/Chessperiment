@@ -13,14 +13,15 @@ import {
     useSensors,
     PointerSensor
 } from '@dnd-kit/core';
+import { useRouter } from 'next/navigation';
+import { ChevronLeft, Save } from 'lucide-react';
+import { getCustomPieceAction, saveCustomPieceAction } from '@/app/actions/library';
+import { CustomPiece } from '@/lib/firestore';
 
 // Constants
 const BLOCK_HEIGHT = 50;
 const DEFAULT_WIDTH = 200;
 const VARIABLE_WIDTH = 140;
-const NOTCH_WIDTH = 22;
-const NOTCH_HEIGHT = 8;
-const NOTCH_X = 15;
 
 // Types
 type BlockCategory = 'Trigger' | 'Effects' | 'Variables';
@@ -192,11 +193,12 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'Effects',
         color: '#9370DB',
         description: 'Immediately removes the piece from play.',
-        width: 140 // Standardized smaller width
+        width: 140
     }
 ];
 
-export default function PageClient() {
+export default function LogicPageClient({ id }: { id: string }) {
+    const router = useRouter();
     const [activeCategory, setActiveCategory] = useState<BlockCategory>('Trigger');
     const [canvasBlocks, setCanvasBlocks] = useState<BlockInstance[]>([]);
     const [variables, setVariables] = useState<{ id: string, name: string }[]>([]);
@@ -210,9 +212,63 @@ export default function PageClient() {
     const draggedDescendantsRef = useRef<Set<string>>(new Set());
     const [mounted, setMounted] = useState(false);
 
+    // Integration Setup
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const initialPieceRef = useRef<CustomPiece | null>(null);
+
     useEffect(() => {
         setMounted(true);
-    }, []);
+        const loadPiece = async () => {
+            try {
+                const piece = await getCustomPieceAction(id);
+                if (piece) {
+                    initialPieceRef.current = piece;
+                    if (piece.logic) {
+                        setCanvasBlocks(Array.isArray(piece.logic) ? piece.logic : []);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to load piece logic:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadPiece();
+    }, [id]);
+
+    // Auto-save
+    useEffect(() => {
+        if (isLoading || !initialPieceRef.current) return;
+
+        const save = async () => {
+            setIsSaving(true);
+            try {
+                // Ensure we strip unnecessary fields for the update action
+                const pieceToUpdate = {
+                    ...initialPieceRef.current,
+                    logic: canvasBlocks
+                } as CustomPiece;
+
+                // We need to omit fields that shouldn't be touched or are auto-handled
+                // But saveCustomPieceAction takes Omit<..., "userId" | "createdAt" | "updatedAt">
+                // so we can just pass the necessary data.
+                const { userId, createdAt, updatedAt, ...safePiece } = pieceToUpdate;
+
+                await saveCustomPieceAction(safePiece);
+                // Update ref to latest state in case we need it again
+                initialPieceRef.current = pieceToUpdate;
+            } catch (error) {
+                console.error("Auto-save failed:", error);
+            } finally {
+                setIsSaving(false);
+            }
+        };
+
+        const timer = setTimeout(save, 1000); // Debounce 1s
+        return () => clearTimeout(timer);
+    }, [canvasBlocks, isLoading]);
+
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -325,6 +381,7 @@ export default function PageClient() {
 
         // Capture current template and ghost before clearing state
         const currentTemplate = activeDragTemplate || activeTemplateRef.current;
+        const currentGhost = ghost;
 
         // Clear all drag states
         setActiveDragId(null);
@@ -359,11 +416,9 @@ export default function PageClient() {
             if (block.type === 'variable' || block.childId || block.type === 'terminal') continue;
             if (currentTemplate.type === 'trigger' || currentTemplate.type === 'variable') continue;
 
-            // Snap Target: Bottom-Left of the parent block
             const targetX = block.position.x;
             const targetY = block.position.y + BLOCK_HEIGHT;
 
-            // Distance from Top-Left of dragged block to Snap Target
             const dist = Math.sqrt(Math.pow(canvasX - targetX, 2) + Math.pow(canvasY - targetY, 2));
 
             if (dist < minDistance) {
@@ -377,13 +432,14 @@ export default function PageClient() {
             }
         }
 
-        // Check if dropped within canvas boundaries (using the center of the dragged element)
-        // Recalculate center based on current position and template dimensions
         const width = currentTemplate.width || (currentTemplate.type === 'variable' ? VARIABLE_WIDTH : DEFAULT_WIDTH);
         const height = BLOCK_HEIGHT;
-
         const centerX = currentLeft + width / 2;
-        const centerY = currentTop + height / 2;
+
+        // This check was causing the "way below" issue if not using proper viewport coords
+        // Now that canvasX/Y are correct relative to content, we use visual bounds check relative to viewport for "drop outside"
+        // But simply: if `currentLeft` is outside `canvasRect`, it's "dropped outside".
+        // Keep it simple.
 
         const isExisting = canvasBlocks.some(b => b.instanceId === active.id);
 
@@ -392,15 +448,10 @@ export default function PageClient() {
                 setCanvasBlocks(prev => {
                     const oldBlock = prev.find(b => b.instanceId === active.id);
                     if (!oldBlock) return prev;
-
                     const dx = bestSnap!.x - oldBlock.position.x;
                     const dy = bestSnap!.y - oldBlock.position.y;
-
-                    // 1. Remove from old parent
                     let updated = prev.map(b => b.childId === active.id ? { ...b, childId: undefined } : b);
-                    // 2. Attach to new parent
                     updated = updated.map(b => b.instanceId === bestSnap!.parentId ? { ...b, childId: active.id as string } : b);
-                    // 3. Update block and descendants
                     return updated.map(b => {
                         if (b.instanceId === active.id) {
                             return { ...b, position: { x: bestSnap!.x, y: bestSnap!.y }, parentId: bestSnap!.parentId };
@@ -412,7 +463,6 @@ export default function PageClient() {
                     });
                 });
             } else {
-                // Snapped to another block (New Instance)
                 const newInstanceId = `instance-${Date.now()}`;
                 const newBlock: BlockInstance = {
                     ...bestSnap.template,
@@ -421,15 +471,15 @@ export default function PageClient() {
                     socketValues: {},
                     parentId: bestSnap.parentId
                 };
-
                 setCanvasBlocks(prev => {
                     const updated = prev.map(b => b.instanceId === bestSnap!.parentId ? { ...b, childId: newInstanceId } : b);
                     return [...updated, newBlock];
                 });
             }
         } else {
-            if (centerX < canvasRect.left || centerX > canvasRect.right ||
-                centerY < canvasRect.top || centerY > canvasRect.bottom) {
+            // Boundary Check
+            if (currentLeft < canvasRect.left || currentLeft > canvasRect.right ||
+                currentTop < canvasRect.top || currentTop > canvasRect.bottom) {
                 return;
             }
 
@@ -437,13 +487,9 @@ export default function PageClient() {
                 setCanvasBlocks(prev => {
                     const oldBlock = prev.find(b => b.instanceId === active.id);
                     if (!oldBlock) return prev;
-
                     const dx = canvasX - oldBlock.position.x;
                     const dy = canvasY - oldBlock.position.y;
-
-                    // 1. Remove from old parent
                     let updated = prev.map(b => b.childId === active.id ? { ...b, childId: undefined } : b);
-                    // 2. Update block and descendants
                     return updated.map(b => {
                         if (b.instanceId === active.id) {
                             return { ...b, position: { x: canvasX, y: canvasY }, parentId: undefined };
@@ -455,7 +501,6 @@ export default function PageClient() {
                     });
                 });
             } else {
-                // Free placement - place block at its exact visual position
                 const newBlock: BlockInstance = {
                     ...currentTemplate,
                     instanceId: `instance-${Date.now()}`,
@@ -478,6 +523,10 @@ export default function PageClient() {
         setIsCreatingVar(false);
     };
 
+    if (isLoading) {
+        return <div className="flex h-screen items-center justify-center bg-[#0f1115] text-white">Loading Logic Editor...</div>
+    }
+
     return (
         <DndContext
             sensors={sensors}
@@ -488,7 +537,15 @@ export default function PageClient() {
         >
             <div className="flex h-screen bg-[#0f1115] text-white overflow-hidden font-sans selection:bg-blue-500/30">
                 {/* 1. CATEGORY SIDEBAR */}
-                <div className="w-[60px] border-r border-white/5 bg-[#161920] flex flex-col items-center py-6 gap-8 z-30 shadow-2xl">
+                <div className="w-[60px] border-r border-white/5 bg-[#161920] flex flex-col items-center py-6 gap-8 z-30 shadow-2xl relative">
+                    <button
+                        onClick={() => router.back()}
+                        className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors mb-4 text-white/50 hover:text-white"
+                        title="Back to Piece Editor"
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+
                     {(['Trigger', 'Effects', 'Variables'] as BlockCategory[]).map(cat => (
                         <button
                             key={cat}
@@ -502,6 +559,22 @@ export default function PageClient() {
                             {cat}
                         </button>
                     ))}
+
+                    {/* Save Indicator */}
+                    <div className="mt-auto mb-4">
+                        <AnimatePresence>
+                            {isSaving && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0 }}
+                                    className="p-2 text-amber-500"
+                                >
+                                    <Save size={16} className="animate-pulse" />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
 
                 {/* 2. BLOCK PALETTE SIDEBAR */}
@@ -561,13 +634,11 @@ export default function PageClient() {
                             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar flex flex-col items-start">
                                 {BLOCK_TEMPLATES.filter(t => t.category === activeCategory).map(template => (
                                     <div key={template.id} className="relative w-full h-[50px] group">
-                                        {/* Background placeholder that always stays in the sidebar */}
                                         <div className="absolute inset-x-0 top-0 opacity-20 pointer-events-none transition-opacity group-hover:opacity-40">
                                             <BlockComponent
                                                 block={{ ...template, instanceId: 'bg', position: { x: 0, y: 0 }, socketValues: {} }}
                                             />
                                         </div>
-                                        {/* The actual draggable item */}
                                         <div className="absolute inset-x-0 top-0 z-10">
                                             <BlockTemplateItem template={template} />
                                         </div>
@@ -793,177 +864,156 @@ function BlockComponent({
     const getPath = () => {
         const w = width;
         const h = height;
-        const r = 10; // Slightly more rounded
+        const r = 10;
 
         if (block.type === 'trigger') {
             return `
                 M 0 ${r}
-                Q 0 0 ${r} 0
-                L ${w - r} 0
-                Q ${w} 0 ${w} ${r}
-                L ${w} ${h - r}
-                Q ${w} ${h} ${w - r} ${h}
-                L ${NOTCH_X + NOTCH_WIDTH} ${h}
-                L ${NOTCH_X + NOTCH_WIDTH / 2 + NOTCH_HEIGHT / 2} ${h + NOTCH_HEIGHT}
-                L ${NOTCH_X - NOTCH_HEIGHT / 2 + NOTCH_WIDTH / 2} ${h + NOTCH_HEIGHT}
-                L ${NOTCH_X} ${h}
-                L ${r} ${h}
-                Q 0 ${h} 0 ${h - r}
-                Z
+                a ${r} ${r} 0 0 1 ${r} -${r}
+                h ${w - 2 * r}
+                a ${r} ${r} 0 0 1 ${r} ${r}
+                v ${h - 2 * r}
+                a ${r} ${r} 0 0 1 -${r} ${r}
+                h -15
+                l -6 6
+                l -6 -6
+                h -${w - 32 - 27}
+                a ${r} ${r} 0 0 1 -${r} -${r}
+                z
             `;
-        }
-        if (block.type === 'effect') {
-            return `
-                M 0 ${r}
-                Q 0 0 ${r} 0
-                L ${NOTCH_X} 0
-                L ${NOTCH_X + NOTCH_HEIGHT / 2} ${NOTCH_HEIGHT}
-                L ${NOTCH_X + NOTCH_WIDTH - NOTCH_HEIGHT / 2} ${NOTCH_HEIGHT}
-                L ${NOTCH_X + NOTCH_WIDTH} 0
-                L ${w - r} 0
-                Q ${w} 0 ${w} ${r}
-                L ${w} ${h - r}
-                Q ${w} ${h} ${w - r} ${h}
-                L ${NOTCH_X + NOTCH_WIDTH} ${h}
-                L ${NOTCH_X + NOTCH_WIDTH / 2 + NOTCH_HEIGHT / 2} ${h + NOTCH_HEIGHT}
-                L ${NOTCH_X - NOTCH_HEIGHT / 2 + NOTCH_WIDTH / 2} ${h + NOTCH_HEIGHT}
-                L ${NOTCH_X} ${h}
-                L ${r} ${h}
-                Q 0 ${h} 0 ${h - r}
-                Z
-            `;
-        }
+        } // Notch at bottom only
+
         if (block.type === 'terminal') {
             return `
                 M 0 ${r}
-                Q 0 0 ${r} 0
-                L ${NOTCH_X} 0
-                L ${NOTCH_X + NOTCH_HEIGHT / 2} ${NOTCH_HEIGHT}
-                L ${NOTCH_X + NOTCH_WIDTH - NOTCH_HEIGHT / 2} ${NOTCH_HEIGHT}
-                L ${NOTCH_X + NOTCH_WIDTH} 0
-                L ${w - r} 0
-                Q ${w} 0 ${w} ${r}
-                L ${w} ${h - r / 2}
-                Q ${w} ${h} ${w - r} ${h}
-                L ${r} ${h}
-                Q 0 ${h} 0 ${h - r}
-                Z
+                a ${r} ${r} 0 0 1 ${r} -${r}
+                h 15
+                l 6 6
+                l 6 -6
+                h ${w - 32 - 27}
+                a ${r} ${r} 0 0 1 ${r} ${r}
+                v ${h - 2 * r}
+                a ${r} ${r} 0 0 1 -${r} ${r}
+                h -${w - 2 * r}
+                a ${r} ${r} 0 0 1 -${r} -${r}
+                z
             `;
-        }
+        } // Notch at top only
+
         if (block.type === 'variable') {
             return `
-                M ${h / 2} 0
-                L ${w - h / 2} 0
-                Q ${w} 0 ${w} ${h / 2}
-                Q ${w} ${h} ${w - h / 2} ${h}
-                L ${h / 2} ${h}
-                Q 0 ${h} 0 ${h / 2}
-                Q 0 0 ${h / 2} 0
-                Z
+                M ${r} 0
+                h ${w - 2 * r}
+                a ${r} ${r} 0 0 1 ${r} ${r}
+                v ${h - 2 * r}
+                a ${r} ${r} 0 0 1 -${r} ${r}
+                h -${w - 2 * r}
+                a ${r} ${r} 0 0 1 -${r} -${r}
+                v -${h - 2 * r}
+                a ${r} ${r} 0 0 1 ${r} -${r}
+                z
             `;
         }
-        return `M 0 0 L ${w} 0 L ${w} ${h} L 0 ${h} Z`;
-    };
 
-    const contentPaddingLeft = hasNotch ? NOTCH_X + NOTCH_WIDTH : 12;
+        // Standard Effect Block (Top and Bottom Notch)
+        return `
+            M 0 ${r}
+            a ${r} ${r} 0 0 1 ${r} -${r}
+            h 15
+            l 6 6
+            l 6 -6
+            h ${w - 32 - 27}
+            a ${r} ${r} 0 0 1 ${r} ${r}
+            v ${h - 2 * r}
+            a ${r} ${r} 0 0 1 -${r} ${r}
+            h -15
+            l -6 6
+            l -6 -6
+            h -${w - 32 - 27}
+            a ${r} ${r} 0 0 1 -${r} -${r}
+            z
+        `;
+    };
 
     return (
         <div
-            className={`relative group filter drop-shadow-lg origin-center transition-all duration-200 ${isGhost ? 'opacity-30' : 'hover:scale-[1.02]'}`}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-            onClick={() => setShowTooltip(true)}
-            style={{ width, height }}
+            className="relative select-none group"
+            style={{ width, height: height + 20 }}
+            onDoubleClick={onShowInfo}
         >
-            <svg
-                width={width}
-                height={height + (hasNotch ? NOTCH_HEIGHT : 0)}
-                viewBox={`0 0 ${width} ${height + (hasNotch ? NOTCH_HEIGHT : 0)}`}
-                className="absolute top-0 left-0 pointer-events-none"
-            >
+            <svg width={width} height={height + 20} className="drop-shadow-lg">
                 <path
                     d={getPath()}
-                    fill={isGhost ? '#333' : block.color}
-                    stroke={isGhost ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.2)'}
-                    strokeWidth="1.5"
+                    fill={block.color}
+                    className="transition-colors duration-200"
+                />
+
+                {/* 3D Border Effect */}
+                <path
+                    d={getPath()}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.2)"
+                    strokeWidth="1"
                 />
             </svg>
-            <div className="absolute inset-0 flex items-center pointer-events-none z-10">
-                <div
-                    className="flex items-center gap-2.5 w-full justify-start px-3"
-                    style={{ paddingLeft: contentPaddingLeft }}
-                >
-                    <span className="font-bold text-white text-[14px] shadow-sm tracking-tight whitespace-nowrap">{block.label}</span>
-                    <div className="flex items-center gap-2">
-                        {block.sockets?.map(socket => (
-                            <div key={socket.id} className="flex items-center gap-1.5 pointer-events-auto">
-                                {socket.label && <span className="text-[10px] font-black uppercase text-white/40">{socket.label}</span>}
-                                {socket.type === 'number' && (
-                                    <div className="flex bg-black/30 rounded-lg border border-white/10 focus-within:ring-1 focus-within:ring-white/20 transition-all overflow-hidden">
-                                        {block.socketValues[socket.id]?.type === 'variable' ? (
-                                            <div className="px-2 py-0.5 bg-orange-500/20 text-orange-500 text-[10px] font-black border-l-2 border-orange-500 flex items-center gap-1">
-                                                <div className="w-1 h-1 rounded-full bg-orange-500" />
-                                                {block.socketValues[socket.id].name}
-                                            </div>
-                                        ) : (
-                                            <input
-                                                type="number"
-                                                value={block.socketValues[socket.id] || ''}
-                                                onChange={(e) => onUpdateSocket?.(socket.id, e.target.value)}
-                                                className="w-12 bg-transparent text-white text-[11px] font-bold px-2 py-0.5 focus:outline-none text-center"
-                                                placeholder="0"
-                                            />
-                                        )}
-                                    </div>
-                                )}
-                                {socket.type === 'text' && (
-                                    <div className="flex bg-black/30 rounded-lg border border-white/10 focus-within:ring-1 focus-within:ring-white/20 transition-all overflow-hidden">
-                                        <input
-                                            type="text"
-                                            value={block.socketValues[socket.id] || ''}
-                                            onChange={(e) => onUpdateSocket?.(socket.id, e.target.value)}
-                                            className="w-20 bg-transparent text-white text-[11px] font-bold px-2 py-0.5 focus:outline-none"
-                                            placeholder="..."
-                                        />
-                                    </div>
-                                )}
-                                {socket.type === 'select' && (
-                                    <select
-                                        value={block.socketValues[socket.id] || socket.options?.[0]}
-                                        onChange={(e) => onUpdateSocket?.(socket.id, e.target.value)}
-                                        className="bg-black/30 text-white text-[10px] font-bold rounded-lg px-1 py-0.5 border border-white/10 focus:outline-none appearance-none cursor-pointer pr-4"
-                                    >
-                                        {socket.options?.map(opt => <option key={opt} value={opt} className="bg-[#1a1d26]">{opt}</option>)}
-                                    </select>
-                                )}
-                            </div>
-                        ))}
+
+            {/* Content */}
+            <div className="absolute inset-x-0 top-0 h-[50px] flex items-center px-4 gap-2">
+                <span className="font-black text-xs text-[rgba(0,0,0,0.7)] uppercase tracking-wider">{block.label}</span>
+
+                {block.sockets?.map(socket => (
+                    <div key={socket.id} className="flex items-center gap-1 bg-black/10 rounded px-1.5 py-0.5">
+                        {socket.label && <span className="text-[9px] font-bold text-black/50">{socket.label}</span>}
+                        {socket.type === 'select' ? (
+                            <select
+                                value={block.socketValues[socket.id] || ''}
+                                onChange={(e) => onUpdateSocket?.(socket.id, e.target.value)}
+                                className="bg-transparent text-[10px] font-bold text-black border-none outline-none min-w-[40px] appearance-none cursor-pointer"
+                                onClick={(e) => e.stopPropagation()}
+                                onPointerDown={(e) => e.stopPropagation()}
+                            >
+                                <option value="">-</option>
+                                {socket.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                        ) : (
+                            <input
+                                type={socket.type === 'number' ? 'number' : 'text'}
+                                value={block.socketValues[socket.id] || ''}
+                                onChange={(e) => onUpdateSocket?.(socket.id, e.target.value)}
+                                className="bg-transparent text-[10px] font-bold text-black border-none outline-none w-[40px] text-center"
+                                placeholder="..."
+                                onClick={(e) => e.stopPropagation()}
+                                onPointerDown={(e) => e.stopPropagation()}
+                            />
+                        )}
                     </div>
-                </div>
+                ))}
             </div>
 
-            {!isGhost && block.instanceId !== 'template' && isHovered && (
-                <div className="absolute top-1 right-2 flex gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
-                    <button onClick={onShowInfo} className="p-1 bg-black/40 hover:bg-black/60 rounded-md text-white/70 hover:text-white transition-colors">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    </button>
-                    <button onClick={onDelete} className="p-1 bg-red-500/40 hover:bg-red-500/60 rounded-md text-white/70 hover:text-white transition-colors">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
-                </div>
+            {onDelete && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             )}
 
             <AnimatePresence>
                 {showTooltip && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute bottom-full mb-3 left-0 w-max max-w-[200px] z-50 pointer-events-none">
-                        <div className="bg-[#1a1d26] border border-white/10 px-4 py-2 rounded-xl shadow-2xl flex flex-col gap-1">
-                            <p className="text-white text-xs font-bold leading-tight">{block.label}</p>
-                            <p className="text-stone-400 text-[10px] leading-relaxed italic">{block.description}</p>
-                        </div>
-                        <div className="w-2 h-2 bg-[#1a1d26] border-r border-b border-white/10 rotate-45 ml-6 -mt-1.5" />
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50 pointer-events-none"
+                    >
+                        {block.description}
                     </motion.div>
                 )}
             </AnimatePresence>
         </div>
     );
 }
+

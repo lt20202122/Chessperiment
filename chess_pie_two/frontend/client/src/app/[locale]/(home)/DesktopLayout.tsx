@@ -1,4 +1,3 @@
-
 export default function DesktopLayout({
     children, statistics, mixed
 }: Readonly<{
@@ -8,7 +7,7 @@ export default function DesktopLayout({
 }>) {
     return (
         <main
-            className="mt-0  px-10"
+            className="mt-0 px-10 pb-20"
             style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 2fr 1fr",
@@ -16,17 +15,17 @@ export default function DesktopLayout({
         "statistics main mixed"
         `,
                 gap: "40px",
-                height: "100vh"
+                minHeight: "100vh"
             }}
         >
             <div className="block h-3"></div>
             <div className="h-1 w-full mb-9"></div>
             <section style={{ gridArea: "main" }}
-                className='bg-islands transition-all duration-300 shadow-islands lg:h-[440px] md:h-[360px] p-4 rounded-lg'>{children}</section>
+                className='bg-islands transition-all duration-300 shadow-islands min-h-[440px] p-6 rounded-lg h-fit'>{children}</section>
             <aside style={{ gridArea: "statistics" }}
-                className='bg-islands'>{statistics}</aside>
+                className='bg-islands h-fit'>{statistics}</aside>
             <aside style={{ gridArea: "mixed" }}
-                className='bg-islands'>{mixed}</aside>
+                className='bg-islands h-fit'>{mixed}</aside>
         </main>
     );
 }

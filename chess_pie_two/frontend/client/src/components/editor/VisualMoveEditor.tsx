@@ -39,17 +39,18 @@ interface MoveRule {
 interface VisualMoveEditorProps {
     moves: MoveRule[];
     onUpdate: (moves: MoveRule[]) => void;
+    pieceId?: string;
 }
 
-const VAR_MAP = {
-    absDiffX: { label: 'Horizontal distance', math: '|ΔX|', desc: 'How many squares left or right the piece moves, regardless of direction.' },
-    absDiffY: { label: 'Vertical distance', math: '|ΔY|', desc: 'How many squares up or down the piece moves, regardless of direction.' },
-    diffX: { label: 'Horizontal steps', math: 'ΔX', desc: 'Distance horizontally. Positive is right, negative is left.' },
-    diffY: { label: 'Vertical steps', math: 'ΔY', desc: 'Distance vertically. Positive is up (forward for white), negative is down.' },
-};
+const VAR_MATH = {
+    absDiffX: '|ΔX|',
+    absDiffY: '|ΔY|',
+    diffX: 'ΔX',
+    diffY: 'ΔY',
+} as const;
 
-function ExplanationModal({ variable, onClose }: { variable: keyof typeof VAR_MAP, onClose: () => void }) {
-    const info = VAR_MAP[variable];
+function ExplanationModal({ variable, onClose }: { variable: keyof typeof VAR_MATH, onClose: () => void }) {
+    const t = useTranslations('Editor.Piece');
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -66,18 +67,18 @@ function ExplanationModal({ variable, onClose }: { variable: keyof typeof VAR_MA
             >
                 <div className="flex items-center gap-3 mb-6">
                     <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500 font-black text-xl">
-                        {info.math}
+                        {VAR_MATH[variable]}
                     </div>
-                    <h3 className="text-xl font-black text-stone-900 dark:text-white">{info.label}</h3>
+                    <h3 className="text-xl font-black text-stone-900 dark:text-white">{t(`variables.${variable}.label`)}</h3>
                 </div>
                 <p className="text-stone-500 dark:text-white/60 leading-relaxed mb-8">
-                    {info.desc}
+                    {t(`variables.${variable}.desc`)}
                 </p>
                 <button
                     onClick={onClose}
                     className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold hover:bg-white/10 transition-all"
                 >
-                    Got it
+                    {t('gotIt')}
                 </button>
             </motion.div>
         </motion.div>
@@ -103,7 +104,7 @@ function SortableRule({
     onToggleResult: (id: string) => void,
     t: any
 }) {
-    const [explaining, setExplaining] = useState<keyof typeof VAR_MAP | null>(null);
+    const [explaining, setExplaining] = useState<keyof typeof VAR_MATH | null>(null);
     const {
         attributes,
         listeners,
@@ -163,8 +164,8 @@ function SortableRule({
                                         onChange={(e) => onUpdateCondition(rule.id, cond.id, { variable: e.target.value as any })}
                                         className="bg-white dark:bg-[#1c1c1c] text-sm font-bold text-amber-500 pl-2 pr-6 py-1 outline-none appearance-none cursor-pointer hover:bg-stone-50 dark:hover:bg-white/5 rounded-lg transition-colors border-none"
                                     >
-                                        {Object.entries(VAR_MAP).map(([key, info]) => (
-                                            <option key={key} value={key}>{info.label} ({info.math})</option>
+                                        {(Object.keys(VAR_MATH) as Array<keyof typeof VAR_MATH>).map((key) => (
+                                            <option key={key} value={key}>{t(`variables.${key}.label`)} ({VAR_MATH[key]})</option>
                                         ))}
                                     </select>
                                     <div className="absolute right-2 pointer-events-none text-amber-500/40">
@@ -243,7 +244,7 @@ function SortableRule({
     );
 }
 
-export default function VisualMoveEditor({ moves, onUpdate }: VisualMoveEditorProps) {
+export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMoveEditorProps) {
     const t = useTranslations('Editor.Piece');
 
     const sensors = useSensors(
@@ -395,6 +396,24 @@ export default function VisualMoveEditor({ moves, onUpdate }: VisualMoveEditorPr
                         {t('createFirstRule')}
                     </button>
                 </motion.div>
+            )}
+
+            {pieceId && (
+                <div className="flex justify-center pt-8 border-t border-white/5">
+                    <button
+                        onClick={() => window.location.href = `/editor/piece/${pieceId}/logic`}
+                        className="group flex items-center gap-3 px-6 py-4 bg-stone-100 dark:bg-white/5 rounded-2xl border border-stone-200 dark:border-white/10 hover:bg-white/10 hover:border-amber-500/50 transition-all"
+                    >
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
+                        </div>
+                        <div className="text-left">
+                            <h3 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider group-hover:text-amber-500 transition-colors">Advanced Logic</h3>
+                            <p className="text-[10px] font-medium text-stone-500 dark:text-white/40">Open the node-based logic editor (Scratch-like)</p>
+                        </div>
+                        <ArrowRight size={16} className="text-stone-300 dark:text-white/20 group-hover:text-amber-500 group-hover:translate-x-1 transition-all ml-2" />
+                    </button>
+                </div>
             )}
         </div>
     );

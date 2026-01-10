@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getUserPieceSetsAction, getCustomPieceAction, savePieceSetAction, saveCustomPieceAction, getSetPiecesAction, deleteCustomPieceAction } from '@/app/actions/library';
 import { PieceSet, CustomPiece } from '@/lib/firestore';
+import { invertLightness } from '@/lib/colors';
 
 export default function PageClient() {
     const t = useTranslations('Editor.Piece');
@@ -43,31 +44,41 @@ export default function PageClient() {
 
     // Load sets and check for edit mode
     useEffect(() => {
-        loadSets();
-
-        // Check if we're editing a piece from library
-        const editId = localStorage.getItem('editPieceId');
-        if (editId) {
-            loadPieceForEditing(editId);
-            localStorage.removeItem('editPieceId');
-        }
+        initializeEditor();
     }, []);
 
-    const loadSets = async () => {
+    const initializeEditor = async () => {
         try {
+            // Check if we're editing a piece from library
+            const editId = localStorage.getItem('editPieceId');
+            if (editId) {
+                await loadPieceForEditing(editId);
+                localStorage.removeItem('editPieceId');
+                return;
+            }
+
+            // Load all sets
             const loadedSets = await getUserPieceSetsAction();
             setSets(loadedSets as any);
-            // Don't auto-select or create if we just arrived
-            // Let the user start painting immediately
-            if (loadedSets.length > 0) {
-                // If there are sets, maybe load the first one's pieces for the sidebar, 
-                // but don't force a piece selection yet if we want a "fresh" start.
-                const loadedPieces = await getSetPiecesAction(loadedSets[0].id!);
-                setPieces(loadedPieces as any);
-                // We keep currentSetId null if we want the "New Piece" from scratch feel
+
+            if (loadedSets.length === 0) {
+                // No sets exist - show modal to create first set
+                setIsSaveModalOpen(true);
+                return;
             }
+
+            // Auto-select the most recently updated set
+            const sortedSets = [...loadedSets].sort((a, b) =>
+                new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+            );
+            const mostRecentSet = sortedSets[0];
+
+            setCurrentSetId(mostRecentSet.id!);
+            await loadSetPieces(mostRecentSet.id!);
         } catch (error) {
-            console.error('Failed to load sets:', error);
+            console.error('Failed to initialize editor:', error);
+            // If there's an error, show the modal
+            setIsSaveModalOpen(true);
         }
     };
 
@@ -75,14 +86,47 @@ export default function PageClient() {
         try {
             const loadedPieces = await getSetPiecesAction(setId);
             setPieces(loadedPieces as any);
-            if (loadedPieces.length > 0) {
-                selectPiece(loadedPieces[0].id!);
+
+            if (loadedPieces.length === 0) {
+                // Set is empty - create starter pieces automatically
+                await createStarterPieces(setId);
             } else {
-                // Create first piece in set
-                createNewPiece();
+                // Select the first piece
+                selectPiece(loadedPieces[0].id!);
             }
         } catch (error) {
             console.error('Failed to load pieces:', error);
+        }
+    };
+
+    const createStarterPieces = async (setId: string) => {
+        try {
+            // Create white piece
+            const whitePieceData: Omit<CustomPiece, 'userId' | 'createdAt' | 'updatedAt'> = {
+                setId: setId,
+                name: 'NewPiece',
+                color: 'white',
+                pixels: Array(64).fill(null).map(() => Array(64).fill('transparent')),
+                moves: []
+            };
+            const whiteId = await saveCustomPieceAction(whitePieceData);
+
+            // Create black piece
+            const blackPieceData: Omit<CustomPiece, 'userId' | 'createdAt' | 'updatedAt'> = {
+                setId: setId,
+                name: 'NewPiece',
+                color: 'black',
+                pixels: Array(64).fill(null).map(() => Array(64).fill('transparent')),
+                moves: []
+            };
+            await saveCustomPieceAction(blackPieceData);
+
+            // Reload pieces and select the white one
+            const loadedPieces = await getSetPiecesAction(setId);
+            setPieces(loadedPieces as any);
+            selectPiece(whiteId);
+        } catch (error) {
+            console.error('Failed to create starter pieces:', error);
         }
     };
 
@@ -120,21 +164,38 @@ export default function PageClient() {
         }
     };
 
-    const createNewPiece = () => {
-        setSelectedPieceId(null);
-        setEditingPieceId(null);
-        setCurrentPixels(Array(64).fill(null).map(() => Array(64).fill('transparent')));
-        setCurrentMoves([]);
-        setCurrentName('New Piece');
-        setCurrentColor('white');
+    const createNewPiece = async () => {
+        if (!currentSetId) {
+            // No set selected - show modal
+            setIsSaveModalOpen(true);
+            return;
+        }
+
+        try {
+            // Create a new blank piece in the current set
+            const newPieceData: Omit<CustomPiece, 'userId' | 'createdAt' | 'updatedAt'> = {
+                setId: currentSetId,
+                name: 'New Piece',
+                color: 'white',
+                pixels: Array(64).fill(null).map(() => Array(64).fill('transparent')),
+                moves: []
+            };
+
+            const newPieceId = await saveCustomPieceAction(newPieceData);
+
+            // Reload pieces and select the new one
+            const loadedPieces = await getSetPiecesAction(currentSetId);
+            setPieces(loadedPieces as any);
+            selectPiece(newPieceId);
+        } catch (error) {
+            console.error('Failed to create new piece:', error);
+        }
     };
 
-    const handleSavePiece = async (overrides?: { pixels?: string[][], moves?: any[], name?: string, color?: 'white' | 'black' }) => {
-        // If no set is selected, and this is NOT an auto-save, open the modal
+    const handleSavePiece = async (overrides?: { pixels?: string[][], moves?: any[], name?: string, color?: 'white' | 'black', sourceId?: string }) => {
+        // If no set is selected, open the modal to let user choose/create a set
         if (!currentSetId) {
-            if (!overrides) {
-                setIsSaveModalOpen(true);
-            }
+            setIsSaveModalOpen(true);
             return;
         }
 
@@ -147,7 +208,8 @@ export default function PageClient() {
                 name: overrides?.name ?? currentName,
                 color: overrides?.color ?? currentColor,
                 pixels: overrides?.pixels ?? currentPixels,
-                moves: overrides?.moves ?? currentMoves
+                moves: overrides?.moves ?? currentMoves,
+                sourceId: overrides?.sourceId ?? (pieces.find(p => p.id === editingPieceId)?.sourceId)
             };
 
             const savedId = await saveCustomPieceAction(pieceData);
@@ -172,28 +234,27 @@ export default function PageClient() {
     };
 
     const handleSelectSetAndSave = async (setId: string) => {
-        setCurrentSetId(setId);
         setIsSaveModalOpen(false);
-        setIsSaving(true);
+        setCurrentSetId(setId);
+
         try {
-            const pieceData: Omit<CustomPiece, 'userId' | 'createdAt' | 'updatedAt'> = {
-                id: editingPieceId || undefined,
-                setId: setId,
-                name: currentName,
-                color: currentColor,
-                pixels: currentPixels,
-                moves: currentMoves
-            };
-            const savedId = await saveCustomPieceAction(pieceData);
+            // Load pieces in the selected set
             const loadedPieces = await getSetPiecesAction(setId);
-            setPieces(loadedPieces as any);
-            setEditingPieceId(savedId);
-            setSelectedPieceId(savedId);
-            await loadSets();
+
+            if (loadedPieces.length === 0) {
+                // Set is empty - create starter pieces
+                await createStarterPieces(setId);
+            } else {
+                // Set has pieces - load them and select the first one
+                setPieces(loadedPieces as any);
+                selectPiece(loadedPieces[0].id!);
+            }
+
+            // Reload sets list
+            const refreshedSets = await getUserPieceSetsAction();
+            setSets(refreshedSets as any);
         } catch (error) {
-            console.error('Failed to save piece to selected set:', error);
-        } finally {
-            setIsSaving(false);
+            console.error('Failed to initialize set:', error);
         }
     };
 
@@ -207,6 +268,71 @@ export default function PageClient() {
             console.error('Failed to delete piece:', error);
         }
     };
+
+    const generateInvertedPiece = async () => {
+        if (!currentSetId || !selectedPieceId) return;
+
+        try {
+            const currentPiece = pieces.find(p => p.id === selectedPieceId);
+            if (!currentPiece) return;
+
+            // Search for existing counterpart using sourceId or name fallback
+            let existingInverted = pieces.find(p =>
+                (p.sourceId === currentPiece.id || currentPiece.sourceId === p.id) &&
+                p.color !== currentPiece.color
+            );
+
+            if (!existingInverted) {
+                // Fallback: match by name only if it's the only one of that color
+                const sameName = pieces.filter(p => p.name === currentPiece.name && p.color !== currentPiece.color);
+                if (sameName.length === 1) {
+                    existingInverted = sameName[0];
+                }
+            }
+
+            if (existingInverted) {
+                if (!confirm(`An inverted piece (${existingInverted.color}) already exists. Update it?`)) {
+                    // Create new instead
+                    existingInverted = undefined;
+                }
+            }
+
+            const invertedPixels = currentPiece.pixels.map(row =>
+                row.map(color => (color === 'transparent' || !color.startsWith('#')) ? color : invertLightness(color))
+            );
+
+            const invertedColor = currentPiece.color === 'white' ? 'black' : 'white';
+            const invertedPieceData: Omit<CustomPiece, 'userId' | 'createdAt' | 'updatedAt'> = {
+                id: existingInverted?.id,
+                setId: currentSetId,
+                name: currentPiece.name,
+                color: invertedColor,
+                pixels: invertedPixels,
+                moves: currentPiece.moves || [],
+                sourceId: currentPiece.id
+            };
+
+            const newPieceId = await saveCustomPieceAction(invertedPieceData);
+            const loadedPieces = await getSetPiecesAction(currentSetId);
+            setPieces(loadedPieces as any);
+            selectPiece(newPieceId);
+        } catch (error) {
+            console.error('Inversion failed:', error);
+        }
+    };
+
+    // Auto-save name and color
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (editingPieceId) {
+                const piece = pieces.find(p => p.id === editingPieceId);
+                if (piece && (piece.name !== currentName || piece.color !== currentColor)) {
+                    handleSavePiece({ name: currentName, color: currentColor });
+                }
+            }
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, [currentName, currentColor, editingPieceId]);
 
     const addToHistory = (newPixels: string[][]) => {
         const newHistory = history.slice(0, historyIndex + 1);
@@ -300,6 +426,7 @@ export default function PageClient() {
                 canUndo={historyIndex > 0}
                 canRedo={historyIndex < history.length - 1}
                 onDeletePiece={handleDeletePiece}
+                onGenerateInvertedPiece={generateInvertedPiece}
             />
         }>
             <div className="flex flex-col items-center w-full relative">
@@ -342,6 +469,7 @@ export default function PageClient() {
                     <VisualMoveEditor
                         moves={currentMoves}
                         onUpdate={updateCurrentMoves}
+                        pieceId={editingPieceId || undefined}
                     />
                 )}
             </div>

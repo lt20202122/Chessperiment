@@ -101,7 +101,6 @@ export default function AnnouncementsPage({ params: { locale } }: { params: { lo
                     ))}
                 </div>
             </div>
-            <SEOFooter />
         </div>
     );
 }

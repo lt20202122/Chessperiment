@@ -211,6 +211,16 @@
             "clickToPlace": "Click square to place {piece}",
             "rightClickToRemove": "Right-click to remove piece",
             "cleanup": "Start from scratch",
+            "customPieces": "Custom Creations",
+            "import": "Import",
+            "noCustomPieces": "No custom pieces yet",
+            "importPieces": "Import Pieces",
+            "selectSetToImport": "Select a set to import",
+            "loadingCollection": "Loading your collection...",
+            "noSetsFound": "No sets found in your library",
+            "createFirstSet": "Create your first piece set",
+            "saveSuccess": "Board saved successfully",
+            "saveBoard": "Save Board",
             "Play": {
                 "noValidation": "No move validation",
                 "validation": "Move validation",
@@ -334,6 +344,37 @@
         "madeWith": "Created with the friendly support of",
         "dieterLinkText": "Dieter macht den Datenschutz"
     },
+    "PrivacyPolicy": {
+        "title": "Privacy Policy (GDPR)",
+        "lastUpdated": "(As of: January 2026)",
+        "controllerHeading": "1. Data Controller",
+        "controllerText": "The person responsible for data processing on this website is:\n\nChessPie\nResponsible Person: Lasse Mauritz\nAddress: Ahlerfeld 29, 38527 Meine, Germany\nEmail: contact.chesspie@gmail.com\n\nWebsite: https://chesspie.org",
+        "generalHeading": "2. General Information on Data Processing",
+        "generalText": "The protection of your personal data is important to us. Personal data is processed on this website exclusively within the framework of the legal provisions of the General Data Protection Regulation (GDPR). Personal data is any data with which you can be personally identified (e.g., name, email address).",
+        "collectionHeading": "3. Collection and Storage of Personal Data",
+        "accountsSubheading": "a) User Accounts",
+        "accountsText": "When creating a user account, we process the following data: name, email address, profile picture. This data is not publicly visible and serves exclusively for the use of the platform. Legal basis: Art. 6 Para. 1 lit. b GDPR (contract fulfillment)",
+        "contentSubheading": "b) User-generated Content",
+        "contentText": "Users can create content, including: chessboards, pieces, content for the marketplace. This content may be publicly visible depending on the settings. Legal basis: Art. 6 Para. 1 lit. b GDPR",
+        "chatSubheading": "c) Chat Function",
+        "chatText": "ChessPie offers a chat function. Content in the chat is stored and automatically checked for certain prohibited words (filtering). This filtering serves security and minor protection purposes. Legal basis: Art. 6 Para. 1 lit. f GDPR (legitimate interest in security and moderation)",
+        "analyticsHeading": "4. Analysis Tools",
+        "analyticsText": "Vercel Analytics & Speed Insights: This website uses Vercel Analytics and Vercel Speed Insights to collect anonymized usage statistics and improve website performance. No cookies are set, and no personal profiles are created. Legal basis: Art. 6 Para. 1 lit. f GDPR",
+        "hostingHeading": "5. Database & Hosting",
+        "hostingText": "Firebase / Firestore: We use Google Firebase (Firestore) to store user data. It cannot be excluded that data may also be processed on servers outside the EU (e.g., USA). Google is certified according to the EU-US Data Privacy Framework. Legal basis: Art. 6 Para. 1 lit. b & f GDPR",
+        "cookiesHeading": "6. Cookies",
+        "cookiesText": "ChessPie does not use tracking cookies for advertising purposes. Technically necessary cookies may be used to provide basic functions.",
+        "minorsHeading": "7. Minors",
+        "minorsText": "The offer is directed at users of all ages. Persons under 16 years of age should obtain the consent of a legal guardian if personal data is being processed.",
+        "rightsHeading": "8. Your Rights",
+        "rightsText": "You have the right to access, rectification, erasure, restriction of processing, data portability, and objection (Art. 15-21 GDPR). Please direct your inquiries to: contact.chesspie@gmail.com",
+        "complaintHeading": "9. Right to Lodge a Complaint",
+        "complaintText": "You have the right to lodge a complaint with a data protection supervisory authority.",
+        "changesHeading": "10. Changes to this Privacy Policy",
+        "changesText": "We reserve the right to adjust this privacy policy to adapt it to new legal requirements or changes in our offer.",
+        "madeWith": "Created with the friendly support of",
+        "dieterLinkText": "Dieter macht den Datenschutz"
+    },
     "SEO": {
         "Footer": {
             "title": "Frequently Asked Questions",
@@ -342,10 +383,13 @@
             "isItFree": "Is ChessPie free?",
             "isItFreeAnswer": "Yes, ChessPie is currently completely free to use. You can play, create, and share without any cost.",
             "canIPlayFriends": "Can I play with friends?",
-            "canIPlayFriendsAnswer": "Absolutely! Just share your room code or link and play your custom variants instantly in your browser."
+            "canIPlayFriendsAnswer": "Absolutely! Just share your room code or link and play your custom variants instantly in your browser.",
+            "legal": "Legal",
+            "privacyPolicy": "Privacy Policy",
+            "legalNotice": "Legal Notice"
         },
         "Home": {
-            "title": "ChessPie | Play, Create & Share Custom Chess Variants",
+            "title": "ChessPie | Create and share!",
             "description": "The ultimate platform for custom chess. Create your own chess pieces, design boards, and play unique chess variants online with friends.",
             "h1": "ChessPie - The Custom Chess Platform",
             "p": "Design unique chess sets, customize your board, and play multiplayer chess variants online."
@@ -408,5 +452,10 @@
         "itemTypePiece": "Piece",
         "white": "White",
         "black": "Black"
+    },
+    "NotFound": {
+        "title": "404 - Piece Not Found",
+        "description": "It looks like this move was illegal. The page you are looking for does not exist or has been shifted.",
+        "backHome": "Return to the Game"
     }
 }

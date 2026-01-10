@@ -189,6 +189,16 @@
             "clickToPlace": "Klicke auf ein Feld, um {piece} zu platzieren",
             "rightClickToRemove": "Rechtsklick, um Figuren zu entfernen",
             "cleanup": "Neu starten",
+            "customPieces": "Eigene Figuren",
+            "import": "Importieren",
+            "noCustomPieces": "Noch keine eigenen Figuren",
+            "importPieces": "Figuren importieren",
+            "selectSetToImport": "Wähle ein Set zum Importieren",
+            "loadingCollection": "Lade deine Sammlung...",
+            "noSetsFound": "Keine Sets in deiner Bibliothek gefunden",
+            "createFirstSet": "Erstelle dein erstes Figuren-Set",
+            "saveSuccess": "Brett erfolgreich gespeichert",
+            "saveBoard": "Brett speichern",
             "Play": {
                 "noValidation": "Keine Zugvalidierung",
                 "validation": "Zugvalidierung",
@@ -306,6 +316,37 @@
         "madeWith": "Erstellt mit freundlicher Unterstützung von",
         "dieterLinkText": "Dieter macht den Datenschutz"
     },
+    "PrivacyPolicy": {
+        "title": "Datenschutzerklärung (DSGVO)",
+        "lastUpdated": "(Stand: Januar 2026)",
+        "controllerHeading": "1. Verantwortlicher",
+        "controllerText": "Verantwortlich für die Datenverarbeitung auf dieser Website ist:\n\nChessPie\nVerantwortliche Person: Lasse Mauritz\nAdresse: Ahlerfeld 29, 38527 Meine\nE-Mail: contact.chesspie@gmail.com\n\nWebsite: https://chesspie.org",
+        "generalHeading": "2. Allgemeine Hinweise zur Datenverarbeitung",
+        "generalText": "Der Schutz Ihrer personenbezogenen Daten ist uns wichtig. Personenbezogene Daten werden auf dieser Website ausschließlich im Rahmen der gesetzlichen Bestimmungen der Datenschutz-Grundverordnung (DSGVO) verarbeitet. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können (z. B. Name, E-Mail-Adresse).",
+        "collectionHeading": "3. Erhebung und Speicherung personenbezogener Daten",
+        "accountsSubheading": "a) Nutzerkonten",
+        "accountsText": "Bei der Erstellung eines Benutzerkontos verarbeiten wir folgende Daten: Name, E-Mail-Adresse, Profilbild. Diese Daten sind nicht öffentlich sichtbar und dienen ausschließlich der Nutzung der Plattform. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)",
+        "contentSubheading": "b) Nutzer-generierte Inhalte",
+        "contentText": "Nutzer können Inhalte erstellen, darunter: Schachbretter, Figuren, Inhalte für den Marketplace. Diese Inhalte können – abhängig von den Einstellungen – öffentlich sichtbar sein. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO",
+        "chatSubheading": "c) Chat-Funktion",
+        "chatText": "ChessPie bietet eine Chat-Funktion an. Inhalte im Chat werden gespeichert und automatisiert auf bestimmte verbotene Wörter überprüft (Filterung). Diese Filterung dient der Sicherheit und dem Jugendschutz. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an Sicherheit und Moderation)",
+        "analyticsHeading": "4. Analyse-Tools",
+        "analyticsText": "Vercel Analytics & Speed Insights: Diese Website nutzt Vercel Analytics und Vercel Speed Insights, um anonymisierte Nutzungsstatistiken zu erfassen und die Performance der Website zu verbessern. Dabei werden keine Cookies gesetzt und keine personenbezogenen Profile erstellt. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO",
+        "hostingHeading": "5. Datenbank & Hosting",
+        "hostingText": "Firebase / Firestore: Zur Speicherung von Nutzerdaten verwenden wir Google Firebase (Firestore). Es kann nicht ausgeschlossen werden, dass Daten auch auf Servern außerhalb der EU (z. B. USA) verarbeitet werden. Google ist nach dem EU-US Data Privacy Framework zertifiziert. Rechtsgrundlage: Art. 6 Abs. 1 lit. b & f DSGVO",
+        "cookiesHeading": "6. Cookies",
+        "cookiesText": "ChessPie verwendet keine Tracking-Cookies zu Werbezwecken. Technisch notwendige Cookies können eingesetzt werden, um grundlegende Funktionen bereitzustellen.",
+        "minorsHeading": "7. Minderjährige",
+        "minorsText": "Das Angebot richtet sich an Nutzer jeden Alters. Personen unter 16 Jahren sollten die Zustimmung eines Erziehungsberechtigten einholen, sofern personenbezogene Daten verarbeitet werden.",
+        "rightsHeading": "8. Ihre Rechte",
+        "rightsText": "Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch (Art. 15-21 DSGVO). Anfragen richten Sie bitte an: contact.chesspie@gmail.com",
+        "complaintHeading": "9. Beschwerderecht",
+        "complaintText": "Sie haben das Recht, sich bei einer Datenschutzaufsichtsbehörde zu beschweren.",
+        "changesHeading": "10. Änderungen dieser Datenschutzerklärung",
+        "changesText": "Wir behalten uns vor, diese Datenschutzerklärung anzupassen, um sie an neue rechtliche Anforderungen oder Änderungen unseres Angebots anzupassen.",
+        "madeWith": "Erstellt mit freundlicher Unterstützung von",
+        "dieterLinkText": "Dieter macht den Datenschutz"
+    },
     "SEO": {
         "Footer": {
             "title": "Häufig gestellte Fragen",
@@ -314,12 +355,15 @@
             "isItFree": "Ist ChessPie kostenlos?",
             "isItFreeAnswer": "Ja, ChessPie ist derzeit komplett kostenlos nutzbar. Du kannst spielen, erstellen und teilen ohne Kosten.",
             "canIPlayFriends": "Kann ich mit Freunden spielen?",
-            "canIPlayFriendsAnswer": "Absolut! Teile einfach deinen Raumcode oder Link und spiele deine eigenen Varianten sofort im Browser."
+            "canIPlayFriendsAnswer": "Absolut! Teile einfach deinen Raumcode oder Link und spiele deine eigenen Varianten sofort im Browser.",
+            "legal": "Rechtliches",
+            "privacyPolicy": "Datenschutzerklärung",
+            "legalNotice": "Impressum"
         },
         "Home": {
             "title": "ChessPie | Benutzerdefiniertes Schach Spielen & Erstellen",
             "description": "Die ultimative Plattform für individuelles Schach. Erstelle eigene Schachfiguren, designe Bretter und spiele einzigartige Varianten online.",
-            "h1": "ChessPie - Die Plattform für individuelles Schach",
+            "h1": "ChessPie - Spielen, erstellen, teilen",
             "p": "Gestalte einzigartige Schachsets, passe dein Brett an und spiele Multiplayer-Schachvarianten online."
         },
         "Game": {
@@ -380,5 +424,10 @@
         "itemTypePiece": "Figur",
         "white": "Weiß",
         "black": "Schwarz"
+    },
+    "NotFound": {
+        "title": "404 - Figur nicht gefunden",
+        "description": "Es scheint, als wäre dieser Zug ungültig. Die Seite, die du suchst, existiert nicht oder wurde verschoben.",
+        "backHome": "Zurück zum Spiel"
     }
 }

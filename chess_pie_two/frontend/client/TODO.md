@@ -23,7 +23,15 @@ chess variants
 custom pieces
 Also, maybe implement them in h1s. Don't do keyword stuffing. Nowhere.
 
-You should also be able to drag tiles once they are on the canvas. Once they're on the canvas, you just take them and you can grab them anywhere else.
+Create a favicon and open graph images.
+
+Ok, so you know the pieces, and when you create new pieces, you can create them for white and for black. What I wanna do is give the option to automatically generate the black piece by reverting the color using HSL values. Let's say the party for example was originally HSL 0% 100%, then it's now HSL 0% 0%. Yeah, and 30 gets to 70, and 40 gets to 60, and all that. It should also, when you see the pieces in set, you should see at the bottom if it's white or if it's black.
+
+## Scratch
+
+- You should also be able to drag tiles once they are on the canvas. Once they're on the canvas, you just take them and you can grab them anywhere else.
+- Add correct snapping
+- fix IDE errors
 
 ## Marketplace (Upcoming)
 

@@ -1,9 +1,8 @@
-"use client";
-import React from 'react';
-import { useParams } from 'next/navigation';
+import Link from 'next/link'
+import { getLocale } from 'next-intl/server';
 
-export function BoardEditorHelp() {
-    const { locale } = useParams();
+export async function BoardEditorHelp() {
+    const locale = await getLocale();
     const isEn = locale === 'en';
     const isDe = locale === 'de';
 
@@ -12,7 +11,7 @@ export function BoardEditorHelp() {
     if (isEn) {
         return (
             <article className="w-full max-w-4xl mx-auto px-6 py-16 mt-12 border-t border-stone-200 dark:border-white/10">
-                <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight">Board Editor Guide</h2>
+                <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight"><Link href="/editor/board" className="underline decoration-wavy decoration-2 decoration-stone-600 dark:decoration-stone-400">Board Editor</Link> Guide</h2>
                 <div className="space-y-8 text-stone-600 dark:text-stone-400 leading-relaxed">
                     <div>
                         <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">What is the Board Editor?</h3>
@@ -73,7 +72,15 @@ export function BoardEditorHelp() {
 
     return (
         <article className="w-full max-w-4xl mx-auto px-6 py-16 mt-12 border-t border-stone-200 dark:border-white/10">
-            <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight">Board Editor Guide</h2>
+            <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight">
+                <Link
+                    href="/editor/board"
+                    className="underline decoration-wavy decoration-2 decoration-stone-600 dark:decoration-stone-400"
+                >
+                    Board Editor
+                </Link>{" "}
+                Guide
+            </h2>
             <div className="space-y-8 text-stone-600 dark:text-stone-400 leading-relaxed">
                 <div>
                     <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Was ist der Board Editor?</h3>
@@ -132,8 +139,8 @@ export function BoardEditorHelp() {
     );
 }
 
-export function PieceEditorHelp() {
-    const { locale } = useParams();
+export async function PieceEditorHelp() {
+    const locale = await getLocale();
     const isEn = locale === 'en';
     const isDe = locale === 'de';
 
@@ -268,8 +275,8 @@ export function PieceEditorHelp() {
     );
 }
 
-export function GameHelp() {
-    const { locale } = useParams();
+export async function GameHelp() {
+    const locale = await getLocale();
     const isEn = locale === 'en';
     const isDe = locale === 'de';
 
