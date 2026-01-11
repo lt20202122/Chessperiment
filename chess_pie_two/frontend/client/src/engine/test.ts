@@ -6,11 +6,8 @@ const testMove = (game: Game, from: Square, to: Square, expected: boolean) => {
     const board = game.getBoard();
     const piece = board.getPiece(from);
     const result = game.makeMove(from, to);
-    console.log(`Move ${from} (${piece?.color} ${piece?.type}) -> ${to}: expected ${expected}, got ${result}`);
     if (result !== expected) {
         console.error(`  [FAIL] Move ${from} -> ${to}: expected ${expected}, got ${result}`);
-    } else {
-        console.log(`  [PASS] Move ${from} -> ${to}: expected ${expected}, got ${result}`);
     }
 };
 

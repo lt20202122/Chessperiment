@@ -1,5 +1,5 @@
 "use client"
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { Header } from "./Header";
 import { useLocale } from "next-intl";
 import { MobileMenu } from "./MobileMenu";

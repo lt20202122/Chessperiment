@@ -25,17 +25,13 @@ export function getSocket() {
     // Register player immediately on connection
     socket.on("connect", () => {
       const playerId = getOrCreatePlayerId();
-      console.log("Socket connected, registering player:", playerId);
       socket!.emit("register_player", { playerId });
     });
 
-    // Add connection error handling
     socket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error);
     });
 
     socket.on("disconnect", (reason) => {
-      console.log("Socket disconnected:", reason);
     });
   }
   return socket;

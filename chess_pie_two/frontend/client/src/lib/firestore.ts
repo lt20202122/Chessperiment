@@ -65,11 +65,10 @@ export interface CustomPiece {
     setId: string // Reference to parent set
     userId: string
     name: string
-    color: 'white' | 'black'
-    pixels: string[][] // Grid of colors
+    pixelsWhite: string[][] // Grid for white version
+    pixelsBlack: string[][] // Grid for black version
     moves: any[] // Move logic
     logic?: any // Logic blocks (triggers/effects)
-    sourceId?: string // Reference to inverted counterpart
     createdAt: Date
     updatedAt: Date
 }
@@ -246,14 +245,12 @@ export async function saveCustomPiece(piece: CustomPiece) {
     if (!db) throw new Error("Firestore not initialized")
     const piecesRef = db.collection("customPieces")
     
-    // Firestore doesn't allow nested arrays, so we serialize pixels
-    // Also, Firestore doesn't allow undefined values, so we exclude undefined fields
     const serializedPiece: any = {
         ...piece,
-        pixels: JSON.stringify(piece.pixels),
+        pixelsWhite: JSON.stringify(piece.pixelsWhite),
+        pixelsBlack: JSON.stringify(piece.pixelsBlack),
     }
     
-    // Only include logic if it exists (not undefined)
     if (piece.logic !== undefined) {
         serializedPiece.logic = JSON.stringify(piece.logic)
     }
@@ -285,10 +282,21 @@ export async function getUserCustomPieces(userId: string): Promise<CustomPiece[]
 
     const pieces = snapshot.docs.map(doc => {
         const data = doc.data()
+        // Support legacy pieces with 'pixels' and 'color'
+        let pixelsWhite = data.pixelsWhite ? JSON.parse(data.pixelsWhite) : null;
+        let pixelsBlack = data.pixelsBlack ? JSON.parse(data.pixelsBlack) : null;
+        
+        if (!pixelsWhite && !pixelsBlack && data.pixels) {
+            const legacyPixels = typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels;
+            if (data.color === 'black') pixelsBlack = legacyPixels;
+            else pixelsWhite = legacyPixels;
+        }
+
         return {
             id: doc.id,
             ...data,
-            pixels: typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels,
+            pixelsWhite: pixelsWhite || Array(64).fill(Array(64).fill('transparent')),
+            pixelsBlack: pixelsBlack || Array(64).fill(Array(64).fill('transparent')),
             logic: typeof data.logic === 'string' ? JSON.parse(data.logic) : data.logic,
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
             updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
@@ -314,10 +322,20 @@ export async function getCustomPiece(pieceId: string, userId: string): Promise<C
     const data = doc.data()
     if (!data) return null;
 
+    let pixelsWhite = data.pixelsWhite ? JSON.parse(data.pixelsWhite) : null;
+    let pixelsBlack = data.pixelsBlack ? JSON.parse(data.pixelsBlack) : null;
+    
+    if (!pixelsWhite && !pixelsBlack && data.pixels) {
+        const legacyPixels = typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels;
+        if (data.color === 'black') pixelsBlack = legacyPixels;
+        else pixelsWhite = legacyPixels;
+    }
+
     return {
         id: doc.id,
         ...data,
-        pixels: typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels,
+        pixelsWhite: pixelsWhite || Array(64).fill(Array(64).fill('transparent')),
+        pixelsBlack: pixelsBlack || Array(64).fill(Array(64).fill('transparent')),
         logic: typeof data.logic === 'string' ? JSON.parse(data.logic) : data.logic,
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
         updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
@@ -413,10 +431,21 @@ export async function getSetPieces(setId: string, userId: string): Promise<Custo
 
     const pieces = snapshot.docs.map(doc => {
         const data = doc.data()
+        
+        let pixelsWhite = data.pixelsWhite ? JSON.parse(data.pixelsWhite) : null;
+        let pixelsBlack = data.pixelsBlack ? JSON.parse(data.pixelsBlack) : null;
+        
+        if (!pixelsWhite && !pixelsBlack && data.pixels) {
+            const legacyPixels = typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels;
+            if (data.color === 'black') pixelsBlack = legacyPixels;
+            else pixelsWhite = legacyPixels;
+        }
+
         return {
             id: doc.id,
             ...data,
-            pixels: typeof data.pixels === 'string' ? JSON.parse(data.pixels) : data.pixels,
+            pixelsWhite: pixelsWhite || Array(64).fill(Array(64).fill('transparent')),
+            pixelsBlack: pixelsBlack || Array(64).fill(Array(64).fill('transparent')),
             logic: typeof data.logic === 'string' ? JSON.parse(data.logic) : data.logic,
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
             updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,

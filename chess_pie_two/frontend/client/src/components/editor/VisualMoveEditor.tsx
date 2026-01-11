@@ -408,8 +408,8 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
                         </div>
                         <div className="text-left">
-                            <h3 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider group-hover:text-amber-500 transition-colors">Advanced Logic</h3>
-                            <p className="text-[10px] font-medium text-stone-500 dark:text-white/40">Open the node-based logic editor (Scratch-like)</p>
+                            <h3 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider group-hover:text-amber-500 transition-colors">{t('advancedLogicTitle')}</h3>
+                            <p className="text-[10px] font-medium text-stone-500 dark:text-white/40">{t('advancedLogicDesc')}</p>
                         </div>
                         <ArrowRight size={16} className="text-stone-300 dark:text-white/20 group-hover:text-amber-500 group-hover:translate-x-1 transition-all ml-2" />
                     </button>

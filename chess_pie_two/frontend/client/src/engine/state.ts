@@ -28,11 +28,18 @@ export class BoardStateManager {
 
     addMoveToHistory(from: Square, to: Square, pieceId: string) {
         this.history.push({ from, to, pieceId });
+        const oldTurn = this.turn;
         this.turn = this.turn === "white" ? "black" : "white";
     }
 
     getHistory() {
         return this.history;
+    }
+
+    revertLastMove() {
+        if (this.history.length === 0) return;
+        this.history.pop();
+        this.turn = this.turn === "white" ? "black" : "white";
     }
 
     getSquares() {

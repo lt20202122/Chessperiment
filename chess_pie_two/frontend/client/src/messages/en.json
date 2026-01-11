@@ -61,7 +61,13 @@
     },
     "Multiplayer": {
         "title": "Chess Multiplayer",
+        "description": "Compete against friends or AI in exciting chess matches",
+        "createRoom": "Create Room",
+        "roomCode": "Room Code",
+        "join": "Join",
+        "create": "Create",
         "yourTurn": "Your Turn",
+        "opponentTurn": "Opponent's Turn",
         "ended": "Game ended!",
         "resetBoard": "Reset Board",
         "previousMove": "Previous Move",
@@ -79,7 +85,7 @@
         "gameStarted": "Game started!",
         "live": "Live",
         "historyMode": "History Mode",
-        "roomNotFound": "Room not found!",
+
         "roomFull": "Room is already full!",
         "alreadyInRoom": "You are already in this room!",
         "opponentDisconnected": "Opponent disconnected",
@@ -89,6 +95,7 @@
         "won": "You won!",
         "lost": "You lost!",
         "draw": "Draw!",
+        "check": "Check!",
         "checkmate": "Checkmate!",
         "roomLabel": "Room:",
         "playersLabel": "Players:",
@@ -101,6 +108,7 @@
         "actions": "Game Actions",
         "offerDraw": "Offer Draw",
         "acceptDraw": "Accept Draw",
+        "declineDraw": "Decline Draw",
         "resign": "Resign",
         "confirmResign": "Do you really want to resign?",
         "chat": "Chat",
@@ -138,6 +146,25 @@
         "stockfish": "Stockfish AI",
         "stockfishOpponent": "Stockfish AI",
         "opponent": "Opponent",
+        "waiting": "Waiting...",
+        "gameOver": "Game Over",
+        "youWon": "You won!",
+        "youLost": "You lost!",
+        "playAgain": "Play Again",
+        "backToMenu": "Back to Menu",
+        "spectating": "Spectating",
+        "moves": "Moves",
+        "captured": "Captured",
+        "timer": "Timer",
+        "unlimited": "Unlimited",
+        "selectStyle": "Select Style",
+        "searchStyle": "Search style...",
+        "noStyle": "No style found",
+        "reset": "Reset",
+        "menu": "Menu",
+        "design": "Design",
+        "confirmLeave": "Do you really want to leave the game?",
+        "leave": "Leave",
         "waitingOpponent": "Waiting...",
         "you": "You",
         "spectator": "Spectator",
@@ -153,8 +180,6 @@
         "practiceVsComputer": "Practice vs Computer",
         "joinMyGameTitle": "Join my ChessPie game!",
         "joinMyGameText": "Join my chess game with room code: {room}",
-        "playing": "Playing",
-        "waiting": "Waiting",
         "connecting": "Connecting...",
         "matchingOpponent": "Matching you with a worthy opponent...",
         "jumpIntoMatch": "Jump into a match instantly with global players.",
@@ -175,7 +200,9 @@
         "bishop": "Bishop",
         "rook": "Rook",
         "queen": "Queen",
-        "king": "King"
+        "king": "King",
+        "white": "White",
+        "black": "Black"
     },
     "Editor": {
         "Board": {
@@ -235,6 +262,7 @@
             }
 
         },
+
         "Piece": {
             "title": "Design Your <accent>Chess Pieces</accent>",
             "description": "Create pixel-perfect custom chess pieces with our intuitive 64x64 editor.",
@@ -265,7 +293,58 @@
             "legal": "Legal",
             "illegal": "Illegal",
             "noRules": "No movement patterns defined yet.",
-            "createFirstRule": "Create your first rule"
+            "createFirstRule": "Create your first rule",
+            "invert": "Invert",
+            "switchSet": "Switch Set",
+            "selectCollection": "Select Collection",
+            "newSet": "New Set",
+            "activeSet": "Active Set",
+            "noSetSelected": "No set selected",
+            "pieceName": "Piece Name",
+            "piecesInSet": "Pieces in Set ({count})",
+            "addNew": "Add New",
+            "noPieces": "No pieces yet",
+            "clickAgain": "Click again to confirm",
+            "deletePiece": "Delete piece",
+            "delete": "Delete",
+            "white": "White",
+            "black": "Black",
+            "gotIt": "Got it!",
+            "advancedLogicTitle": "Advanced Logic",
+            "advancedLogicDesc": "Open the node-based logic editor (Scratch-like)",
+            "eraser": "Eraser",
+            "clearCanvas": "Clear Canvas",
+            "saveToSetModal": {
+                "title": "Save Piece",
+                "selectSet": "Select a set for",
+                "createNewSet": "Create New Set",
+                "chooseExistingSet": "Choose Existing Set",
+                "searchSets": "Search sets...",
+                "loadingSets": "Loading Sets...",
+                "noSetsFound": "No sets found",
+                "existingCollection": "Existing Collection",
+                "setName": "Set name...",
+                "failedToLoadSets": "Failed to load sets",
+                "failedToCreateSet": "Failed to create set"
+            },
+            "variables": {
+                "diffX": {
+                    "label": "Horizontal Step",
+                    "desc": "The number of squares the piece moves horizontally. Positive is right, negative is left."
+                },
+                "diffY": {
+                    "label": "Vertical Step",
+                    "desc": "The number of squares the piece moves vertically. Positive is forward, negative is backward."
+                },
+                "absDiffX": {
+                    "label": "Horizontal Distance",
+                    "desc": "The absolute horizontal distance, regardless of left or right."
+                },
+                "absDiffY": {
+                    "label": "Vertical Distance",
+                    "desc": "The absolute vertical distance, regardless of forward or backward."
+                }
+            }
         }
     },
     "Auth": {

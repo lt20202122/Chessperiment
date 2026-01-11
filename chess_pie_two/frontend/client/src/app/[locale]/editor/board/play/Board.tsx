@@ -23,7 +23,7 @@ import "../../../game/Board.css";
 import { type Square } from '@/engine/types'
 import { Game } from '@/engine/game'
 import { BoardClass } from "@/engine/board";
-import { Piece } from "@/engine/piece";
+import { Piece, CustomPiece } from "@/engine/piece";
 
 export interface Coord {
     col: number;
@@ -34,6 +34,9 @@ export interface PlacedPiece {
     type: string;
     color: string;
     size?: number;
+    pixels?: string[][];
+    variables?: Record<string, number>;
+    hasLogic?: boolean;
 }
 
 export type PlacedPieces = Record<string, PlacedPiece>;
@@ -59,12 +62,14 @@ const DraggablePiece = memo(function DraggablePiece({
     isTurn,
     onClick,
     boardStyle = "v3",
+    pixels,
 }: {
-    piece: PlacedPiece & { position: string };
+    piece: PlacedPiece & { position: string; pixels?: string[][] };
     size: number;
     isTurn: boolean;
     onClick: () => void;
     boardStyle?: string;
+    pixels?: string[][];
 }) {
     const { attributes, listeners, setNodeRef, transform, isDragging } =
         useDraggable({ id: piece.position, data: piece, disabled: !isTurn });
@@ -89,7 +94,10 @@ const DraggablePiece = memo(function DraggablePiece({
                 type={piece.type}
                 color={piece.color}
                 size={size}
+                pixels={pixels}
                 boardStyle={boardStyle}
+                variables={piece.variables}
+                hasLogic={piece.hasLogic}
             />
         </div>
     );
@@ -143,7 +151,7 @@ const SquareTile = memo(function SquareTile({
                 onContextMenu(pos);
             }}
         >
-            {piece && <DraggablePiece piece={piece} size={piece.size ?? blockSize * 0.8} isTurn={isTurn} onClick={() => onClick(pos)} boardStyle={boardStyle} />}
+            {piece && <DraggablePiece piece={piece} size={piece.size ?? blockSize * 0.8} isTurn={isTurn} onClick={() => onClick(pos)} boardStyle={boardStyle} pixels={piece.pixels} />}
         </div>
     );
 });
@@ -240,39 +248,102 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
     };
 
     const initGame = useCallback(() => {
-        // Convert editor pieces to engine pieces
-        const enginePieces: Record<Square, Piece | null> = {};
-        Object.entries(board.placedPieces).forEach(([pos, piece]) => {
-            const enginePos = toEngineSq(pos);
-            // Search for rules in customCollection - first by ID, then by name
-            const customPieceData = customCollection[piece.type] || Object.values(customCollection).find(p => p.name === piece.type);
-            const rules = customPieceData?.moves || [];
-            const logic = customPieceData?.logic || []; // Load logic
-
-            const enginePiece = Piece.create(`${pos}_${piece.color}_${piece.type}`, piece.type as any, piece.color as any, enginePos, rules, logic);
-            if (enginePiece) {
-                enginePieces[enginePos] = enginePiece;
+        const savedStateRaw = localStorage.getItem('engine_state');
+        let savedState = null;
+        if (savedStateRaw) {
+            try {
+                savedState = JSON.parse(savedStateRaw);
+            } catch (e) {
+                console.error("Failed to parse engine state", e);
             }
-        });
+        }
+
+        // Convert pieces
+        const enginePieces: Record<Square, Piece | null> = {};
+
+        if (savedState && savedState.pieces) {
+            // Restore from saved state
+            Object.entries(savedState.pieces).forEach(([sq, pData]: [string, any]) => {
+                if (!pData) return;
+                const customPieceData = customCollection[pData.type] || Object.values(customCollection).find((p: any) => p.name === pData.type);
+                const rules = customPieceData?.moves || [];
+                const logic = customPieceData?.logic || [];
+
+                const piece = Piece.create(pData.id, pData.type, pData.color, sq as Square, rules, logic);
+                if (piece instanceof CustomPiece) {
+                    piece.variables = pData.variables || {};
+                }
+                piece.hasMoved = pData.hasMoved;
+                enginePieces[sq as Square] = piece;
+            });
+            setMoveHistory(savedState.history || []);
+            setHistoryIndex(savedState.historyIndex ?? -1);
+        } else {
+            // Initial setup from Board Editor
+            Object.entries(board.placedPieces).forEach(([pos, piece]) => {
+                const enginePos = toEngineSq(pos);
+
+                // Search for rules in customCollection with multiple strategies:
+                // 1. Direct match by type
+                // 2. Match by type_color format (e.g., "pieceId_white")
+                // 3. Match by name
+                // 4. Match by originalId
+                let customPieceData = customCollection[piece.type];
+
+                if (!customPieceData) {
+                    // Try with color suffix
+                    const keyWithColor = `${piece.type}_${piece.color}`;
+                    customPieceData = customCollection[keyWithColor];
+                }
+
+                if (!customPieceData) {
+                    // Search by name or originalId
+                    customPieceData = Object.values(customCollection).find((p: any) =>
+                        (p.name === piece.type || p.originalId === piece.type) && p.color === piece.color
+                    );
+                }
+
+                const rules = customPieceData?.moves || [];
+                const logic = customPieceData?.logic || [];
+
+                console.log(`[Board Init] Piece at ${pos}:`, {
+                    type: piece.type,
+                    color: piece.color,
+                    foundData: !!customPieceData,
+                    rulesCount: rules.length,
+                    logicCount: logic.length
+                });
+
+                const enginePiece = Piece.create(`${pos}_${piece.color}_${piece.type}`, piece.type as any, piece.color as any, enginePos, rules, logic);
+                if (enginePiece) {
+                    enginePieces[enginePos] = enginePiece;
+                }
+            });
+            setMoveHistory([]);
+            setHistoryIndex(-1);
+        }
 
         // Initialize engine with custom board state and active squares
         const activeSquaresArr = board.activeSquares.map(s => toEngineSq(`${s.col},${s.row}`));
         const customBoardObj = new BoardClass(enginePieces, activeSquaresArr, board.cols, board.rows);
         gameRef.current = new Game(customBoardObj);
+
+        // If we restored state, ensure turn is correct
+        if (savedState && savedState.turn) {
+            (gameRef.current.getBoard() as any).stateManager.turn = savedState.turn;
+        }
+
+        syncFromEngine();
     }, [board, customCollection]);
 
     useEffect(() => {
         initGame();
 
-        // Update UI state
+        // Determine validation
         const piecesArray: (PlacedPiece & { position: string })[] = Object.entries(board.placedPieces).map(
             ([pos, piece]) => ({ ...piece, position: pos })
         );
 
-        setBoardPieces(piecesArray);
-
-        // Check if kings are present to determine if validation can be ON
-        // Need to check both by direct type and by looking up in customCollection
         const whiteKing = piecesArray.some(p => {
             const customPiece = customCollection[p.type] || Object.values(customCollection).find((cp: any) => cp.name === p.type);
             const actualType = customPiece ? customPiece.name : p.type;
@@ -284,8 +355,6 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
             return actualType.toLowerCase() === 'king' && p.color === 'black';
         });
         setValidationEnabled(whiteKing && blackKing);
-        setMoveHistory([]);
-        setHistoryIndex(-1);
         setLastMoveFrom(null);
         setLastMoveTo(null);
 
@@ -321,17 +390,59 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
                 const idParts = piece.id.split('_');
                 const originalType = idParts.length >= 3 ? idParts.slice(2).join('_') : piece.type;
 
+                // Lookup pixels from customCollection
+                const pieceData = customCollection[originalType] ||
+                    Object.values(customCollection).find((p: any) => (p.name === originalType || p.originalId === originalType) && p.color === piece.color);
+
+                // Extract variables and logic state from CustomPiece
+                const variables = (piece as any).variables || {};
+                const hasLogic = !!(pieceData as any)?.logic && (pieceData as any).logic.length > 0;
+
                 newPiecesArray.push({
                     type: originalType, // Use the original ID/type for lookup
                     color: piece.color,
                     position: editorPos,
                     size: blockSize * 0.8,
-                });
+                    pixels: (pieceData as any)?.pixels,
+                    variables,
+                    hasLogic
+                } as any);
             }
         }
         setBoardPieces(newPiecesArray);
         setCurrentTurn(gameRef.current.getTurn() === "white" ? "w" : "b");
     };
+
+    const saveEngineState = useCallback(() => {
+        if (!gameRef.current) return;
+        const board = gameRef.current.getBoard();
+        const squares = board.getSquares();
+
+        // Serialize pieces with their variables
+        const serializedPieces: Record<string, any> = {};
+        for (const [sq, piece] of Object.entries(squares)) {
+            if (piece) {
+                serializedPieces[sq] = {
+                    id: piece.id,
+                    type: piece.type,
+                    color: piece.color,
+                    position: piece.position,
+                    hasMoved: piece.hasMoved,
+                    variables: (piece as any).variables || {}
+                };
+            } else {
+                serializedPieces[sq] = null;
+            }
+        }
+
+        const state = {
+            pieces: serializedPieces,
+            turn: board.getTurn(),
+            history: moveHistory,
+            historyIndex: historyIndex
+        };
+        localStorage.setItem('engine_state', JSON.stringify(state));
+    }, [moveHistory, historyIndex]);
 
     const getNotation = (from: string, to: string, pieceType: string) => {
         // Simple conversion to e.g. "Pe2-e4" or just "e2-e4"
@@ -442,8 +553,12 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
 
             // Record Move
             const newMove: MoveRecord = { from, to, promotion, notation };
-            setMoveHistory([...currentHist, newMove]);
-            setHistoryIndex(currentHist.length);
+            const nextHist = [...currentHist, newMove];
+            setMoveHistory(nextHist);
+            setHistoryIndex(nextHist.length - 1);
+
+            // SAVE STATE after a slight delay to ensure setMoveHistory has settled for the next sync/save iteration if any
+            setTimeout(saveEngineState, 10);
 
             const sound = isCapture ? "/sounds/capture.mp3" : "/sounds/move-self.mp3";
             const audio = new Audio(sound);
@@ -607,7 +722,7 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
                                     if (!p) return null;
                                     return (
                                         <div style={{ width: blockSize, height: blockSize, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                            <PieceRenderer type={p.type} color={p.color} size={blockSize} boardStyle="v3" />
+                                            <PieceRenderer type={p.type} color={p.color} size={blockSize} pixels={p.pixels} boardStyle="v3" variables={p.variables} hasLogic={p.hasLogic} />
                                         </div>
                                     );
                                 })()}

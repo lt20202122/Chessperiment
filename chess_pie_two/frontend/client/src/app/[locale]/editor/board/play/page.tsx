@@ -54,7 +54,6 @@ export default function PlayPage() {
     useEffect(() => {
         const rawCols = localStorage.getItem("cols");
         const rawRows = localStorage.getItem("rows");
-        console.log("PlayPage loaded. localStorage:", { rawCols, rawRows });
 
         const cols = parseInt(rawCols || "8", 10);
         const rows = parseInt(rawRows || "8", 10);
@@ -77,13 +76,31 @@ export default function PlayPage() {
                 board={board}
                 headerContent={
                     <div className="flex justify-between items-center mb-6 w-full">
-                        <button onClick={() => router.push('/editor/board')} className="p-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        <button
+                            onClick={() => {
+                                // Clear move history when going back to editor
+                                localStorage.removeItem('engine_state');
+                                router.push('/editor/board');
+                            }}
+                            className="p-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                        >
                             <ArrowLeft size={20} />
                         </button>
                         <h1 className="text-2xl font-bold text-stone-900 dark:text-white">{t('title')}</h1>
-                        <button onClick={() => window.location.reload()} className="p-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                            <RefreshCcw size={20} />
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => {
+                                    localStorage.removeItem('engine_state');
+                                    window.location.reload();
+                                }}
+                                className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-2 text-sm font-bold"
+                            >
+                                Reset
+                            </button>
+                            <button onClick={() => window.location.reload()} className="p-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                                <RefreshCcw size={20} />
+                            </button>
+                        </div>
                     </div>
                 }
             />

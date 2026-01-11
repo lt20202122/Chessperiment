@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -194,6 +194,15 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         color: '#9370DB',
         description: 'Immediately removes the piece from play.',
         width: 140
+    },
+    {
+        id: 'prevent',
+        type: 'effect',
+        label: 'Prevent Default',
+        category: 'Effects',
+        color: '#FF4500',
+        description: 'Prevents the default engine behavior for this event (e.g. cancels the capture).',
+        width: 160
     }
 ];
 
@@ -219,13 +228,23 @@ export default function LogicPageClient({ id }: { id: string }) {
 
     useEffect(() => {
         setMounted(true);
+        if (!id) {
+            setIsLoading(false);
+            return;
+        }
         const loadPiece = async () => {
             try {
                 const piece = await getCustomPieceAction(id);
                 if (piece) {
                     initialPieceRef.current = piece;
                     if (piece.logic) {
-                        setCanvasBlocks(Array.isArray(piece.logic) ? piece.logic : []);
+                        try {
+                            const parsedLogic = typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic;
+                            setCanvasBlocks(Array.isArray(parsedLogic) ? parsedLogic : []);
+                        } catch (e) {
+                            console.error("Failed to parse logic:", e);
+                            setCanvasBlocks([]);
+                        }
                     }
                 }
             } catch (error) {
@@ -238,36 +257,51 @@ export default function LogicPageClient({ id }: { id: string }) {
     }, [id]);
 
     // Auto-save
+    const handleManualSave = useCallback(async () => {
+        if (isLoading || !initialPieceRef.current || isSaving) return;
+        setIsSaving(true);
+        try {
+            const pieceToUpdate = {
+                ...initialPieceRef.current,
+                logic: canvasBlocks
+            } as CustomPiece;
+            const { userId, createdAt, updatedAt, ...safePiece } = pieceToUpdate;
+            await saveCustomPieceAction(safePiece);
+            initialPieceRef.current = pieceToUpdate;
+
+            // Sync to localStorage for immediate use in Board Editor
+            if (typeof window !== 'undefined') {
+                const existingCollection = JSON.parse(localStorage.getItem('piece_collection') || '{}');
+                const pId = pieceToUpdate.id;
+
+                if (pId) {
+                    // Raw ID entry
+                    existingCollection[pId] = { ...existingCollection[pId], ...pieceToUpdate, logic: canvasBlocks };
+
+                    // Update compatibility keys
+                    if (existingCollection[`${pId}_white`]) {
+                        existingCollection[`${pId}_white`] = { ...existingCollection[`${pId}_white`], logic: canvasBlocks };
+                    }
+                    if (existingCollection[`${pId}_black`]) {
+                        existingCollection[`${pId}_black`] = { ...existingCollection[`${pId}_black`], logic: canvasBlocks };
+                    }
+
+                    localStorage.setItem('piece_collection', JSON.stringify(existingCollection));
+                }
+            }
+        } catch (error) {
+            console.error("Save failed:", error);
+        } finally {
+            setIsSaving(false);
+        }
+    }, [canvasBlocks, isLoading, isSaving]);
+
+    // Auto-save
     useEffect(() => {
         if (isLoading || !initialPieceRef.current) return;
-
-        const save = async () => {
-            setIsSaving(true);
-            try {
-                // Ensure we strip unnecessary fields for the update action
-                const pieceToUpdate = {
-                    ...initialPieceRef.current,
-                    logic: canvasBlocks
-                } as CustomPiece;
-
-                // We need to omit fields that shouldn't be touched or are auto-handled
-                // But saveCustomPieceAction takes Omit<..., "userId" | "createdAt" | "updatedAt">
-                // so we can just pass the necessary data.
-                const { userId, createdAt, updatedAt, ...safePiece } = pieceToUpdate;
-
-                await saveCustomPieceAction(safePiece);
-                // Update ref to latest state in case we need it again
-                initialPieceRef.current = pieceToUpdate;
-            } catch (error) {
-                console.error("Auto-save failed:", error);
-            } finally {
-                setIsSaving(false);
-            }
-        };
-
-        const timer = setTimeout(save, 1000); // Debounce 1s
+        const timer = setTimeout(handleManualSave, 500); // Debounce reduced to 500ms
         return () => clearTimeout(timer);
-    }, [canvasBlocks, isLoading]);
+    }, [canvasBlocks, isLoading, handleManualSave]);
 
 
     const sensors = useSensors(
@@ -560,21 +594,16 @@ export default function LogicPageClient({ id }: { id: string }) {
                         </button>
                     ))}
 
-                    {/* Save Indicator */}
-                    <div className="mt-auto mb-4">
-                        <AnimatePresence>
-                            {isSaving && (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0 }}
-                                    className="p-2 text-amber-500"
-                                >
-                                    <Save size={16} className="animate-pulse" />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                    {/* Manual Save Button */}
+                    <button
+                        onClick={handleManualSave}
+                        disabled={isSaving}
+                        className={`p-3 rounded-xl transition-all ${isSaving ? 'text-amber-500 bg-amber-500/10' : 'text-stone-500 hover:text-white hover:bg-white/5'}`}
+                        title="Save Logic"
+                    >
+                        <Save size={20} className={isSaving ? 'animate-pulse' : ''} />
+                        <span className="text-[10px] block mt-1 font-bold text-center">SAVE</span>
+                    </button>
                 </div>
 
                 {/* 2. BLOCK PALETTE SIDEBAR */}

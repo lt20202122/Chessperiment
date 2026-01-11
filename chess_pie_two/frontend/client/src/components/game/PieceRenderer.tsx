@@ -2,6 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { getPieceImage } from '@/app/[locale]/game/Data';
+import PieceStateIndicators from './PieceStateIndicators';
 
 interface PieceRendererProps {
     type: string;
@@ -10,6 +11,12 @@ interface PieceRendererProps {
     pixels?: string[][]; // Optional: direct pixels from Firestore/Library
     boardStyle?: string;
     className?: string;
+    // New props for visual feedback
+    variables?: Record<string, number>;
+    hasLogic?: boolean;
+    isUnderThreat?: boolean;
+    recentTrigger?: string | null;
+    recentEffect?: string | null;
 }
 
 export const PixelPiece = ({ pixels, size, className }: { pixels: string[][], size: number, className?: string }) => {
@@ -60,46 +67,86 @@ export const PixelPiece = ({ pixels, size, className }: { pixels: string[][], si
     );
 };
 
-export default function PieceRenderer({ type, color, size, pixels, boardStyle = "v3", className = "" }: PieceRendererProps) {
+export default function PieceRenderer({
+    type,
+    color,
+    size,
+    pixels,
+    boardStyle = "v3",
+    className = "",
+    variables,
+    hasLogic,
+    isUnderThreat,
+    recentTrigger,
+    recentEffect
+}: PieceRendererProps) {
+    // Render piece content
+    let pieceContent: React.ReactNode;
+
     // If we have direct pixels (from Library), use them
     if (pixels) {
-        return <PixelPiece pixels={pixels} size={size} className={className} />;
-    }
+        pieceContent = <PixelPiece pixels={pixels} size={size} className={className} />;
+    } else {
+        // Check if it's a standard piece
+        const standardPieces = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'];
+        const lowerType = type.toLowerCase();
 
-    // Check if it's a standard piece
-    const standardPieces = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'];
-    const lowerType = type.toLowerCase();
-
-    if (standardPieces.includes(lowerType)) {
-        return (
-            <Image
-                src={getPieceImage(boardStyle, color, type)}
-                alt={`${color} ${type}`}
-                height={size}
-                width={size}
-                unoptimized
-                className={`bg-transparent ${className}`}
-                style={{ height: size, width: "auto", pointerEvents: "none" }}
-            />
-        );
-    }
-
-    // It might be a custom piece. Try to find it in localStorage if pixels weren't provided
-    if (typeof window !== 'undefined') {
-        const collection = JSON.parse(localStorage.getItem('piece_collection') || '{}');
-        const customPiece = Object.values(collection).find((p: any) => p.name === type && p.color === color) as any;
-        if (customPiece && customPiece.pixels) {
-            return <PixelPiece pixels={customPiece.pixels} size={size} className={className} />;
+        if (standardPieces.includes(lowerType)) {
+            pieceContent = (
+                <Image
+                    src={getPieceImage(boardStyle, color, type)}
+                    alt={`${color} ${type}`}
+                    height={size}
+                    width={size}
+                    unoptimized
+                    className={`bg-transparent ${className}`}
+                    style={{ height: size, width: "auto", pointerEvents: "none" }}
+                />
+            );
+        } else {
+            // It might be a custom piece. Try to find it in localStorage if pixels weren't provided
+            if (typeof window !== 'undefined') {
+                const collection = JSON.parse(localStorage.getItem('piece_collection') || '{}');
+                const customPiece = Object.values(collection).find((p: any) => p.name === type && p.color === color) as any;
+                if (customPiece && customPiece.pixels) {
+                    pieceContent = <PixelPiece pixels={customPiece.pixels} size={size} className={className} />;
+                } else {
+                    // Fallback: Show a generic placeholder or the type name
+                    pieceContent = (
+                        <div
+                            className={`flex items-center justify-center rounded-full ${color === 'white' ? 'bg-white text-bg' : 'bg-gray-800 text-white'} ${className}`}
+                            style={{ width: size, height: size, fontSize: size * 0.4, fontWeight: 'black' }}
+                        >
+                            {type.substring(0, 1).toUpperCase()}
+                        </div>
+                    );
+                }
+            } else {
+                // Fallback for SSR
+                pieceContent = (
+                    <div
+                        className={`flex items-center justify-center rounded-full ${color === 'white' ? 'bg-white text-bg' : 'bg-gray-800 text-white'} ${className}`}
+                        style={{ width: size, height: size, fontSize: size * 0.4, fontWeight: 'black' }}
+                    >
+                        {type.substring(0, 1).toUpperCase()}
+                    </div>
+                );
+            }
         }
     }
 
-    // Fallback: Show a generic placeholder or the type name
+    // Wrap in container with state indicators
     return (
-        <div
-            className={`flex items-center justify-center rounded-full ${color === 'white' ? 'bg-white text-bg' : 'bg-gray-800 text-white'} ${className}`}
-            style={{ width: size, height: size, fontSize: size * 0.4, fontWeight: 'black' }}
-        >
-            {type.substring(0, 1).toUpperCase()}
+        <div className="relative" style={{ width: size, height: size }}>
+            {pieceContent}
+            <PieceStateIndicators
+                variables={variables}
+                hasLogic={hasLogic}
+                isUnderThreat={isUnderThreat}
+                size={size}
+                recentTrigger={recentTrigger}
+                recentEffect={recentEffect}
+            />
         </div>
     );
 }

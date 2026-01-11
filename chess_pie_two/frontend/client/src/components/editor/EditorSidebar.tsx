@@ -25,8 +25,8 @@ interface EditorSidebarProps {
     generateBoardData: () => string;
     setBoard: any;
     onPresetChange?: (data: any) => void;
-    customCollection: Record<string, { name: string, color: 'white' | 'black', pixels: string[][], moves: any[] }>;
-    setCustomCollection: (collection: Record<string, { name: string, color: 'white' | 'black', pixels: string[][], moves: any[] }>) => void;
+    customCollection: Record<string, { name: string, color: 'white' | 'black', pixels: string[][], moves: any[], logic: any[], originalId?: string }>;
+    setCustomCollection: (collection: Record<string, { name: string, color: 'white' | 'black', pixels: string[][], moves: any[], logic: any[], originalId?: string }>) => void;
 }
 
 const pieceTypes = ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'];
@@ -86,7 +86,6 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                 setBoardName('');
             }, 2000);
         } catch (error) {
-            console.error(error);
             setSaveStatus('error');
             setTimeout(() => setSaveStatus('idle'), 3000);
         } finally {
@@ -126,19 +125,22 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                         {t('selectPiece')}
                     </h3>
 
-                    {/* All Pieces Grid - No Toggle! */}
-                    <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
-                        {/* White Pieces */}
+                    {/* Standard White Pieces */}
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 mb-3 ml-1 flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-white border border-stone-200" />
+                        {tg('white')}
+                    </h4>
+                    <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
                         {pieceTypes.map(type => (
                             <button
                                 key={`white_${type}`}
                                 onClick={() => handlePieceSelect(type, 'white')}
-                                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${selectedPiece.type === type && selectedPiece.color === 'white'
-                                    ? 'bg-accent/10 border-accent shadow-sm'
+                                className={`flex flex-col items-center justify-center aspect-square p-2 rounded-2xl border transition-all ${selectedPiece.type === type && selectedPiece.color === 'white'
+                                    ? 'bg-accent/10 border-accent shadow-md scale-105 z-10'
                                     : 'bg-white dark:bg-bg/20 border-stone-200 dark:border-gray-200/10 hover:border-accent/40 hover:bg-accent/5'
                                     }`}
                             >
-                                <div className="w-10 h-10 relative">
+                                <div className="w-12 h-12 relative mb-1">
                                     <Image
                                         src={getPieceImage(boardStyle, 'white', type)}
                                         alt={type}
@@ -147,19 +149,27 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                                         className="object-contain drop-shadow-sm bg-transparent"
                                     />
                                 </div>
+                                <span className="text-[8px] font-black uppercase tracking-tighter opacity-40">{tg(type.toLowerCase() as any)}</span>
                             </button>
                         ))}
-                        {/* Black Pieces */}
+                    </div>
+
+                    {/* Standard Black Pieces */}
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 mb-3 ml-1 flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-stone-900 border border-stone-700" />
+                        {tg('black')}
+                    </h4>
+                    <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
                         {pieceTypes.map(type => (
                             <button
                                 key={`black_${type}`}
                                 onClick={() => handlePieceSelect(type, 'black')}
-                                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${selectedPiece.type === type && selectedPiece.color === 'black'
-                                    ? 'bg-accent/20 border-accent shadow-sm'
+                                className={`flex flex-col items-center justify-center aspect-square p-2 rounded-2xl border transition-all ${selectedPiece.type === type && selectedPiece.color === 'black'
+                                    ? 'bg-accent/20 border-accent shadow-md scale-105 z-10'
                                     : 'bg-white dark:bg-bg/20 border-stone-200 dark:border-gray-200/10 hover:border-accent/40 hover:bg-accent/5'
                                     }`}
                             >
-                                <div className="w-10 h-10 relative">
+                                <div className="w-12 h-12 relative mb-1">
                                     <Image
                                         src={getPieceImage(boardStyle, 'black', type)}
                                         alt={type}
@@ -168,12 +178,13 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                                         className="object-contain drop-shadow-sm bg-transparent"
                                     />
                                 </div>
+                                <span className="text-[8px] font-black uppercase tracking-tighter opacity-40">{tg(type.toLowerCase() as any)}</span>
                             </button>
                         ))}
                     </div>
 
                     {/* Custom Pieces Section Header */}
-                    <div className="mt-8 flex items-center justify-between mb-4">
+                    <div className="mt-10 flex items-center justify-between mb-4">
                         <h3 className="text-sm font-semibold uppercase tracking-wider opacity-80 flex items-center gap-2 text-stone-900 dark:text-stone-100">
                             <Star size={14} className="text-amber-500" />
                             {t('customPieces')}
@@ -200,33 +211,37 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
 
                     {/* Custom Pieces Grid */}
                     {Object.keys(customCollection).length > 0 ? (
-                        <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
+                        <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
                             {Object.entries(customCollection).map(([id, piece]) => (
                                 <button
                                     key={id}
                                     onClick={() => handlePieceSelect(id, piece.color)}
-                                    className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${selectedPiece.type === id && selectedPiece.color === piece.color
-                                        ? 'bg-amber-500/20 border-amber-500 shadow-sm'
+                                    className={`flex flex-col items-center justify-center aspect-square p-2 rounded-2xl border transition-all relative overflow-hidden ${selectedPiece.type === id && selectedPiece.color === piece.color
+                                        ? 'bg-amber-500/20 border-amber-500 shadow-sm scale-105 z-10'
                                         : 'bg-white dark:bg-bg/20 border-stone-200 dark:border-gray-200/10 hover:border-amber-500/40 hover:bg-amber-500/5'
                                         }`}
                                 >
-                                    <div className="w-10 h-10 relative overflow-hidden rounded-lg bg-black/20 flex items-center justify-center">
+                                    <div className="w-12 h-12 relative flex items-center justify-center">
                                         <PieceRenderer
                                             type={piece.name}
                                             color={piece.color}
-                                            size={32}
+                                            size={48}
                                             pixels={piece.pixels}
                                         />
-                                        <span className="absolute inset-x-0 bottom-0 text-[8px] font-black bg-black/40 text-white/80 truncate px-1 text-center">
-                                            {piece.name}
-                                        </span>
+                                    </div>
+                                    <span className="text-[7px] font-black uppercase tracking-tighter opacity-60 mt-1 truncate w-full text-center px-1">
+                                        {piece.name}
+                                    </span>
+                                    {/* Color Indicator Badge */}
+                                    <div className={`absolute top-0 right-0 px-1 py-0.5 text-[6px] font-black uppercase ${piece.color === 'white' ? 'bg-white text-stone-900 border-b border-l border-stone-100' : 'bg-stone-900 text-white border-b border-l border-stone-800'}`}>
+                                        {tg(piece.color)}
                                     </div>
                                 </button>
                             ))}
                         </div>
                     ) : (
-                        <div className="p-4 rounded-xl border border-dashed border-stone-200 dark:border-white/5 text-center">
-                            <p className="text-[10px] text-stone-400 dark:text-white/20 uppercase font-black tracking-widest">{t('noCustomPieces')}</p>
+                        <div className="p-8 rounded-2xl border border-dashed border-stone-200 dark:border-white/5 text-center bg-stone-50 dark:bg-white/2">
+                            <p className="text-[10px] text-stone-400 dark:text-white/20 uppercase font-black tracking-[0.2em]">{t('noCustomPieces')}</p>
                         </div>
                     )}
                 </div>
@@ -268,18 +283,29 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                                                     const pieces = await getSetPiecesAction(set.id);
                                                     const collection = { ...customCollection };
                                                     pieces.forEach(p => {
-                                                        collection[p.id!] = {
+                                                        // For each unified piece, we create two visual entries in the collection
+                                                        // One for white, one for black
+                                                        collection[`${p.id}_white`] = {
                                                             name: p.name,
-                                                            color: p.color,
-                                                            pixels: p.pixels,
-                                                            moves: p.moves || []
+                                                            color: 'white',
+                                                            pixels: p.pixelsWhite,
+                                                            moves: p.moves || [],
+                                                            logic: p.logic || [],
+                                                            originalId: p.id
+                                                        };
+                                                        collection[`${p.id}_black`] = {
+                                                            name: p.name,
+                                                            color: 'black',
+                                                            pixels: p.pixelsBlack,
+                                                            moves: p.moves || [],
+                                                            logic: p.logic || [],
+                                                            originalId: p.id
                                                         };
                                                     });
                                                     localStorage.setItem('piece_collection', JSON.stringify(collection));
                                                     setCustomCollection(collection);
                                                     setIsSetImportOpen(false);
                                                 } catch (e) {
-                                                    console.error("Failed to import set", e);
                                                 }
                                             }}
                                             className="w-full text-left p-4 bg-stone-50 dark:bg-white/5 border border-stone-200 dark:border-white/5 rounded-2xl hover:border-amber-500/50 hover:bg-stone-100 dark:hover:bg-white/10 transition-all group"
@@ -336,7 +362,6 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                         localStorage.setItem("placedPieces", "{}")
                         localStorage.setItem("activeSquares", "[]")
                         window.location.reload()
-                        console.log("Booard reseted")
                     }}
                 />
             </div>

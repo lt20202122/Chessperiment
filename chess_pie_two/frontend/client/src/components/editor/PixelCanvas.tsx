@@ -1,265 +1,207 @@
 "use client"
-import { useEffect, useRef, useState } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, Eraser, Paintbrush } from 'lucide-react';
+import { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { Eraser, Trash2, Minus, Plus } from 'lucide-react';
 
 interface PixelCanvasProps {
     gridSize: number;
     pixels: string[][];
     setPixels: (pixels: string[][]) => void;
     commitPixels: (pixels: string[][]) => void;
-    selectedPieceId: string;
+    selectedPieceId: string | null;
 }
 
-export default function PixelCanvas({ gridSize, pixels, setPixels, commitPixels, selectedPieceId }: PixelCanvasProps) {
+const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedPieceId }: PixelCanvasProps) => {
     const t = useTranslations('Editor.Piece');
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [zoom, setZoom] = useState(1);
-    const [currentColor, setCurrentColor] = useState('#ffffff');
+    const [drawColor, setDrawColor] = useState('#000000');
+    const [penSize, setPenSize] = useState(1);
     const [isDrawing, setIsDrawing] = useState(false);
-    const [tool, setTool] = useState<'brush' | 'eraser'>('brush');
-    const [brushSize, setBrushSize] = useState(1);
-    const startingPixelsRef = useRef<string[][] | null>(null);
 
-    // Initialize pixel grid if empty
-    useEffect(() => {
-        if (pixels.length === 0) {
-            const newPixels = Array(gridSize).fill(null).map(() =>
-                Array(gridSize).fill('transparent')
-            );
-            setPixels(newPixels);
-        }
-    }, [gridSize, pixels.length, setPixels]);
+    // Internal pixel data for performance
+    const internalPixels = useRef<string[][]>(pixels);
 
-    // Draw grid on canvas
+    const colors = [
+        '#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#00ffff', '#ff00ff',
+        '#808080', '#c0c0c0', '#800000', '#808000', '#008000', '#800080', '#008080', '#000080',
+        'transparent'
+    ];
+
+    // Initialize/Sync internal pixels
     useEffect(() => {
+        internalPixels.current = pixels;
+        drawCanvas();
+    }, [pixels]);
+
+    const drawCanvas = useCallback(() => {
         const canvas = canvasRef.current;
-        if (!canvas || pixels.length === 0) return;
-
-        const ctx = canvas.getContext('2d');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d', { alpha: true });
         if (!ctx) return;
 
-        const basePixelSize = 8; // Smaller base size for 64x64
-        const pixelSize = basePixelSize * zoom;
-        canvas.width = gridSize * pixelSize;
-        canvas.height = gridSize * pixelSize;
-
-        // Clear canvas
+        const cellSize = canvas.width / gridSize;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        // Draw grid/background
+        ctx.fillStyle = '#f5f5f5'; // Light stone
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
         // Draw pixels
-        pixels.forEach((row, y) => {
-            row.forEach((color, x) => {
+        for (let y = 0; y < gridSize; y++) {
+            for (let x = 0; x < gridSize; x++) {
+                const color = internalPixels.current[y][x];
                 if (color !== 'transparent') {
                     ctx.fillStyle = color;
-                    ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                    ctx.fillRect(x * cellSize, y * cellSize, cellSize + 0.5, cellSize + 0.5); // +0.5 to prevent subpixel gaps
                 }
-            });
-        });
-
-        // Draw grid lines (subtle)
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        ctx.lineWidth = 0.5;
-        for (let i = 0; i <= gridSize; i++) {
-            ctx.beginPath();
-            ctx.moveTo(i * pixelSize, 0);
-            ctx.lineTo(i * pixelSize, gridSize * pixelSize);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(0, i * pixelSize);
-            ctx.lineTo(gridSize * pixelSize, i * pixelSize);
-            ctx.stroke();
+            }
         }
-    }, [pixels, gridSize, zoom]);
+    }, [gridSize]);
 
-    const handleAction = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const handleAction = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
         const rect = canvas.getBoundingClientRect();
-        const basePixelSize = 8;
-        const pixelSize = basePixelSize * zoom;
-        const centerX = Math.floor((e.clientX - rect.left) / pixelSize);
-        const centerY = Math.floor((e.clientY - rect.top) / pixelSize);
+        let clientX, clientY;
 
-        if (centerX >= 0 && centerX < gridSize && centerY >= 0 && centerY < gridSize) {
-            const newPixels = pixels.map(row => [...row]);
-            const newColor = tool === 'brush' ? currentColor : 'transparent';
+        if ('touches' in e) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
 
-            const radius = Math.floor(brushSize / 2);
-            const start = -(brushSize % 2 === 0 ? radius - 1 : radius);
-            const end = radius;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = Math.floor((clientX - rect.left) * scaleX / (canvas.width / gridSize));
+        const y = Math.floor((clientY - rect.top) * scaleY / (canvas.height / gridSize));
 
-            let changed = false;
-            for (let dy = start; dy <= end; dy++) {
-                for (let dx = start; dx <= end; dx++) {
-                    const nx = centerX + dx;
-                    const ny = centerY + dy;
-                    if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize) {
-                        if (newPixels[ny][nx] !== newColor) {
-                            newPixels[ny][nx] = newColor;
-                            changed = true;
-                        }
-                    }
+        if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+            paintPixels(x, y);
+        }
+    }, [gridSize, drawColor, penSize]);
+
+    const paintPixels = (centerX: number, centerY: number) => {
+        const halfSize = Math.floor(penSize / 2);
+        const startX = Math.max(0, centerX - halfSize);
+        const endX = Math.min(gridSize - 1, centerX + (penSize - halfSize - 1));
+        const startY = Math.max(0, centerY - halfSize);
+        const endY = Math.min(gridSize - 1, centerY + (penSize - halfSize - 1));
+
+        let changed = false;
+        for (let py = startY; py <= endY; py++) {
+            for (let px = startX; px <= endX; px++) {
+                if (internalPixels.current[py][px] !== drawColor) {
+                    internalPixels.current[py][px] = drawColor;
+                    changed = true;
                 }
             }
+        }
 
-            if (changed) {
-                setPixels(newPixels);
-            }
+        if (changed) {
+            drawCanvas();
         }
     };
 
-    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!isDrawing) return;
-        handleAction(e);
-    };
-
-    const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (e.button !== 0) return;
         setIsDrawing(true);
-        startingPixelsRef.current = JSON.parse(JSON.stringify(pixels));
         handleAction(e);
     };
 
-    const handleMouseUp = () => {
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (isDrawing) {
+            handleAction(e);
+        }
+    };
+
+    const handleMouseUp = useCallback(() => {
         if (isDrawing) {
             setIsDrawing(false);
-            if (startingPixelsRef.current) {
-                const hasChanged = JSON.stringify(startingPixelsRef.current) !== JSON.stringify(pixels);
-                if (hasChanged) {
-                    console.log('🎨 Committing pixel changes for piece:', selectedPieceId);
-                    commitPixels(pixels);
-                }
-            }
-            startingPixelsRef.current = null;
+            const copy = internalPixels.current.map(row => [...row]);
+            setPixels(copy);
+            commitPixels(copy);
         }
-    };
+    }, [isDrawing, setPixels, commitPixels]);
 
-    const handleClear = () => {
-        const newPixels = Array(gridSize).fill(null).map(() =>
-            Array(gridSize).fill('transparent')
-        );
-        commitPixels(newPixels);
+    useEffect(() => {
+        window.addEventListener('mouseup', handleMouseUp);
+        return () => window.removeEventListener('mouseup', handleMouseUp);
+    }, [handleMouseUp]);
+
+    const clearCanvas = () => {
+        const cleared = Array(gridSize).fill(null).map(() => Array(gridSize).fill('transparent'));
+        internalPixels.current = cleared;
+        drawCanvas();
+        setPixels(cleared);
+        commitPixels(cleared);
     };
 
     return (
-        <div className="flex flex-col items-center gap-8">
+        <div className="flex flex-col items-center gap-6">
             {/* Toolbar */}
-            <div className="flex items-center gap-4 p-4 bg-white/80 dark:bg-stone-900/50 backdrop-blur-md border border-stone-200 dark:border-white/10 rounded-2xl shadow-xl">
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setTool('brush')}
-                        className={`p-2.5 rounded-xl transition-all ${tool === 'brush'
-                            ? 'bg-amber-500 text-bg shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                            : 'bg-stone-100 dark:bg-white/5 text-stone-500 dark:text-white/60 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-white/10'
-                            }`}
-                        title="Brush"
-                    >
-                        <Paintbrush size={18} />
-                    </button>
-                    <button
-                        onClick={() => setTool('eraser')}
-                        className={`p-2.5 rounded-xl transition-all ${tool === 'eraser'
-                            ? 'bg-amber-500 text-bg shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                            : 'bg-stone-100 dark:bg-white/5 text-stone-500 dark:text-white/60 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-white/10'
-                            }`}
-                        title="Eraser"
-                    >
-                        <Eraser size={18} />
-                    </button>
+            <div className="flex flex-wrap items-center justify-center gap-4 p-4 bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-white/10 shadow-lg">
+                <div className="flex flex-wrap gap-1 max-w-[280px]">
+                    {colors.map(color => (
+                        <button
+                            key={color}
+                            onClick={() => setDrawColor(color)}
+                            className={`w-7 h-7 rounded border ${drawColor === color ? 'ring-2 ring-amber-500 ring-offset-1 border-transparent' : 'border-stone-200 dark:border-white/10'}`}
+                            style={{
+                                backgroundColor: color === 'transparent' ? 'white' : color,
+                                backgroundImage: color === 'transparent' ? 'linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee), linear-gradient(45deg, #eee 25%, transparent 25%, transparent 75%, #eee 75%, #eee)' : 'none',
+                                backgroundSize: '8px 8px',
+                                backgroundPosition: '0 0, 4px 4px'
+                            }}
+                            title={color === 'transparent' ? t('eraser') : color}
+                        >
+                            {color === 'transparent' && <Eraser size={12} className="mx-auto text-stone-400" />}
+                        </button>
+                    ))}
                 </div>
 
-                <div className="w-px h-8 bg-stone-200 dark:bg-white/10"></div>
-
-                {/* Brush Size Slider */}
-                <div className="flex items-center gap-3 px-2">
-                    <div className="flex flex-col gap-1">
-                        <input
-                            type="range"
-                            min="1"
-                            max="8"
-                            value={brushSize}
-                            onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                            className="w-24 accent-amber-500 cursor-pointer"
-                        />
-                        <div className="flex justify-between text-[10px] text-stone-500 dark:text-white/40 font-bold uppercase tracking-tighter">
-                            <span>Size</span>
-                            <span>{brushSize}px</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="w-px h-8 bg-stone-200 dark:bg-white/10"></div>
-
-                <div className="relative group">
-                    <input
-                        type="color"
-                        value={currentColor}
-                        onChange={(e) => setCurrentColor(e.target.value)}
-                        className="w-10 h-10 rounded-xl cursor-pointer bg-stone-100 dark:bg-white/5 p-1 border border-stone-200 dark:border-white/10 transition-transform active:scale-95"
-                    />
-                </div>
-
-                <div className="w-px h-8 bg-stone-200 dark:bg-white/10"></div>
+                <div className="h-8 w-px bg-stone-200 dark:bg-white/10 mx-2" />
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => setZoom(Math.max(0.5, zoom - 0.25))}
-                        className="p-2.5 rounded-xl bg-stone-100 dark:bg-white/5 text-stone-500 dark:text-white/60 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-white/10 transition-all shadow-sm"
-                    >
-                        <ZoomOut size={18} />
-                    </button>
-                    <span className="text-xs font-black text-amber-500 w-12 text-center tabular-nums">
-                        {Math.round(zoom * 100)}%
-                    </span>
-                    <button
-                        onClick={() => setZoom(Math.min(4, zoom + 0.25))}
-                        className="p-2.5 rounded-xl bg-stone-100 dark:bg-white/5 text-stone-500 dark:text-white/60 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-white/10 transition-all shadow-sm"
-                    >
-                        <ZoomIn size={18} />
-                    </button>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Size</span>
+                    <div className="flex items-center gap-1">
+                        <button onClick={() => setPenSize(Math.max(1, penSize - 1))} className="p-1 border border-stone-200 dark:border-white/10 rounded hover:bg-stone-50"><Minus size={14} /></button>
+                        <span className="text-xs font-bold w-4 text-center">{penSize}</span>
+                        <button onClick={() => setPenSize(Math.min(10, penSize + 1))} className="p-1 border border-stone-200 dark:border-white/10 rounded hover:bg-stone-50"><Plus size={14} /></button>
+                    </div>
                 </div>
-
-                <div className="w-px h-8 bg-stone-200 dark:bg-white/10"></div>
-
-                <button
-                    onClick={handleClear}
-                    className="p-2.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all border border-red-500/20"
-                    title="Clear Canvas"
-                >
-                    <RotateCcw size={18} />
-                </button>
             </div>
 
             {/* Canvas Container */}
-            <div className="group relative p-1 bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-3xl shadow-2xl">
-                <div className="relative overflow-hidden rounded-2xl bg-[#1c1c1c]">
-                    {/* Background Pattern */}
-                    <div className="absolute inset-0 opacity-10 pointer-events-none"
-                        style={{
-                            backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
-                            backgroundSize: '20px 20px'
-                        }}
-                    />
-
-                    <canvas
-                        ref={canvasRef}
-                        onMouseDown={handleMouseDown}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
-                        onMouseMove={handleMouseMove}
-                        className="cursor-crosshair block"
-                        style={{ imageRendering: 'pixelated' }}
-                    />
-                </div>
-
-                {/* Corner Accents */}
-                <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-amber-500/50 rounded-tl-lg" />
-                <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-amber-500/50 rounded-tr-lg" />
-                <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-amber-500/50 rounded-bl-lg" />
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-amber-500/50 rounded-br-lg" />
+            <div
+                className="bg-stone-300 dark:bg-stone-950 p-1 rounded-sm shadow-xl border border-stone-400/50"
+            >
+                <canvas
+                    ref={canvasRef}
+                    width={512}
+                    height={512}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    className="cursor-crosshair bg-white touch-none shadow-inner"
+                    style={{
+                        width: 'min(90vw, 512px)',
+                        height: 'min(90vw, 512px)',
+                        imageRendering: 'pixelated'
+                    }}
+                />
             </div>
+
+            <button
+                onClick={clearCanvas}
+                className="flex items-center gap-2 px-6 py-2 bg-stone-100 hover:bg-red-500 hover:text-white text-stone-600 rounded-lg text-xs font-black uppercase tracking-widest transition-colors border border-stone-200"
+            >
+                <Trash2 size={14} />
+                {t('clearCanvas')}
+            </button>
         </div>
     );
-}
+});
+
+export default PixelCanvas;

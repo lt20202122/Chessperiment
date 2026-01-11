@@ -25,7 +25,8 @@ export default function PageClient() {
 
     const [customCollection, setCustomCollection] = useState<Record<string, any>>({});
 
-    useEffect(() => {
+    // Load custom collection from localStorage
+    const loadCustomCollection = useCallback(() => {
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem('piece_collection');
             if (saved) {
@@ -37,6 +38,18 @@ export default function PageClient() {
             }
         }
     }, []);
+
+    useEffect(() => {
+        loadCustomCollection();
+
+        // Refresh when window regains focus (e.g., user returns from Piece Editor)
+        const handleFocus = () => {
+            loadCustomCollection();
+        };
+
+        window.addEventListener('focus', handleFocus);
+        return () => window.removeEventListener('focus', handleFocus);
+    }, [loadCustomCollection]);
 
     const generateBoardData = useCallback((rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => {
         const boardData = {

@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         title: t('title'),
         description: t('description'),
         alternates: {
-            canonical: "https://chesspie.org/en/editor/board",
+            canonical: `https://chesspie.org/${locale}/editor/board`,
             languages: {
                 'en': 'https://chesspie.org/en/editor/board',
                 'de': 'https://chesspie.org/de/editor/board'

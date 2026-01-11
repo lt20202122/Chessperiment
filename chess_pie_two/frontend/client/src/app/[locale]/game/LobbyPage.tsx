@@ -10,17 +10,14 @@ export default function GamePage() {
 
     useEffect(() => {
         const handleMatchFound = (data: { roomId: string }) => {
-            console.log("Match found! Joining room:", data.roomId);
             setIsSearching(false);
             router.push(`/game/${data.roomId}?mode=join`);
         };
 
         const handleQuickSearchStarted = () => {
-            console.log("Quick search started - waiting for opponent...");
         };
 
         const handleSearchCancelled = () => {
-            console.log("Search cancelled");
             setIsSearching(false);
         };
 
@@ -36,7 +33,6 @@ export default function GamePage() {
     }, [socket, router]);
 
     const handleQuickSearch = () => {
-        console.log("Quick search button clicked, emitting find_match event");
         socket.emit('find_match', { elo: 1200 }); // Placeholder ELO
         setIsSearching(true);
     };

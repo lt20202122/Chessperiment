@@ -1,42 +1,51 @@
 export default function JsonLd() {
+    const siteInfo = {
+        name: "ChessPie",
+        url: "https://chesspie.org",
+        logo: "https://chesspie.org/logo.png",
+        description: "The ultimate platform for custom chess. Create, share, and play unique chess variants.",
+        contactEmail: "contact.chesspie@gmail.com",
+        socialLinks: [
+            "https://twitter.com/chesspie",
+            "https://instagram.com/chesspie",
+            "https://youtube.com/@chesspie"
+        ]
+    };
+
     const jsonLd =
     {
         "@context": "https://schema.org",
         "@graph": [
             {
                 "@type": "WebSite",
-                "@id": "https://example.com/#website", //TODO
-                "url": "https://example.com/", //TODO
-                "name": "ChessPie",
-                "description": "A creative board game platform where users design custom boards, pieces, rules, and playable games.",
+                "@id": `${siteInfo.url}/#website`,
+                "url": `${siteInfo.url}/`,
+                "name": siteInfo.name,
+                "description": siteInfo.description,
                 "inLanguage": [
                     "en",
                     "de"
                 ],
                 "publisher": {
-                    "@id": "https://example.com/#organization" //TODO
+                    "@id": `${siteInfo.url}/#organization`
                 }
             },
             {
                 "@type": "Organization",
-                "@id": "https://example.com/#organization", //TODO
-                "name": "ChessPie",
-                "url": "https://example.com/", //TODO
+                "@id": `${siteInfo.url}/#organization`,
+                "name": siteInfo.name,
+                "url": `${siteInfo.url}/`,
                 "logo": {
                     "@type": "ImageObject",
-                    "url": "https://example.com/logo.png" //TODO
+                    "url": siteInfo.logo
                 },
-                "sameAs": [
-                    "https://twitter.com/chesspie", //TODO
-                    "https://instagram.com/chesspie", //TODO
-                    "https://youtube.com/@chesspie" //TODO
-                ]
+                "sameAs": siteInfo.socialLinks
             },
             {
                 "@type": "WebApplication",
-                "@id": "https://example.com/#app", //TODO
-                "name": "ChessPie",
-                "url": "https://example.com/", //TODO
+                "@id": `${siteInfo.url}/#app`,
+                "name": siteInfo.name,
+                "url": `${siteInfo.url}/`,
                 "applicationCategory": [
                     "GameApplication",
                     "DesignApplication"
@@ -51,10 +60,10 @@ export default function JsonLd() {
                 "offers": {
                     "@type": "Offer",
                     "price": "0",
-                    "priceCurrency": "EUR" //TODO
+                    "priceCurrency": "EUR"
                 },
                 "creator": {
-                    "@id": "https://example.com/#organization" //TODO
+                    "@id": `${siteInfo.url}/#organization`
                 },
                 "description": "ChessPie is a creation-first game platform that lets players design custom boards, pieces, and rules, play their own games, and share creations with others.",
                 "audience": {
@@ -92,8 +101,8 @@ export default function JsonLd() {
             },
             {
                 "@type": "VideoGame",
-                "@id": "https://example.com/#game", //TODO
-                "name": "ChessPie",
+                "@id": `${siteInfo.url}/#game`,
+                "name": siteInfo.name,
                 "gamePlatform": [
                     "Web",
                     "iOS",
@@ -110,12 +119,12 @@ export default function JsonLd() {
                 ],
                 "description": "A strategy sandbox game where players create, customize, and play original board games.",
                 "creator": {
-                    "@id": "https://example.com/#organization" //TODO
+                    "@id": `${siteInfo.url}/#organization`
                 }
             },
             {
                 "@type": "CreativeWork",
-                "@id": "https://example.com/#ugc", //TODO
+                "@id": `${siteInfo.url}/#ugc`,
                 "name": "User Created Games and Boards",
                 "description": "Publicly visible custom boards, pieces, and games created by users.",
                 "creator": {

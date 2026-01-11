@@ -65,6 +65,31 @@ export class BoardClass {
         return this.stateManager.getPiece(square) as Piece | null;
     }
 
+    findNearestEmptySquare(target: Square): Square | null {
+        // Spiral search for nearest empty active square
+        const [targetX, targetY] = [target.charCodeAt(0) - 'a'.charCodeAt(0), parseInt(target.slice(1)) - 1];
+        
+        for (let d = 1; d < Math.max(this.width, this.height); d++) {
+            for (let dx = -d; dx <= d; dx++) {
+                for (let dy = -d; dy <= d; dy++) {
+                    if (Math.abs(dx) !== d && Math.abs(dy) !== d) continue;
+                    
+                    const x = targetX + dx;
+                    const y = targetY + dy;
+                    
+                    if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+                        const file = String.fromCharCode('a'.charCodeAt(0) + x);
+                        const sq = `${file}${y + 1}` as Square;
+                        if (this.isActive(sq) && this.getPiece(sq) === null) {
+                            return sq;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     movePiece(from: Square, to: Square, promotion?: string): void {
         const piece = this.getPiece(from);
         if (piece) {
@@ -76,17 +101,80 @@ export class BoardClass {
                 const newPiece = Piece.create(`${piece.id}_promo`, promotion as any, piece.color, to);
                 if (newPiece) pieceToMove = newPiece;
             }
+
+            // Tentatively move the piece
+            const oldPos = piece.position;
             this.stateManager.setPiece(to, pieceToMove);
             this.stateManager.setPiece(from, null);
             pieceToMove.position = to;
-            pieceToMove.hasMoved = true;
-            this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
 
+            let prevented = false;
+            let displacementSquare: Square | null = null;
+
+            // Execute logic hooks
             if (pieceToMove instanceof CustomPiece) {
-                pieceToMove.executeLogic('on-move', { from, to, capturedPiece: isCapture ? destinationPiece : null }, this);
+                // on-move trigger
+                const moveContext = { from, to, capturedPiece: isCapture ? destinationPiece : null, prevented: false };
+                pieceToMove.executeLogic('on-move', moveContext, this);
+                if (moveContext.prevented) prevented = true;
+
+                // on-capture trigger
+                if (isCapture && !prevented) {
+                    const captureContext = { from, to, capturedPiece: destinationPiece, prevented: false };
+                    pieceToMove.executeLogic('on-capture', captureContext, this);
+                    
+                    if (captureContext.prevented) {
+                        // Special Displacement Logic: If capture is prevented, move target instead of canceling move
+                        displacementSquare = this.findNearestEmptySquare(to);
+                    }
+                }
+            }
+
+            if (prevented && !displacementSquare) {
+                // Full revert if move itself was prevented (not just capture)
+                this.stateManager.setPiece(from, pieceToMove);
+                this.stateManager.setPiece(to, destinationPiece);
+                pieceToMove.position = oldPos;
+            } else {
+                // Move finalized
+                if (displacementSquare && destinationPiece) {
+                    // Place displaced piece in free square
+                    this.stateManager.setPiece(displacementSquare, destinationPiece);
+                    destinationPiece.position = displacementSquare;
+                }
                 
-                if (isCapture) {
-                    pieceToMove.executeLogic('on-capture', { from, to, capturedPiece: destinationPiece }, this);
+                pieceToMove.hasMoved = true;
+                this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
+
+                // Turn Lifecycle: Update all custom pieces
+                const allSquares = this.getSquares();
+                for (const s in allSquares) {
+                    const p = allSquares[s as Square];
+                    if (p instanceof CustomPiece) {
+                        p.updateTurnState(this);
+                    }
+                }
+
+                // Threat Detection
+                this.checkThreats();
+            }
+        }
+    }
+
+    private checkThreats(): void {
+        const squares = this.getSquares();
+        for (const s in squares) {
+            const piece = squares[s as Square];
+            if (piece instanceof CustomPiece) {
+                const opponentColor = piece.color === 'white' ? 'black' : 'white';
+                // Find potential attackers
+                for (const attackerPos in squares) {
+                    const attacker = squares[attackerPos as Square];
+                    if (attacker && attacker.color === opponentColor) {
+                        if (attacker.canAttack(s as Square, this)) {
+                            piece.executeLogic('on-threat', { attacker, square: s }, this);
+                        }
+                    }
                 }
             }
         }

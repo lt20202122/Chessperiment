@@ -1,5 +1,6 @@
 import PageClient from './PageClient';
 
-export default function LogicEditorPage({ params }: { params: { id: string } }) {
-    return <PageClient id={params.id} />;
+export default async function LogicEditorPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    return <PageClient id={id} />;
 }

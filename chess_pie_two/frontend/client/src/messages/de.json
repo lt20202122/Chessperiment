@@ -4,7 +4,9 @@
         "create": "Eigenes Spiel erstellen",
         "analyze": "Analysiere",
         "notAvailable": "Nicht verfügbar",
-        "learnMore": "Mehr erfahren"
+        "learnMore": "Mehr erfahren",
+        "trending": "Angesagt",
+        "statistics": "Statistik"
     },
     "Header": {
         "play": "Spielen",
@@ -16,9 +18,44 @@
         "boardEditor": "Board-Editor",
         "pieceEditor": "Figuren-Editor",
         "marketplace": "Marktplatz",
-        "library": "Bibliothek"
+        "library": "Bibliothek",
+        "notifications": "Benachrichtigungen"
     },
     "Marketplace": {
+        "title": "Marktplatz",
+        "subtitle": "Entdecke einzigartige Bretter, Figuren und Designs von der Community.",
+        "searchPlaceholder": "Suche nach Brettern, Figuren...",
+        "loading": "Lade fantastische Elemente...",
+        "noResults": "Keine passenden Elemente gefunden.",
+        "backToMarketplace": "Zurück zum Marktplatz",
+        "noImage": "Keine Vorschau",
+        "price": "Preis",
+        "free": "Kostenlos",
+        "addToLibrary": "Zur Bibliothek hinzufügen",
+        "buyNow": "Jetzt kaufen",
+        "noDescription": "Keine Beschreibung vorhanden.",
+        "accessDenied": "Zugriff verweigert",
+        "loginRequired": "Bitte melde dich an, um Marketplace-Elemente zu erstellen.",
+        "createItem": "Element erstellen",
+        "publishItem": "Element veröffentlichen",
+        "form": {
+            "title": "Titel",
+            "titlePlaceholder": "z.B. Neon Schachset",
+            "type": "Typ",
+            "price": "Preis (USD)",
+            "description": "Beschreibung",
+            "descriptionPlaceholder": "Erzähl uns von deiner Kreation...",
+            "imageUrl": "Bild-URL",
+            "imageUrlHelp": "Füge einen direkten Link zu einem Bild ein (z.B. Imgur, S3)"
+        },
+        "filters": {
+            "all": "Alle Elemente",
+            "board": "Bretter",
+            "piece": "Figuren",
+            "design": "Designs",
+            "free": "Kostenlos",
+            "paid": "Premium"
+        },
         "inProduction": "In Produktion",
         "marketplaceBetaMessage": "Unser Marktplatz wird zurzeit stark weiterentwickelt. Freu dich auf einzigartige Figuren-Designs und benutzerdefinierte Bretter!"
     },
@@ -34,11 +71,18 @@
         "joining": "Raum beitreten...",
         "creatingRoom": "Raum erstellen...",
         "roomCreated": "Raum erstellt: ",
+        "joinedRoom": "Erfolgreich beigetreten! Warte auf Start...",
         "live": "Live",
         "historyMode": "History Mode",
         "reasons": {
+            "not_in_room": "Du bist in keinem Raum!",
+            "room_not_found": "Raum nicht gefunden!",
+            "not_a_player": "Du bist kein Spieler in diesem Raum!",
             "not_your_turn": "Nicht am Zug!",
-            "server_error": "Serverfehler"
+            "illegal_move": "Ungültiger Zug!",
+            "server_error": "Serverfehler",
+            "no_pending_move": "Kein ausstehender Zug",
+            "illegal_promotion_move": "Ungültige Bauernumwandlung"
         },
         "lost": "Du hast verloren!",
         "ended": "Spiel beendet",
@@ -72,6 +116,10 @@
         "sendMessage": "Nachricht senden",
         "send": "Senden",
         "share": "Teilen",
+        "opponentDisconnected": "Gegner hat die Verbindung getrennt",
+        "gameEnded": "Spiel beendet",
+        "won": "Du hast gewonnen!",
+        "confirmResign": "Möchtest du wirklich aufgeben?",
         "quickSearch": "Schnellsuche",
         "searchingForGame": "Suche nach Spiel...",
         "drawOfferDeclined": "Remis-Angebot vom Gegner abgelehnt",
@@ -130,14 +178,11 @@
         "practiceVsComputer": "Gegen Computer üben",
         "joinMyGameTitle": "Tritt meinem ChessPie-Spiel bei!",
         "joinMyGameText": "Tritt meinem Schachspiel bei! Raumcode: {room}",
-        "playing": "Spielt",
-        "connecting": "Verbindet...",
-        "roomNotFound": "Raum nicht gefunden!",
-        "error": "Fehler: ",
-        "matchingOpponent": "Finde einen ebenbürtigen Gegner...",
-        "jumpIntoMatch": "Sofort in ein Match mit Spielern weltweit starten.",
-        "createPrivate": "Privat Erstellen",
-        "generateCode": "Code generieren, um Freunde einzuladen.",
+        "connecting": "Verbinden...",
+        "matchingOpponent": "Matching-Prozess läuft...",
+        "jumpIntoMatch": "Starte sofort ein Match gegen Spieler weltweit.",
+        "createPrivate": "Privat erstellen",
+        "generateCode": "Erzeuge einen Code, um Freunde einzuladen.",
         "easy": "Leicht",
         "medium": "Mittel",
         "grandmaster": "Großmeister"
@@ -213,7 +258,7 @@
             }
         },
         "Piece": {
-            "title": "Gestalte deine <accent>Schachfiguren</accent>",
+            "title": "Design Deine <accent>Schachfiguren</accent>",
             "description": "Erstelle pixelgenaue Schachfiguren mit unserem intuitiven 64x64 Editor.",
             "badge": "Figuren-Editor",
             "design": "Design",
@@ -242,8 +287,64 @@
             "legal": "Erlaubt",
             "illegal": "Verboten",
             "noRules": "Noch keine Bewegungsmuster definiert.",
-            "createFirstRule": "Erstelle deine erste Regel"
+            "createFirstRule": "Erstelle deine erste Regel",
+            "invert": "Invertieren",
+            "switchSet": "Set wechseln",
+            "selectCollection": "Kollektion wählen",
+            "newSet": "Neues Set",
+            "activeSet": "Aktives Set",
+            "noSetSelected": "Kein Set ausgewählt",
+            "pieceName": "Figurenname",
+            "piecesInSet": "Figuren im Set ({count})",
+            "addNew": "Neu hinzufügen",
+            "noPieces": "Noch keine Figuren",
+            "clickAgain": "Nochmal klicken zum Löschen",
+            "deletePiece": "Figur löschen",
+            "delete": "Löschen",
+            "white": "Weiß",
+            "black": "Schwarz",
+            "gotIt": "Verstanden!",
+            "advancedLogicTitle": "Fortgeschrittene Logik",
+            "advancedLogicDesc": "Öffne den knotenbasierten Editor (Scratch-ähnlich)",
+            "eraser": "Radiergummi",
+            "clearCanvas": "Leinwand leeren",
+            "saveToSetModal": {
+                "title": "Figur speichern",
+                "selectSet": "Wähle ein Set für",
+                "createNewSet": "Neues Set erstellen",
+                "chooseExistingSet": "Vorhandenes Set wählen",
+                "searchSets": "Sets durchsuchen...",
+                "loadingSets": "Sets werden geladen...",
+                "noSetsFound": "Keine Sets gefunden",
+                "existingCollection": "Vorhandene Sammlung",
+                "setName": "Set-Name...",
+                "failedToLoadSets": "Fehler beim Laden der Sets",
+                "failedToCreateSet": "Fehler beim Erstellen des Sets"
+            },
+            "variables": {
+                "diffX": {
+                    "label": "Horizontaler Schritt",
+                    "desc": "Anzahl der Felder horizontal. Positiv ist rechts, negativ ist links."
+                },
+                "diffY": {
+                    "label": "Vertikaler Schritt",
+                    "desc": "Anzahl der Felder vertikal. Positiv ist vorwärts, negativ ist rückwärts."
+                },
+                "absDiffX": {
+                    "label": "Horizontaler Abstand",
+                    "desc": "Der absolute horizontale Abstand, egal ob links oder rechts."
+                },
+                "absDiffY": {
+                    "label": "Vertikaler Abstand",
+                    "desc": "Der absolute vertikale Abstand, egal ob vorwärts oder rückwärts."
+                }
+            }
         }
+    },
+    "Analyze": {
+        "title": "Analyse-Funktion kommt bald",
+        "description": "Mach dich bereit, dein Spiel auf das nächste Level zu heben. Unser kommendes Analyse-Tool wird eine leistungsstarke Schach-Engine verwenden, um deine vergangenen Spiele zu überprüfen und tiefe Einblicke in deine Strategie zu geben. Entdecke deine Fehler, verpasste Chancen und brillanten Züge, um schneller zu lernen und klüger zu spielen.",
+        "goBackHome": "Zurück zum Start"
     },
     "Game": {
         "pawn": "Bauer",
@@ -251,7 +352,9 @@
         "bishop": "Läufer",
         "rook": "Turm",
         "queen": "Dame",
-        "king": "König"
+        "king": "König",
+        "white": "Weiß",
+        "black": "Schwarz"
     },
     "Auth": {
         "signInToContinue": "Melde dich an, um deine Reise fortzusetzen",

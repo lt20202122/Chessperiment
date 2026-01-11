@@ -2,8 +2,7 @@
 import { useState } from "react"
 import { useTranslations } from "next-intl";
 import { Menu, X } from 'lucide-react';
-import Link from "next/link";
-import { usePathname } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 
 export function MobileMenu({ locale }: { locale: string }) {
     const t = useTranslations('Header');

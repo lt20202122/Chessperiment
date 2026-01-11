@@ -29,6 +29,11 @@ const nextConfig: NextConfig = {
                 permanent: true,
             },
             {
+                source: '/:locale/news',
+                destination: '/:locale/announcements',
+                permanent: true,
+            },
+            {
                 source: '/news',
                 destination: '/announcements',
                 permanent: true,

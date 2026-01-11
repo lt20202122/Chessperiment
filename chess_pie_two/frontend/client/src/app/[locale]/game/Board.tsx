@@ -268,7 +268,6 @@ export default function Board({
   const [difficulty, setDifficulty] = useState(1200);
 
   const updateBoardState = useCallback((fen: string) => {
-    console.log("[Board] Updating state with FEN:", fen);
     const newPieces = parseFen(fen);
     setBoardPieces(newPieces);
     const parts = fen.split(' ');
@@ -327,7 +326,7 @@ export default function Board({
           setTimeout(() => setGameStatus("ended"), 2000);
         }
       }
-    } catch (e) { console.error("SF Move Error", e); }
+    } catch (e) { }
   }, [chess, updateBoardState, myColor, t]);
 
   const { requestMove } = useStockfish(chess, difficulty, onBestMove);
@@ -370,39 +369,32 @@ export default function Board({
     };
 
     const onGameStateInit = (data: any) => {
-      console.log("[Board] Initializing game state:", data);
       if (data.fen) {
-        console.log("[Board] Setting FEN:", data.fen);
         updateBoardState(data.fen);
       }
 
       if (data.color !== undefined) {
         const mappedColor = data.color === "white" ? "white" : (data.color === "black" ? "black" : null);
-        console.log("[Board] Setting color:", mappedColor);
         setMyColor(mappedColor);
       }
 
       const newStatus = data.status || data.gameStatus;
       if (newStatus) {
-        console.log("[Board] Setting status:", newStatus);
         setGameStatus(newStatus);
         if (newStatus === "playing") { setPlayerCount(2); setIsSearching(false); }
         else if (newStatus === "waiting") { setPlayerCount(1); }
       }
 
       if (data.roomId) {
-        console.log("[Board] Setting Room ID:", data.roomId);
         setCurrentRoom(data.roomId);
       }
 
       if (data.history) {
-        console.log("[Board] Restoration: Move history length:", data.history.length);
         setMoveHistory(data.history);
         setHistoryIndex(data.history.length - 1);
       }
 
       if (data.chatMessages) {
-        console.log("[Board] Restoration: Chat history length:", data.chatMessages.length);
         setChatMessages(data.chatMessages.map((m: any) => filterMessage(m.message)));
       }
     };
@@ -420,18 +412,15 @@ export default function Board({
       setPlayerCount(2);
     });
     socket.on("rejoin_game", (data: any) => {
-      console.log("[Board] Rejoin successful!", data);
       onGameStateInit(data);
     });
     socket.on("room_created", (data: any) => {
-      console.log("[Board] Room created:", data);
       setCurrentRoom(data.roomId);
       setMyColor("white");
       setGameStatus("waiting");
       setPlayerCount(1);
     });
     socket.on("joined_room", (data: any) => {
-      console.log("[Board] Joined room as player:", data);
       setCurrentRoom(data.roomId);
       setMyColor("black");
       setGameStatus("waiting");
@@ -446,7 +435,7 @@ export default function Board({
           return curr;
         });
       }
-      setGameInfo(data.reason || t("Multiplayer.gameEnded"));
+      setGameInfo(data.reason || t("gameEnded"));
       setDrawOffer(null);
       setTimeout(() => {
         setGameStatus("ended");
@@ -461,14 +450,12 @@ export default function Board({
       setGameInfo(`${t("error")}${data.message}`);
       setToastMessage(`${t("error")}${data.message}`);
       setShowToast(true);
-      console.error("[Board] Socket Error:", data);
     });
     socket.on("room_not_found", (data: any) => {
-      setGameInfo(`${t("roomNotFound")}`);
-      setToastMessage(`${t("roomNotFound")}`);
+      setGameInfo(`${t("reasons.room_not_found")}`);
+      setToastMessage(`${t("reasons.room_not_found")}`);
       setShowToast(true);
       setGameStatus("ended");
-      console.warn("[Board] Room not found:", data);
     });
     socket.on("room_full", () => {
       setToastMessage(t("roomFull"));
@@ -527,11 +514,9 @@ export default function Board({
         localStorage.setItem("playerId", pId);
       }
 
-      console.log(`[Board] Registering with pId: ${pId} (Session: ${session?.user?.id || 'none'})`);
       socket.emit("register_player", { playerId: pId });
 
       if (initialRoomId) {
-        console.log("[Board] Explicitly joining room on refresh:", initialRoomId);
         socket.emit("join_room", { roomId: initialRoomId });
       }
     };
@@ -580,7 +565,6 @@ export default function Board({
 
     if (gameMode === "online") {
       if (socket) {
-        console.log("[Board] Emitting promotion move to server");
         socket.emit("move", { from: promotionMove.from, to: promotionMove.to, promotion: code });
       }
     } else {

@@ -22,7 +22,14 @@ export abstract class Piece {
     abstract clone(): Piece;
 
     static create(id: string, type: string, color: "white" | "black", position: Square, rules: MoveRule[] = [], logic: any[] = []): Piece {
-        switch (type.toLowerCase()) {
+        // If there are custom rules or logic, always treat as a CustomPiece
+        // unless it's a completely empty initialization which might happen for standard pieces
+        if (rules.length > 0 || logic.length > 0) {
+            return new CustomPiece(id, type, color, position, rules, logic);
+        }
+
+        const lowerType = type.toLowerCase();
+        switch (lowerType) {
             case 'pawn': return new Pawn(id, color, position);
             case 'knight': return new Knight(id, color, position);
             case 'bishop': return new Bishop(id, color, position);
@@ -49,7 +56,6 @@ export class CustomPiece extends Piece {
         if (!this.logic || !Array.isArray(this.logic)) return;
 
         // Find relevant triggers
-        // The ID of trigger blocks matches the triggerType ('on-move', 'on-capture', etc.)
         const triggers = this.logic.filter((b: any) => b.type === 'trigger' && b.id === triggerType);
 
         for (const trigger of triggers) {
@@ -57,15 +63,37 @@ export class CustomPiece extends Piece {
             const vals = trigger.socketValues || {};
 
             if (triggerType === 'on-capture') {
-                // Socket: 'by' -> 'Any', 'Pawn', etc.
                 if (vals.by && vals.by !== 'Any') {
                     if (context.capturedPiece && context.capturedPiece.type.toLowerCase() !== vals.by.toLowerCase()) {
                         conditionsMet = false;
                     }
                 }
-            } else if (triggerType === 'on-move') {
-                 // Socket: 'by' -> 'Any', ... (usually redundant if on-move is triggered by self moving)
-                 // But maybe we want specific move types? For now ignore.
+            } else if (triggerType === 'on-threat') {
+                if (vals.by && vals.by !== 'Any') {
+                    if (context.attacker && context.attacker.type.toLowerCase() !== vals.by.toLowerCase()) {
+                        conditionsMet = false;
+                    }
+                }
+            } else if (triggerType === 'on-environment') {
+                const [col, row] = toCoords(this.position);
+                const isWhiteSquare = (col + row) % 2 === 0;
+                
+                if (vals.condition === 'White Square' && !isWhiteSquare) conditionsMet = false;
+                if (vals.condition === 'Black Square' && isWhiteSquare) conditionsMet = false;
+                if (vals.condition === 'Is Attacked' && !context.isAttacked) conditionsMet = false;
+            } else if (triggerType === 'on-var') {
+                if (vals.varName) {
+                    const current = this.variables[vals.varName] || 0;
+                    const v = Number(vals.value);
+                    switch (vals.op) {
+                        case '==': if (current !== v) conditionsMet = false; break;
+                        case '!=': if (current === v) conditionsMet = false; break;
+                        case '>': if (current <= v) conditionsMet = false; break;
+                        case '<': if (current >= v) conditionsMet = false; break;
+                        case '>=': if (current < v) conditionsMet = false; break;
+                        case '<=': if (current > v) conditionsMet = false; break;
+                    }
+                }
             }
 
             if (conditionsMet && trigger.childId) {
@@ -82,15 +110,10 @@ export class CustomPiece extends Piece {
 
         switch (block.id) {
             case 'kill':
-                if (board.getPiece(this.position)?.id === this.id) {
-                     board.setPiece(this.position, null);
-                }
+                board.setPiece(this.position, null);
                 break;
             case 'transformation':
                 if (vals.target) {
-                    // Create new piece of target type
-                    // Preserving ID for continuity, or new ID? Usually transform keeps identity or creates new.
-                    // Let's create new piece instance
                     const newPiece = Piece.create(this.id, vals.target, this.color, this.position);
                     newPiece.hasMoved = this.hasMoved;
                     board.setPiece(this.position, newPiece);
@@ -105,9 +128,29 @@ export class CustomPiece extends Piece {
                     else if (vals.op === '-=') next -= v;
                     else if (vals.op === '=') next = v;
                     this.variables[vals.varName] = next;
+                    
+                    // Trigger on-var check after modification
+                    this.executeLogic('on-var', { varName: vals.varName, value: next }, board);
                 }
                 break;
-             // Add more effects as needed
+            case 'cooldown':
+                if (vals.duration) {
+                    this.variables['cooldown'] = Number(vals.duration);
+                }
+                break;
+            case 'charge':
+                if (vals.turns) {
+                    this.variables['charge'] = Number(vals.turns);
+                }
+                break;
+            case 'mode':
+                if (vals.mode) {
+                    this.variables['mode'] = vals.mode === 'On' ? 1 : 0;
+                }
+                break;
+            case 'prevent':
+                context.prevented = true;
+                break;
         }
 
         if (block.childId) {
@@ -115,7 +158,28 @@ export class CustomPiece extends Piece {
         }
     }
 
+    updateTurnState(board: BoardClass) {
+        // Cooldown decrement
+        if (this.variables['cooldown'] && this.variables['cooldown'] > 0) {
+            this.variables['cooldown']--;
+            // console.log(`Piece ${this.id} cooldown decreased to ${this.variables['cooldown']}`);
+        }
+        // Charge decrement
+        if (this.variables['charge'] && this.variables['charge'] > 0) {
+            this.variables['charge']--;
+        }
+        
+        // Periodic check for environment or variables
+        this.executeLogic('on-environment', { isAttacked: false }, board); 
+        this.executeLogic('on-var', {}, board);
+    }
+
     isValidMove(from: Square, to: Square, board: BoardClass): boolean {
+        // Cooldown check: if > 0, the piece cannot move.
+        if (this.variables['cooldown'] && this.variables['cooldown'] > 0) {
+            return false;
+        }
+
         const fromCoords = toCoords(from);
         const toCoordsCoords = toCoords(to);
         
@@ -192,8 +256,9 @@ export class CustomPiece extends Piece {
     }
 
     clone(): CustomPiece {
-        const p = new CustomPiece(this.id, this.type, this.color, this.position, this.rules);
+        const p = new CustomPiece(this.id, this.type, this.color, this.position, this.rules, this.logic);
         p.hasMoved = this.hasMoved;
+        p.variables = { ...this.variables };
         return p;
     }
 }

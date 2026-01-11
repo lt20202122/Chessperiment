@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Box, Library, ChevronRight, Loader2, Check } from 'lucide-react';
+import { X, Plus, Box, Library, ChevronRight, Loader2 } from 'lucide-react';
 import { PieceSet } from '@/lib/firestore';
 import { savePieceSetAction, getUserPieceSetsAction } from '@/app/actions/library';
+import { useTranslations } from 'next-intl';
 
 interface SaveToSetModalProps {
     isOpen: boolean;
@@ -13,6 +14,7 @@ interface SaveToSetModalProps {
 }
 
 export default function SaveToSetModal({ isOpen, onClose, onSelectSet, currentPieceName }: SaveToSetModalProps) {
+    const t = useTranslations('Editor.Piece.saveToSetModal');
     const [sets, setSets] = useState<(PieceSet & { id: string })[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
@@ -32,7 +34,7 @@ export default function SaveToSetModal({ isOpen, onClose, onSelectSet, currentPi
             const data = await getUserPieceSetsAction();
             setSets(data as any);
         } catch (e) {
-            setError("Failed to load sets");
+            setError(t('failedToLoadSets'));
         } finally {
             setIsLoading(false);
         }
@@ -50,7 +52,7 @@ export default function SaveToSetModal({ isOpen, onClose, onSelectSet, currentPi
             onSelectSet(setId);
             onClose();
         } catch (e) {
-            setError("Failed to create set");
+            setError(t('failedToCreateSet'));
         } finally {
             setIsCreating(false);
         }
@@ -84,10 +86,10 @@ export default function SaveToSetModal({ isOpen, onClose, onSelectSet, currentPi
                         <div className="p-8 pb-4 flex items-center justify-between">
                             <div>
                                 <h3 className="text-3xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                                    Save Piece
+                                    {t('title')}
                                 </h3>
                                 <p className="text-stone-500 dark:text-white/40 text-sm font-bold uppercase tracking-widest mt-1">
-                                    Select a set for <span className="text-amber-500">{currentPieceName}</span>
+                                    {t('selectSet')} <span className="text-amber-500">{currentPieceName}</span>
                                 </p>
                             </div>
                             <button
@@ -102,14 +104,14 @@ export default function SaveToSetModal({ isOpen, onClose, onSelectSet, currentPi
                             {/* Create New Set Section */}
                             <div className="space-y-4">
                                 <label className="block text-[10px] font-black uppercase tracking-widest text-stone-900 dark:text-white/30 ml-1">
-                                    Create New Set
+                                    {t('createNewSet')}
                                 </label>
                                 <div className="flex gap-3">
                                     <input
                                         type="text"
                                         value={newSetName}
                                         onChange={(e) => setNewSetName(e.target.value)}
-                                        placeholder="Set name..."
+                                        placeholder={t('setName')}
                                         className="flex-1 bg-stone-50 dark:bg-white/5 border border-stone-200 dark:border-white/10 rounded-2xl px-6 py-4 text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-white/10 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all font-bold"
                                         onKeyDown={(e) => e.key === 'Enter' && handleCreateSet()}
                                     />
@@ -129,12 +131,12 @@ export default function SaveToSetModal({ isOpen, onClose, onSelectSet, currentPi
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <label className="block text-[10px] font-black uppercase tracking-widest text-stone-900 dark:text-white/30 ml-1">
-                                        Choose Existing Set
+                                        {t('chooseExistingSet')}
                                     </label>
                                     <div className="relative">
                                         <input
                                             type="text"
-                                            placeholder="Search sets..."
+                                            placeholder={t('searchSets')}
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             className="bg-transparent text-[10px] font-bold uppercase tracking-widest text-stone-900 dark:text-white/40 focus:outline-none border-b border-stone-200 dark:border-white/10 py-1"
@@ -146,7 +148,7 @@ export default function SaveToSetModal({ isOpen, onClose, onSelectSet, currentPi
                                     {isLoading ? (
                                         <div className="py-12 flex flex-col items-center justify-center text-stone-400 dark:text-white/20">
                                             <Loader2 size={32} className="animate-spin mb-4" />
-                                            <p className="text-xs font-black uppercase tracking-widest">Loading Sets...</p>
+                                            <p className="text-xs font-black uppercase tracking-widest">{t('loadingSets')}</p>
                                         </div>
                                     ) : filteredSets.length > 0 ? (
                                         filteredSets.map(set => (
@@ -164,7 +166,7 @@ export default function SaveToSetModal({ isOpen, onClose, onSelectSet, currentPi
                                                             {set.name}
                                                         </h4>
                                                         <p className="text-[10px] text-stone-900/60 dark:text-white/20 font-bold uppercase tracking-widest">
-                                                            {set.description || "Existing Collection"}
+                                                            {set.description || t('existingCollection')}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -175,7 +177,7 @@ export default function SaveToSetModal({ isOpen, onClose, onSelectSet, currentPi
                                         <div className="py-12 bg-stone-50 dark:bg-white/5 rounded-3xl border border-dashed border-stone-200 dark:border-white/10 text-center">
                                             <Library size={32} className="mx-auto text-stone-200 dark:text-white/10 mb-4" />
                                             <p className="text-[10px] font-black uppercase tracking-widest text-stone-900 dark:text-white/20">
-                                                No sets found
+                                                {t('noSetsFound')}
                                             </p>
                                         </div>
                                     )}

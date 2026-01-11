@@ -37,15 +37,20 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://chesspie.org"),
   title: {
-    default: "ChessPie | Play, Create & Share Custom Chess Variants",
+    default: "ChessPie | Custom Chess Platform",
     template: "%s | ChessPie",
   },
-  description: "The ultimate platform for custom chess. Create your own chess pieces, design boards, and play unique chess variants online with friends.",
+  description: "Create individual chess pieces, design unique boards, and play custom chess online with friends.",
   keywords: [
+    "chess",
+    "custom chess",
+    "chess editor",
+    "board game designer",
+    "chess variants",
+    "pixel art chess",
     "custom chess board",
     "piece generator",
     "creative chess",
-    "chess",
     "online chess board editor",
     "chess variant creator",
     "create your own chess rules",
@@ -55,20 +60,10 @@ export const metadata: Metadata = {
     "play custom chess online",
     "chess game creator"
   ],
-  authors: [{ name: "ChessPie Team" }],
-  creator: "ChessPie",
+  authors: [{ name: "Lasse Mauritz" }],
+  creator: "Lasse Mauritz",
   publisher: "ChessPie",
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
+  robots: "index, follow",
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -95,13 +90,6 @@ export const metadata: Metadata = {
     icon: "/icon.png",
     shortcut: "/favicon.ico",
     apple: "/apple-icon.png",
-  },
-  alternates: {
-    canonical: 'https://chesspie.org/en',
-    languages: {
-      'en-US': 'https://chesspie.org/en',
-      'de-DE': 'https://chesspie.org/de',
-    },
   },
 };
 
