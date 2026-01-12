@@ -12,7 +12,7 @@ import { UserPanel } from "@/components/auth/UserPanel";
 import { generateBreadcrumbs } from "@/lib/breadcrumbs";
 import { headers } from "next/headers";
 import { Providers } from "../providers";
-
+import { Analytics } from "@vercel/analytics/next"
 import { SEOFooter } from "@/components/SEOFooter";
 
 export function generateStaticParams() {
@@ -129,7 +129,7 @@ export default async function RootLayout({
               disableTransitionOnChange
             >
               <Providers>
-
+                <Analytics />
                 <UserPanel />
                 <ThemeToggle />
                 <HeaderWrapper />
