@@ -80,16 +80,13 @@ export default function SetDetailClient({ set, pieces, locale, translations }: S
                         key={piece.id}
                         className="group relative bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-3xl overflow-hidden hover:border-amber-500/50 transition-all duration-500 shadow-xl"
                     >
-                        <div className={`aspect-square flex items-center justify-center p-8 transition-colors duration-500 ${piece.color === 'white'
-                                ? 'bg-stone-50 dark:bg-stone-800/50'
-                                : 'bg-stone-100 dark:bg-stone-950/50'
-                            }`}>
+                        <div className={`aspect-square flex items-center justify-center p-8 transition-colors duration-500 bg-stone-50 dark:bg-stone-800/50`}>
                             <div className="transform group-hover:scale-110 transition-transform duration-700">
                                 <PieceRenderer
                                     type={piece.name}
-                                    color={piece.color}
+                                    color={piece.color || "white"}
                                     size={120}
-                                    pixels={piece.pixels}
+                                    pixels={piece.pixelsWhite || piece.pixels}
                                     className="drop-shadow-2xl"
                                 />
                             </div>
@@ -102,7 +99,7 @@ export default function SetDetailClient({ set, pieces, locale, translations }: S
                                         {piece.name}
                                     </h3>
                                     <p className="text-[10px] font-black text-stone-400 dark:text-white/30 uppercase tracking-widest mt-1">
-                                        {piece.color} Side
+                                        Custom Piece
                                     </p>
                                 </div>
                             </div>
