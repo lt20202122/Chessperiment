@@ -90,12 +90,12 @@ export class BoardClass {
         return null;
     }
 
-    movePiece(from: Square, to: Square, promotion?: string): void {
+    movePiece(from: Square, to: Square, promotion?: string): boolean {
         const piece = this.getPiece(from);
         if (piece) {
             this.saveSnapshot(); // Save state before any potential logic execution or move
 
-            const destinationPiece = this.getPiece(to);
+            let destinationPiece = this.getPiece(to);
             const isCapture = destinationPiece !== null && destinationPiece.color !== piece.color;
 
             let pieceToMove = piece;
@@ -111,10 +111,14 @@ export class BoardClass {
             let capturePrevented = false;
 
             // Execute logic hooks BEFORE actually moving
-            if (pieceToMove instanceof CustomPiece) {
+            if (pieceToMove && (pieceToMove as any).isCustom) {
                 // on-move trigger (check if move itself is prevented)
                 const moveContext = { from, to, capturedPiece: isCapture ? destinationPiece : null, prevented: false, movePrevented: false, capturePrevented: false };
-                pieceToMove.executeLogic('on-move', moveContext, this);
+                (pieceToMove as any).executeLogic('on-move', moveContext, this);
+                
+                // Refresh reference in case of transformation
+                pieceToMove = this.getPiece(from) || pieceToMove;
+
                 if (moveContext.prevented || moveContext.movePrevented) {
                     movePrevented = true;
                 }
@@ -122,9 +126,24 @@ export class BoardClass {
                 // on-capture trigger (only if move not prevented and it's a capture)
                 if (!movePrevented && isCapture) {
                     const captureContext = { from, to, capturedPiece: destinationPiece, prevented: false, movePrevented: false, capturePrevented: false };
-                    pieceToMove.executeLogic('on-capture', captureContext, this);
+                    (pieceToMove as any).executeLogic('on-capture', captureContext, this);
+                    
+                    // Refresh piece again in case capture logic transformed it
+                    pieceToMove = this.getPiece(from) || pieceToMove;
+
                     if (captureContext.prevented || captureContext.capturePrevented) {
                         capturePrevented = true;
+                    } else if (destinationPiece && (destinationPiece as any).isCustom) {
+                        // Check passive on-captured trigger on the victim
+                        const victimContext = { attacker: pieceToMove, from, to, prevented: false, movePrevented: false, capturePrevented: false };
+                        (destinationPiece as any).executeLogic('on-captured', victimContext, this);
+                        
+                        // Victim might have transformed too! (Rare but possible)
+                        destinationPiece = this.getPiece(to) || destinationPiece;
+
+                        if (victimContext.prevented || victimContext.movePrevented || victimContext.capturePrevented) {
+                            capturePrevented = true;
+                        }
                     }
                 }
             }
@@ -133,23 +152,23 @@ export class BoardClass {
             if (movePrevented) {
                 // Move was prevented - piece stays at origin, nothing happens
                 console.log(`[Move] Prevented by on-move logic`);
-                return;
+                return false;
             }
 
             if (capturePrevented) {
                 // Capture was prevented - move is cancelled, piece stays at origin ("Bounce Back")
                 console.log(`[Move] Capture prevented by on-capture logic - Bounce Back`);
-                return;
+                return false;
             }
 
             // --- Pre-Move Environment Trigger ---
-            if (pieceToMove instanceof CustomPiece) {
+            if (pieceToMove && (pieceToMove as any).isCustom) {
                 // on-leave-square trigger
                 const leaveContext = { square: from, prevented: false, movePrevented: false };
-                pieceToMove.executeLogic('on-leave-square', leaveContext, this);
+                (pieceToMove as any).executeLogic('on-leave-square', leaveContext, this);
                 if (leaveContext.prevented || leaveContext.movePrevented) {
                      console.log(`[Move] Prevented by on-leave-square logic`);
-                     return;
+                     return false;
                 }
 
                 // on-enter-threatened-square trigger
@@ -157,10 +176,10 @@ export class BoardClass {
                 const oppColor = piece.color === 'white' ? 'black' : 'white';
                 if (this.isSquareAttacked(to, oppColor)) {
                     const threatContext = { square: to, prevented: false, movePrevented: false };
-                    pieceToMove.executeLogic('on-enter-threatened-square', threatContext, this);
+                    (pieceToMove as any).executeLogic('on-enter-threatened-square', threatContext, this);
                      if (threatContext.prevented || threatContext.movePrevented) {
                          console.log(`[Move] Prevented by on-enter-threatened-square logic`);
-                         return;
+                         return false;
                     }
                 }
             }
@@ -171,26 +190,29 @@ export class BoardClass {
             pieceToMove.position = to;
             pieceToMove.hasMoved = true;
             this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
-
+            
             // --- Post-Move Environment Trigger ---
-            if (pieceToMove instanceof CustomPiece) {
+            if (pieceToMove && (pieceToMove as any).isCustom) {
                 // on-enter-square trigger
                 const enterContext = { square: to }; // Cannot be prevented as move is done
-                pieceToMove.executeLogic('on-enter-square', enterContext, this);
+                (pieceToMove as any).executeLogic('on-enter-square', enterContext, this);
             }
 
             // Turn Lifecycle: Update all custom pieces and fire environment triggers
             const allSquares = this.getSquares();
             for (const s in allSquares) {
                 const p = allSquares[s as Square];
-                if (p instanceof CustomPiece) {
-                    p.updateTurnState(this);
+                if (p && (p as any).isCustom) {
+                    (p as any).updateTurnState(this);
                 }
             }
 
             // Threat Detection
             this.checkThreats();
+            
+            return true;
         }
+        return false;
     }
 
     isSquareAttacked(square: Square, byColor: string): boolean {
@@ -210,14 +232,14 @@ export class BoardClass {
         const squares = this.getSquares();
         for (const s in squares) {
             const piece = squares[s as Square];
-            if (piece instanceof CustomPiece) {
+            if (piece && (piece as any).isCustom) {
                 const opponentColor = piece.color === 'white' ? 'black' : 'white';
                 // Find potential attackers
                 for (const attackerPos in squares) {
                     const attacker = squares[attackerPos as Square];
                     if (attacker && attacker.color === opponentColor) {
                         if (attacker.canAttack(s as Square, this)) {
-                            piece.executeLogic('on-threat', { attacker, square: s }, this);
+                            (piece as any).executeLogic('on-threat', { attacker, square: s }, this);
                         }
                     }
                 }

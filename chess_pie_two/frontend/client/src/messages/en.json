@@ -314,6 +314,8 @@
             "advancedLogicDesc": "Open the node-based logic editor (Scratch-like)",
             "eraser": "Eraser",
             "clearCanvas": "Clear Canvas",
+            "comingSoon": "Coming Soon",
+            "comingEndOfJanuary": "Available end of January 2026",
             "saveToSetModal": {
                 "title": "Save Piece",
                 "selectSet": "Select a set for",
@@ -496,7 +498,15 @@
         "Analyze": {
             "title": "Analyze Chess Games | Stockfish Analysis | ChessPie",
             "description": "Analyze your chess games with powerful engines. Improve your strategy and learn from your mistakes.",
-            "h1": "Chess Game Analysis"
+            "h1": "Chess Analysis Tool"
+        },
+        "LegalNotice": {
+            "title": "Legal Notice | ChessPie",
+            "description": "Legal information and contact details for ChessPie."
+        },
+        "PrivacyPolicy": {
+            "title": "Privacy Policy | ChessPie",
+            "description": "Learn how we protect your data and privacy at ChessPie."
         },
         "Login": {
             "title": "Login to ChessPie | Save Your Creations",

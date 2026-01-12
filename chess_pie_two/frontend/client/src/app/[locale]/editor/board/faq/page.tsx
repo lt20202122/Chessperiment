@@ -78,7 +78,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title: title,
         description: description,
         alternates: {
-            canonical: "https://chesspie.org/editor/board/faq",
+            canonical: `https://chesspie.org/${locale}/editor/board/faq`,
             languages: hreflangs.reduce((acc, tag) => {
                 acc[tag.hrefLang] = tag.href;
                 return acc;
@@ -87,7 +87,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         openGraph: {
             title: title,
             description: description,
-            url: "https://chesspie.org/editor/board/faq",
+            url: `https://chesspie.org/${locale}/editor/board/faq`,
             images: ['https://chesspie.org/editor-board-faq.png'],
             type: "website"
         },

@@ -2,19 +2,6 @@ import PageClient from "./PageClient";
 import { getTranslations } from 'next-intl/server';
 import { BoardEditorHelp } from "@/components/help/HelpArticles";
 
-const jsonLd_boardEditor = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "ChessPie Board Editor",
-    "url": "https://chesspie.org/en/editor/board",
-    "description": "An editor to design custom chess boards on ChessPie.",
-    "applicationCategory": "DesignApplication",
-    "operatingSystem": "Web",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "provider": { "@type": "Organization", "name": "ChessPie", "url": "https://chesspie.org/en" },
-    "featureList": ["Grid editor", "Tile coloring", "Custom starting positions"]
-};
-
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = await params;
     const t = await getTranslations({ locale, namespace: 'SEO.EditorBoard' });
@@ -31,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: "https://chesspie.org/en/editor/board",
+            url: `https://chesspie.org/${locale}/editor/board`,
             type: "website",
             images: [{ url: "/images/seo/og-editor.png", width: 1200, height: 630 }],
         },
@@ -47,6 +34,19 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function Board({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = await params;
     const t = await getTranslations({ locale, namespace: 'SEO.EditorBoard' });
+
+    const jsonLd_boardEditor = {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "ChessPie Board Editor",
+        "url": `https://chesspie.org/${locale}/editor/board`,
+        "description": t('description'),
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "provider": { "@type": "Organization", "name": "ChessPie", "url": `https://chesspie.org/${locale}` },
+        "featureList": ["Grid editor", "Tile coloring", "Custom starting positions"]
+    };
 
     return <>
         <script

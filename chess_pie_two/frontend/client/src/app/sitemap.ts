@@ -8,27 +8,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const routes = [
     '',
     '/editor/board',
+    '/editor/board/faq',
     '/editor/piece',
     '/marketplace',
     '/game',
     '/announcements',
+    '/library',
     '/login',
     '/features/analyze',
-    '/legal-notice'
+    '/legal-notice',
+    '/privacy-policy'
   ];
 
-  const sitemapEntries: MetadataRoute.Sitemap = [];
-
-  routes.forEach((route) => {
-    locales.forEach((locale) => {
-      sitemapEntries.push({
-        url: `${baseUrl}/${locale}${route}`,
-        lastModified: new Date(),
-        changeFrequency: 'daily',
-        priority: route === '' ? 1 : 0.8,
-      });
-    });
-  });
-
-  return sitemapEntries;
+  return routes.flatMap((route) => 
+    locales.map((locale) => ({
+      url: `${baseUrl}/${locale}${route}`,
+      lastModified: new Date(),
+      changeFrequency: (route === '' ? 'daily' : 'weekly') as any,
+      priority: route === '' ? 1 : 0.8,
+      alternates: {
+        languages: {
+          en: `${baseUrl}/en${route}`,
+          de: `${baseUrl}/de${route}`,
+        },
+      },
+    }))
+  );
 }

@@ -32,34 +32,34 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-const jsonLd_home = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "WebSite",
-      "@id": "https://chesspie.org/en/#website",
-      "url": "https://chesspie.org/en",
-      "name": "ChessPie",
-      "description": "The ultimate platform for custom chess creation and play.",
-      "inLanguage": "en"
-    },
-    {
-      "@type": "Organization",
-      "@id": "https://chesspie.org/en/#organization",
-      "name": "ChessPie",
-      "url": "https://chesspie.org/en",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://chesspie.org/icon.png"
-      },
-      "sameAs": []
-    }
-  ]
-};
-
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'SEO.Home' });
+
+  const jsonLd_home = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `https://chesspie.org/${locale}/#website`,
+        "url": `https://chesspie.org/${locale}`,
+        "name": "ChessPie",
+        "description": t('description'),
+        "inLanguage": locale
+      },
+      {
+        "@type": "Organization",
+        "@id": `https://chesspie.org/${locale}/#organization`,
+        "name": "ChessPie",
+        "url": `https://chesspie.org/${locale}`,
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://chesspie.org/icon.png"
+        },
+        "sameAs": []
+      }
+    ]
+  };
 
   return (
     <>

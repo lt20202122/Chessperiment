@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: "https://chesspie.org/en/marketplace",
+            url: `https://chesspie.org/${locale}/marketplace`,
             type: "website",
         },
     };

@@ -276,10 +276,11 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
                 color: piece.color,
                 foundData: !!customPieceData,
                 rulesCount: rules.length,
-                logicCount: logic.length
+                logicCount: logic.length,
+                logic: logic // Trace the actual logic data
             });
 
-            const enginePiece = Piece.create(`${pos}_${piece.color}_${piece.type}`, piece.type as any, piece.color as any, enginePos, rules, logic);
+            const enginePiece = Piece.create(`${pos}_${piece.color}_${piece.type}`, piece.type as any, piece.color as any, enginePos, rules, logic, customPieceData?.name);
             if (enginePiece) {
                 enginePieces[enginePos] = enginePiece;
             }
@@ -543,8 +544,7 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
         let moveSuccessful = false;
 
         if (!validationEnabled) {
-            gameRef.current.getBoard().movePiece(engineFrom, engineTo, promotion);
-            moveSuccessful = true;
+            moveSuccessful = gameRef.current.getBoard().movePiece(engineFrom, engineTo, promotion);
         } else {
             if (gameRef.current.makeMove(engineFrom, engineTo, promotion)) {
                 moveSuccessful = true;
@@ -569,6 +569,10 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
             const sound = isCapture ? "/sounds/capture.mp3" : "/sounds/move-self.mp3";
             const audio = new Audio(sound);
             audio.play().catch(() => { });
+        } else {
+            // Even if move failed (e.g. Bounce Back), logic might have changed piece state (transformation, variables)
+            syncFromEngine();
+            setSelectedPos(null);
         }
     };
 

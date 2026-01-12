@@ -399,19 +399,28 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
             )}
 
             {pieceId && (
-                <div className="flex justify-center pt-8 border-t border-white/5">
+                <div className="flex justify-center pt-8 border-t border-white/5 relative group">
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/5 backdrop-blur-[2px] rounded-3xl mt-8">
+                        <div className="px-4 py-1.5 rounded-full bg-amber-500 text-bg text-[10px] font-black uppercase tracking-[0.2em] mb-1 shadow-lg shadow-amber-500/20">
+                            {t('comingSoon')}
+                        </div>
+                        <p className="text-[10px] font-bold text-stone-500 dark:text-white/40 uppercase tracking-widest italic">
+                            {t('comingEndOfJanuary')}
+                        </p>
+                    </div>
+
                     <button
-                        onClick={() => window.location.href = `/editor/piece/${pieceId}/logic`}
-                        className="group flex items-center gap-3 px-6 py-4 bg-stone-100 dark:bg-white/5 rounded-2xl border border-stone-200 dark:border-white/10 hover:bg-white/10 hover:border-amber-500/50 transition-all"
+                        disabled
+                        className="group flex items-center gap-3 px-6 py-4 bg-stone-100 dark:bg-white/5 rounded-2xl border border-stone-200 dark:border-white/10 opacity-40 grayscale"
                     >
-                        <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
                         </div>
                         <div className="text-left">
-                            <h3 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider group-hover:text-amber-500 transition-colors">{t('advancedLogicTitle')}</h3>
+                            <h3 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider">{t('advancedLogicTitle')}</h3>
                             <p className="text-[10px] font-medium text-stone-500 dark:text-white/40">{t('advancedLogicDesc')}</p>
                         </div>
-                        <ArrowRight size={16} className="text-stone-300 dark:text-white/20 group-hover:text-amber-500 group-hover:translate-x-1 transition-all ml-2" />
+                        <ArrowRight size={16} className="text-stone-300 dark:text-white/20 ml-2" />
                     </button>
                 </div>
             )}

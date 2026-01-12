@@ -1,8 +1,26 @@
+import { getTranslations } from "next-intl/server";
+import { Metadata } from "next";
 import styles from "./legal-notice.module.css";
-import { useTranslations } from "next-intl";
 
-export default function LegalNotice() {
-    const t = useTranslations("LegalNotice");
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: 'SEO.LegalNotice' });
+    return {
+        title: t('title'),
+        description: t('description'),
+        alternates: {
+            canonical: `https://chesspie.org/${locale}/legal-notice`,
+            languages: {
+                'en': 'https://chesspie.org/en/legal-notice',
+                'de': 'https://chesspie.org/de/legal-notice'
+            }
+        },
+    };
+}
+
+export default async function LegalNotice({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "LegalNotice" });
 
     return (
         <div className={styles.container}>

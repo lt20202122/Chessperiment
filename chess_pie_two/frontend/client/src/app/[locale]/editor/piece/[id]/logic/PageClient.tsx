@@ -98,6 +98,45 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         width: 220
     },
     {
+        id: 'on-captured',
+        type: 'trigger',
+        label: 'onCaptured',
+        category: 'Trigger',
+        color: '#FFD700',
+        description: 'Triggers when THIS piece is captured by another piece.',
+        sockets: [
+            { id: 'by', type: 'select', label: 'by', options: ['Any', 'Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }
+        ],
+        width: 220
+    },
+    {
+        id: 'on-leave-square',
+        type: 'trigger',
+        label: 'onLeaveSquare',
+        category: 'Trigger',
+        color: '#FFD700',
+        description: 'Triggers when THIS piece leaves its current square.',
+        width: 180
+    },
+    {
+        id: 'on-enter-square',
+        type: 'trigger',
+        label: 'onEnterSquare',
+        category: 'Trigger',
+        color: '#FFD700',
+        description: 'Triggers when THIS piece enters its destination square.',
+        width: 180
+    },
+    {
+        id: 'on-enter-threatened-square',
+        type: 'trigger',
+        label: 'onEnterThreatenedSquare',
+        category: 'Trigger',
+        color: '#FFD700',
+        description: 'Triggers when THIS piece enters a square that is under attack by the opponent.',
+        width: 240
+    },
+    {
         id: 'on-environment',
         type: 'trigger',
         label: 'onEnvironment',

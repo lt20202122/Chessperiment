@@ -5,29 +5,47 @@ import { BoardClass } from './board';
 export abstract class Piece {
     id: string;
     type: string;
+    name: string;
     color: "white" | "black";
     position: Square;
-    hasMoved: boolean;
+    hasMoved: boolean = false;
 
-    constructor(id: string, type: string, color: "white" | "black", position: Square) {
+    constructor(id: string, type: string, color: "white" | "black", position: Square, name?: string) {
         this.id = id;
         this.type = type;
         this.color = color;
         this.position = position;
-        this.hasMoved = false;
+        this.name = name || type;
     }
 
     abstract isValidMove(from: Square, to: Square, board: BoardClass): boolean;
     abstract canAttack(target: Square, board: BoardClass): boolean;
     abstract clone(): Piece;
 
-    static create(id: string, type: string, color: "white" | "black", position: Square, rules: MoveRule[] = [], logic: any[] = []): Piece {
-        // If there are custom rules or logic, always treat as a CustomPiece
-        // unless it's a completely empty initialization which might happen for standard pieces
-        if (rules.length > 0 || logic.length > 0) {
-            return new CustomPiece(id, type, color, position, rules, logic);
+    static create(id: string, type: string, color: "white" | "black", position: Square, rules: any = [], logic: any = [], name?: string): Piece {
+        const actualRules = typeof rules === 'string' ? JSON.parse(rules) : (Array.isArray(rules) ? rules : []);
+        const actualLogic = typeof logic === 'string' ? JSON.parse(logic) : (Array.isArray(logic) ? logic : []);
+
+        if (actualRules.length > 0 || actualLogic.length > 0) {
+            return new CustomPiece(id, type, color, position, actualRules, actualLogic, name);
         }
 
+        const lowerType = type.toLowerCase();
+        let piece: Piece;
+        switch (lowerType) {
+            case 'pawn': piece = new Pawn(id, color, position); break;
+            case 'knight': piece = new Knight(id, color, position); break;
+            case 'bishop': piece = new Bishop(id, color, position); break;
+            case 'rook': piece = new Rook(id, color, position); break;
+            case 'queen': piece = new Queen(id, color, position); break;
+            case 'king': piece = new King(id, color, position); break;
+            default: piece = new CustomPiece(id, type, color, position, actualRules, actualLogic, name); break;
+        }
+        if (name) piece.name = name;
+        return piece;
+    }
+
+    static createStandard(id: string, type: string, color: "white" | "black", position: Square): Piece | null {
         const lowerType = type.toLowerCase();
         switch (lowerType) {
             case 'pawn': return new Pawn(id, color, position);
@@ -36,7 +54,7 @@ export abstract class Piece {
             case 'rook': return new Rook(id, color, position);
             case 'queen': return new Queen(id, color, position);
             case 'king': return new King(id, color, position);
-            default: return new CustomPiece(id, type, color, position, rules, logic);
+            default: return null;
         }
     }
 }
@@ -45,11 +63,12 @@ export class CustomPiece extends Piece {
     rules: MoveRule[];
     logic: any[];
     variables: Record<string, number> = {};
+    public isCustom = true;
 
-    constructor(id: string, type: string, color: "white" | "black", position: Square, rules: MoveRule[] = [], logic: any[] = []) {
-        super(id, type, color, position);
-        this.rules = rules;
-        this.logic = logic;
+    constructor(id: string, type: string, color: "white" | "black", position: Square, rules: any = [], logic: any = [], name?: string) {
+        super(id, type, color, position, name);
+        this.rules = typeof rules === 'string' ? JSON.parse(rules) : (Array.isArray(rules) ? rules : []);
+        this.logic = typeof logic === 'string' ? JSON.parse(logic) : (Array.isArray(logic) ? logic : []);
     }
 
     // Execution Queue for preventing infinite loops
@@ -91,47 +110,91 @@ export class CustomPiece extends Piece {
 
         // Find relevant triggers
         const triggers = this.logic.filter((b: any) => b.type === 'trigger' && b.id === triggerType);
+        
+        if (triggers.length > 0) {
+            console.log(`[Logic] Executing "${triggerType}" for ${this.id} (${this.type}). Found ${triggers.length} matching blocks.`);
+        }
 
         for (const trigger of triggers) {
             let conditionsMet = true;
             const vals = trigger.socketValues || {};
 
+            // Helper for matching piece types robustly (handles ID suffixes and case)
+            const matchesType = (p: Piece | null, expected: string) => {
+                if (!expected || expected === 'Any') return true;
+                if (!p) return false;
+                const pType = p.type.toLowerCase();
+                const pName = p.name.toLowerCase();
+                const exp = expected.toLowerCase();
+                
+                const isMatch = pType === exp || pType.startsWith(exp + '_') ||
+                              pName === exp || pName.startsWith(exp + '_');
+                
+                if (!isMatch) {
+                    console.log(`[Logic] Type mismatch: [Expected: ${expected}] vs [Captured: type=${p.type}, name=${p.name}]`);
+                }
+                
+                return isMatch;
+            };
+
             if (triggerType === 'on-capture') {
-                if (vals.by && vals.by !== 'Any') {
-                    if (context.capturedPiece && context.capturedPiece.type.toLowerCase() !== vals.by.toLowerCase()) {
-                        conditionsMet = false;
-                    }
+                if (vals.by && !matchesType(context.capturedPiece, vals.by)) {
+                    console.log(`[Logic] Condition failed for "on-capture": Expected ${vals.by}, but captured ${context.capturedPiece?.type}`);
+                    conditionsMet = false;
+                }
+            } else if (triggerType === 'on-captured') {
+                if (vals.by && !matchesType(context.attacker, vals.by)) {
+                    console.log(`[Logic] Condition failed for "on-captured": Expected attacker ${vals.by}, but attacked by ${context.attacker?.type}`);
+                    conditionsMet = false;
                 }
             } else if (triggerType === 'on-threat') {
-                if (vals.by && vals.by !== 'Any') {
-                    if (context.attacker && context.attacker.type.toLowerCase() !== vals.by.toLowerCase()) {
-                        conditionsMet = false;
-                    }
+                if (vals.by && !matchesType(context.attacker, vals.by)) {
+                    console.log(`[Logic] Condition failed for "on-threat": Expected attacker ${vals.by}, but attacked by ${context.attacker?.type}`);
+                    conditionsMet = false;
                 }
             } else if (triggerType === 'on-environment') {
                 const [col, row] = toCoords(this.position);
                 const isWhiteSquare = (col + row) % 2 === 0;
                 
-                if (vals.condition === 'White Square' && !isWhiteSquare) conditionsMet = false;
-                if (vals.condition === 'Black Square' && isWhiteSquare) conditionsMet = false;
-                if (vals.condition === 'Is Attacked' && !context.isAttacked) conditionsMet = false;
+                if (vals.condition === 'White Square' && !isWhiteSquare) {
+                    console.log(`[Logic] Condition failed for "on-environment": Not on White Square`);
+                    conditionsMet = false;
+                }
+                if (vals.condition === 'Black Square' && isWhiteSquare) {
+                    console.log(`[Logic] Condition failed for "on-environment": Not on Black Square`);
+                    conditionsMet = false;
+                }
+                if (vals.condition === 'Is Attacked' && !context.isAttacked) {
+                    console.log(`[Logic] Condition failed for "on-environment": Piece is not attacked`);
+                    conditionsMet = false;
+                }
             } else if (triggerType === 'on-var') {
                 if (vals.varName) {
                     const current = this.variables[vals.varName] || 0;
                     const v = Number(vals.value);
+                    let met = true;
                     switch (vals.op) {
-                        case '==': if (current !== v) conditionsMet = false; break;
-                        case '!=': if (current === v) conditionsMet = false; break;
-                        case '>': if (current <= v) conditionsMet = false; break;
-                        case '<': if (current >= v) conditionsMet = false; break;
-                        case '>=': if (current < v) conditionsMet = false; break;
-                        case '<=': if (current > v) conditionsMet = false; break;
+                        case '==': if (current !== v) met = false; break;
+                        case '!=': if (current === v) met = false; break;
+                        case '>': if (current <= v) met = false; break;
+                        case '<': if (current >= v) met = false; break;
+                        case '>=': if (current < v) met = false; break;
+                        case '<=': if (current > v) met = false; break;
+                    }
+                    if (!met) {
+                        console.log(`[Logic] Condition failed for "on-var": ${vals.varName} (${current}) ${vals.op} ${v} is false`);
+                        conditionsMet = met;
                     }
                 }
             }
 
-            if (conditionsMet && trigger.childId) {
-                this.runBlock(trigger.childId, context, board);
+            if (conditionsMet) {
+                if (trigger.childId) {
+                    console.log(`[Logic] Conditions met for ${trigger.id} (instance ${trigger.instanceId}). Executing child ${trigger.childId}`);
+                    this.runBlock(trigger.childId, context, board);
+                } else {
+                    console.log(`[Logic] Conditions met for ${trigger.id}, but NO action (childId) is connected.`);
+                }
             }
         }
     }
@@ -269,6 +332,14 @@ export class CustomPiece extends Piece {
         // Cooldown check: if > 0, the piece cannot move.
         if (this.variables['cooldown'] && this.variables['cooldown'] > 0) {
             return false;
+        }
+
+        if (this.rules.length === 0) {
+            // Fallback to standard piece behavior if no custom rules defined
+            const standardPiece = Piece.createStandard(this.id, this.type, this.color, from);
+            if (standardPiece) {
+                return standardPiece.isValidMove(from, to, board);
+            }
         }
 
         const fromCoords = toCoords(from);

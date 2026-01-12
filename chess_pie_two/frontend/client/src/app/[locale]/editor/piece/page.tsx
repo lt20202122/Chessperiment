@@ -2,18 +2,6 @@ import PageClient from "./PageClient";
 import { getTranslations } from 'next-intl/server';
 import { PieceEditorHelp } from "@/components/help/HelpArticles";
 
-const jsonLd_pieceEditor = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "ChessPie Piece Editor",
-    "url": "https://chesspie.org/en/editor/piece",
-    "description": "Design and customize chess pieces — shapes, colors, and animations.",
-    "applicationCategory": "DesignApplication",
-    "operatingSystem": "Web",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "provider": { "@type": "Organization", "name": "ChessPie", "url": "https://chesspie.org/en" }
-};
-
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = await params;
     const t = await getTranslations({ locale, namespace: 'SEO.EditorPiece' });
@@ -30,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: "https://chesspie.org/en/editor/piece",
+            url: `https://chesspie.org/${locale}/editor/piece`,
             siteName: "ChessPie",
             images: [{ url: "/images/seo/og-editor.png", width: 1200, height: 630 }],
             type: "website",
@@ -47,6 +35,18 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function PiecePage({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = await params;
     const t = await getTranslations({ locale, namespace: 'SEO.EditorPiece' });
+
+    const jsonLd_pieceEditor = {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "ChessPie Piece Editor",
+        "url": `https://chesspie.org/${locale}/editor/piece`,
+        "description": t('description'),
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "provider": { "@type": "Organization", "name": "ChessPie", "url": `https://chesspie.org/${locale}` }
+    };
 
     return <>
         <script

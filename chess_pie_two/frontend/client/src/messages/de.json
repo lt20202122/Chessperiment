@@ -308,6 +308,8 @@
             "advancedLogicDesc": "Öffne den knotenbasierten Editor (Scratch-ähnlich)",
             "eraser": "Radiergummi",
             "clearCanvas": "Leinwand leeren",
+            "comingSoon": "Demnächst",
+            "comingEndOfJanuary": "Verfügbar Ende Januar 2026",
             "saveToSetModal": {
                 "title": "Figur speichern",
                 "selectSet": "Wähle ein Set für",
@@ -493,6 +495,14 @@
             "title": "Schachpartien Analysieren | Stockfish Analyse | ChessPie",
             "description": "Analysiere deine Schachpartien mit starken Engines. Verbessere deine Strategie und lerne aus Fehlern.",
             "h1": "Schachpartie Analyse"
+        },
+        "LegalNotice": {
+            "title": "Impressum | ChessPie",
+            "description": "Rechtliche Informationen und Kontakt details für ChessPie."
+        },
+        "PrivacyPolicy": {
+            "title": "Datenschutzerklärung | ChessPie",
+            "description": "Erfahre, wie wir deine Daten bei ChessPie schützen."
         },
         "Login": {
             "title": "Anmelden bei ChessPie",
