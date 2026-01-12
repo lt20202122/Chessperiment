@@ -71,6 +71,8 @@ export interface CustomPiece {
     logic?: any // Logic blocks (triggers/effects)
     createdAt: Date
     updatedAt: Date
+    color?: string // Legacy
+    pixels?: string[][] // Legacy
 }
 
 

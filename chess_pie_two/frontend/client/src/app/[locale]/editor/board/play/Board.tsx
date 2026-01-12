@@ -247,6 +247,50 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
         setValidationEnabled(!validationEnabled);
     };
 
+    const buildGameFromProps = useCallback(() => {
+        const enginePieces: Record<Square, Piece | null> = {};
+        Object.entries(board.placedPieces).forEach(([pos, piece]) => {
+            const enginePos = toEngineSq(pos);
+
+            // Search for rules in customCollection with multiple strategies:
+            let customPieceData = customCollection[piece.type];
+
+            if (!customPieceData) {
+                // Try with color suffix
+                const keyWithColor = `${piece.type}_${piece.color}`;
+                customPieceData = customCollection[keyWithColor];
+            }
+
+            if (!customPieceData) {
+                // Search by name or originalId
+                customPieceData = Object.values(customCollection).find((p: any) =>
+                    (p.name === piece.type || p.originalId === piece.type) && p.color === piece.color
+                );
+            }
+
+            const rules = customPieceData?.moves || [];
+            const logic = customPieceData?.logic || [];
+
+            console.log(`[Board Init] Piece at ${pos}:`, {
+                type: piece.type,
+                color: piece.color,
+                foundData: !!customPieceData,
+                rulesCount: rules.length,
+                logicCount: logic.length
+            });
+
+            const enginePiece = Piece.create(`${pos}_${piece.color}_${piece.type}`, piece.type as any, piece.color as any, enginePos, rules, logic);
+            if (enginePiece) {
+                enginePieces[enginePos] = enginePiece;
+            }
+        });
+
+        // Initialize engine with custom board state and active squares
+        const activeSquaresArr = board.activeSquares.map(s => toEngineSq(`${s.col},${s.row}`));
+        const customBoardObj = new BoardClass(enginePieces, activeSquaresArr, board.cols, board.rows);
+        return new Game(customBoardObj);
+    }, [board, customCollection]);
+
     const initGame = useCallback(() => {
         const savedStateRaw = localStorage.getItem('engine_state');
         let savedState = null;
@@ -258,11 +302,9 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
             }
         }
 
-        // Convert pieces
-        const enginePieces: Record<Square, Piece | null> = {};
-
         if (savedState && savedState.pieces) {
             // Restore from saved state
+            const enginePieces: Record<Square, Piece | null> = {};
             Object.entries(savedState.pieces).forEach(([sq, pData]: [string, any]) => {
                 if (!pData) return;
                 const customPieceData = customCollection[pData.type] || Object.values(customCollection).find((p: any) => p.name === pData.type);
@@ -276,65 +318,28 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
                 piece.hasMoved = pData.hasMoved;
                 enginePieces[sq as Square] = piece;
             });
+
+            // Initialize engine with restored pieces
+            const activeSquaresArr = board.activeSquares.map(s => toEngineSq(`${s.col},${s.row}`));
+            const customBoardObj = new BoardClass(enginePieces, activeSquaresArr, board.cols, board.rows);
+            gameRef.current = new Game(customBoardObj);
+
             setMoveHistory(savedState.history || []);
             setHistoryIndex(savedState.historyIndex ?? -1);
+
+            // If we restored state, ensure turn is correct
+            if (savedState.turn) {
+                (gameRef.current.getBoard() as any).stateManager.turn = savedState.turn;
+            }
         } else {
             // Initial setup from Board Editor
-            Object.entries(board.placedPieces).forEach(([pos, piece]) => {
-                const enginePos = toEngineSq(pos);
-
-                // Search for rules in customCollection with multiple strategies:
-                // 1. Direct match by type
-                // 2. Match by type_color format (e.g., "pieceId_white")
-                // 3. Match by name
-                // 4. Match by originalId
-                let customPieceData = customCollection[piece.type];
-
-                if (!customPieceData) {
-                    // Try with color suffix
-                    const keyWithColor = `${piece.type}_${piece.color}`;
-                    customPieceData = customCollection[keyWithColor];
-                }
-
-                if (!customPieceData) {
-                    // Search by name or originalId
-                    customPieceData = Object.values(customCollection).find((p: any) =>
-                        (p.name === piece.type || p.originalId === piece.type) && p.color === piece.color
-                    );
-                }
-
-                const rules = customPieceData?.moves || [];
-                const logic = customPieceData?.logic || [];
-
-                console.log(`[Board Init] Piece at ${pos}:`, {
-                    type: piece.type,
-                    color: piece.color,
-                    foundData: !!customPieceData,
-                    rulesCount: rules.length,
-                    logicCount: logic.length
-                });
-
-                const enginePiece = Piece.create(`${pos}_${piece.color}_${piece.type}`, piece.type as any, piece.color as any, enginePos, rules, logic);
-                if (enginePiece) {
-                    enginePieces[enginePos] = enginePiece;
-                }
-            });
+            gameRef.current = buildGameFromProps();
             setMoveHistory([]);
             setHistoryIndex(-1);
         }
 
-        // Initialize engine with custom board state and active squares
-        const activeSquaresArr = board.activeSquares.map(s => toEngineSq(`${s.col},${s.row}`));
-        const customBoardObj = new BoardClass(enginePieces, activeSquaresArr, board.cols, board.rows);
-        gameRef.current = new Game(customBoardObj);
-
-        // If we restored state, ensure turn is correct
-        if (savedState && savedState.turn) {
-            (gameRef.current.getBoard() as any).stateManager.turn = savedState.turn;
-        }
-
         syncFromEngine();
-    }, [board, customCollection]);
+    }, [board, customCollection, buildGameFromProps]);
 
     useEffect(() => {
         initGame();
@@ -466,7 +471,8 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
         if (index < -1 || index >= moveHistory.length) return;
 
         // 1. Re-initialize Game to start state
-        initGame();
+        // CRITICAL FIX: Always start fresh from props when navigating history, ignoring localStorage state
+        gameRef.current = buildGameFromProps();
 
         // 2. Replay moves up to index
         // index -1 means start state (no moves)
@@ -495,7 +501,7 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
         }
 
         setSelectedPos(null);
-    }, [initGame, moveHistory, blockSize]);
+    }, [buildGameFromProps, moveHistory, blockSize]);
 
     // Keyboard Shortcuts for Zoom & History
     useEffect(() => {

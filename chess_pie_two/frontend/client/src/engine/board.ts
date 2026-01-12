@@ -93,6 +93,8 @@ export class BoardClass {
     movePiece(from: Square, to: Square, promotion?: string): void {
         const piece = this.getPiece(from);
         if (piece) {
+            this.saveSnapshot(); // Save state before any potential logic execution or move
+
             const destinationPiece = this.getPiece(to);
             const isCapture = destinationPiece !== null && destinationPiece.color !== piece.color;
 
@@ -102,63 +104,106 @@ export class BoardClass {
                 if (newPiece) pieceToMove = newPiece;
             }
 
-            // Tentatively move the piece
+            // Save old state for potential rollback/bounce back
             const oldPos = piece.position;
+            
+            let movePrevented = false;
+            let capturePrevented = false;
+
+            // Execute logic hooks BEFORE actually moving
+            if (pieceToMove instanceof CustomPiece) {
+                // on-move trigger (check if move itself is prevented)
+                const moveContext = { from, to, capturedPiece: isCapture ? destinationPiece : null, prevented: false, movePrevented: false, capturePrevented: false };
+                pieceToMove.executeLogic('on-move', moveContext, this);
+                if (moveContext.prevented || moveContext.movePrevented) {
+                    movePrevented = true;
+                }
+
+                // on-capture trigger (only if move not prevented and it's a capture)
+                if (!movePrevented && isCapture) {
+                    const captureContext = { from, to, capturedPiece: destinationPiece, prevented: false, movePrevented: false, capturePrevented: false };
+                    pieceToMove.executeLogic('on-capture', captureContext, this);
+                    if (captureContext.prevented || captureContext.capturePrevented) {
+                        capturePrevented = true;
+                    }
+                }
+            }
+
+            // NOW decide what to do based on prevention flags
+            if (movePrevented) {
+                // Move was prevented - piece stays at origin, nothing happens
+                console.log(`[Move] Prevented by on-move logic`);
+                return;
+            }
+
+            if (capturePrevented) {
+                // Capture was prevented - move is cancelled, piece stays at origin ("Bounce Back")
+                console.log(`[Move] Capture prevented by on-capture logic - Bounce Back`);
+                return;
+            }
+
+            // --- Pre-Move Environment Trigger ---
+            if (pieceToMove instanceof CustomPiece) {
+                // on-leave-square trigger
+                const leaveContext = { square: from, prevented: false, movePrevented: false };
+                pieceToMove.executeLogic('on-leave-square', leaveContext, this);
+                if (leaveContext.prevented || leaveContext.movePrevented) {
+                     console.log(`[Move] Prevented by on-leave-square logic`);
+                     return;
+                }
+
+                // on-enter-threatened-square trigger
+                // Check if target square is attached by enemy
+                const oppColor = piece.color === 'white' ? 'black' : 'white';
+                if (this.isSquareAttacked(to, oppColor)) {
+                    const threatContext = { square: to, prevented: false, movePrevented: false };
+                    pieceToMove.executeLogic('on-enter-threatened-square', threatContext, this);
+                     if (threatContext.prevented || threatContext.movePrevented) {
+                         console.log(`[Move] Prevented by on-enter-threatened-square logic`);
+                         return;
+                    }
+                }
+            }
+
+            // No prevention - execute the move normally
             this.stateManager.setPiece(to, pieceToMove);
             this.stateManager.setPiece(from, null);
             pieceToMove.position = to;
+            pieceToMove.hasMoved = true;
+            this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
 
-            let prevented = false;
-            let displacementSquare: Square | null = null;
-
-            // Execute logic hooks
+            // --- Post-Move Environment Trigger ---
             if (pieceToMove instanceof CustomPiece) {
-                // on-move trigger
-                const moveContext = { from, to, capturedPiece: isCapture ? destinationPiece : null, prevented: false };
-                pieceToMove.executeLogic('on-move', moveContext, this);
-                if (moveContext.prevented) prevented = true;
+                // on-enter-square trigger
+                const enterContext = { square: to }; // Cannot be prevented as move is done
+                pieceToMove.executeLogic('on-enter-square', enterContext, this);
+            }
 
-                // on-capture trigger
-                if (isCapture && !prevented) {
-                    const captureContext = { from, to, capturedPiece: destinationPiece, prevented: false };
-                    pieceToMove.executeLogic('on-capture', captureContext, this);
-                    
-                    if (captureContext.prevented) {
-                        // Special Displacement Logic: If capture is prevented, move target instead of canceling move
-                        displacementSquare = this.findNearestEmptySquare(to);
-                    }
+            // Turn Lifecycle: Update all custom pieces and fire environment triggers
+            const allSquares = this.getSquares();
+            for (const s in allSquares) {
+                const p = allSquares[s as Square];
+                if (p instanceof CustomPiece) {
+                    p.updateTurnState(this);
                 }
             }
 
-            if (prevented && !displacementSquare) {
-                // Full revert if move itself was prevented (not just capture)
-                this.stateManager.setPiece(from, pieceToMove);
-                this.stateManager.setPiece(to, destinationPiece);
-                pieceToMove.position = oldPos;
-            } else {
-                // Move finalized
-                if (displacementSquare && destinationPiece) {
-                    // Place displaced piece in free square
-                    this.stateManager.setPiece(displacementSquare, destinationPiece);
-                    destinationPiece.position = displacementSquare;
-                }
-                
-                pieceToMove.hasMoved = true;
-                this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
+            // Threat Detection
+            this.checkThreats();
+        }
+    }
 
-                // Turn Lifecycle: Update all custom pieces
-                const allSquares = this.getSquares();
-                for (const s in allSquares) {
-                    const p = allSquares[s as Square];
-                    if (p instanceof CustomPiece) {
-                        p.updateTurnState(this);
-                    }
+    isSquareAttacked(square: Square, byColor: string): boolean {
+        const squares = this.getSquares();
+        for (const pos in squares) {
+            const piece = squares[pos as Square];
+            if (piece && piece.color === byColor) {
+                if (piece.canAttack(square, this)) {
+                    return true;
                 }
-
-                // Threat Detection
-                this.checkThreats();
             }
         }
+        return false;
     }
 
     private checkThreats(): void {
@@ -200,5 +245,62 @@ export class BoardClass {
         const clonedBoard = new BoardClass(undefined, undefined, this.width, this.height);
         clonedBoard.stateManager = this.stateManager.clone();
         return clonedBoard;
+    }
+
+    private snapshots: Array<{
+        squares: Record<Square, Piece | null>;
+        turn: 'white' | 'black';
+        pieceVariables: Record<string, Record<string, number>>;
+    }> = [];
+
+    private saveSnapshot() {
+        const squaresCopy: Record<Square, Piece | null> = {} as any;
+        const currentSquares = this.getSquares();
+        const pieceVariables: Record<string, Record<string, number>> = {};
+
+        for (const s in currentSquares) {
+            const piece = currentSquares[s as Square];
+            if (piece) {
+                 if (piece instanceof CustomPiece) {
+                     pieceVariables[piece.id] = { ...piece.variables };
+                 }
+            }
+            squaresCopy[s as Square] = piece; 
+        }
+
+        this.snapshots.push({
+            squares: { ...currentSquares },
+            turn: this.getTurn(),
+            pieceVariables
+        });
+    }
+
+    undo() {
+        if (this.snapshots.length > 0) {
+            const snapshot = this.snapshots.pop();
+            if (!snapshot) return;
+
+            // Restore board state
+            for (const s in snapshot.squares) {
+                const p = snapshot.squares[s as Square];
+                this.setPiece(s as Square, p);
+                if (p) p.position = s as Square; 
+            }
+            
+            // Restore variables
+            const currentSquares = this.getSquares();
+            for (const s in currentSquares) {
+                 const p = currentSquares[s as Square];
+                 if (p instanceof CustomPiece && snapshot.pieceVariables[p.id]) {
+                     p.variables = { ...snapshot.pieceVariables[p.id] };
+                 }
+            }
+
+            // Restore turn (sync state manager)
+            this.stateManager.revertLastMove(); 
+            if (this.stateManager.turn !== snapshot.turn) {
+                this.stateManager.turn = snapshot.turn;
+            }
+        }
     }
 }

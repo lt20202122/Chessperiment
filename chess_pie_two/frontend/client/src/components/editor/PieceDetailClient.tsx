@@ -51,13 +51,24 @@ export default function PieceDetailClient({ piece, locale, translations }: Piece
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                 {/* Left Side: Piece Preview */}
                 <div className="lg:col-span-7 space-y-6">
-                    <div className="aspect-square bg-[#1c1917] rounded-3xl border border-white/10 overflow-hidden flex items-center justify-center p-8 shadow-2xl relative group">
-                        <div className="w-full h-full relative flex items-center justify-center">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="aspect-square bg-[#1c1917] rounded-3xl border border-white/10 overflow-hidden flex flex-col items-center justify-center p-8 shadow-2xl relative group">
+                            <div className="absolute top-4 left-4 text-[10px] font-black uppercase tracking-widest text-white/20">White Version</div>
                             <PieceRenderer
                                 type={piece.name}
-                                color={piece.color}
-                                size={256}
-                                pixels={piece.pixels}
+                                color="white"
+                                size={180}
+                                pixels={piece.pixelsWhite || (piece.color === 'white' ? piece.pixels : undefined)}
+                                className="drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+                            />
+                        </div>
+                        <div className="aspect-square bg-[#1c1917] rounded-3xl border border-white/10 overflow-hidden flex flex-col items-center justify-center p-8 shadow-2xl relative group">
+                            <div className="absolute top-4 left-4 text-[10px] font-black uppercase tracking-widest text-white/20">Black Version</div>
+                            <PieceRenderer
+                                type={piece.name}
+                                color="black"
+                                size={180}
+                                pixels={piece.pixelsBlack || (piece.color === 'black' ? piece.pixels : undefined)}
                                 className="drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]"
                             />
                         </div>
@@ -88,10 +99,10 @@ export default function PieceDetailClient({ piece, locale, translations }: Piece
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
                             <div className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-1 flex items-center gap-2">
-                                <Shield size={12} /> Color
+                                <Shield size={12} /> Set ID
                             </div>
-                            <div className="text-2xl font-bold text-white capitalize">
-                                {piece.color}
+                            <div className="text-sm font-bold text-white truncate">
+                                {piece.setId}
                             </div>
                         </div>
                         <div className="bg-white/5 p-4 rounded-2xl border border-white/10">

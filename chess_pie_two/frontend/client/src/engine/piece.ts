@@ -52,8 +52,42 @@ export class CustomPiece extends Piece {
         this.logic = logic;
     }
 
+    // Execution Queue for preventing infinite loops
+    private pendingTriggers: Array<{ type: string, context: any }> = [];
+    private isExecutingLogic: boolean = false;
+
     executeLogic(triggerType: string, context: any, board: BoardClass) {
         if (!this.logic || !Array.isArray(this.logic)) return;
+
+        // Queue trigger if already executing
+        if (this.isExecutingLogic) {
+            this.pendingTriggers.push({ type: triggerType, context });
+            return;
+        }
+
+        this.isExecutingLogic = true;
+        this._executeLogicInternal(triggerType, context, board);
+        
+        // Process pending triggers (max 20 iterations to prevent infinite loops)
+        let iterations = 0;
+        const MAX_ITERATIONS = 20;
+        
+        while (this.pendingTriggers.length > 0 && iterations < MAX_ITERATIONS) {
+            const pending = this.pendingTriggers.shift()!;
+            this._executeLogicInternal(pending.type, pending.context, board);
+            iterations++;
+        }
+        
+        if (this.pendingTriggers.length > 0) {
+            console.warn(`[Logic] Infinite loop risk detected for piece ${this.id}, stopping execution after ${MAX_ITERATIONS} recursive triggers.`);
+            this.pendingTriggers = [];
+        }
+        
+        this.isExecutingLogic = false;
+    }
+
+    private _executeLogicInternal(triggerType: string, context: any, board: BoardClass) {
+        if (!this.logic) return;
 
         // Find relevant triggers
         const triggers = this.logic.filter((b: any) => b.type === 'trigger' && b.id === triggerType);
@@ -149,7 +183,38 @@ export class CustomPiece extends Piece {
                 }
                 break;
             case 'prevent':
-                context.prevented = true;
+                if (context.prevented !== undefined) context.prevented = true;
+                // Generic prevent also sets specific flags if they exist
+                if (context.movePrevented !== undefined) context.movePrevented = true;
+                if (context.capturePrevented !== undefined) context.capturePrevented = true;
+                break;
+            case 'prevent-move':
+                if (context.movePrevented !== undefined) context.movePrevented = true;
+                break;
+            case 'prevent-capture':
+                if (context.capturePrevented !== undefined) context.capturePrevented = true;
+                break;
+            case 'affect-adjacent':
+                const [col, row] = toCoords(this.position);
+                const adjacentSquares = [
+                    [col-1, row], [col+1, row], [col, row-1], [col, row+1],
+                    [col-1, row-1], [col-1, row+1], [col+1, row-1], [col+1, row+1]
+                ];
+                
+                for (const [c, r] of adjacentSquares) {
+                    const sq = toSquare([c, r]);
+                    const targetPiece = board.getPiece(sq);
+                    if (targetPiece && targetPiece instanceof CustomPiece) {
+                        // Apply specific effects to target
+                        if (vals.effect === 'cooldown' && vals.value) {
+                             targetPiece.variables['cooldown'] = Number(vals.value);
+                        } else if (vals.effect === 'charge' && vals.value) {
+                             targetPiece.variables['charge'] = Number(vals.value);
+                        } else if (vals.effect === 'modify-var' && vals.varName && vals.value) {
+                             targetPiece.variables[vals.varName] = Number(vals.value);
+                        }
+                    }
+                }
                 break;
         }
 
@@ -159,18 +224,44 @@ export class CustomPiece extends Piece {
     }
 
     updateTurnState(board: BoardClass) {
-        // Cooldown decrement
+        // Cooldown processing
         if (this.variables['cooldown'] && this.variables['cooldown'] > 0) {
             this.variables['cooldown']--;
-            // console.log(`Piece ${this.id} cooldown decreased to ${this.variables['cooldown']}`);
-        }
-        // Charge decrement
-        if (this.variables['charge'] && this.variables['charge'] > 0) {
-            this.variables['charge']--;
+            
+            // Trigger on-cooldown-tick
+            this.executeLogic('on-cooldown-tick', { remaining: this.variables['cooldown'] }, board);
+            
+            // Trigger on-cooldown-end when it reaches 0
+            if (this.variables['cooldown'] === 0) {
+                this.executeLogic('on-cooldown-end', {}, board);
+            }
         }
         
-        // Periodic check for environment or variables
-        this.executeLogic('on-environment', { isAttacked: false }, board); 
+        // Charge processing
+        if (this.variables['charge'] && this.variables['charge'] > 0) {
+            this.variables['charge']--;
+            
+            // Trigger on-charge-tick
+            this.executeLogic('on-charge-tick', { remaining: this.variables['charge'] }, board);
+            
+            if (this.variables['charge'] === 0) {
+                this.executeLogic('on-charge-complete', {}, board);
+            }
+        }
+
+        // Fire on-turn-start trigger for general logic
+        this.executeLogic('on-turn-start', {}, board);
+
+        // Environment checks
+        const [col, row] = toCoords(this.position);
+        const isWhiteSquare = (col + row) % 2 === 0;
+        this.executeLogic('on-environment', { 
+            isWhiteSquare, 
+            isBlackSquare: !isWhiteSquare,
+            isAttacked: false // Will be updated by checkThreats later
+        }, board); 
+        
+        // General variable check trigger
         this.executeLogic('on-var', {}, board);
     }
 
@@ -205,12 +296,17 @@ export class CustomPiece extends Piece {
             for (let i = 0; i < rule.conditions.length; i++) {
                 const cond = rule.conditions[i];
                 let value = 0;
-                switch (cond.variable) {
-                    case 'diffX': value = dx; break;
-                    case 'diffY': value = forwardDy; break; // Use normalized forward direction
-                    case 'absDiffX': value = adx; break;
-                    case 'absDiffY': value = ady; break;
-                }
+                
+                // Helper to check standard spatial conditions
+                if (cond.variable === 'diffX') value = dx;
+                else if (cond.variable === 'diffY') value = forwardDy;
+                else if (cond.variable === 'absDiffX') value = adx;
+                else if (cond.variable === 'absDiffY') value = ady;
+                // NEW: Check state variable conditions
+                else if (cond.variable === 'cooldown') value = this.variables['cooldown'] || 0;
+                else if (cond.variable === 'charge') value = this.variables['charge'] || 0;
+                else if (cond.variable === 'mode') value = this.variables['mode'] || 0;
+
 
                 let condSatisfied = false;
                 switch (cond.operator) {

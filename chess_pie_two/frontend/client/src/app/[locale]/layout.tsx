@@ -12,7 +12,7 @@ import { UserPanel } from "@/components/auth/UserPanel";
 import { generateBreadcrumbs } from "@/lib/breadcrumbs";
 import { headers } from "next/headers";
 import { Providers } from "../providers";
-import Script from "next/script";
+
 import { SEOFooter } from "@/components/SEOFooter";
 
 export function generateStaticParams() {
@@ -117,13 +117,7 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(generateBreadcrumbs(pathname)) }}
         />
-        <Script
-          id="cookiebot"
-          src="https://consent.cookiebot.com/uc.js"
-          data-cbid="9312e6eb-fa6c-4d47-b75f-c043af39a218"
-          data-blockingmode="auto"
-          strategy="beforeInteractive"
-        />
+
       </head>
       <body className="bg-bg transition-colors duration-300 dark:bg-stone-950">
         <SessionWrapper>
