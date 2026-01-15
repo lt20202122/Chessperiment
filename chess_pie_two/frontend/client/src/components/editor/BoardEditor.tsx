@@ -144,6 +144,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         cols: number;
     }[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
+    const [symmetry, setSymmetry] = useState<'none' | 'horizontal' | 'vertical' | 'rotational'>('none');
 
     const saveToHistory = (
         pPieces: Record<string, { type: string; color: string, size: number }>,
@@ -472,8 +473,23 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         document.removeEventListener('touchend', handlePointerUp);
     };
 
+    const getSymmetricSquares = (x: number, y: number): { x: number, y: number }[] => {
+        const squares: { x: number, y: number }[] = [];
+        if (symmetry === 'none') return squares;
+
+        if (symmetry === 'horizontal') {
+            squares.push({ x: colsRef.current - 1 - x, y });
+        } else if (symmetry === 'vertical') {
+            squares.push({ x, y: rowsRef.current - 1 - y });
+        } else if (symmetry === 'rotational') {
+            squares.push({ x: colsRef.current - 1 - x, y: rowsRef.current - 1 - y });
+        }
+        return squares;
+    };
+
     const handleSquareAction = useCallback((x: number, y: number, isInitialClick: boolean = false) => {
         const key = toKey(x, y);
+        const symSquares = getSymmetricSquares(x, y);
 
         if (editMode === 'shape') {
             if (isInitialClick) {
@@ -481,14 +497,20 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                 setPaintValue(newValue);
                 setActiveSquares(prev => {
                     const next = new Set(prev);
-                    if (newValue) next.add(key);
-                    else next.delete(key);
+                    if (newValue) {
+                        next.add(key);
+                        symSquares.forEach(s => next.add(toKey(s.x, s.y)));
+                    } else {
+                        next.delete(key);
+                        symSquares.forEach(s => next.delete(toKey(s.x, s.y)));
+                    }
                     return next;
                 });
                 if (!newValue) {
                     setPlacedPieces(prev => {
                         const next = { ...prev };
                         delete next[key];
+                        symSquares.forEach(s => delete next[toKey(s.x, s.y)]);
                         return next;
                     });
                 }
@@ -496,14 +518,20 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                 const pv = paintValueRef.current;
                 setActiveSquares(prev => {
                     const next = new Set(prev);
-                    if (pv) next.add(key);
-                    else next.delete(key);
+                    if (pv) {
+                        next.add(key);
+                        symSquares.forEach(s => next.add(toKey(s.x, s.y)));
+                    } else {
+                        next.delete(key);
+                        symSquares.forEach(s => next.delete(toKey(s.x, s.y)));
+                    }
                     return next;
                 });
                 if (!pv) {
                     setPlacedPieces(prev => {
                         const next = { ...prev };
                         delete next[key];
+                        symSquares.forEach(s => delete next[toKey(s.x, s.y)]);
                         return next;
                     });
                 }
@@ -516,13 +544,23 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     size: squareSizeRef.current * 0.8 // use ref
                 };
 
-                setPlacedPieces((prev: any) => ({
-                    ...prev,
-                    [key]: pieceToPlace
-                }));
+                // Symmetric piece placement (color swap if rotational/vertical?)
+                // In chess variants, we usually want mirrored pieces to be the SAME color for building,
+                // OR opposite color for standard setups. Let's stick to SAME color for "Piece Editor" mode
+                // as it's a "paint" tool.
+
+                setPlacedPieces((prev: any) => {
+                    const next = { ...prev, [key]: pieceToPlace };
+                    symSquares.forEach(s => {
+                        if (activeSquaresRef.current.has(toKey(s.x, s.y))) {
+                            next[toKey(s.x, s.y)] = { ...pieceToPlace };
+                        }
+                    });
+                    return next;
+                });
             }
         }
-    }, [editMode, selectedPiece.type, selectedPiece.color]);
+    }, [editMode, selectedPiece.type, selectedPiece.color, symmetry]);
 
     const handleMouseDown = useCallback((x: number, y: number, e: React.MouseEvent) => {
         if (e.button !== 0) return;
@@ -564,6 +602,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     const removePiece = useCallback((x: number, y: number, e: React.MouseEvent) => {
         e.preventDefault();
         const key = toKey(x, y);
+        const symSquares = getSymmetricSquares(x, y);
 
         // Start right-click painting mode for pieces
         if (editMode === 'pieces') {
@@ -571,21 +610,44 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
             setPlacedPieces(prev => {
                 const next = { ...prev };
                 delete next[key];
+                symSquares.forEach(s => delete next[toKey(s.x, s.y)]);
                 return next;
             });
         } else if (editMode === 'shape' && activeSquaresRef.current.has(key)) {
             setActiveSquares(prev => {
                 const next = new Set(prev);
                 next.delete(key);
+                symSquares.forEach(s => next.delete(toKey(s.x, s.y)));
                 return next;
             });
             setPlacedPieces(prev => {
                 const next = { ...prev };
                 delete next[key];
+                symSquares.forEach(s => delete next[toKey(s.x, s.y)]);
                 return next;
             });
         }
-    }, [editMode]);
+    }, [editMode, symmetry]);
+
+    const clearBoard = () => {
+        setActiveSquares(new Set());
+        setPlacedPieces({});
+        saveToHistory({}, new Set(), rows, cols);
+    };
+
+    const resetToStandard = () => {
+        const newSet = new Set<string>();
+        for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 8; x++) {
+                newSet.add(toKey(x, y));
+            }
+        }
+        setRows(8);
+        setCols(8);
+        setActiveSquares(newSet);
+        setPlacedPieces({});
+        saveToHistory({}, newSet, 8, 8);
+    };
 
     return (
         <div ref={containerRef} className="flex flex-col items-center animate-in fade-in zoom-in duration-500 w-full">
@@ -599,6 +661,48 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                             {cols} <span className="text-accent/60">×</span> {rows}
                         </span>
                     </div>
+                </div>
+
+                <div className="w-px h-8 bg-stone-900/10 dark:bg-white/10" />
+
+                {/* Symmetry Controls */}
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold mr-2">Symmetry</span>
+                    <div className="flex bg-stone-100 dark:bg-white/5 rounded-xl p-1 border border-stone-200 dark:border-white/5">
+                        {[
+                            { id: 'none', label: 'None' },
+                            { id: 'horizontal', label: 'H' },
+                            { id: 'vertical', label: 'V' },
+                            { id: 'rotational', label: 'R' }
+                        ].map(s => (
+                            <button
+                                key={s.id}
+                                onClick={() => setSymmetry(s.id as any)}
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${symmetry === s.id ? 'bg-white dark:bg-stone-800 text-accent shadow-sm' : 'text-stone-500 dark:text-white/40 hover:text-stone-900 dark:hover:text-white'}`}
+                                title={`${s.label} Symmetry`}
+                            >
+                                {s.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="w-px h-8 bg-stone-900/10 dark:bg-white/10" />
+
+                {/* Utility Controls */}
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={clearBoard}
+                        className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold hover:bg-red-500 hover:text-white transition-all active:scale-95"
+                    >
+                        Clear
+                    </button>
+                    <button
+                        onClick={resetToStandard}
+                        className="px-4 py-2 rounded-xl bg-accent/10 border border-accent/20 text-accent text-xs font-bold hover:bg-accent hover:text-white transition-all active:scale-95"
+                    >
+                        Standard
+                    </button>
                 </div>
 
                 <div className="w-px h-8 bg-stone-900/10 dark:bg-white/10" />

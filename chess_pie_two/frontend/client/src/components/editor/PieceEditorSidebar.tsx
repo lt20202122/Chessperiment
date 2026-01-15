@@ -4,6 +4,7 @@ import { Save, Plus, Trash2, Undo2, Redo2, Type, Box, Loader2, Palette, ChevronD
 import { useTranslations } from 'next-intl';
 import { PieceSet, CustomPiece } from '@/lib/firestore';
 import PieceRenderer from '@/components/game/PieceRenderer';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface PieceEditorSidebarProps {
     sets: (PieceSet & { id: string })[];
@@ -188,7 +189,9 @@ export default function PieceEditorSidebar({
                 </div>
 
                 {selectedPieceId && (
-                    <button
+                    <motion.button
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
                         onClick={(e) => {
                             e.stopPropagation();
                             onGenerateInvertedPiece();
@@ -196,7 +199,7 @@ export default function PieceEditorSidebar({
                         className="w-full py-5 bg-amber-500 hover:bg-amber-600 text-white dark:text-bg rounded-3xl font-black text-xs uppercase tracking-[0.15em] flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-amber-500/20"
                     >
                         <RefreshCw size={18} /> {t('invert')}
-                    </button>
+                    </motion.button>
                 )}
             </div>
 
@@ -257,39 +260,55 @@ export default function PieceEditorSidebar({
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 overflow-y-auto pr-1 custom-scrollbar pb-6">
-                    {pieces.map((piece) => (
-                        <div key={piece.id} className="flex flex-col gap-1.5">
-                            <button
-                                onClick={() => setSelectedPieceId(piece.id!)}
-                                onContextMenu={(e) => handleContextMenu(e, piece.id!)}
-                                className={`group aspect-square relative flex items-center justify-center rounded-2xl border transition-all overflow-hidden ${selectedPieceId === piece.id
-                                    ? 'bg-amber-500/10 border-amber-500 shadow-md'
-                                    : 'bg-white dark:bg-white/5 border-stone-200 dark:border-white/10 hover:border-amber-500/50'
-                                    }`}
+                    <AnimatePresence mode="popLayout">
+                        {pieces.map((piece) => (
+                            <motion.div
+                                key={piece.id}
+                                layout
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                className="flex flex-col gap-1.5"
                             >
-                                <div className="transform">
-                                    <PieceRenderer
-                                        type={piece.name}
-                                        color={currentColor}
-                                        size={32}
-                                        pixels={currentColor === 'white' ? piece.pixelsWhite : piece.pixelsBlack}
-                                    />
+                                <button
+                                    onClick={() => setSelectedPieceId(piece.id!)}
+                                    onContextMenu={(e) => handleContextMenu(e, piece.id!)}
+                                    className={`group aspect-square relative flex items-center justify-center rounded-2xl border transition-all overflow-hidden ${selectedPieceId === piece.id
+                                        ? 'bg-amber-500/10 border-amber-500 shadow-md ring-2 ring-amber-500/20'
+                                        : 'bg-white dark:bg-white/5 border-stone-200 dark:border-white/10 hover:border-amber-500/50'
+                                        }`}
+                                >
+                                    <motion.div
+                                        animate={selectedPieceId === piece.id ? { scale: 1.15 } : { scale: 1 }}
+                                        className="transform"
+                                    >
+                                        <PieceRenderer
+                                            type={piece.name}
+                                            color={currentColor}
+                                            size={32}
+                                            pixels={currentColor === 'white' ? piece.pixelsWhite : piece.pixelsBlack}
+                                        />
+                                    </motion.div>
+                                    <div className={`absolute bottom-0 inset-x-0 h-1 transition-colors ${selectedPieceId === piece.id ? 'bg-amber-500' : 'bg-transparent group-hover:bg-amber-500/30'}`} />
+                                </button>
+                                <div className="text-center px-1 pb-1">
+                                    <p className={`text-[10px] font-black uppercase tracking-tight transition-colors ${selectedPieceId === piece.id ? 'text-amber-500' : 'text-stone-400 dark:text-white/20'}`}>
+                                        {piece.name}
+                                    </p>
                                 </div>
-                                <div className={`absolute bottom-0 inset-x-0 h-1 transition-colors ${selectedPieceId === piece.id ? 'bg-amber-500' : 'bg-transparent group-hover:bg-amber-500/30'}`} />
-                            </button>
-                            <div className="text-center px-1 pb-1">
-                                <p className="text-[10px] font-black text-stone-400 dark:text-white/20 truncate uppercase tracking-tight group-hover:text-amber-500 transition-colors">
-                                    {piece.name}
-                                </p>
-                            </div>
-                        </div>
-                    ))}
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
 
                     {pieces.length === 0 && (
-                        <div className="col-span-full py-12 bg-stone-50 dark:bg-white/5 rounded-3xl border border-dashed border-stone-200 dark:border-white/10 flex flex-col items-center justify-center text-stone-900 dark:text-white/10">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="col-span-full py-12 bg-stone-50 dark:bg-white/5 rounded-3xl border border-dashed border-stone-200 dark:border-white/10 flex flex-col items-center justify-center text-stone-900 dark:text-white/10"
+                        >
                             <Box size={32} className="mb-3" />
                             <p className="text-[10px] font-black text-stone-900 dark:text-white/10 uppercase tracking-widest">{t('noPieces')}</p>
-                        </div>
+                        </motion.div>
                     )}
                 </div>
             </div>

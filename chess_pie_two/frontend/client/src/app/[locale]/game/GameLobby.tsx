@@ -130,25 +130,28 @@ export default function GameLobby({
                         <Monitor size={32} />
                     </div>
                     <h3 className="text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight mb-6">{t('playAgainstComputer')}</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <button
-                            onClick={() => onVsComputer(800)}
-                            className="py-4 px-6 bg-green-500/5 hover:bg-green-500/20 text-green-500 rounded-2xl border border-green-500/20 transition-all font-black uppercase tracking-wider text-sm hover:translate-y-[-2px] active:translate-y-0"
-                        >
-                            {t('easy')}
-                        </button>
-                        <button
-                            onClick={() => onVsComputer(1500)}
-                            className="py-4 px-6 bg-yellow-500/5 hover:bg-yellow-500/20 text-yellow-500 rounded-2xl border border-yellow-500/20 transition-all font-black uppercase tracking-wider text-sm hover:translate-y-[-2px] active:translate-y-0"
-                        >
-                            {t('medium')}
-                        </button>
-                        <button
-                            onClick={() => onVsComputer(2500)}
-                            className="py-4 px-6 bg-red-500/5 hover:bg-red-500/20 text-red-500 rounded-2xl border border-red-500/20 transition-all font-black uppercase tracking-wider text-sm hover:translate-y-[-2px] active:translate-y-0 col-span-2"
-                        >
-                            {t('grandmaster')}
-                        </button>
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                        {[
+                            { elo: 400, key: 'beginner', color: 'bg-emerald-500', icon: '🌱' },
+                            { elo: 800, key: 'casual', color: 'bg-green-500', icon: '🎮' },
+                            { elo: 1400, key: 'intermediate', color: 'bg-blue-500', icon: '⚔️' },
+                            { elo: 2000, key: 'expert', color: 'bg-purple-500', icon: '🧠' },
+                            { elo: 2600, key: 'master', color: 'bg-red-500', icon: '👑' },
+                            { elo: 3000, key: 'grandmaster', color: 'bg-stone-950', icon: '🌌' }
+                        ].map((level) => (
+                            <button
+                                key={level.elo}
+                                onClick={() => onVsComputer(level.elo)}
+                                className="group/level relative p-4 bg-stone-50 dark:bg-stone-950/50 hover:bg-white dark:hover:bg-white/5 border border-stone-200 dark:border-white/10 rounded-2xl transition-all hover:border-amber-500/50 hover:shadow-xl active:scale-95 text-left overflow-hidden"
+                            >
+                                <div className={`absolute top-0 right-0 w-16 h-16 ${level.color} opacity-5 blur-2xl group-hover/level:opacity-20 transition-opacity`} />
+                                <div className="text-2xl mb-2">{level.icon}</div>
+                                <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-widest mb-1">{level.elo} ELO</p>
+                                <h4 className="text-sm font-bold text-stone-900 dark:text-white group-hover/level:text-amber-500 transition-colors uppercase">
+                                    {t(level.key)}
+                                </h4>
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>

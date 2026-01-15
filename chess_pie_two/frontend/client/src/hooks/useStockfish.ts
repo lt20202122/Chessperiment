@@ -5,7 +5,7 @@ type StockfishMessage = {
   data: string;
 };
 
-export function useStockfish(game: Chess, difficulty: number = 1300, onBestMove: (move: string) => void) {
+export function useStockfish(fen: string, difficulty: number = 1300, onBestMove: (move: string) => void) {
   const workerRef = useRef<Worker | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
@@ -53,19 +53,16 @@ export function useStockfish(game: Chess, difficulty: number = 1300, onBestMove:
     const skillLevel = Math.max(0, Math.min(20, Math.floor((difficulty - 400) / 100)));
     
     workerRef.current.postMessage(`setoption name Skill Level value ${skillLevel}`);
-    // Limit depth based on ELO to simulate mistakes
-    const depth = Math.max(1, Math.min(20, Math.floor(difficulty / 150))); 
-    
   }, [difficulty, isReady]);
 
   const requestMove = useCallback(() => {
     if (!workerRef.current || !isReady) return;
     setIsThinking(true);
-    workerRef.current.postMessage(`position fen ${game.fen()}`);
+    workerRef.current.postMessage(`position fen ${fen}`);
     // Calculate depth based on difficulty
     const depth = Math.max(1, Math.min(20, Math.floor(difficulty / 150))); 
     workerRef.current.postMessage(`go depth ${depth}`);
-  }, [game, difficulty, isReady]);
+  }, [fen, difficulty, isReady]);
 
   return { isReady, isThinking, requestMove };
 }

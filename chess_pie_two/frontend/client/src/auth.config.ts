@@ -3,7 +3,8 @@ import type { NextAuthConfig } from "next-auth"
 import Google from "next-auth/providers/google"
 
 export const authConfig = {
-    providers: [Google],
+    providers: [Google({})],
+    trustHost: true,
     session: {
         strategy: "jwt",
     },

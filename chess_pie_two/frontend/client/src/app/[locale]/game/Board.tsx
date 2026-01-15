@@ -329,7 +329,7 @@ export default function Board({
     } catch (e) { }
   }, [chess, updateBoardState, myColor, t]);
 
-  const { requestMove } = useStockfish(chess, difficulty, onBestMove);
+  const { requestMove } = useStockfish(chess.fen(), difficulty, onBestMove);
 
   useEffect(() => {
     // Auto-start computer game if mode is computer and status is empty/waiting
