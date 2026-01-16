@@ -24,7 +24,7 @@ export default function EditorLayout({ children, sidebar }: EditorLayoutProps) {
             </div>
 
             {/* Sidebar Panel */}
-            <div className="w-full lg:w-96 bg-islands border-t lg:border-t-0 lg:border-l border-gray-200 shadow-xl z-20 flex flex-col order-first lg:order-last shrink-0 h-auto lg:h-full">
+            <div className="w-full lg:w-96 bg-islands border-t lg:border-t-0 lg:border-l border-gray-200 shadow-xl z-20 flex flex-col order-last shrink-0 h-auto lg:h-full">
                 {sidebar}
             </div>
         </div>

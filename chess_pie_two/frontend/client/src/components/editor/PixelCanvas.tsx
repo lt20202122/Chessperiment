@@ -184,6 +184,18 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
                     height={512}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
+                    onTouchStart={(e) => {
+                        setIsDrawing(true);
+                        handleAction(e);
+                    }}
+                    onTouchMove={(e) => {
+                        if (isDrawing) {
+                            handleAction(e);
+                        }
+                    }}
+                    onTouchEnd={() => {
+                        handleMouseUp();
+                    }}
                     className="cursor-crosshair bg-white touch-none shadow-inner"
                     style={{
                         width: 'min(90vw, 512px)',

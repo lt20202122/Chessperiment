@@ -1,26 +1,14 @@
 "use client"
-import { useState } from "react"
 import { useTranslations } from "next-intl";
-import { Menu, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Link, usePathname } from "@/i18n/navigation";
 
-export function MobileMenu({ locale }: { locale: string }) {
+export function MobileMenu({ locale, isMenuOpen, setIsMenuOpen }: { locale: string, isMenuOpen: boolean, setIsMenuOpen: (val: boolean) => void }) {
     const t = useTranslations('Header');
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pathname = usePathname();
 
     return (
         <>
-
-            <button
-                className="lg:hidden p-2 mr-2 text-amber-400 outline-none hover:bg-amber-400/10 rounded-xl transition-colors"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                aria-label={t('menu')}
-                title={t('menu')}
-            >
-                {isMenuOpen ? <X size={32} /> : <Menu size={32} />}
-            </button>
-
             {/* Mobile Nav Overlay */}
             {isMenuOpen && (
                 <div className="fixed inset-0 bg-bg z-100 flex flex-col items-center justify-start pt-32 px-8 animate-in slide-in-from-top duration-500">

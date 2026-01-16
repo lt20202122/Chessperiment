@@ -1,7 +1,9 @@
 "use client"
+import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Bungee } from "next/font/google";
+import { Menu, X } from 'lucide-react';
 
 const bungee = Bungee({
     display: "swap",
@@ -9,14 +11,24 @@ const bungee = Bungee({
     weight: ["400"],
 });
 
-export function Header({ pathname, locale }: { pathname: string, locale: string }) {
+export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen }: { pathname: string, locale: string, isMenuOpen: boolean, setIsMenuOpen: (val: boolean) => void }) {
     const t = useTranslations('Header');
 
     const small = pathname?.includes("/game")
 
     return (
-        <header className={`flex justify-between items-center lg:px-5 pt-2 ${small ? "group" : "pb-10"} bg-bg relative z-50`}>
-            <Link href="/" className={`${bungee.className} [font-variant-caps:small-caps] ml-1.5 lg:ml-0 transition-colors duration-300 ${small ? "text-3xl lg:text-5xl text-amber-400/50 dark:text-amber-400/50 group-hover:text-amber-400 dark:group-hover:text-amber-400" : "text-4xl lg:text-7xl text-amber-400"} caret-transparent`}>ChessPie</Link>
+        <header className={`flex justify-between items-center px-4 lg:px-5 pt-2 ${small ? "group" : "pb-6 lg:pb-10"} bg-bg relative z-50`}>
+            <div className="flex items-center gap-2">
+                <button
+                    className="lg:hidden p-2 text-amber-400 outline-none hover:bg-amber-400/10 rounded-xl transition-colors"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    aria-label={t('menu')}
+                    title={t('menu')}
+                >
+                    {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                </button>
+                <Link href="/" className={`${bungee.className} [font-variant-caps:small-caps] transition-all duration-300 ${small ? "text-2xl md:text-3xl lg:text-5xl text-amber-400/50 dark:text-amber-400/50 group-hover:text-amber-400 dark:group-hover:text-amber-400" : "text-4xl md:text-5xl lg:text-7xl text-amber-400"} hover:scale-[1.02] active:scale-[0.98] caret-transparent drop-shadow-sm`}>ChessPie</Link>
+            </div>
 
             {/* Desktop Nav */}
             <div className={`hidden lg:flex gap-4 items-center`}>

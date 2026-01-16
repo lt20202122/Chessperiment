@@ -652,7 +652,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     return (
         <div ref={containerRef} className="flex flex-col items-center animate-in fade-in zoom-in duration-500 w-full">
             {/* Controls Overlay */}
-            <div className="flex items-center gap-6 mb-8 px-6 py-3 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-2xl border border-stone-200 dark:border-white/10 shadow-xl">
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mb-8 px-4 md:px-6 py-3 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-2xl border border-stone-200 dark:border-white/10 shadow-xl max-w-[95vw]">
                 {/* Board Stats */}
                 <div className="flex items-center gap-3">
                     <div className="flex flex-col">
@@ -663,11 +663,11 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     </div>
                 </div>
 
-                <div className="w-px h-8 bg-stone-900/10 dark:bg-white/10" />
+                <div className="hidden md:block w-px h-8 bg-stone-900/10 dark:bg-white/10" />
 
                 {/* Symmetry Controls */}
                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold mr-2">Symmetry</span>
+                    <span className="hidden sm:inline text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold mr-2">Symmetry</span>
                     <div className="flex bg-stone-100 dark:bg-white/5 rounded-xl p-1 border border-stone-200 dark:border-white/5">
                         {[
                             { id: 'none', label: 'None' },
@@ -678,7 +678,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                             <button
                                 key={s.id}
                                 onClick={() => setSymmetry(s.id as any)}
-                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${symmetry === s.id ? 'bg-white dark:bg-stone-800 text-accent shadow-sm' : 'text-stone-500 dark:text-white/40 hover:text-stone-900 dark:hover:text-white'}`}
+                                className={`px-2 sm:px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${symmetry === s.id ? 'bg-white dark:bg-stone-800 text-accent shadow-sm' : 'text-stone-500 dark:text-white/40 hover:text-stone-900 dark:hover:text-white'}`}
                                 title={`${s.label} Symmetry`}
                             >
                                 {s.label}
@@ -687,45 +687,45 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     </div>
                 </div>
 
-                <div className="w-px h-8 bg-stone-900/10 dark:bg-white/10" />
+                <div className="hidden md:block w-px h-8 bg-stone-900/10 dark:bg-white/10" />
 
                 {/* Utility Controls */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                     <button
                         onClick={clearBoard}
-                        className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold hover:bg-red-500 hover:text-white transition-all active:scale-95"
+                        className="px-3 sm:px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] sm:text-xs font-bold hover:bg-red-500 hover:text-white transition-all active:scale-95"
                     >
                         Clear
                     </button>
                     <button
                         onClick={resetToStandard}
-                        className="px-4 py-2 rounded-xl bg-accent/10 border border-accent/20 text-accent text-xs font-bold hover:bg-accent hover:text-white transition-all active:scale-95"
+                        className="px-3 sm:px-4 py-2 rounded-xl bg-accent/10 border border-accent/20 text-accent text-[10px] sm:text-xs font-bold hover:bg-accent hover:text-white transition-all active:scale-95"
                     >
                         Standard
                     </button>
                 </div>
 
-                <div className="w-px h-8 bg-stone-900/10 dark:bg-white/10" />
+                <div className="hidden md:block w-px h-8 bg-stone-900/10 dark:bg-white/10" />
 
                 {/* Zoom Controls */}
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setZoom(prev => Math.max(0.5, prev - 0.1))}
-                        className="p-2 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-white/60 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-white/5 active:scale-95"
+                        className="p-1.5 sm:p-2 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-white/60 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-white/5 active:scale-95"
                         title="Zoom Out"
                     >
-                        <Minus size={18} />
+                        <Minus size={16} />
                     </button>
-                    <div className="flex flex-col items-center min-w-12">
-                        <span className="text-[9px] text-stone-500 dark:text-white/40 uppercase font-bold mb-0.5">Zoom</span>
-                        <span className="text-sm font-bold text-stone-900 dark:text-white tabular-nums">{Math.round(zoom * 100)}%</span>
+                    <div className="flex flex-col items-center min-w-10 sm:min-w-12">
+                        <span className="text-[8px] sm:text-[9px] text-stone-500 dark:text-white/40 uppercase font-bold">Zoom</span>
+                        <span className="text-xs sm:text-sm font-bold text-stone-900 dark:text-white tabular-nums">{Math.round(zoom * 100)}%</span>
                     </div>
                     <button
                         onClick={() => setZoom(prev => Math.min(2, prev + 0.1))}
-                        className="p-2 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-white/60 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-white/5 active:scale-95"
+                        className="p-1.5 sm:p-2 rounded-xl bg-stone-100 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-white/60 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-white/5 active:scale-95"
                         title="Zoom In"
                     >
-                        <Plus size={18} />
+                        <Plus size={16} />
                     </button>
                 </div>
             </div>
