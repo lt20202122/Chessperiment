@@ -440,7 +440,11 @@ export default function PageClient() {
                         <Palette size={14} /> {t('badge')}
                     </div>
                     <h1 className="text-4xl md:text-5xl font-black text-stone-900 dark:text-white mb-4 tracking-tight">
-                        {t('title').replace('<accent>', '').replace('</accent>', '')}
+                        {t.rich("title", {
+                            accent: chunks => {
+                                return <span className="text-accent underline decoration-wavy decoration-2 underline-offset-4">{chunks}</span>
+                            }
+                        })}
                     </h1>
                     <p className="text-stone-500 dark:text-white/60 text-lg leading-relaxed max-w-lg mx-auto">
                         {t('description')}

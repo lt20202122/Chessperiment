@@ -260,7 +260,7 @@
             }
         },
         "Piece": {
-            "title": "Design Deine <accent>Schachfiguren</accent>",
+            "title": "Design deine <accent>Schachfiguren</accent>",
             "description": "Erstelle pixelgenaue Schachfiguren mit unserem intuitiven 64x64 Editor.",
             "badge": "Figuren-Editor",
             "design": "Design",
