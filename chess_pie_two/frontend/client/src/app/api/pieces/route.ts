@@ -18,10 +18,10 @@ export async function GET(req: Request) {
 
     try {
         const { db } = await import("@/lib/firebase");
-        const pieceRef = db.collection("pieces").doc(`${userId}_${piece}`);
-        const doc = await pieceRef.get();
+        const pieceRef = db?.collection("pieces").doc(`${userId}_${piece}`);
+        const doc = await pieceRef?.get();
 
-        if (!doc.exists) {
+        if (!doc?.exists) {
             return NextResponse.json({ error: "Piece not found" }, { status: 404 });
         }
 
@@ -58,8 +58,8 @@ export async function POST(req: Request) {
     }
 
     try {
-        const pieceRef = db.collection("pieces").doc(`${userId}_${pieceType}_${color}`);
-        await pieceRef.set({
+        const pieceRef = db?.collection("pieces").doc(`${userId}_${pieceType}_${color}`);
+        await pieceRef?.set({
             userId,
             pieceType,
             color,
