@@ -79,3 +79,35 @@ The privacy policy is well-structured and covers many important aspects of GDPR,
 Both the "Impressum" and the "Datenschutzerklärung" are well on their way to being compliant, but there are several areas where they could be improved to better align with German and EU legal standards. The most critical changes are adding the dispute resolution information to the "Impressum" and including information about data retention in the Privacy Policy.
 
 Again, I strongly recommend consulting with a legal professional to verify these suggestions and ensure full compliance.
+
+---
+
+## Update: July 2024
+
+### Implemented Changes
+
+Based on your request, I have implemented the following changes:
+
+*   **Impressum:**
+    *   Added the mandatory link to the EU's Online Dispute Resolution (ODR) platform.
+    *   Added the requested statement that you are not willing or obligated to participate in consumer dispute resolution proceedings (VSBG).
+    *   Updated the provider information to include your full name and the correct postal code.
+*   **Privacy Policy:**
+    *   Updated the "last updated" date to July 2024.
+    *   Added a new section on "Data Retention" to explain how long user data is stored.
+    *   Clarified the use of Vercel Analytics and Speed Insights, emphasizing that they are cookie-free and privacy-friendly.
+    *   Provided a more detailed description of the data stored in Firebase/Firestore.
+    *   Explicitly mentioned the use of a technically necessary session cookie (JWT) for user authentication.
+
+### Cookie Banner Analysis
+
+You asked whether a cookie banner is necessary for your site. Based on my technical analysis, here is an assessment:
+
+*   **Vercel Analytics & Speed Insights:** My research confirms that these tools are designed to be privacy-friendly and do **not** use cookies to track users.
+*   **Authentication Cookie:** The only cookie your site uses is a session cookie (JWT) that is set after a user logs in. This type of cookie is generally considered "technically necessary" for the core functionality of the site (i.e., keeping a user logged in).
+
+According to the ePrivacy Directive and GDPR, consent is typically not required for cookies that are strictly necessary for the service to function. Since your site only uses a session cookie for logged-in users and no tracking or advertising cookies, it is likely that you do **not** need a cookie banner.
+
+However, it is crucial to be transparent with your users. The updated privacy policy now clearly states that a session cookie is used for authentication, which fulfills the requirement of informing users about the cookies in use.
+
+**Final Recommendation:** While a cookie banner does not appear to be required, this is a legal question that depends on the interpretation of "strictly necessary." The final decision should be made in consultation with a legal expert who can provide a definitive answer based on the specifics of your site and the relevant case law.

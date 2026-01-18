@@ -61,6 +61,23 @@ export default async function LegalNotice({ params }: { params: Promise<{ locale
                 </p>
             </section>
 
+            <section className={styles.section}>
+                <h2 className={styles.heading}>{t("disputeResolutionHeading")}</h2>
+                <p className={styles.text}>
+                    {t("odrText")}{" "}
+                    <a
+                        href="https://ec.europa.eu/consumers/odr"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.link}
+                    >
+                        https://ec.europa.eu/consumers/odr
+                    </a>
+                    .
+                </p>
+                <p className={styles.text}>{t("vsbgText")}</p>
+            </section>
+
             <footer className={styles.footer}>
                 <p className={styles.smallText}>
                     {t("madeWith")}{" "}
