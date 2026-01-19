@@ -185,6 +185,10 @@ export class BoardClass {
             }
 
             // No prevention - execute the move normally
+            // If this was a capture and no transformation occurred, remove the captured piece first
+            if (isCapture) {
+                this.stateManager.setPiece(to, null);
+            }
             this.stateManager.setPiece(to, pieceToMove);
             this.stateManager.setPiece(from, null);
             pieceToMove.position = to;

@@ -13,47 +13,62 @@
 }
 
 :root {
-  --bg: oklch(96% 0.008 240); /* Softer, less harsh background */
-  --islands: oklch(92% 0.015 240); /* More subtle elevation */
-  --text: oklch(20% 0.03 240); /* Slightly lighter for better readability */
-  --accent: oklch(58% 0.18 250); /* Slightly muted accent */
-  --accent-hover: oklch(53% 0.18 250);
+  /* Common variables */
+  --bg: #f5f5f7;
+  --islands: #ececef;
+  --text: #1c1c1e;
+  --accent: #5e5ce6;
+  --accent-hover: #4848d1;
+
+  /* Modern oklch values with fallback logic */
+  @supports (color: oklch(0% 0 0)) {
+    --bg: oklch(96% 0.008 240);
+    --islands: oklch(92% 0.015 240);
+    --text: oklch(20% 0.03 240);
+    --accent: oklch(58% 0.18 250);
+    --accent-hover: oklch(53% 0.18 250);
+  }
 }
 
 .dark {
-  /* --bg:oklch(28.6% 0.066 53.813);
-  --islands:oklch(36.855% 0.08078 58.738); */
-  --bg: hsl(220, 11%, 11%);
-  --islands: hsl(218, 13%, 17%);
+  --bg: #1c1c1e;
+  --islands: #2c2c2e;
+  --text: #e5e5e7;
   --accent: oklch(68.1% 0.162 75.834);
   --accent-hover: oklch(79.5% 0.184 86.047);
-  --text: hsl(0, 0%, 90%);
-  --text: hsl(0, 0%, 90%);
+
+  @supports (color: oklch(0% 0 0)) {
+    --accent: oklch(68.1% 0.162 75.834);
+    --accent-hover: oklch(79.5% 0.184 86.047);
+  }
 }
 
 body {
   background-color: var(--bg);
-  background-image: radial-gradient(
-      circle at center,
-      transparent 0%,
-      var(--bg) 100%
-    ),
-    linear-gradient(
-      color-mix(in srgb, var(--islands) 30%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--islands) 30%, transparent) 1px,
-      transparent 1px
-    );
-  background-size: 100% 100%, 40px 40px, 40px 40px;
-  background-attachment: fixed;
+  /* Simplify background to prevent GPU glitches on mobile */
+  background-image: none;
+  background-attachment: scroll;
+}
+
+/* Only apply complex gradients on larger screens with better GPUs */
+@media (min-width: 1024px) {
+  body {
+    background-image:
+      radial-gradient(circle at center, transparent 0%, var(--bg) 100%),
+      linear-gradient(hsla(240, 10%, 50%, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, hsla(240, 10%, 50%, 0.1) 1px, transparent 1px);
+    background-size:
+      100% 100%,
+      40px 40px,
+      40px 40px;
+    background-attachment: fixed;
+  }
 }
 
 .shadow-islands:hover {
-  box-shadow: 2.5px 2px 10px color-mix(in srgb, var(--text) 40%, transparent),
-    10px 10px 15px color-mix(in srgb, var(--text) 20%, transparent);
+  box-shadow:
+    2.5px 2px 10px rgba(0, 0, 0, 0.2),
+    10px 10px 15px rgba(0, 0, 0, 0.1);
 }
 
 .link-underline-regular {

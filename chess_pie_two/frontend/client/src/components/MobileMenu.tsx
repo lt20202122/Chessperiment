@@ -11,7 +11,7 @@ export function MobileMenu({ locale, isMenuOpen, setIsMenuOpen }: { locale: stri
         <>
             {/* Mobile Nav Overlay */}
             {isMenuOpen && (
-                <div className="fixed inset-0 bg-bg z-100 flex flex-col items-center justify-start pt-32 px-8 animate-in slide-in-from-top duration-500">
+                <div className="fixed inset-0 bg-bg z-[100] flex flex-col items-center justify-start pt-32 px-8 animate-in slide-in-from-top duration-500">
                     {/* Close button inside overlay */}
                     <button
                         className="absolute top-6 right-6 p-4 text-amber-400 hover:scale-110 transition-transform active:scale-95 bg-amber-400/10 rounded-2xl"
