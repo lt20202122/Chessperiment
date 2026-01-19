@@ -9,6 +9,7 @@ export default function GamePage() {
     const [isSearching, setIsSearching] = useState(false);
 
     useEffect(() => {
+        if (!socket) return;
         const handleMatchFound = (data: { roomId: string }) => {
             setIsSearching(false);
             router.push(`/game/${data.roomId}?mode=join`);
@@ -33,13 +34,17 @@ export default function GamePage() {
     }, [socket, router]);
 
     const handleQuickSearch = () => {
-        socket.emit('find_match', { elo: 1200 }); // Placeholder ELO
-        setIsSearching(true);
+        if (socket) {
+            socket.emit('find_match', { elo: 1200 }); // Placeholder ELO
+            setIsSearching(true);
+        }
     };
 
     const handleCancelSearch = () => {
         setIsSearching(false);
-        socket.emit("cancel_search");
+        if (socket) {
+            socket.emit("cancel_search");
+        }
     };
 
     const handleCreateRoom = () => {
