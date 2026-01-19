@@ -105,7 +105,7 @@ export default function Btn() {
                         />
                     </div>
                     {/* Fallback pattern for mobile */}
-                    <div className="lg:hidden absolute inset-0 z-0 bg-stone-800 opacity-50 bg-[radial-gradient(#444_1px,transparent_1px)] [background-size:20px_20px]" />
+                    <div className="lg:hidden absolute inset-0 z-0 bg-stone-800 opacity-50 bg-[radial-gradient(#444_1px,transparent_1px)] bg-size-[20px_20px]" />
 
                     <div
                         className="relative z-20 flex items-center justify-center gap-4 w-full h-full"
