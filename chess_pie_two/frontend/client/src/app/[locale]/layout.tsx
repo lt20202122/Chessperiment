@@ -122,7 +122,7 @@ export default async function RootLayout({
         />
 
       </head>
-      <body className="bg-bg transition-colors duration-300 dark:bg-stone-950">
+      <body className="bg-bg transition-colors duration-300 dark:bg-stone-950 min-h-screen flex flex-col">
         <SessionWrapper>
           <NextIntlClientProvider messages={messages}>
             <ThemeProvider

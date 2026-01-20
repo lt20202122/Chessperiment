@@ -13,8 +13,8 @@ export default function HomeLayout({
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr_1fr] gap-8 mt-4 lg:mt-0 items-start">
 
                 {/* Main Content (Center) - Appears first on mobile */}
-                <div className="order-1 lg:order-2 space-y-8">
-                    <section className='bg-primary-island transition-all duration-300 shadow-islands min-h-[440px] p-4 md:p-6 rounded-3xl h-fit border border-gray-200/50 dark:border-stone-700/50 backdrop-blur-sm bg-white/30 dark:bg-stone-900/30'>
+                <div className="order-1 lg:order-2 space-y-8 w-full">
+                    <section className='bg-islands lg:bg-white/30 lg:backdrop-blur-sm lg:transition-all lg:duration-300 shadow-islands min-h-[440px] p-4 md:p-6 rounded-3xl h-fit border border-gray-200/50 dark:border-stone-700/50 dark:lg:bg-stone-900/30'>
                         {children}
                     </section>
                 </div>

@@ -17,7 +17,7 @@ export default function MarketplaceTrending() {
     };
 
     return (
-        <section className="p-6 bg-white/50 dark:bg-stone-900/50 backdrop-blur-sm border border-gray-200/50 dark:border-stone-700/50 rounded-3xl h-full flex flex-col">
+        <section className="p-6 bg-islands lg:bg-white/50 dark:lg:bg-stone-900/50 lg:backdrop-blur-sm border border-gray-200/50 dark:border-stone-700/50 rounded-3xl h-full flex flex-col">
             <div className="flex items-center gap-2 mb-5">
                 <TrendingUp className="w-5 h-5 text-amber-500" />
                 <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
@@ -33,7 +33,7 @@ export default function MarketplaceTrending() {
                     >
                         <div className="flex gap-3 items-center">
                             {/* Preview Image */}
-                            <div className="w-12 h-12 bg-linear-to-br from-gray-100 to-gray-50 dark:from-stone-800 dark:to-stone-900 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                            <div className="w-12 h-12 bg-linear-to-br from-gray-100 to-gray-50 dark:from-stone-800 dark:to-stone-900 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                                 <Image
                                     src={item.image}
                                     alt={item.name}

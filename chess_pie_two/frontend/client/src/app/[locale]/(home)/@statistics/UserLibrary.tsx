@@ -43,7 +43,7 @@ export default async function UserLibrary() {
     ];
 
     return (
-        <section className="p-6 bg-white/50 dark:bg-stone-900/50 backdrop-blur-sm border border-gray-200/50 dark:border-stone-700/50 rounded-3xl h-full flex flex-col">
+        <section className="p-6 bg-islands lg:bg-white/50 dark:lg:bg-stone-900/50 lg:backdrop-blur-sm border border-gray-200/50 dark:border-stone-700/50 rounded-3xl h-full flex flex-col">
             <div className="flex items-center gap-2 mb-5">
                 <Library className="w-5 h-5 text-amber-500" />
                 <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">

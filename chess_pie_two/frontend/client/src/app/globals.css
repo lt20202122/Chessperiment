@@ -65,6 +65,51 @@ body {
   }
 }
 
+/* Performance optimizations for mobile */
+@media (max-width: 1023px) {
+  :root {
+    --bg: #f5f5f7 !important;
+    --islands: #ececef !important;
+  }
+
+  .dark {
+    --bg: #1c1c1e !important;
+    --islands: #2c2c2e !important;
+  }
+
+  * {
+    /* Disable transitions on mobile to prevent lag during page load/layout shifts */
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+
+  .backdrop-blur-sm,
+  .backdrop-blur-md,
+  .backdrop-blur-lg,
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl {
+    /* Disable expensive backdrop-blur on mobile */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body {
+    transition: none !important;
+  }
+
+  /* Use solid backgrounds instead of transparent ones when blur is disabled */
+  .bg-white\/30,
+  .bg-white\/50,
+  .bg-primary-island {
+    background-color: var(--islands) !important;
+  }
+
+  .dark .bg-stone-900\/30,
+  .dark .bg-stone-900\/50 {
+    background-color: var(--islands) !important;
+  }
+}
+
 .shadow-islands:hover {
   box-shadow:
     2.5px 2px 10px rgba(0, 0, 0, 0.2),
