@@ -1,23 +1,4 @@
-import { cert } from "firebase-admin/app"
-import { getFirestore } from "firebase-admin/firestore"
-import { initializeApp, getApps, cert as adminCert } from "firebase-admin/app"
-
-// Initialize Firebase Admin if not already initialized
-if (!getApps().length && process.env.FIREBASE_PROJECT_ID) {
-    try {
-        initializeApp({
-            credential: cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-            }),
-        })
-    } catch (error) {
-        console.error("Error initializing Firebase Admin:", error);
-    }
-}
-
-const db = process.env.FIREBASE_PROJECT_ID ? getFirestore() : null
+import { db } from "@/lib/firebase";
 
 export interface GameResult {
     userId: string
