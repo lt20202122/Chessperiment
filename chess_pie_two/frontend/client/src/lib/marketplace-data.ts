@@ -1,9 +1,13 @@
 'use server';
-import { db } from '@/lib/firebase-admin';
+import { db } from '@/lib/firebase';
 import { MarketplaceItem } from './marketplace-types';
 
 export async function getMarketplaceItems(): Promise<MarketplaceItem[]> {
   try {
+    if (!db) {
+        console.error("Firestore not initialized");
+        return [];
+    }
     const snapshot = await db.collection('marketplace').get();
     if (snapshot.empty) {
         return [];
@@ -20,6 +24,7 @@ export async function getMarketplaceItems(): Promise<MarketplaceItem[]> {
 
 export async function getMarketplaceItem(id: string): Promise<MarketplaceItem | null> {
     try {
+      if (!db) return null;
       const doc = await db.collection('marketplace').doc(id).get();
       if (!doc.exists) {
         return null;
@@ -40,6 +45,7 @@ export async function createMarketplaceItem(item: Omit<MarketplaceItem, 'id' | '
             isNew: true,
             createdAt: new Date(),
         };
+        if (!db) throw new Error("Firestore not initialized");
         const res = await db.collection('marketplace').add(newItem);
         return res.id;
     } catch (error) {

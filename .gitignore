@@ -1,2 +1,3 @@
 node_modules/
 .env
+chess_pie_two/frontend/secrets.json
