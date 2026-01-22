@@ -185,9 +185,10 @@
         "copied": "Copied",
         "typeMessage": "Type a message...",
         "practiceVsComputer": "Practice vs Computer",
-        "joinMyGameTitle": "Join my ChessPie game!",
+"joinMyGameTitle": "Join my ChessPie game!",
         "joinMyGameText": "Join my chess game with room code: {room}",
-        "connecting": "Connecting..."
+        "connecting": "Connecting...",
+        "quicksearch": "Quick Search"
     },
     "Analyze": {
         "title": "Analysis Feature Coming Soon",
@@ -401,7 +402,10 @@
     },
     "Announcements": {
         "title": "Latest News & Updates",
-        "by": "By"
+        "by": "By",
+        "news": "News",
+        "backToOverview": "Back to Overview",
+        "readMore": "Read more"
     },
     "FAQ": {
         "title": "Board Editor FAQ – All Answers"

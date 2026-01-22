@@ -1,28 +1,28 @@
-
-import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+import { getTranslations } from 'next-intl/server';
 import announcements from '@/app/announcements';
 import Image from 'next/image';
-import Link from 'next/link'; // Use next/link for client-side navigation
-import { getTranslations } from 'next-intl/server';
 import { SEOFooter } from "@/components/SEOFooter";
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
-    const { locale } = await params;
+export async function generateMetadata({ params }: { params: any }) {
+    const resolvedParams = await params;
+    const locale = resolvedParams?.locale || 'en';
     const t = await getTranslations({ locale, namespace: 'SEO.Announcements' });
+
     return {
-        title: t('title'),
+        title: t('title') || 'ChessPie News',
         description: t('description'),
         alternates: {
-            canonical: "https://chesspie.org/en/announcements",
+            canonical: `https://chesspie.org/${locale}/announcements`,
             languages: {
                 'en': 'https://chesspie.org/en/announcements',
                 'de': 'https://chesspie.org/de/announcements'
             }
         },
         openGraph: {
-            title: t('title'),
+            title: t('title') || 'ChessPie News',
             description: t('description'),
-            url: "https://chesspie.org/en/announcements",
+            url: `https://chesspie.org/${locale}/announcements`,
             type: "website",
             images: [{ url: "/images/seo/og-home.png", width: 1200, height: 630 }],
         },
@@ -30,8 +30,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 
-export default function AnnouncementsPage({ params: { locale } }: { params: { locale: string } }) {
-    const t = useTranslations('Announcements');
+export default async function AnnouncementsPage({ params }: { params: any }) {
+    const resolvedParams = await params;
+    const locale = resolvedParams?.locale || 'en';
+    const t = await getTranslations({ locale, namespace: 'Announcements' });
 
     return (
         <div className="min-h-screen bg-bg py-16 px-4 sm:px-6 lg:px-8">
@@ -50,7 +52,7 @@ export default function AnnouncementsPage({ params: { locale } }: { params: { lo
                         <Link
                             href={`/announcements/${announcement.id}`}
                             key={announcement.id}
-                            className="group relative block h-full"
+                            className="group relative block h-full focus:outline-none"
                         >
                             <div className="relative h-full bg-white/80 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-2 dark:hover:border-amber-500/50 hover:border-amber-500/50">
 
@@ -90,7 +92,7 @@ export default function AnnouncementsPage({ params: { locale } }: { params: { lo
                                     </p>
 
                                     <div className="pt-4 flex items-center text-amber-600 dark:text-amber-400 font-semibold group-hover:translate-x-1 transition-transform">
-                                        Read more
+                                        {t('readMore')}
                                         <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                                         </svg>
@@ -100,6 +102,7 @@ export default function AnnouncementsPage({ params: { locale } }: { params: { lo
                         </Link>
                     ))}
                 </div>
+                <SEOFooter />
             </div>
         </div>
     );
