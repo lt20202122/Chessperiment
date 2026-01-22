@@ -12,14 +12,14 @@ export const metadata: Metadata = {
         description: 'View and manage ChessPie user profiles.',
         url: 'https://chesspie.org/en/profile',
         siteName: 'ChessPie',
-        images: ['/og-profile.png'],
+        images: ['/images/seo/og-home.png'],
         type: 'website',
     },
     twitter: {
         card: 'summary_large_image',
         title: 'ChessPie User Profiles',
         description: 'View and manage ChessPie user profiles.',
-        images: ['/og-profile.png'],
+        images: ['/images/seo/og-home.png'],
     },
     alternates: {
         canonical: "https://chesspie.org/en/profile", // absolute URL

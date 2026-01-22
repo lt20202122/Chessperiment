@@ -329,7 +329,16 @@ export default function Board({
     } catch (e) { }
   }, [chess, updateBoardState, myColor, t]);
 
-  const { requestMove } = useStockfish(chess.fen(), difficulty, onBestMove);
+  const { requestMove, isReady } = useStockfish(chess.fen(), difficulty, onBestMove);
+
+  useEffect(() => {
+    if (gameMode === 'computer' && isReady && gameStatus === 'playing') {
+      const isComputerTurn = chess.turn() !== (myColor === 'white' ? 'w' : 'b');
+      if (isComputerTurn) {
+        requestMove(chess.fen());
+      }
+    }
+  }, [isReady, currentTurn, gameMode, gameStatus, myColor, chess, requestMove]);
 
   useEffect(() => {
     // Auto-start computer game if mode is computer and status is empty/waiting
@@ -606,11 +615,6 @@ export default function Board({
               setGameInfo(t("draw"));
             }
             setTimeout(() => setGameStatus("ended"), 2000);
-          } else {
-            if (gameMode === 'computer' && chess.turn() !== (myColor === 'white' ? 'w' : 'b')) {
-              // Trigger AI
-              setTimeout(() => requestMove(), 500);
-            }
           }
           setIsViewingHistory(false);
           setLastMoveFrom(from); setLastMoveTo(to); setSelectedPos(null);

@@ -71,7 +71,7 @@ export default function GameLobby({
                         <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 text-white shadow-inner">
                             <Sparkles size={32} />
                         </div>
-                        <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">{t('quickSearch')}</h3>
+                        <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">{t('quicksearch')}</h3>
                         <p className="text-white/90 text-lg font-medium">{t('jumpIntoMatch')}</p>
                     </div>
                 </button>

@@ -22,74 +22,46 @@ export interface Announcement {
 
 const announcements: Announcement[] = [
     {
-        id: 'new-piece-editor',
-        date: '2025-12-26',
-        author: 'Gemini',
-        image: '/announcements/piece-editor.png',
+        id: 'chesspie-launch',
+        date: '2026-01-20',
+        author: 'Lasse T.',
+        image: '/announcements/launch.png',
         title: {
-            en: 'Unleash Your Creativity: Introducing the New Piece Editor!',
-            de: 'Entfessle deine Kreativität: Der neue Figuren-Editor ist da!'
+            en: 'Welcome to ChessPie: The Future of Custom Chess!',
+            de: 'Willkommen bei ChessPie: Die Zukunft des individuellen Schachs!'
         },
         shortDescription: {
-            en: 'Design your own pixel-perfect chess pieces and bring a personal touch to your games.',
-            de: 'Gestalte deine eigenen pixelgenauen Schachfiguren und verleihe deinen Spielen eine persönliche Note.'
+            en: 'Create, play, and share your own chess pieces and rules. Explore a new dimension of the game.',
+            de: 'Erstelle, spiele und teile deine eigenen Schachfiguren und Regeln. Entdecke eine neue Dimension des Spiels.'
         },
         content: {
             en: `
-                <p>We are thrilled to announce the launch of our brand-new Piece Editor! Now, you have the power to customize every aspect of your chess pieces, pixel by pixel.</p>
-                <h3>What's New?</h3>
+                <p>Welcome to ChessPie! We're incredibly excited to finally launch the ultimate platform for custom chess enthusiasts. ChessPie isn't just about playing chess; it's about making it your own.</p>
+                <h3>What can you do on ChessPie?</h3>
                 <ul>
-                    <li><strong>Intuitive Interface:</strong> Our easy-to-use editor makes design accessible to everyone.</li>
-                    <li><strong>Endless Possibilities:</strong> Create unique Kings, Queens, Rooks, and more.</li>
-                    <li><strong>Save & Share:</strong> Save your creations and share them with the ChessPie community.</li>
+                    <li><strong>Custom Piece Editor:</strong> Use our pixel-art editor to draw your own pieces. Whether it's a dragon, a wizard, or a futuristic tank, you decide the look!</li>
+                    <li><strong>Visual Logic Builder:</strong> Give your pieces unique powers! Our Scratch-like logic editor allows you to define movements, capture rules, and special effects without writing a single line of code.</li>
+                    <li><strong>Board Editor:</strong> Don't stick to the standard layout. Create custom boards with your own pieces and unique starting positions.</li>
+                    <li><strong>Live Game Lobby:</strong> Challenge your friends to a match or test your creations against Stockfish, the world's strongest chess engine, fully adapted to handle your custom rules.</li>
+                    <li><strong>Move History & Analysis:</strong> Every game is recorded. Replay your moves, branch off into new variations, and perfect your strategy.</li>
                 </ul>
-                <p>Dive in and start designing today!</p>
+                <p>This is just the beginning. We have many more features planned, and we can't wait to see what amazing games you'll create. Thank you for being part of our journey!</p>
+                <p>Enjoy playing,</p>
+                <p><strong>Lasse T.</strong></p>
             `,
             de: `
-                <p>Wir freuen uns riesig, den Start unseres brandneuen Figuren-Editors bekannt zu geben! Jetzt hast du die Möglichkeit, jeden Aspekt deiner Schachfiguren Pixel für Pixel anzupassen.</p>
-                <h3>Was ist neu?</h3>
+                <p>Willkommen bei ChessPie! Wir freuen uns riesig, endlich die ultimative Plattform für Fans von individuellem Schach zu starten. Bei ChessPie geht es nicht nur darum, Schach zu spielen – es geht darum, es zu deinem eigenen Spiel zu machen.</p>
+                <h3>Was kannst du auf ChessPie machen?</h3>
                 <ul>
-                    <li><strong>Intuitive Benutzeroberfläche:</strong> Unser benutzerfreundlicher Editor macht Design für jeden zugänglich.</li>
-                    <li><strong>Endlose Möglichkeiten:</strong> Erstelle einzigartige Könige, Damen, Türme und mehr.</li>
-                    <li><strong>Speichern & Teilen:</strong> Speichere deine Kreationen und teile sie mit der ChessPie-Community.</li>
+                    <li><strong>Eigener Figuren-Editor:</strong> Nutze unseren Pixel-Art-Editor, um deine eigenen Figuren zu zeichnen. Ob Drache, Zauberer oder futuristischer Panzer – du bestimmst das Aussehen!</li>
+                    <li><strong>Visueller Logik-Editor:</strong> Gib deinen Figuren einzigartige Kräfte! Unser Scratch-ähnlicher Logik-Editor ermöglicht es dir, Bewegungen, Schlagregeln und Spezialeffekte zu definieren, ohne eine einzige Zeile Code zu schreiben.</li>
+                    <li><strong>Brett-Editor:</strong> Halte dich nicht an das Standard-Layout. Erstelle eigene Bretter mit deinen Figuren und einzigartigen Startpositionen.</li>
+                    <li><strong>Live-Spiel-Lobby:</strong> Fordere deine Freunde zu einer Partie heraus oder teste deine Kreationen gegen Stockfish, die stärkste Schach-Engine der Welt, die vollständig angepasst wurde, um mit deinen individuellen Regeln umzugehen.</li>
+                    <li><strong>Spielverlauf & Analyse:</strong> Jedes Spiel wird aufgezeichnet. Spiele deine Züge noch einmal ab, erstelle Varianten und perfektioniere deine Strategie.</li>
                 </ul>
-                <p>Tauche ein und beginne noch heute mit dem Design!</p>
-            `
-        }
-    },
-    {
-        id: 'history-mode-improvements',
-        date: '2025-12-25',
-        author: 'Gemini',
-        image: '/announcements/history-mode.png',
-        title: {
-            en: 'Enhanced History Mode: Relive Your Games Like Never Before!',
-            de: 'Verbesserter Verlaufsmodus: Erlebe deine Spiele wie nie zuvor!'
-        },
-        shortDescription: {
-            en: 'Navigate through your game history with improved precision and visual move highlighting.',
-            de: 'Navigiere durch deine Spielhistorie mit verbesserter Präzision und visueller Zug-Hervorhebung.'
-        },
-        content: {
-            en: `
-                <p>Our History Mode just got a major upgrade! We've listened to your feedback and implemented several key improvements to make reviewing your past games a seamless experience.</p>
-                <h3>Key Enhancements:</h3>
-                <ul>
-                    <li><strong>Accurate Navigation:</strong> No more jumping to the first move – navigate move by move with confidence.</li>
-                    <li><strong>Move Highlighting:</strong> Instantly see the 'from' and 'to' squares of each move as you scroll through history.</li>
-                    <li><strong>Fluid Performance:</strong> Enjoy a smoother and more responsive history playback.</li>
-                </ul>
-                <p>Revisit your most epic battles and learn from every decision!</p>
-            `,
-            de: `
-                <p>Unser Verlaufsmodus hat ein großes Upgrade erhalten! Wir haben euer Feedback berücksichtigt und mehrere wichtige Verbesserungen implementiert, um die Überprüfung eurer vergangenen Spiele zu einem nahtlosen Erlebnis zu machen.</p>
-                <h3>Wesentliche Verbesserungen:</h3>
-                <ul>
-                    <li><strong>Genaue Navigation:</strong> Kein Springen mehr zum ersten Zug – navigiere Zug für Zug mit Vertrauen.</li>
-                    <li><strong>Zughervorhebung:</strong> Sieh sofort die "von"- und "nach"-Felder jedes Zuges, während du durch die Historie scrollst.</li>
-                    <li><strong>Flüssige Performance:</strong> Genieße eine flüssigere und reaktionsschnellere Wiedergabe der Historie.</li>
-                </ul>
-                <p>Besuche deine epischsten Schlachten noch einmal und lerne aus jeder Entscheidung!</p>
+                <p>Dies ist erst der Anfang. Wir haben noch viele weitere Funktionen geplant und können es kaum erwarten zu sehen, welche fantastischen Spiele du erschaffen wirst. Vielen Dank, dass du Teil unserer Reise bist!</p>
+                <p>Viel Spaß beim Spielen,</p>
+                <p><strong>Lasse T.</strong></p>
             `
         }
     }

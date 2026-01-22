@@ -185,9 +185,10 @@
         "copied": "Kopiert",
         "typeMessage": "Nachricht eingeben...",
         "practiceVsComputer": "Gegen Computer üben",
-        "joinMyGameTitle": "Tritt meinem ChessPie-Spiel bei!",
+"joinMyGameTitle": "Tritt meinem ChessPie-Spiel bei!",
         "joinMyGameText": "Tritt meinem Schachspiel bei! Raumcode: {room}",
-        "connecting": "Verbinden..."
+        "connecting": "Verbinden...",
+        "quicksearch": "Schnelle Suche"
     },
     "GameSidebar": {
         "info": "Info",
@@ -399,7 +400,10 @@
     },
     "Announcements": {
         "title": "Neues & Updates",
-        "by": "Von"
+        "by": "Von",
+        "news": "Neuigkeiten",
+        "backToOverview": "Zurück zur Übersicht",
+        "readMore": "Mehr lesen"
     },
     "FAQ": {
         "title": "Brett-Editor FAQ – Alle Antworten"

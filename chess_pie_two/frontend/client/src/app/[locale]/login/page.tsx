@@ -25,14 +25,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
             description: t('description'),
             url: 'https://chesspie.org/en/login',
             siteName: 'ChessPie',
-            images: ['/og-login.png'],
+            images: ['/images/seo/og-home.png'],
             type: 'website',
         },
         twitter: {
             card: 'summary_large_image',
             title: t('title'),
             description: t('description'),
-            images: ['/og-login.png'],
+            images: ['/images/seo/og-home.png'],
         },
         robots: {
             index: false,
