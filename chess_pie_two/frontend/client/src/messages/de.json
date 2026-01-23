@@ -154,6 +154,7 @@
         "stockfishOpponent": "Stockfish KI",
         "opponent": "Gegner",
         "waiting": "Warten...",
+        "playing": "Im Spiel",
         "gameOver": "Spiel beendet",
         "youWon": "Du hast gewonnen!",
         "youLost": "Du hast verloren!",
@@ -411,7 +412,7 @@
     "LegalNotice": {
         "title": "Impressum - Rechtliche Hinweise",
         "providerHeading": "Anbieter",
-        "providerName": "Lasse Mauritz - ChessPie",
+        "providerName": "Lars Thoroe - ChessPie",
         "providerAddress": "Ahlerfeld 29, 38527 Meine",
         "contactHeading": "Kontakt",
         "emailLabel": "E-Mail:",

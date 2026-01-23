@@ -83,6 +83,7 @@ const DraggablePiece = memo(function DraggablePiece({
   isViewingHistory,
   gameStatus,
   myColor,
+  gameMode,
 }: {
   piece: PieceType;
   size: number;
@@ -92,6 +93,7 @@ const DraggablePiece = memo(function DraggablePiece({
   isViewingHistory: boolean;
   gameStatus: string;
   myColor: "white" | "black" | null;
+  gameMode: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -104,7 +106,7 @@ const DraggablePiece = memo(function DraggablePiece({
     amIAtTurn &&
     isMyPiece &&
     gameStatus === "playing" &&
-    !isViewingHistory;
+    (!isViewingHistory || gameMode === 'computer');
 
   const style: React.CSSProperties = {
     fontSize: size,
@@ -160,6 +162,7 @@ const SquareTile = memo(function SquareTile({
   myColor,
   amIAtTurn,
   squareRefs,
+  gameMode,
 }: {
   pos: string;
   isWhite: boolean;
@@ -176,6 +179,7 @@ const SquareTile = memo(function SquareTile({
   myColor: "white" | "black" | null;
   amIAtTurn: boolean;
   squareRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
+  gameMode: string;
 }) {
   const { setNodeRef } = useDroppable({ id: pos });
 
@@ -209,6 +213,7 @@ const SquareTile = memo(function SquareTile({
           isViewingHistory={isViewingHistory}
           gameStatus={gameStatus}
           myColor={myColor}
+          gameMode={gameMode}
         />
       )}
     </div>
@@ -593,6 +598,51 @@ export default function Board({
     // Computer / Local Mode
     if (gameMode === 'computer' || gameMode === 'local') {
       try {
+        // Handle history rewrite for computer mode
+        if (isViewingHistory && gameMode === 'computer') {
+             let fenToLoad = initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+             if (historyIndex >= 0) {
+                 fenToLoad = historyFens[historyIndex];
+             }
+             chess.load(fenToLoad);
+             
+             const moveResult = chess.move({ from, to, promotion: promotion || 'q' });
+             if (moveResult) {
+                const newFen = chess.fen();
+                updateBoardState(newFen);
+                new Audio("/sounds/move-self.mp3").play().catch(() => { });
+                const san = moveResult.san;
+
+                const sliceIndex = historyIndex + 1;
+                
+                setMoveHistory(prev => [...prev.slice(0, sliceIndex), san]);
+                setHistoryFens(prev => [...prev.slice(0, sliceIndex), newFen]);
+                setHistoryMoves(prev => [...prev.slice(0, sliceIndex), { from, to, san }]);
+                
+                setHistoryIndex(sliceIndex); 
+                setIsViewingHistory(false);
+                setLastMoveFrom(from);
+                setLastMoveTo(to);
+                setSelectedPos(null);
+                
+                if (chess.isGameOver()) {
+                    if (chess.isCheckmate()) {
+                        setGameResult(chess.turn() === myColor?.charAt(0) ? 'loss' : 'win');
+                        setGameInfo(t("checkmate"));
+                    } else {
+                        setGameResult('draw');
+                        setGameInfo(t("draw"));
+                    }
+                    setTimeout(() => setGameStatus("ended"), 2000);
+                }
+                return true;
+             }
+             // If move failed, reload live state to be safe, though activeFEN handles view
+             // But since we failed, we might want to revert chess instance?
+             // Ideally we just return false.
+             return false;
+        }
+
         const moveResult = chess.move({ from, to, promotion: promotion || 'q' });
         if (moveResult) {
           const newFen = chess.fen();
@@ -642,43 +692,63 @@ export default function Board({
 
   const handlePieceSelect = useCallback((pos: string) => {
     setRedMarkedSquares(new Set()); // Clear red highlights on any left-click
-    if (gameStatus !== "playing" || isViewingHistory) return;
+    if (gameStatus !== "playing") return;
+    if (isViewingHistory && gameMode !== 'computer') return;
+
+    // Determine the relevant pieces and turn based on history view or live view
+    const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? (initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : null);
+    const effectivePieces = activeFEN ? parseFen(activeFEN) : boardPieces;
+    const effectiveTurn = activeFEN ? (activeFEN.split(' ')[1] as 'w' | 'b') : currentTurn;
+
+    // Helper to get piece from the effective set
+    const getEffectivePieceAt = (pPos: string) => effectivePieces.find(p => p.position === pPos);
+
     if (!selectedPos) {
-      const p = getPieceAt(pos);
-      if (p && (p.color === 'white' ? 'w' : 'b') === currentTurn) {
+      const p = getEffectivePieceAt(pos);
+      if (p && (p.color === 'white' ? 'w' : 'b') === effectiveTurn) {
         if (!myColor || p.color === myColor) setSelectedPos(pos);
       }
     } else {
       if (selectedPos === pos) setSelectedPos(null);
       else {
-        const p = getPieceAt(selectedPos);
+        const p = getEffectivePieceAt(selectedPos);
         if (!p) return;
         if (p.type === 'Pawn' && (pos[1] === '8' || pos[1] === '1')) {
           setPromotionMove({ from: selectedPos, to: pos }); setShowPromotionDialog(true);
         } else {
-          const target = getPieceAt(pos);
+          const target = getEffectivePieceAt(pos);
           if (target && target.color === p.color) setSelectedPos(pos);
           else executeMove(selectedPos, pos);
         }
       }
     }
-  }, [gameStatus, isViewingHistory, selectedPos, boardPieces, currentTurn, myColor, executeMove]);
+  }, [gameStatus, isViewingHistory, selectedPos, boardPieces, currentTurn, myColor, executeMove, gameMode, historyIndex, historyFens, initialFen]);
 
   const navigateHistory = (dir: "prev" | "next" | "start" | "end") => {
     if (moveHistory.length === 0) return;
-    setIsViewingHistory(true);
+    
     let idx = historyIndex;
     if (dir === "start") idx = -1;
     else if (dir === "prev") idx = Math.max(-1, historyIndex - 1);
     else if (dir === "next") idx = Math.min(moveHistory.length - 1, historyIndex + 1);
-    else if (dir === "end") { idx = moveHistory.length - 1; setIsViewingHistory(false); }
+    else if (dir === "end") idx = moveHistory.length - 1;
+
+    if (idx === moveHistory.length - 1) {
+      setIsViewingHistory(false);
+    } else {
+      setIsViewingHistory(true);
+    }
     setHistoryIndex(idx);
   };
 
   const exitHistoryView = () => { setIsViewingHistory(false); setHistoryIndex(moveHistory.length - 1); };
 
   const onMoveClick = (index: number) => {
-    setIsViewingHistory(true);
+    if (index === moveHistory.length - 1) {
+      setIsViewingHistory(false);
+    } else {
+      setIsViewingHistory(true);
+    }
     setHistoryIndex(index);
   };
 
@@ -725,6 +795,7 @@ export default function Board({
   const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? (initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : null);
   const displayPieces = activeFEN ? parseFen(activeFEN) : boardPieces;
   const historyMove = isViewingHistory && historyIndex >= 0 ? historyMoves[historyIndex] : null;
+  const activeTurn = activeFEN ? (activeFEN.split(' ')[1] as 'w' | 'b') : currentTurn;
 
   for (const i of rRange) {
     for (const a of cRange) {
@@ -736,14 +807,20 @@ export default function Board({
       const isMoveFrom = isViewingHistory ? historyMove?.from === pos : lastMoveFrom === pos;
       const isMoveTo = isViewingHistory ? historyMove?.to === pos : lastMoveTo === pos;
 
+      const amIAtTurn = gameStatus === "playing" && (
+        (!isViewingHistory && (myColor ? currentTurn === (myColor === "white" ? "w" : "b") : gameMode === 'local')) ||
+        (isViewingHistory && gameMode === 'computer' && (myColor ? activeTurn === (myColor === "white" ? "w" : "b") : false))
+      );
+
       boardContent.push(
         <SquareTile
           key={pos} pos={pos} isWhite={isWhiteSq} piece={piece} blockSize={blockSize}
           selected={selectedPos === pos} isMoveFrom={isMoveFrom} isMoveTo={isMoveTo}
           onClick={handlePieceSelect} onContextMenu={p => setRedMarkedSquares(prev => { const n = new Set(prev); if (n.has(p)) n.delete(p); else n.add(p); return n; })}
           boardStyle={boardStyle} isViewingHistory={isViewingHistory} gameStatus={gameStatus} myColor={myColor}
-          amIAtTurn={!isViewingHistory && gameStatus === "playing" && (myColor ? currentTurn === (myColor === "white" ? "w" : "b") : gameMode === 'local')}
+          amIAtTurn={amIAtTurn}
           squareRefs={squareRefs}
+          gameMode={gameMode}
         />
       );
     }

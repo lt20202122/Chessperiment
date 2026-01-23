@@ -55,8 +55,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       "chess pieces designer", "online chess variant", "chess rules simulator",
       "play custom chess online", "chess game creator"
     ],
-    authors: [{ name: "Lasse Mauritz" }],
-    creator: "Lasse Mauritz",
+    authors: [{ name: "Lasse Thoroe" }],
+    creator: "Lasse Thoroe",
     publisher: "ChessPie",
     robots: "index, follow",
     openGraph: {
