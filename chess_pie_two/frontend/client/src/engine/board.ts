@@ -13,7 +13,7 @@ export class BoardClass {
     public gridType: 'square' | 'hex';
     private grid: GridType;
 
-    constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[], width: number = 8, height: number = 11, gridType: 'square' | 'hex' = 'square') {
+    constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[], width: number = 8, height: number = 8, gridType: 'square' | 'hex' = 'square') {
         this.width = width;
         this.height = height;
         this.gridType = gridType;
@@ -122,6 +122,24 @@ export class BoardClass {
             }
         }
         return null;
+    }
+
+    isPromotionMove(from: Square, to: Square): boolean {
+        const piece = this.getPiece(from);
+        if (!piece || piece.type.toLowerCase() !== 'pawn') return false;
+
+        const coords = toCoords(to);
+        const toRow = coords[1];
+
+        if (this.gridType === 'square') {
+            return (piece.color === 'white' && toRow === this.height - 1) ||
+                   (piece.color === 'black' && toRow === 0);
+        } else {
+            // Hex grid: check if the next step in the forward direction is outside active squares
+            const dr = piece.color === 'white' ? -1 : 1;
+            const nextSquare = toSquare([coords[0], toRow + dr]);
+            return !this.isActive(nextSquare);
+        }
     }
 
     movePiece(from: Square, to: Square, promotion?: string): boolean {

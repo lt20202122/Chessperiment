@@ -129,7 +129,7 @@ export default function ProfilePage() {
             <div className="container mx-auto px-4 py-8 max-w-6xl">
                 {/* Profile Header */}
                 <div className="bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-3xl p-8 mb-8">
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
                         {session?.user?.image ? (
                             <Image
                                 src={session.user.image}
@@ -263,7 +263,7 @@ function GameHistoryCard({ game }: { game: GameHistoryItem }) {
                     {game.result}
                 </div>
                 <div>
-                    <p className="text-white font-medium">
+                    <p className="text-white font-medium truncate max-w-[120px] sm:max-w-xs">
                         {game.opponent || "Unknown Opponent"}
                     </p>
                     <p className="text-sm text-amber-400/60">{date}</p>

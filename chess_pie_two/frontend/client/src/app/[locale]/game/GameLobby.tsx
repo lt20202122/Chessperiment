@@ -25,9 +25,9 @@ export default function GameLobby({
 
     if (isSearching) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl rounded-[3rem] border border-gray-200 dark:border-white/10 shadow-2xl animate-in zoom-in duration-500 max-w-lg w-full">
+            <div className="flex flex-col items-center justify-center p-12 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl rounded-[3rem] border border-gray-200 dark:border-white/10 shadow-2xl animate-in zoom-in duration-500 max-w-lg w-full select-none caret-transparent">
                 <div className="relative mb-10">
-                    <div className="w-32 h-32 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+                    <div className="w-32 h-32 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin-slow" />
                     <div className="absolute inset-0 flex items-center justify-center">
                         <Search className="text-amber-500 animate-pulse" size={40} />
                     </div>

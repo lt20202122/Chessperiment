@@ -211,7 +211,11 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                     {/* Custom Pieces Grid */}
                     {Object.keys(customCollection).length > 0 ? (
                         <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
-                            {Object.entries(customCollection).map(([id, piece]) => (
+                            {Object.entries(customCollection).map(([id, piece]) => {
+                                // Skip pieces with missing color property
+                                if (!piece.color) return null;
+                                
+                                return (
                                 <button
                                     key={id}
                                     onClick={() => handlePieceSelect(id, piece.color)}
@@ -236,7 +240,8 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                                         {tg(piece.color)}
                                     </div>
                                 </button>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="p-8 rounded-2xl border border-dashed border-stone-200 dark:border-white/5 text-center bg-stone-50 dark:bg-white/2">
@@ -339,15 +344,12 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
             {onPresetChange && <BoardPresets onSelectPreset={onPresetChange} />}
 
             {/* Board Style Selector */}
-            <div className="mb-8 border-t border-gray-200/20 pt-6 flex justify-around items-center gap-5">
-                <div>
-
-                    <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-80">Design</h3>
-                    <BoardStyle currentStyle={boardStyle} onStyleChange={(style) => {
-                        setBoardStyle(style);
-                        localStorage.setItem('boardStyle', style);
-                    }} />
-                </div>
+            <div className="mb-8 border-t border-gray-200/20 pt-6">
+                <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-80">Design</h3>
+                <BoardStyle currentStyle={boardStyle} onStyleChange={(style) => {
+                    setBoardStyle(style);
+                    localStorage.setItem('boardStyle', style);
+                }} />
             </div>
 
             {/* Actions Grid */}

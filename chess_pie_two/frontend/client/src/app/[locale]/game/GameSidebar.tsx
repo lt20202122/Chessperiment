@@ -215,7 +215,7 @@ export default function GameSidebar({
                         <p className="text-[10px] font-black text-stone-400 dark:text-stone-500 uppercase tracking-[0.2em]">{t('GameSidebar.roomCode')}</p>
                         {currentRoom ? (
                             <div className="space-y-4">
-                                <code className="block w-full bg-stone-100 dark:bg-black/40 px-6 py-4 rounded-2xl border border-stone-200 dark:border-white/10 font-mono text-3xl font-black text-center tracking-[0.2em] text-amber-600 dark:text-amber-500 shadow-inner">{currentRoom}</code>
+                                <code className="block w-full bg-stone-100 dark:bg-black/40 px-6 py-4 rounded-2xl border border-stone-200 dark:border-white/10 font-mono text-xl sm:text-3xl font-black text-center tracking-[0.2em] text-amber-600 dark:text-amber-500 shadow-inner break-all">{currentRoom}</code>
                                 <div className="flex gap-2">
                                     <button onClick={handleCopyRoom} className="flex-1 flex items-center justify-center gap-2 bg-stone-900 dark:bg-white text-white dark:text-stone-900 px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg">{copied ? <><Check size={16} /> {t('Multiplayer.copied')}</> : <><Copy size={16} /> {t('Multiplayer.copy')}</>}</button>
                                     <button onClick={handleShareRoom} className="p-3.5 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl transition-all shadow-lg active:scale-[0.98]"><Share2 size={20} /></button>

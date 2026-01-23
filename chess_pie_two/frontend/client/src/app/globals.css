@@ -83,6 +83,14 @@ body {
     animation-duration: 0.01ms !important;
   }
 
+  /* Restore animation duration for spinner animations */
+  .animate-spin,
+  .animate-spin-slow,
+  .animate-pulse,
+  .animate-bounce {
+    animation-duration: revert !important;
+  }
+
   .backdrop-blur-sm,
   .backdrop-blur-md,
   .backdrop-blur-lg,

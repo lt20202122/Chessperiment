@@ -4,6 +4,8 @@ import { Server, Socket } from "socket.io";
 import cors from "cors";
 import { v4 as uuidv4 } from "uuid";
 import { Chess, type Square } from "chess.js";
+import path from "path";
+const loadEngine = require("./loadEngine");
 
 const app = express();
 app.use(cors());
@@ -112,6 +114,41 @@ const checkGameStatus = (game: Game) => {
 
 io.on("connection", (socket: Socket) => {
     console.log("connected:", socket.id);
+
+    // --- Server-Side Stockfish ---
+    socket.on("request_computer_move", (data: { fen: string; difficulty: number }) => {
+        const { fen, difficulty } = data;
+        console.log(`[Stockfish] Request for FEN: ${fen}, Diff: ${difficulty}`);
+
+        try {
+            const stockfishPath = path.join(__dirname, "node_modules", "stockfish", "src", "stockfish-17.1-8e4d048.js");
+            const engine = loadEngine(stockfishPath);
+            
+            const skillLevel = Math.max(0, Math.min(20, Math.floor((difficulty - 400) / 100)));
+            const depth = Math.max(1, Math.min(20, Math.floor(difficulty / 150)));
+
+            engine.send("uci", () => {
+                engine.send(`setoption name Skill Level value ${skillLevel}`);
+                engine.send(`position fen ${fen}`);
+                engine.send(`go depth ${depth}`, (result: string) => {
+                    // result is usually the full output, but loadEngine buffers it? 
+                    // loadEngine 'go' callback receives the "bestmove ..." line or similar
+                    console.log("[Stockfish] Output:", result);
+                    const match = result.match(/bestmove\s+(\S+)/);
+                    const bestMove = match ? match[1] : null;
+                    
+                    if (bestMove) {
+                        socket.emit("computer_move_result", { bestMove });
+                    } else {
+                        console.error("[Stockfish] No bestmove found in output");
+                    }
+                    engine.quit();
+                });
+            });
+        } catch (e) {
+            console.error("[Stockfish] Error:", e);
+        }
+    });
 
     socket.on("find_match", () => {
         const playerId = socketToPlayer.get(socket.id);
@@ -356,8 +393,9 @@ io.on("connection", (socket: Socket) => {
             if (chess.turn() !== color) return;
 
             const piece = chess.get(data.from as Square);
-            const toRank = parseInt(data.to[1]);
-            const isPawnPromotion = piece && piece.type === "p" && ((piece.color === "w" && toRank === 8) || (piece.color === "b" && toRank === 1));
+            const toRank = parseInt(data.to.match(/\d+/)?.[0] || "0", 10);
+            const boardHeight = 8; // Default for chess.js, but prepared for future expansion
+            const isPawnPromotion = piece && piece.type === "p" && ((piece.color === "w" && toRank === boardHeight) || (piece.color === "b" && toRank === 1));
 
             console.log(`[Move Request] Room: ${roomId}, Player: ${playerId}, Move: ${data.from}->${data.to}, Promotion: ${data.promotion}, IsPromo: ${isPawnPromotion}`);
 

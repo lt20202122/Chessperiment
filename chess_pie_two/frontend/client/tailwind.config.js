@@ -10,6 +10,9 @@ module.exports = {
         merri: ["var(--font-merri)"],
         sri: ["var(--font-sri)"]
       },
+      animation: {
+        'spin-slow': 'spin 2s linear infinite',
+      },
     },
   },
   plugins: [

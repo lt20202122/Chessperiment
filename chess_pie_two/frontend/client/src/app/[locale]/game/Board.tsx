@@ -600,47 +600,47 @@ export default function Board({
       try {
         // Handle history rewrite for computer mode
         if (isViewingHistory && gameMode === 'computer') {
-             let fenToLoad = initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-             if (historyIndex >= 0) {
-                 fenToLoad = historyFens[historyIndex];
-             }
-             chess.load(fenToLoad);
-             
-             const moveResult = chess.move({ from, to, promotion: promotion || 'q' });
-             if (moveResult) {
-                const newFen = chess.fen();
-                updateBoardState(newFen);
-                new Audio("/sounds/move-self.mp3").play().catch(() => { });
-                const san = moveResult.san;
+          let fenToLoad = initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+          if (historyIndex >= 0) {
+            fenToLoad = historyFens[historyIndex];
+          }
+          chess.load(fenToLoad);
 
-                const sliceIndex = historyIndex + 1;
-                
-                setMoveHistory(prev => [...prev.slice(0, sliceIndex), san]);
-                setHistoryFens(prev => [...prev.slice(0, sliceIndex), newFen]);
-                setHistoryMoves(prev => [...prev.slice(0, sliceIndex), { from, to, san }]);
-                
-                setHistoryIndex(sliceIndex); 
-                setIsViewingHistory(false);
-                setLastMoveFrom(from);
-                setLastMoveTo(to);
-                setSelectedPos(null);
-                
-                if (chess.isGameOver()) {
-                    if (chess.isCheckmate()) {
-                        setGameResult(chess.turn() === myColor?.charAt(0) ? 'loss' : 'win');
-                        setGameInfo(t("checkmate"));
-                    } else {
-                        setGameResult('draw');
-                        setGameInfo(t("draw"));
-                    }
-                    setTimeout(() => setGameStatus("ended"), 2000);
-                }
-                return true;
-             }
-             // If move failed, reload live state to be safe, though activeFEN handles view
-             // But since we failed, we might want to revert chess instance?
-             // Ideally we just return false.
-             return false;
+          const moveResult = chess.move({ from, to, promotion: promotion || 'q' });
+          if (moveResult) {
+            const newFen = chess.fen();
+            updateBoardState(newFen);
+            new Audio("/sounds/move-self.mp3").play().catch(() => { });
+            const san = moveResult.san;
+
+            const sliceIndex = historyIndex + 1;
+
+            setMoveHistory(prev => [...prev.slice(0, sliceIndex), san]);
+            setHistoryFens(prev => [...prev.slice(0, sliceIndex), newFen]);
+            setHistoryMoves(prev => [...prev.slice(0, sliceIndex), { from, to, san }]);
+
+            setHistoryIndex(sliceIndex);
+            setIsViewingHistory(false);
+            setLastMoveFrom(from);
+            setLastMoveTo(to);
+            setSelectedPos(null);
+
+            if (chess.isGameOver()) {
+              if (chess.isCheckmate()) {
+                setGameResult(chess.turn() === myColor?.charAt(0) ? 'loss' : 'win');
+                setGameInfo(t("checkmate"));
+              } else {
+                setGameResult('draw');
+                setGameInfo(t("draw"));
+              }
+              setTimeout(() => setGameStatus("ended"), 2000);
+            }
+            return true;
+          }
+          // If move failed, reload live state to be safe, though activeFEN handles view
+          // But since we failed, we might want to revert chess instance?
+          // Ideally we just return false.
+          return false;
         }
 
         const moveResult = chess.move({ from, to, promotion: promotion || 'q' });
@@ -684,7 +684,9 @@ export default function Board({
     if (over && active.id !== over.id) {
       const from = active.id as string, to = over.id as string;
       const p = getPieceAt(from);
-      if (p?.type === 'Pawn' && (to[1] === '8' || to[1] === '1')) {
+      const toRank = parseInt(to.match(/\d+/)?.[0] || "0", 10);
+      const boardHeight = 8; // Default for chess.js in this component
+      if (p?.type === 'Pawn' && (toRank === boardHeight || toRank === 1)) {
         setPromotionMove({ from, to }); setShowPromotionDialog(true);
       } else executeMove(from, to);
     }
@@ -713,7 +715,9 @@ export default function Board({
       else {
         const p = getEffectivePieceAt(selectedPos);
         if (!p) return;
-        if (p.type === 'Pawn' && (pos[1] === '8' || pos[1] === '1')) {
+        const toRank = parseInt(pos.match(/\d+/)?.[0] || "0", 10);
+        const boardHeight = 8;
+        if (p.type === 'Pawn' && (toRank === boardHeight || toRank === 1)) {
           setPromotionMove({ from: selectedPos, to: pos }); setShowPromotionDialog(true);
         } else {
           const target = getEffectivePieceAt(pos);
@@ -726,7 +730,7 @@ export default function Board({
 
   const navigateHistory = (dir: "prev" | "next" | "start" | "end") => {
     if (moveHistory.length === 0) return;
-    
+
     let idx = historyIndex;
     if (dir === "start") idx = -1;
     else if (dir === "prev") idx = Math.max(-1, historyIndex - 1);
@@ -854,7 +858,7 @@ export default function Board({
                 </div>
               </div>
             ) : isSearching ? (
-              <div className="flex flex-col items-center justify-center p-8 lg:p-12 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl rounded-4xl border border-gray-200 dark:border-white/10 shadow-2xl max-w-sm lg:max-w-lg w-full my-auto mx-4">
+              <div className="flex flex-col items-center justify-center p-8 lg:p-12 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl rounded-4xl border border-gray-200 dark:border-white/10 shadow-2xl max-w-sm lg:max-w-lg w-full my-auto mx-4 select-none caret-transparent">
                 <div className="w-12 h-12 lg:w-20 lg:h-20 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-6 lg:mb-8" />
                 <h2 className="text-xl lg:text-2xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tight text-center">{t("findingMatch")}</h2>
                 <p className="text-stone-400 text-xs lg:text-sm font-medium mb-6 lg:mb-8 text-center">{t("searchingText")}</p>

@@ -247,12 +247,10 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
     };
 
     const isPromotionMove = (from: string, to: string) => {
-        const piece = getPieceAt(from);
-        if (!piece || piece.type.toLowerCase() !== 'pawn') return false;
-        const engineTo = toEngineSq(to);
-        const [_, row] = engineTo.split(',').map(Number);
-        return (piece.color === 'white' && row === board.rows - 1) ||
-            (piece.color === 'black' && row === 0);
+        if (!gameRef.current) return false;
+        const fromSq = toEngineSq(from);
+        const toSq = toEngineSq(to);
+        return gameRef.current.getBoard().isPromotionMove(fromSq, toSq);
     };
 
     const toggleValidation = () => {
