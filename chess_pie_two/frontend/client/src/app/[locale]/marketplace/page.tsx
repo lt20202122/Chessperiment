@@ -56,23 +56,25 @@ export default async function MarketplacePage({ params }: { params: Promise<{ lo
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-8 relative">
-                    {/* Coming Soon Overlay */}
-                    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden pointer-events-none">
-                        <div className="text-center p-8 bg-black/60 backdrop-blur-md rounded-2xl border border-amber-500/30 max-w-md animate-in zoom-in duration-500 pointer-events-auto">
-                            <h2 className="text-3xl font-black text-amber-500 mb-4 uppercase tracking-wider">{marketT('inProduction') || 'Coming Soon'}</h2>
-                            <p className="text-gray-200 font-medium text-lg leading-relaxed">
-                                {marketT('marketplaceBetaMessage') || 'Our marketplace is currently under heavy development. Stay tuned for unique piece designs and custom boards!'}
-                            </p>
-                            <div className="mt-8 flex justify-center gap-4">
-                                <div className="h-2 w-2 rounded-full bg-amber-500 animate-bounce" />
-                                <div className="h-2 w-2 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.15s]" />
-                                <div className="h-2 w-2 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.3s]" />
+                    {/* Coming Soon Overlay - Only shown if beta overlay is enabled */}
+                    {process.env.NEXT_PUBLIC_ENABLE_BETA_OVERLAY !== 'false' && (
+                        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden pointer-events-none">
+                            <div className="text-center p-8 bg-black/60 backdrop-blur-md rounded-2xl border border-amber-500/30 max-w-md animate-in zoom-in duration-500 pointer-events-auto">
+                                <h2 className="text-3xl font-black text-amber-500 mb-4 uppercase tracking-wider">{marketT('inProduction') || 'Coming Soon'}</h2>
+                                <p className="text-gray-200 font-medium text-lg leading-relaxed">
+                                    {marketT('marketplaceBetaMessage') || 'Our marketplace is currently under heavy development. Stay tuned for unique piece designs and custom boards!'}
+                                </p>
+                                <div className="mt-8 flex justify-center gap-4">
+                                    <div className="h-2 w-2 rounded-full bg-amber-500 animate-bounce" />
+                                    <div className="h-2 w-2 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.15s]" />
+                                    <div className="h-2 w-2 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.3s]" />
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Filter Sidebar */}
-                    <aside className="w-full lg:w-64 bg-white dark:bg-stone-900 p-6 rounded-2xl shadow-sm h-fit blur-sm">
+                    <aside className={`w-full lg:w-64 bg-white dark:bg-stone-900 p-6 rounded-2xl shadow-sm h-fit ${process.env.NEXT_PUBLIC_ENABLE_BETA_OVERLAY !== 'false' ? 'blur-sm' : ''}`}>
                         <div className="flex items-center gap-2 font-bold text-lg mb-6">
                             <Filter size={20} /> Filters
                         </div>
@@ -105,7 +107,7 @@ export default async function MarketplacePage({ params }: { params: Promise<{ lo
                     </aside>
 
                     {/* Grid */}
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 blur-sm">
+                    <div className={`flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ${process.env.NEXT_PUBLIC_ENABLE_BETA_OVERLAY !== 'false' ? 'blur-sm' : ''}`}>
                         {MockItems.map((item) => (
                             <div key={item.id} className="group bg-white dark:bg-stone-900 rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 border border-transparent hover:border-amber-500/20">
                                 <div className="relative aspect-square rounded-xl bg-stone-100 dark:bg-stone-800 mb-4 overflow-hidden">

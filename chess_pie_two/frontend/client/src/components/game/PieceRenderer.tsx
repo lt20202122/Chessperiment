@@ -36,8 +36,9 @@ export const PixelPiece = ({ pixels, size, className }: { pixels: string[][], si
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const pixelSizeX = canvas.width / cols;
-        const pixelSizeY = canvas.height / rows;
+        const scale = Math.min(canvas.width / cols, canvas.height / rows);
+        const offsetX = (canvas.width - cols * scale) / 2;
+        const offsetY = (canvas.height - rows * scale) / 2;
 
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
@@ -46,10 +47,10 @@ export const PixelPiece = ({ pixels, size, className }: { pixels: string[][], si
                     ctx.fillStyle = color;
                     // Use floor/ceil to avoid gaps between pixels
                     ctx.fillRect(
-                        Math.floor(c * pixelSizeX),
-                        Math.floor(r * pixelSizeY),
-                        Math.ceil(pixelSizeX),
-                        Math.ceil(pixelSizeY)
+                        Math.floor(offsetX + c * scale),
+                        Math.floor(offsetY + r * scale),
+                        Math.ceil(scale),
+                        Math.ceil(scale)
                     );
                 }
             }
@@ -137,7 +138,7 @@ export default function PieceRenderer({
 
     // Wrap in container with state indicators
     return (
-        <div className="relative" style={{ width: size, height: size }}>
+        <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
             {pieceContent}
             <PieceStateIndicators
                 variables={variables}

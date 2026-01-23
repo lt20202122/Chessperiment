@@ -35,7 +35,6 @@ export default async function AnalyzePage({ params }: { params: Promise<{ locale
 
     return (
         <>
-            <h1 className="sr-only">{t('h1')}</h1>
             <AnalyzePageClient />
             {/* SEO Footer handles its own constraints, maybe stick to bottom? 
                 Analyze page seems full screen centered. Adding footer might look odd if not styled properly.

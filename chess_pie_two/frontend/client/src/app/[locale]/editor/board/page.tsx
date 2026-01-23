@@ -53,8 +53,11 @@ export default async function Board({ params }: { params: Promise<{ locale: stri
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd_boardEditor).replace(/</g, '\\u003c') }}
         />
-        <h1 className="sr-only">{t('h1')}</h1>
         <PageClient />
+        <section className="container mx-auto px-4 py-12 prose dark:prose-invert max-w-4xl text-center">
+            <h2>{t('seoContent.heading')}</h2>
+            <p>{t('seoContent.text')}</p>
+        </section>
         <BoardEditorHelp />
     </>
 }

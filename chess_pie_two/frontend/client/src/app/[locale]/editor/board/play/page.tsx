@@ -37,13 +37,14 @@ export type PlacedPieces = Record<string, PlacedPiece>;
 export interface CustomBoard {
     cols: number;
     rows: number;
+    gridType: 'square' | 'hex';
     activeSquares: Coord[];
     placedPieces: PlacedPieces;
 }
 
 /* =======================
    Component
-======================= */
+ ======================= */
 
 export default function PlayPage() {
     const router = useRouter();
@@ -54,6 +55,7 @@ export default function PlayPage() {
     useEffect(() => {
         const rawCols = localStorage.getItem("cols");
         const rawRows = localStorage.getItem("rows");
+        const gridType = (localStorage.getItem("gridType") as 'square' | 'hex') || "square";
 
         const cols = parseInt(rawCols || "8", 10);
         const rows = parseInt(rawRows || "8", 10);
@@ -63,7 +65,7 @@ export default function PlayPage() {
             return { col, row };
         });
         const placedPieces = JSON.parse(localStorage.getItem("placedPieces") ?? "{}");
-        setBoard({ cols, rows, activeSquares, placedPieces });
+        setBoard({ cols, rows, gridType, activeSquares, placedPieces });
     }, []);
 
     if (!board) {

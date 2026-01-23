@@ -90,24 +90,29 @@ export default function GameSidebar({
     return (
         <div className="h-[40vh] lg:h-full w-full lg:w-[420px] flex flex-col bg-stone-50/50 dark:bg-stone-900/90 border-t lg:border-t-0 lg:border-l border-stone-200 dark:border-white/10 backdrop-blur-2xl shadow-2xl z-40 transition-colors duration-300">
             <Tabs defaultValue="moves" value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col h-full overflow-hidden">
-                <div className="px-6 pt-6 pb-4 border-b border-stone-200 dark:border-white/5 bg-white/30 dark:bg-black/10">
+                <div className="px-4 lg:px-6 pt-4 lg:pt-6 pb-2 lg:pb-4 border-b border-stone-200 dark:border-white/5 bg-white/30 dark:bg-black/10">
                     <TabsList className="grid w-full grid-cols-3 bg-stone-200/50 dark:bg-white/5 p-1 rounded-2xl border border-stone-300 dark:border-white/10">
-                        <TabsTrigger value="info" className="rounded-xl transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-lg dark:data-[state=active]:text-amber-400">
-                            <Info size={16} className="mr-2" /> {t('GameSidebar.info')}
+                        <TabsTrigger value="info" className="rounded-xl transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-lg dark:data-[state=active]:text-amber-400 text-xs lg:text-sm">
+                            <Info size={14} className="mr-1 lg:mr-2" />
+                            <span className="hidden xs:inline">{t('GameSidebar.info')}</span>
+                            <span className="xs:hidden italic text-[10px]">Info</span>
                         </TabsTrigger>
-                        <TabsTrigger value="moves" className="rounded-xl transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-lg dark:data-[state=active]:text-amber-400">
-                            <History size={16} className="mr-2" /> {t('GameSidebar.moves')}
+                        <TabsTrigger value="moves" className="rounded-xl transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-lg dark:data-[state=active]:text-amber-400 text-xs lg:text-sm">
+                            <History size={14} className="mr-1 lg:mr-2" />
+                            <span className="hidden xs:inline">{t('GameSidebar.moves')}</span>
+                            <span className="xs:hidden italic text-[10px]">Moves</span>
                         </TabsTrigger>
-                        <TabsTrigger value="chat" className="rounded-xl transition-all relative data-[state=active]:bg-white dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-lg dark:data-[state=active]:text-amber-400">
-                            <MessageSquare size={16} className="mr-2" />
-                            {t('GameSidebar.chat')}
-                            {hasUnreadChat && <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-sm shadow-red-500/50" />}
+                        <TabsTrigger value="chat" className="rounded-xl transition-all relative data-[state=active]:bg-white dark:data-[state=active]:bg-stone-800 data-[state=active]:shadow-lg dark:data-[state=active]:text-amber-400 text-xs lg:text-sm">
+                            <MessageSquare size={14} className="mr-1 lg:mr-2" />
+                            <span className="hidden xs:inline">{t('GameSidebar.chat')}</span>
+                            <span className="xs:hidden italic text-[10px]">Chat</span>
+                            {hasUnreadChat && <span className="absolute top-1 right-1 lg:right-2 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shadow-sm shadow-red-500/50" />}
                         </TabsTrigger>
                     </TabsList>
                 </div>
 
                 <TabsContent value="moves" className="flex-1 p-0 m-0 overflow-hidden flex flex-col items-stretch">
-                    <ScrollArea className="flex-1 px-6 py-4">
+                    <ScrollArea className="flex-1 px-4 lg:px-6 py-2 lg:py-4">
                         <div className="flex flex-col gap-y-0.5">
                             {Array.from({ length: Math.ceil(moveHistory.length / 2) }).map((_, i) => (
                                 <div key={i} className="flex items-center group transition-colors hover:bg-stone-200/30 dark:hover:bg-white/5 rounded-xl p-1 px-2">
@@ -138,7 +143,7 @@ export default function GameSidebar({
                             ))}
                         </div>
                     </ScrollArea>
-                    <div className="p-6 border-t border-stone-200 dark:border-white/5 bg-white/20 dark:bg-black/20">
+                    <div className="p-3 lg:p-6 border-t border-stone-200 dark:border-white/5 bg-white/20 dark:bg-black/20">
                         <div className="flex gap-2 justify-center">
                             <button onClick={() => navigateHistory('start')} className="p-2.5 rounded-xl text-stone-600 dark:text-stone-400 hover:bg-white dark:hover:bg-white/10 hover:text-amber-500 dark:hover:text-amber-400 transition-all disabled:opacity-30 border border-transparent hover:border-stone-200 dark:hover:border-white/10 shadow-sm" disabled={historyIndex < 0}>|&lt;</button>
                             <button onClick={() => navigateHistory('prev')} className="p-2.5 rounded-xl text-stone-600 dark:text-stone-400 hover:bg-white dark:hover:bg-white/10 hover:text-amber-500 dark:hover:text-amber-400 transition-all disabled:opacity-30 border border-transparent hover:border-stone-200 dark:hover:border-white/10 shadow-sm" disabled={historyIndex < 0}>&lt;</button>

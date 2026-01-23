@@ -1,17 +1,29 @@
 import { Square } from './types';
 import { Piece, Pawn, Rook, Knight, Bishop, Queen, King, CustomPiece } from './piece';
 import { BoardStateManager } from './state';
+import { toCoords, toSquare } from './utils';
+import { GridType } from '../lib/grid/GridType';
+import { SquareGrid } from '../lib/grid/SquareGrid';
+import { HexGrid } from '../lib/grid/HexGrid';
 
 export class BoardClass {
     private stateManager: BoardStateManager;
     public readonly width: number;
     public readonly height: number;
+    public gridType: 'square' | 'hex';
+    private grid: GridType;
 
-    constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[], width: number = 8, height: number = 8) {
+    constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[], width: number = 8, height: number = 11, gridType: 'square' | 'hex' = 'square') {
         this.width = width;
         this.height = height;
+        this.gridType = gridType;
+        this.grid = gridType === 'hex' ? new HexGrid() : new SquareGrid();
         const squares = initialPieces || this.setupInitialBoard();
         this.stateManager = new BoardStateManager(squares, activeSquares);
+    }
+
+    getGrid(): GridType {
+        return this.grid;
     }
 
     isActive(square: Square): boolean {
@@ -66,9 +78,34 @@ export class BoardClass {
     }
 
     findNearestEmptySquare(target: Square): Square | null {
-        // Spiral search for nearest empty active square
-        const [targetX, targetY] = [target.charCodeAt(0) - 'a'.charCodeAt(0), parseInt(target.slice(1)) - 1];
+        const [targetX, targetY] = toCoords(target);
+        const useAlgebraic = !target.includes(',');
         
+        if (this.gridType === 'hex') {
+            for (let d = 1; d < Math.max(this.width, this.height); d++) {
+                let q = targetX;
+                let r = targetY + d; 
+                
+                const directions = [
+                    {dq: 1, dr: -1}, {dq: 0, dr: -1}, {dq: -1, dr: 0},
+                    {dq: -1, dr: 1}, {dq: 0, dr: 1}, {dq: 1, dr: 0}
+                ];
+
+                for (const dir of directions) {
+                    for (let i = 0; i < d; i++) {
+                        const sq = `${q},${r}` as Square;
+                        if (this.isActive(sq) && this.getPiece(sq) === null) {
+                            return sq;
+                        }
+                        q += dir.dq;
+                        r += dir.dr;
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Square spiral search
         for (let d = 1; d < Math.max(this.width, this.height); d++) {
             for (let dx = -d; dx <= d; dx++) {
                 for (let dy = -d; dy <= d; dy++) {
@@ -77,12 +114,9 @@ export class BoardClass {
                     const x = targetX + dx;
                     const y = targetY + dy;
                     
-                    if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-                        const file = String.fromCharCode('a'.charCodeAt(0) + x);
-                        const sq = `${file}${y + 1}` as Square;
-                        if (this.isActive(sq) && this.getPiece(sq) === null) {
-                            return sq;
-                        }
+                    const sq = toSquare([x, y], useAlgebraic);
+                    if (this.isActive(sq) && this.getPiece(sq) === null) {
+                        return sq;
                     }
                 }
             }
@@ -268,7 +302,7 @@ export class BoardClass {
     }
 
     clone(): BoardClass {
-        const clonedBoard = new BoardClass(undefined, undefined, this.width, this.height);
+        const clonedBoard = new BoardClass(undefined, undefined, this.width, this.height, this.gridType);
         clonedBoard.stateManager = this.stateManager.clone();
         return clonedBoard;
     }

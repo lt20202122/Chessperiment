@@ -62,10 +62,11 @@ export default function Game() {
             {/* Leave Room Button */}
             <button
                 onClick={handleLeaveRoom}
-                className="fixed top-20 left-4 z-50 flex items-center gap-2 bg-white/90 dark:bg-stone-900/90 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-900 dark:text-white px-4 py-2 rounded-xl font-bold transition-all shadow-lg backdrop-blur-sm border border-stone-200 dark:border-white/10"
+                className="fixed top-20 left-2 lg:left-4 z-50 flex items-center gap-2 bg-white/90 dark:bg-stone-900/90 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-900 dark:text-white px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-base font-bold transition-all shadow-lg backdrop-blur-sm border border-stone-200 dark:border-white/10"
             >
-                <ArrowLeft size={20} />
-                {t('leaveGame')}
+                <ArrowLeft size={16} className="lg:w-5 lg:h-5" />
+                <span className="hidden sm:inline">{t('leaveGame')}</span>
+                <span className="sm:hidden">{t('leaveGame').split(' ')[0]}</span>
             </button>
 
             {/* Board Component with room context */}

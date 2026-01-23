@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, ArrowRight, GripVertical } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
 import { v4 as uuidv4 } from 'uuid';
 import {
     DndContext,
@@ -245,9 +247,10 @@ function SortableRule({
 }
 
 export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMoveEditorProps) {
-    const t = useTranslations('Editor.Piece');
+     const t = useTranslations('Editor.Piece');
+     const locale = useLocale();
 
-    const sensors = useSensors(
+     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
                 distance: 8,
@@ -399,30 +402,22 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
             )}
 
             {pieceId && (
-                <div className="flex justify-center pt-8 border-t border-white/5 relative group">
-                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/5 backdrop-blur-[2px] rounded-3xl mt-8">
-                        <div className="px-4 py-1.5 rounded-full bg-amber-500 text-bg text-[10px] font-black uppercase tracking-[0.2em] mb-1 shadow-lg shadow-amber-500/20">
-                            {t('comingSoon')}
-                        </div>
-                        <p className="text-[10px] font-bold text-stone-500 dark:text-white/40 uppercase tracking-widest italic">
-                            {t('comingEndOfJanuary')}
-                        </p>
+                <Link href={`/${locale}/editor/piece/${pieceId}/logic`}>
+                    <div className="flex justify-center pt-8 border-t border-white/5 relative group">
+                        <button
+                            className="group flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-purple-500/20 to-purple-600/20 dark:from-purple-500/30 dark:to-purple-600/30 rounded-2xl border border-purple-500/30 hover:border-purple-500/60 hover:from-purple-500/30 hover:to-purple-600/30 transition-all shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 active:scale-95"
+                        >
+                            <div className="w-10 h-10 rounded-xl bg-purple-500/40 flex items-center justify-center text-purple-300 group-hover:text-purple-200 transition-colors">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
+                            </div>
+                            <div className="text-left">
+                                <h3 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider">{t('advancedLogicTitle')}</h3>
+                                <p className="text-[10px] font-medium text-stone-500 dark:text-white/40">{t('advancedLogicDesc')}</p>
+                            </div>
+                            <ArrowRight size={16} className="text-stone-300 dark:text-white/20 ml-2 group-hover:translate-x-1 transition-transform" />
+                        </button>
                     </div>
-
-                    <button
-                        disabled
-                        className="group flex items-center gap-3 px-6 py-4 bg-stone-100 dark:bg-white/5 rounded-2xl border border-stone-200 dark:border-white/10 opacity-40 grayscale"
-                    >
-                        <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
-                        </div>
-                        <div className="text-left">
-                            <h3 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider">{t('advancedLogicTitle')}</h3>
-                            <p className="text-[10px] font-medium text-stone-500 dark:text-white/40">{t('advancedLogicDesc')}</p>
-                        </div>
-                        <ArrowRight size={16} className="text-stone-300 dark:text-white/20 ml-2" />
-                    </button>
-                </div>
+                </Link>
             )}
         </div>
     );

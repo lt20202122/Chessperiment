@@ -546,10 +546,11 @@ export default function Board({
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        // Padding for the board container. Higher value ensures no cut-off.
-        const padding = 96;
+        // Responsive padding: smaller on small screens to maximize board size
+        const padding = width < 600 ? 32 : 96;
         const availW = width - padding;
         const availH = height - padding;
+
         // Ensure non-negative
         const minDim = Math.max(0, Math.min(availW, availH));
         const calculated = Math.floor(minDim / 8);
@@ -561,7 +562,8 @@ export default function Board({
 
     resizeObserver.observe(boardContainerRef.current);
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [gameStatus, isSearching]); // Re-run when layout changes
+
 
   const getPieceAt = (pos: string) => boardPieces.find(p => p.position === pos);
 
@@ -761,25 +763,25 @@ export default function Board({
           <div className={`flex-1 flex flex-col items-center p-2 w-full overflow-hidden ${gameStatus === "playing" ? "justify-center" : "justify-center"}`}>
 
             {(gameStatus === "" && !isSearching) ? (
-              <div className="text-center p-8 lg:p-12 bg-white dark:bg-stone-900 rounded-3xl lg:rounded-[3rem] shadow-2xl border border-stone-200 dark:border-stone-800 max-w-lg w-full animate-in zoom-in duration-500 my-auto">
-                <h1 className="text-4xl lg:text-6xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tighter italic">Chess PIE</h1>
+              <div className="text-center p-6 lg:p-12 bg-white dark:bg-stone-900 rounded-3xl lg:rounded-[3rem] shadow-2xl border border-stone-200 dark:border-stone-800 max-w-lg w-full animate-in zoom-in duration-500 my-auto mx-4">
+                <h1 className="text-3xl lg:text-6xl font-black mb-6 lg:mb-8 text-stone-900 dark:text-white uppercase tracking-tighter italic">Chess PIE</h1>
                 <button
                   onClick={() => { if (socket) { setIsSearching(true); socket.emit("find_match"); } }}
-                  className="w-full py-5 lg:py-7 bg-linear-to-r from-amber-500 to-orange-600 text-white rounded-2xl lg:rounded-4xl font-black text-xl shadow-xl hover:shadow-orange-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full py-4 lg:py-7 bg-linear-to-r from-amber-500 to-orange-600 text-white rounded-2xl lg:rounded-4xl font-black text-lg lg:text-xl shadow-xl hover:shadow-orange-500/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {t("quickPlay")}
                 </button>
-                <div className="mt-8 flex flex-col gap-4">
-                  <button onClick={() => { if (socket) socket.emit("create_room"); }} className="text-stone-500 dark:text-stone-400 font-bold hover:text-amber-500 transition tracking-widest text-xs lg:text-sm uppercase">{t("createPrivateRoom")}</button>
-                  <button onClick={() => startComputerGame()} className="text-stone-500 dark:text-stone-400 font-bold hover:text-green-500 transition tracking-widest text-xs lg:text-sm uppercase">{t("vsStockfish")}</button>
+                <div className="mt-6 lg:mt-8 flex flex-col gap-3 lg:gap-4">
+                  <button onClick={() => { if (socket) socket.emit("create_room"); }} className="text-stone-500 dark:text-stone-400 font-bold hover:text-amber-500 transition tracking-widest text-[10px] lg:text-sm uppercase">{t("createPrivateRoom")}</button>
+                  <button onClick={() => startComputerGame()} className="text-stone-500 dark:text-stone-400 font-bold hover:text-green-500 transition tracking-widest text-[10px] lg:text-sm uppercase">{t("vsStockfish")}</button>
                 </div>
               </div>
             ) : isSearching ? (
-              <div className="flex flex-col items-center justify-center p-12 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl rounded-[3rem] border border-gray-200 dark:border-white/10 shadow-2xl max-w-lg w-full my-auto">
-                <div className="w-20 h-20 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-8" />
-                <h2 className="text-2xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tight">{t("findingMatch")}</h2>
-                <p className="text-stone-400 text-sm font-medium mb-8">{t("searchingText")}</p>
-                <button onClick={() => { if (socket) { setIsSearching(false); socket.emit("cancel_search"); } }} className="px-10 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-2xl font-bold transition-all border border-red-500/30">{t("cancelSearch")}</button>
+              <div className="flex flex-col items-center justify-center p-8 lg:p-12 bg-white/80 dark:bg-stone-900/80 backdrop-blur-2xl rounded-4xl border border-gray-200 dark:border-white/10 shadow-2xl max-w-sm lg:max-w-lg w-full my-auto mx-4">
+                <div className="w-12 h-12 lg:w-20 lg:h-20 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-6 lg:mb-8" />
+                <h2 className="text-xl lg:text-2xl font-black text-stone-900 dark:text-white mb-2 uppercase tracking-tight text-center">{t("findingMatch")}</h2>
+                <p className="text-stone-400 text-xs lg:text-sm font-medium mb-6 lg:mb-8 text-center">{t("searchingText")}</p>
+                <button onClick={() => { if (socket) { setIsSearching(false); socket.emit("cancel_search"); } }} className="w-full lg:w-auto px-10 py-3 lg:py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-2xl font-bold transition-all border border-red-500/30">{t("cancelSearch")}</button>
               </div>
             ) : (
               <div className="flex flex-col w-full h-full items-center justify-center p-2 lg:p-4">

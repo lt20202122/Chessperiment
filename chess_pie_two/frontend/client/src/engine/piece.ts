@@ -1,6 +1,6 @@
 import { Square, MoveRule } from './types';
 import { toCoords, toSquare } from './utils';
-import { BoardClass } from './board';
+import type { BoardClass } from './board';
 
 export abstract class Piece {
     id: string;
@@ -74,6 +74,18 @@ export class CustomPiece extends Piece {
     // Execution Queue for preventing infinite loops
     private pendingTriggers: Array<{ type: string, context: any }> = [];
     private isExecutingLogic: boolean = false;
+
+    // Helper method to check if a variable name is a position preset
+    private isPositionVariable(varName: string): boolean {
+        return /^[A-H][1-8]$/.test(varName.toUpperCase());
+    }
+
+    // Helper method to check if current position matches a position variable
+    private isAtPosition(positionVar: string): boolean {
+        const normalized = positionVar.toUpperCase();
+        if (!this.isPositionVariable(normalized)) return false;
+        return this.position.toUpperCase() === normalized;
+    }
 
     executeLogic(triggerType: string, context: any, board: BoardClass) {
         if (!this.logic || !Array.isArray(this.logic)) return;
@@ -186,6 +198,43 @@ export class CustomPiece extends Piece {
                         conditionsMet = met;
                     }
                 }
+            } else if (triggerType === 'variable-trigger') {
+                if (vals.variableName && vals.value !== undefined) {
+                    let current: any;
+                    let met = true;
+                    
+                    // Check if this is a position variable
+                    if (this.isPositionVariable(vals.variableName)) {
+                        current = this.isAtPosition(vals.variableName) ? 1 : 0;
+                    } else {
+                        current = this.variables[vals.variableName];
+                    }
+                    
+                    const comparisonType = vals.comparisonType || 'Number';
+                    
+                    switch (comparisonType) {
+                        case 'Number':
+                            const currentNum = Number(current) || 0;
+                            const targetNum = Number(vals.value);
+                            if (currentNum !== targetNum) met = false;
+                            break;
+                        case 'Text':
+                            const currentText = String(current || '');
+                            const targetText = String(vals.value);
+                            if (currentText !== targetText) met = false;
+                            break;
+                        case 'Boolean':
+                            const currentBool = Boolean(current);
+                            const targetBool = vals.value.toLowerCase() === 'true' || vals.value === '1';
+                            if (currentBool !== targetBool) met = false;
+                            break;
+                    }
+                    
+                    if (!met) {
+                        console.log(`[Logic] Condition failed for "variable-trigger": ${vals.variableName} (${current}) != ${vals.value} (${comparisonType})`);
+                        conditionsMet = met;
+                    }
+                }
             }
 
             if (conditionsMet) {
@@ -207,7 +256,13 @@ export class CustomPiece extends Piece {
 
         switch (block.id) {
             case 'kill':
-                board.setPiece(this.position, null);
+                // Determine target based on socket value
+                if (vals.target === 'Attacker' && context.attacker) {
+                    board.setPiece(context.attacker.position, null);
+                } else {
+                    // Default: kill the piece this logic belongs to (this piece)
+                    board.setPiece(this.position, null);
+                }
                 break;
             case 'transformation':
                 if (vals.target) {
@@ -356,7 +411,14 @@ export class CustomPiece extends Piece {
         // Directions from white's perspective are different for black
         // However, ΔY in our visual editor usually means "forward" for the color.
         // Let's adjust dy based on color so that positive is always "forward"
-        const forwardDy = this.color === 'white' ? dy : -dy;
+        let forwardDy = dy;
+        if (board.gridType === 'hex') {
+            // In hex pointy-top, white moving up is r decreasing.
+            // So if dy (dr) is negative, it's forward for white.
+            forwardDy = this.color === 'white' ? -dy : dy;
+        } else {
+            forwardDy = this.color === 'white' ? dy : -dy;
+        }
 
         let isAllowed = false;
 
@@ -373,6 +435,14 @@ export class CustomPiece extends Piece {
                 else if (cond.variable === 'diffY') value = forwardDy;
                 else if (cond.variable === 'absDiffX') value = adx;
                 else if (cond.variable === 'absDiffY') value = ady;
+                // Hex specific / generic distance
+                else if (cond.variable === 'dist') {
+                    if (board.gridType === 'hex') {
+                        value = (Math.abs(dx) + Math.abs(dy) + Math.abs(-dx - dy)) / 2;
+                    } else {
+                        value = Math.max(adx, ady); // Chebyshev distance for square
+                    }
+                }
                 // NEW: Check state variable conditions
                 else if (cond.variable === 'cooldown') value = this.variables['cooldown'] || 0;
                 else if (cond.variable === 'charge') value = this.variables['charge'] || 0;
@@ -436,6 +506,32 @@ export class Pawn extends Piece {
     }
 
     isValidMove(from: Square, to: Square, board: BoardClass): boolean {
+        if (board.gridType === 'hex') {
+            const [fq, fr] = toCoords(from);
+            const [tq, tr] = toCoords(to);
+            const dq = tq - fq;
+            const dr = tr - fr;
+
+            // Forward direction depends on color
+            const forward = this.color === 'white' ? { dq: 0, dr: -1 } : { dq: 0, dr: 1 };
+            const captures = this.color === 'white' ? 
+                [{ dq: -1, dr: 0 }, { dq: 1, dr: -1 }] : 
+                [{ dq: 1, dr: 0 }, { dq: -1, dr: 1 }];
+
+            // Standard one-square move
+            if (dq === forward.dq && dr === forward.dr) {
+                return board.getPiece(to) === null;
+            }
+
+            // Capture
+            if (captures.some(c => c.dq === dq && c.dr === dr)) {
+                const destinationPiece = board.getPiece(to);
+                return destinationPiece !== null && destinationPiece.color !== this.color;
+            }
+
+            return false;
+        }
+
         const fromCoords = toCoords(from);
         const toCoordsCoords = toCoords(to);
         const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
@@ -444,18 +540,15 @@ export class Pawn extends Piece {
         const direction = this.color === 'white' ? 1 : -1;
         const startingRank = this.color === 'white' ? 1 : board.height - 2;
 
-        // Standard one-square move
         if (diffX === 0 && diffY === direction) {
             return board.getPiece(to) === null;
         }
 
-        // Initial two-square move
         if (diffX === 0 && fromCoords[1] === startingRank && diffY === 2 * direction) {
             const pathClear = board.getPiece(toSquare([fromCoords[0], fromCoords[1] + direction])) === null;
             return pathClear && board.getPiece(to) === null;
         }
 
-        // Capture
         if (diffX === 1 && diffY === direction) {
             const destinationPiece = board.getPiece(to);
             return destinationPiece !== null && destinationPiece.color !== this.color;
@@ -465,14 +558,24 @@ export class Pawn extends Piece {
     }
 
     canAttack(target: Square, board: BoardClass): boolean {
+        if (board.gridType === 'hex') {
+            const [fq, fr] = toCoords(this.position);
+            const [tq, tr] = toCoords(target);
+            const dq = tq - fq;
+            const dr = tr - fr;
+
+            const captures = this.color === 'white' ? 
+                [{ dq: -1, dr: 0 }, { dq: 1, dr: -1 }] : 
+                [{ dq: 1, dr: 0 }, { dq: -1, dr: 1 }];
+
+            return captures.some(c => c.dq === dq && c.dr === dr);
+        }
+
         const fromCoords = toCoords(this.position);
         const toCoordsCoords = toCoords(target);
         const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
         const diffY = toCoordsCoords[1] - fromCoords[1];
-
         const direction = this.color === 'white' ? 1 : -1;
-
-        // Pawns only attack diagonally forward
         return diffX === 1 && diffY === direction;
     }
 
@@ -489,6 +592,29 @@ export class Knight extends Piece {
     }
 
     isValidMove(from: Square, to: Square, board: BoardClass): boolean {
+        if (board.gridType === 'hex') {
+            const [fq, fr] = toCoords(from);
+            const [tq, tr] = toCoords(to);
+            const dq = tq - fq;
+            const dr = tr - fr;
+            const ds = -dq - dr;
+
+            // Knight move is (dq, dr, ds) = permutation of (+-2, +-1, -+3) or similar
+            // 12 possible jumps
+            const absQ = Math.abs(dq);
+            const absR = Math.abs(dr);
+            const absS = Math.abs(ds);
+            
+            const isKnightJump = (absQ === 2 && absR === 1) || (absQ === 1 && absR === 2) ||
+                                (absQ === 3 && absR === 1) || (absQ === 1 && absR === 3) ||
+                                (absQ === 3 && absR === 2) || (absQ === 2 && absR === 3);
+            
+            if (!isKnightJump) return false;
+
+            const destinationPiece = board.getPiece(to);
+            return destinationPiece === null || destinationPiece.color !== this.color;
+        }
+
         const fromCoords = toCoords(from);
         const toCoordsCoords = toCoords(to);
         const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
@@ -503,12 +629,7 @@ export class Knight extends Piece {
     }
 
     canAttack(target: Square, board: BoardClass): boolean {
-        const fromCoords = toCoords(this.position);
-        const toCoordsCoords = toCoords(target);
-        const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
-        const diffY = Math.abs(fromCoords[1] - toCoordsCoords[1]);
-
-        return (diffX === 2 && diffY === 1) || (diffX === 1 && diffY === 2);
+        return this.isValidMove(this.position, target, board);
     }
 
     clone(): Knight {
@@ -524,50 +645,41 @@ export class Bishop extends Piece {
     }
 
     isValidMove(from: Square, to: Square, board: BoardClass): boolean {
+        if (board.gridType === 'hex') {
+            const [fq, fr] = toCoords(from);
+            const [tq, tr] = toCoords(to);
+            const dq = tq - fq;
+            const dr = tr - fr;
+            if (!(dq === dr || dq === -2 * dr || 2 * dq === -dr)) return false;
+            const destinationPiece = board.getPiece(to);
+            if (destinationPiece !== null && destinationPiece.color === this.color) return false;
+            const dist = Math.abs(dq === dr ? dq : (dq === -2*dr ? dr : dq/2));
+            const sqDir = { q: dq / dist, r: dr / dist };
+            for (let i = 1; i < dist; i++) {
+                const sq = `${fq + i * sqDir.q},${fr + i * sqDir.r}` as Square;
+                if (board.getPiece(sq) !== null || !board.isActive(sq)) return false;
+            }
+            return true;
+        }
+
         const fromCoords = toCoords(from);
         const toCoordsCoords = toCoords(to);
         const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
         const diffY = Math.abs(fromCoords[1] - toCoordsCoords[1]);
-
-        if (diffX !== diffY) {
-            return false;
-        }
-
+        if (diffX !== diffY) return false;
         const destinationPiece = board.getPiece(to);
-        if (destinationPiece !== null && destinationPiece.color === this.color) {
-            return false;
-        }
-        
-        // Check for obstructions
+        if (destinationPiece !== null && destinationPiece.color === this.color) return false;
         const xDirection = toCoordsCoords[0] > fromCoords[0] ? 1 : -1;
         const yDirection = toCoordsCoords[1] > fromCoords[1] ? 1 : -1;
         for (let i = 1; i < diffX; i++) {
             const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1] + i * yDirection]);
-            if (board.getPiece(square) !== null || !board.isActive(square)) {
-                return false;
-            }
+            if (board.getPiece(square) !== null || !board.isActive(square)) return false;
         }
-
         return true;
     }
 
     canAttack(target: Square, board: BoardClass): boolean {
-        const fromCoords = toCoords(this.position);
-        const toCoordsCoords = toCoords(target);
-        const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
-        const diffY = Math.abs(fromCoords[1] - toCoordsCoords[1]);
-
-        if (diffX !== diffY) return false;
-
-        const xDirection = toCoordsCoords[0] > fromCoords[0] ? 1 : -1;
-        const yDirection = toCoordsCoords[1] > fromCoords[1] ? 1 : -1;
-        for (let i = 1; i < diffX; i++) {
-            const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1] + i * yDirection]);
-            if (board.getPiece(square) !== null || !board.isActive(square)) {
-                return false;
-            }
-        }
-        return true;
+        return this.isValidMove(this.position, target, board);
     }
 
     clone(): Bishop {
@@ -583,64 +695,48 @@ export class Rook extends Piece {
     }
 
     isValidMove(from: Square, to: Square, board: BoardClass): boolean {
+        if (board.gridType === 'hex') {
+            const [fq, fr] = toCoords(from);
+            const [tq, tr] = toCoords(to);
+            const dq = tq - fq;
+            const dr = tr - fr;
+            if (!(dq === 0 || dr === 0 || dq === -dr)) return false;
+            const destinationPiece = board.getPiece(to);
+            if (destinationPiece !== null && destinationPiece.color === this.color) return false;
+            const dist = Math.max(Math.abs(dq), Math.abs(dr), Math.abs(-dq - dr));
+            const sqDir = { q: dq / dist, r: dr / dist };
+            for (let i = 1; i < dist; i++) {
+                const sq = `${fq + i * sqDir.q},${fr + i * sqDir.r}` as Square;
+                if (board.getPiece(sq) !== null || !board.isActive(sq)) return false;
+            }
+            return true;
+        }
+
         const fromCoords = toCoords(from);
         const toCoordsCoords = toCoords(to);
         const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
         const diffY = Math.abs(fromCoords[1] - toCoordsCoords[1]);
-
-        if (diffX !== 0 && diffY !== 0) {
-            return false;
-        }
-
+        if (diffX !== 0 && diffY !== 0) return false;
         const destinationPiece = board.getPiece(to);
-        if (destinationPiece !== null && destinationPiece.color === this.color) {
-            return false;
-        }
-
-        // Check for obstructions
+        if (destinationPiece !== null && destinationPiece.color === this.color) return false;
         if (diffX === 0) {
             const yDirection = toCoordsCoords[1] > fromCoords[1] ? 1 : -1;
             for (let i = 1; i < diffY; i++) {
                 const square = toSquare([fromCoords[0], fromCoords[1] + i * yDirection]);
-                if (board.getPiece(square) !== null || !board.isActive(square)) {
-                    return false;
-                }
+                if (board.getPiece(square) !== null || !board.isActive(square)) return false;
             }
         } else {
             const xDirection = toCoordsCoords[0] > fromCoords[0] ? 1 : -1;
             for (let i = 1; i < diffX; i++) {
                 const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1]]);
-                if (board.getPiece(square) !== null || !board.isActive(square)) {
-                    return false;
-                }
+                if (board.getPiece(square) !== null || !board.isActive(square)) return false;
             }
         }
-
         return true;
     }
 
     canAttack(target: Square, board: BoardClass): boolean {
-        const fromCoords = toCoords(this.position);
-        const toCoordsCoords = toCoords(target);
-        const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
-        const diffY = Math.abs(fromCoords[1] - toCoordsCoords[1]);
-
-        if (diffX !== 0 && diffY !== 0) return false;
-
-        if (diffX === 0) {
-            const yDirection = toCoordsCoords[1] > fromCoords[1] ? 1 : -1;
-            for (let i = 1; i < diffY; i++) {
-                const square = toSquare([fromCoords[0], fromCoords[1] + i * yDirection]);
-                if (board.getPiece(square) !== null || !board.isActive(square)) return false;
-            }
-        } else {
-            const xDirection = toCoordsCoords[0] > fromCoords[0] ? 1 : -1;
-            for (let i = 1; i < diffX; i++) {
-                const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1]]);
-                if (board.getPiece(square) !== null || !board.isActive(square)) return false;
-            }
-        }
-        return true;
+        return this.isValidMove(this.position, target, board);
     }
 
     clone(): Rook {
@@ -650,18 +746,52 @@ export class Rook extends Piece {
     }
 }
 
+
 export class Queen extends Piece {
     constructor(id: string, color: "white" | "black", position: Square) {
         super(id, 'queen', color, position);
     }
 
     isValidMove(from: Square, to: Square, board: BoardClass): boolean {
+        if (board.gridType === 'hex') {
+            return this.canAttack(to, board) && (board.getPiece(to) === null || board.getPiece(to)?.color !== this.color);
+        }
         // A queen's move is valid if it's a valid rook or bishop move
-        // We use static-like calls or shared logic instead of instantiating
         return this.canAttack(to, board) && (board.getPiece(to) === null || board.getPiece(to)?.color !== this.color);
     }
 
     canAttack(target: Square, board: BoardClass): boolean {
+        if (board.gridType === 'hex') {
+            // Queen = Rook + Bishop
+            const [fq, fr] = toCoords(this.position);
+            const [tq, tr] = toCoords(target);
+            const dq = tq - fq;
+            const dr = tr - fr;
+
+            const isRookMove = (dq === 0 || dr === 0 || dq === -dr);
+            const isBishopMove = (dq === dr || dq === -2 * dr || 2 * dq === -dr);
+            
+            if (!isRookMove && !isBishopMove) return false;
+
+            // Obstruction check
+            let dist: number;
+            let sqDir: { q: number, r: number };
+            
+            if (isRookMove) {
+                dist = Math.max(Math.abs(dq), Math.abs(dr), Math.abs(-dq - dr));
+                sqDir = { q: dq / dist, r: dr / dist };
+            } else {
+                dist = Math.abs(dq === dr ? dq : (dq === -2*dr ? dr : dq/2));
+                sqDir = { q: dq / dist, r: dr / dist };
+            }
+
+            for (let i = 1; i < dist; i++) {
+                const sq = `${fq + i * sqDir.q},${fr + i * sqDir.r}` as Square;
+                if (board.getPiece(sq) !== null || !board.isActive(sq)) return false;
+            }
+            return true;
+        }
+
         const fromCoords = toCoords(this.position);
         const toCoordsCoords = toCoords(target);
         const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
@@ -712,6 +842,18 @@ export class King extends Piece {
     }
 
     isValidMove(from: Square, to: Square, board: BoardClass): boolean {
+        if (board.gridType === 'hex') {
+            const [fq, fr] = toCoords(from);
+            const [tq, tr] = toCoords(to);
+            const dq = tq - fq;
+            const dr = tr - fr;
+            const dist = (Math.abs(dq) + Math.abs(dr) + Math.abs(-dq - dr)) / 2;
+            
+            if (dist === 1) return true;
+            if (dist === 2 && (dq === dr || dq === -2 * dr || 2 * dq === -dr)) return true;
+            return false;
+        }
+
         const fromCoords = toCoords(from);
         const toCoordsCoords = toCoords(to);
         const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
@@ -726,11 +868,7 @@ export class King extends Piece {
     }
 
     canAttack(target: Square, board: BoardClass): boolean {
-        const fromCoords = toCoords(this.position);
-        const toCoordsCoords = toCoords(target);
-        const diffX = Math.abs(fromCoords[0] - toCoordsCoords[0]);
-        const diffY = Math.abs(fromCoords[1] - toCoordsCoords[1]);
-        return diffX <= 1 && diffY <= 1;
+        return this.isValidMove(this.position, target, board);
     }
 
     clone(): King {

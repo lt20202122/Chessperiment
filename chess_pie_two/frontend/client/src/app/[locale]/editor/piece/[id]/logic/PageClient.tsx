@@ -163,6 +163,20 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         width: 280
     },
     {
+        id: 'variable-trigger',
+        type: 'trigger',
+        label: 'Variable Trigger',
+        category: 'Trigger',
+        color: '#FF6347',
+        description: 'Triggers when any variable equals a specific value (number, text, or boolean).',
+        sockets: [
+            { id: 'variableName', type: 'text', label: 'Variable' },
+            { id: 'comparisonType', type: 'select', label: 'Type', options: ['Number', 'Text', 'Boolean'] },
+            { id: 'value', type: 'text', label: 'Value' }
+        ],
+        width: 320
+    },
+    {
         id: 'cooldown',
         type: 'effect',
         label: 'Cooldown',
@@ -232,6 +246,9 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'Effects',
         color: '#9370DB',
         description: 'Immediately removes the piece from play.',
+        sockets: [
+            { id: 'target', type: 'select', label: 'Target', options: ['Selected Piece', 'Attacker'] }
+        ],
         width: 140
     },
     {
@@ -243,6 +260,18 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         description: 'Prevents the default engine behavior for this event (e.g. cancels the capture).',
         width: 160
     }
+];
+
+// Generate all chess board positions (A1-H8)
+const CHESS_POSITIONS = [
+    'A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1',
+    'A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2',
+    'A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'G3', 'H3',
+    'A4', 'B4', 'C4', 'D4', 'E4', 'F4', 'G4', 'H4',
+    'A5', 'B5', 'C5', 'D5', 'E5', 'F5', 'G5', 'H5',
+    'A6', 'B6', 'C6', 'D6', 'E6', 'F6', 'G6', 'H6',
+    'A7', 'B7', 'C7', 'D7', 'E7', 'F7', 'G7', 'H7',
+    'A8', 'B8', 'C8', 'D8', 'E8', 'F8', 'G8', 'H8'
 ];
 
 export default function LogicPageClient({ id }: { id: string }) {
@@ -655,19 +684,45 @@ export default function LogicPageClient({ id }: { id: string }) {
                     <div className="p-6 flex flex-col gap-4">
                         {activeCategory === 'Variables' ? (
                             <>
-                                {variables.map(v => (
-                                    <BlockTemplateItem
-                                        key={v.id}
-                                        template={{
-                                            id: v.id,
-                                            type: 'variable',
-                                            label: v.name,
-                                            category: 'Variables',
-                                            color: '#FF8C00',
-                                            description: `Custom variable: ${v.name}`
-                                        }}
-                                    />
-                                ))}
+                                {/* Position Preset Variables Section */}
+                                <div className="mb-6">
+                                    <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Position Presets</h3>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {CHESS_POSITIONS.map(position => (
+                                            <BlockTemplateItem
+                                                key={`pos-${position}`}
+                                                template={{
+                                                    id: `pos-${position}`,
+                                                    type: 'variable',
+                                                    label: position,
+                                                    category: 'Variables',
+                                                    color: '#32CD32',
+                                                    description: `Position variable: ${position}`,
+                                                    width: 60
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                {/* Custom Variables Section */}
+                                <div>
+                                    <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Custom Variables</h3>
+                                    {variables.map(v => (
+                                        <BlockTemplateItem
+                                            key={v.id}
+                                            template={{
+                                                id: v.id,
+                                                type: 'variable',
+                                                label: v.name,
+                                                category: 'Variables',
+                                                color: '#FF8C00',
+                                                description: `Custom variable: ${v.name}`
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                                
                                 <AnimatePresence>
                                     {isCreatingVar ? (
                                         <motion.div

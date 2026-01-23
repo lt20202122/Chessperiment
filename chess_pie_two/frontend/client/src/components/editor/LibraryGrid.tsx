@@ -137,6 +137,7 @@ function LibraryCard({ item, onToggleStar, onDelete, t }: { item: LibraryItem, o
         if (isBoard) {
             localStorage.setItem('rows', item.rows.toString());
             localStorage.setItem('cols', item.cols.toString());
+            localStorage.setItem('gridType', (item as any).gridType || 'square');
             localStorage.setItem('activeSquares', JSON.stringify(item.activeSquares));
             localStorage.setItem('placedPieces', JSON.stringify(item.placedPieces));
             router.push('/editor/board/play');
@@ -152,6 +153,7 @@ function LibraryCard({ item, onToggleStar, onDelete, t }: { item: LibraryItem, o
         if (isBoard) {
             localStorage.setItem('rows', item.rows.toString());
             localStorage.setItem('cols', item.cols.toString());
+            localStorage.setItem('gridType', (item as any).gridType || 'square');
             localStorage.setItem('activeSquares', JSON.stringify(item.activeSquares));
             localStorage.setItem('placedPieces', JSON.stringify(item.placedPieces));
             router.push('/editor/board');
@@ -197,7 +199,7 @@ function LibraryCard({ item, onToggleStar, onDelete, t }: { item: LibraryItem, o
                         <div className="flex items-center gap-3 mt-1 text-stone-400 dark:text-white/40 text-[10px] font-black uppercase tracking-widest">
                             <span className="flex items-center gap-1">
                                 {isBoard ? (
-                                    <><LayoutGrid size={10} /> {item.cols}x{item.rows}</>
+                                    <><LayoutGrid size={10} /> {(item as SavedBoard).gridType === 'hex' ? `Radius ${Math.floor(Math.max(item.rows, item.cols) / 2)}` : `${item.cols}x${item.rows}`}</>
                                 ) : (
                                     <><Box size={10} /> Piece Set</>
                                 )}

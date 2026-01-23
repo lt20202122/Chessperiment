@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Metadata } from "next";
+import { Link } from '@/i18n/navigation';
 import styles from "./privacypolicy.module.css";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -24,6 +25,11 @@ export default async function PrivacyPolicy({ params }: { params: Promise<{ loca
 
     return (
         <div className={styles.container}>
+            <div className="mb-6">
+                <Link href="/" className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 transition-colors">
+                    ← ChessPie
+                </Link>
+            </div>
             <h1 className={styles.title}>{t("title")}</h1>
             <p className={styles.lastUpdated}>{t("lastUpdated")}</p>
 

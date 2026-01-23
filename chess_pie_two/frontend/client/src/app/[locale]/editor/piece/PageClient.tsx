@@ -4,16 +4,19 @@ import PieceEditorSidebar from '@/components/editor/PieceEditorSidebar';
 import PixelCanvas from '@/components/editor/PixelCanvas';
 import VisualMoveEditor from '@/components/editor/VisualMoveEditor';
 import SaveToSetModal from '@/components/editor/SaveToSetModal';
-import { Palette, Check } from 'lucide-react';
+import { Palette, Check, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import { getUserPieceSetsAction, getCustomPieceAction, savePieceSetAction, saveCustomPieceAction, getSetPiecesAction, deleteCustomPieceAction } from '@/app/actions/library';
 import { PieceSet, CustomPiece } from '@/lib/firestore';
 import { invertLightness } from '@/lib/colors';
 
 export default function PageClient() {
-    const t = useTranslations('Editor.Piece');
+     const t = useTranslations('Editor.Piece');
+     const locale = useLocale();
 
     // Set management
     const [sets, setSets] = useState<(PieceSet & { id: string })[]>([]);
@@ -435,36 +438,51 @@ export default function PageClient() {
             />
         }>
             <div className="flex flex-col items-center w-full relative">
-                <div className="mb-12 text-center max-w-2xl">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 text-amber-500 text-xs font-semibold uppercase tracking-widest mb-4 border border-amber-400/20">
-                        <Palette size={14} /> {t('badge')}
-                    </div>
-                    <h1 className="text-4xl md:text-5xl font-black text-stone-900 dark:text-white mb-4 tracking-tight">
-                        {t.rich("title", {
-                            accent: chunks => {
-                                return <span className="text-accent underline decoration-wavy decoration-2 underline-offset-4">{chunks}</span>
-                            }
-                        })}
-                    </h1>
-                    <p className="text-stone-500 dark:text-white/60 text-lg leading-relaxed max-w-lg mx-auto">
-                        {t('description')}
-                    </p>
+                 <div className="mb-12 text-center max-w-2xl">
+                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 text-amber-500 text-xs font-semibold uppercase tracking-widest mb-4 border border-amber-400/20">
+                         <Palette size={14} /> {t('badge')}
+                     </div>
+                     <h1 className="text-4xl md:text-5xl font-black text-stone-900 dark:text-white mb-4 tracking-tight">
+                         {t.rich("title", {
+                             accent: chunks => {
+                                 return <span className="text-accent underline decoration-wavy decoration-2 underline-offset-4">{chunks}</span>
+                             }
+                         })}
+                     </h1>
+                     <p className="text-stone-500 dark:text-white/60 text-lg leading-relaxed max-w-lg mx-auto">
+                         {t('description')}
+                     </p>
 
-                    <div className="h-10 mt-4 flex items-center justify-center">
-                        <AnimatePresence>
-                            {saveStatus === 'success' && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0 }}
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-500 text-sm font-bold border border-emerald-500/20"
-                                >
-                                    <Check size={16} /> {t('saved')}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-                </div>
+                     <div className="h-10 mt-4 flex items-center justify-center">
+                         <AnimatePresence>
+                             {saveStatus === 'success' && (
+                                 <motion.div
+                                     initial={{ opacity: 0, y: 10 }}
+                                     animate={{ opacity: 1, y: 0 }}
+                                     exit={{ opacity: 0 }}
+                                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-500 text-sm font-bold border border-emerald-500/20"
+                                 >
+                                     <Check size={16} /> {t('saved')}
+                                 </motion.div>
+                             )}
+                         </AnimatePresence>
+                     </div>
+
+                     {editingPieceId && (
+                         <div className="mt-6 flex justify-center">
+                             <Link href={`/${locale}/editor/piece/${editingPieceId}/logic`}>
+                                 <motion.button
+                                     whileHover={{ scale: 1.05 }}
+                                     whileTap={{ scale: 0.95 }}
+                                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 active:scale-95"
+                                 >
+                                     <Zap size={18} />
+                                     {t('advancedLogicTitle')}
+                                 </motion.button>
+                             </Link>
+                         </div>
+                     )}
+                 </div>
 
                 {mode === 'design' ? (
                     <PixelCanvas

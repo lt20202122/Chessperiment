@@ -409,7 +409,7 @@
         "title": "Brett-Editor FAQ – Alle Antworten"
     },
     "LegalNotice": {
-        "title": "Impressum",
+        "title": "Impressum - Rechtliche Hinweise",
         "providerHeading": "Anbieter",
         "providerName": "Lasse Mauritz - ChessPie",
         "providerAddress": "Ahlerfeld 29, 38527 Meine",
@@ -477,7 +477,7 @@
             "legalNotice": "Impressum"
         },
         "Home": {
-            "title": "ChessPie | Benutzerdefiniertes Schach Spielen & Erstellen",
+            "title": "Benutzerdefiniertes Schach Spielen & Erstellen",
             "description": "Die ultimative Plattform für individuelles Schach. Erstelle eigene Schachfiguren, designe Bretter und spiele einzigartige Varianten online.",
             "h1": "ChessPie - Spielen, erstellen, teilen",
             "p": "Gestalte einzigartige Schachsets, passe dein Brett an und spiele Multiplayer-Schachvarianten online."
@@ -488,9 +488,13 @@
             "h1": "Schach Online Spielen"
         },
         "EditorBoard": {
-            "title": "Schachbrett Editor | Designe 8x8, 10x10 Bretter | ChessPie",
+            "title": "Schachbrett Editor - Designe eigene Bretter",
             "description": "Erstelle eigene Schachbrett-Layouts. Passe Größe, Farben und Startpositionen an. Exportieren oder direkt spielen.",
-            "h1": "Benutzerdefinierter Schachbrett-Editor"
+            "h1": "Benutzerdefinierter Schachbrett-Editor",
+            "seoContent": {
+                "heading": "Erstelle und teile deine eigenen Schachbretter",
+                "text": "Mit dem ChessPie Schachbrett Editor kannst du ganz einfach benutzerdefinierte 8x8, 10x10 oder andere Brettgrößen entwerfen. Passe Farben an, erstelle Startpositionen und teile deine Kreationen. Ideal für Schachvarianten, Feenschach und kreative Schach-Puzzles."
+            }
         },
         "EditorPiece": {
             "title": "Pixel Schachfiguren Editor | Eigene Figuren Erstellen | ChessPie",
@@ -502,17 +506,16 @@
             "description": "Durchsuche und lade von der Community erstellte Schachbretter und Figurensets herunter.",
             "h1": "Schachvarianten Marktplatz"
         },
-        "Analyze": {
-            "title": "Schachpartien Analysieren | Stockfish Analyse | ChessPie",
-            "description": "Analysiere deine Schachpartien mit starken Engines. Verbessere deine Strategie und lerne aus Fehlern.",
-            "h1": "Schachpartie Analyse"
-        },
-        "LegalNotice": {
-            "title": "Impressum | ChessPie",
+            "Analyze": {
+                "title": "Schachpartien analysieren & Stockfish Engine",
+                "description": "Analysiere deine Schachpartien mit der starken Stockfish Engine. Verbessere deine Strategie und lerne aus Fehlern.",
+                "h1": "Schachpartie Analyse"
+            },        "LegalNotice": {
+            "title": "Impressum - Rechtliche Hinweise",
             "description": "Rechtliche Informationen und Kontakt details für ChessPie."
         },
         "PrivacyPolicy": {
-            "title": "Datenschutzerklärung | ChessPie",
+            "title": "Datenschutzerklärung",
             "description": "Erfahre, wie wir deine Daten bei ChessPie schützen."
         },
         "Login": {

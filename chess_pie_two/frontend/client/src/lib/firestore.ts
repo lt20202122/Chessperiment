@@ -24,6 +24,7 @@ export interface SavedBoard {
     name: string
     rows: number
     cols: number
+    gridType?: 'square' | 'hex'
     activeSquares: string[]
     placedPieces: Record<string, { type: string; color: string }>
     isStarred: boolean

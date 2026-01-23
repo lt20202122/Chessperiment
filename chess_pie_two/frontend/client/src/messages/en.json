@@ -411,7 +411,7 @@
         "title": "Board Editor FAQ – All Answers"
     },
     "LegalNotice": {
-        "title": "Legal Notice",
+        "title": "Legal Notice - Contact & Info",
         "providerHeading": "Provider",
         "providerName": "Lasse Mauritz - ChessPie",
         "providerAddress": "Ahlerfeld 29, 38527 Meine, Germany",
@@ -479,7 +479,7 @@
             "legalNotice": "Legal Notice"
         },
         "Home": {
-            "title": "ChessPie | Create and share!",
+            "title": "Create and share Custom Chess!",
             "description": "The ultimate platform for custom chess. Create your own chess pieces, design boards, and play unique chess variants online with friends.",
             "h1": "ChessPie - The Custom Chess Platform",
             "p": "Design unique chess sets, customize your board, and play multiplayer chess variants online."
@@ -490,9 +490,13 @@
             "h1": "Play Chess Online"
         },
         "EditorBoard": {
-            "title": "Chess Board Editor | Design Custom 8x8, 10x10 Boards | ChessPie",
+            "title": "Chess Board Editor - Design Custom Boards",
             "description": "Create your own chess board layouts. Customize dimensions, colors, and starting positions. Export or play directly.",
-            "h1": "Custom Chess Board Editor"
+            "h1": "Custom Chess Board Editor",
+            "seoContent": {
+                "heading": "Create and Share Custom Chess Boards",
+                "text": "With the ChessPie Chess Board Editor, you can easily design custom 8x8, 10x10, or other board sizes. Customize colors, create starting positions, and share your creations. Perfect for chess variants, fairy chess, and creative chess puzzles."
+            }
         },
         "EditorPiece": {
             "title": "Pixel Chess Piece Editor | Create Custom Pieces | ChessPie",
@@ -504,17 +508,16 @@
             "description": "Browse and download community-created chess boards and piece sets. Enhance your game with unique designs.",
             "h1": "Chess Variant Marketplace"
         },
-        "Analyze": {
-            "title": "Analyze Chess Games | Stockfish Analysis | ChessPie",
-            "description": "Analyze your chess games with powerful engines. Improve your strategy and learn from your mistakes.",
-            "h1": "Chess Analysis Tool"
-        },
-        "LegalNotice": {
-            "title": "Legal Notice | ChessPie",
+            "Analyze": {
+                "title": "Analyze Chess Games with Stockfish",
+                "description": "Analyze your chess games with the powerful Stockfish engine. Improve your strategy and learn from your mistakes.",
+                "h1": "Chess Analysis Tool"
+            },        "LegalNotice": {
+            "title": "Legal Notice - Contact & Info",
             "description": "Legal information and contact details for ChessPie."
         },
         "PrivacyPolicy": {
-            "title": "Privacy Policy | ChessPie",
+            "title": "Privacy Policy",
             "description": "Learn how we protect your data and privacy at ChessPie."
         },
         "Login": {

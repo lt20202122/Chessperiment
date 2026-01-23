@@ -40,6 +40,7 @@ export default function BoardDetailClient({ board, locale, translations, userNam
     const handlePlay = () => {
         localStorage.setItem('rows', board.rows.toString());
         localStorage.setItem('cols', board.cols.toString());
+        localStorage.setItem('gridType', board.gridType || 'square');
         localStorage.setItem('activeSquares', JSON.stringify(board.activeSquares));
         localStorage.setItem('placedPieces', JSON.stringify(board.placedPieces));
         router.push('/editor/board/play');
@@ -48,6 +49,7 @@ export default function BoardDetailClient({ board, locale, translations, userNam
     const handleEdit = () => {
         localStorage.setItem('rows', board.rows.toString());
         localStorage.setItem('cols', board.cols.toString());
+        localStorage.setItem('gridType', board.gridType || 'square');
         localStorage.setItem('activeSquares', JSON.stringify(board.activeSquares));
         localStorage.setItem('placedPieces', JSON.stringify(board.placedPieces));
         router.push('/editor/board');
@@ -103,7 +105,7 @@ export default function BoardDetailClient({ board, locale, translations, userNam
                                 <LayoutGrid size={12} /> {translations.size}
                             </div>
                             <div className="text-2xl font-bold text-white">
-                                {board.cols} <span className="text-amber-500">×</span> {board.rows}
+                                {board.gridType === 'hex' ? `Radius ${Math.floor(Math.max(board.rows, board.cols) / 2)}` : `${board.cols} × ${board.rows}`}
                             </div>
                         </div>
                         <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
@@ -133,7 +135,7 @@ export default function BoardDetailClient({ board, locale, translations, userNam
 
                     <div className="p-6 bg-linear-to-br from-amber-500/10 to-transparent rounded-3xl border border-amber-500/10">
                         <p className="text-amber-200/60 text-sm leading-relaxed italic">
-                            "This battlefield was forged by {userName}. It features a custom {board.cols}x{board.rows} layout with {Object.keys(board.placedPieces).length} strategically placed pieces."
+                            "This battlefield was forged by {userName}. It features a custom {board.gridType === 'hex' ? 'hexagonal' : `${board.cols}x${board.rows}`} layout with {Object.keys(board.placedPieces).length} strategically placed pieces."
                         </p>
                     </div>
                 </div>

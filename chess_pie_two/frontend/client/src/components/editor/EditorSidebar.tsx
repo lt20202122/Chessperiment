@@ -7,7 +7,6 @@ import { getPieceImage } from '@/app/[locale]/game/Data';
 import BoardStyle from '@/app/[locale]/game/BoardStyle';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import CleanUp from '@/components/editor/Cleanup';
 import BoardPresets from './BoardPresets';
 import { useSession } from 'next-auth/react';
 import { saveBoardAction, getUserCustomPiecesAction } from '@/app/actions/library';
@@ -349,21 +348,6 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                         localStorage.setItem('boardStyle', style);
                     }} />
                 </div>
-                <CleanUp
-                    handleCleanup={() => {
-                        setBoard({
-                            rows: 8,
-                            cols: 8,
-                            placedPieces: {},
-                            activeSquares: new Set<string>(),
-                        })
-                        localStorage.setItem("cols", "8")
-                        localStorage.setItem("rows", "8")
-                        localStorage.setItem("placedPieces", "{}")
-                        localStorage.setItem("activeSquares", "[]")
-                        window.location.reload()
-                    }}
-                />
             </div>
 
             {/* Actions Grid */}

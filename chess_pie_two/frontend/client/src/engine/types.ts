@@ -13,6 +13,7 @@ export interface BoardState {
     squares: Record<Square, PieceState | null>; // null = leer
     turn: "white" | "black";
     history: Array<{ from: Square; to: Square; pieceId: string }>;
+    gridType?: 'square' | 'hex';
     meta?: Record<string, any>; // z.B. Regeln, Sonderbedingungen
 }
 

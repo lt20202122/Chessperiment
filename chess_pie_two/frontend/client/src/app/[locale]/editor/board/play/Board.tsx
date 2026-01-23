@@ -24,6 +24,14 @@ import { type Square } from '@/engine/types'
 import { Game } from '@/engine/game'
 import { BoardClass } from "@/engine/board";
 import { Piece, CustomPiece } from "@/engine/piece";
+import { SquareGrid } from '@/lib/grid/SquareGrid';
+import { HexGrid } from '@/lib/grid/HexGrid';
+import { Coordinate } from '@/lib/grid/GridType';
+
+const gridMap = {
+    square: new SquareGrid(),
+    hex: new HexGrid()
+};
 
 export interface Coord {
     col: number;
@@ -44,6 +52,7 @@ export type PlacedPieces = Record<string, PlacedPiece>;
 export interface CustomBoard {
     cols: number;
     rows: number;
+    gridType: 'square' | 'hex';
     activeSquares: Coord[];
     placedPieces: PlacedPieces;
 }
@@ -103,9 +112,10 @@ const DraggablePiece = memo(function DraggablePiece({
     );
 });
 
-// --- SquareTile ---
-const SquareTile = memo(function SquareTile({
+// --- BoardTile ---
+const BoardTile = memo(function BoardTile({
     pos,
+    gridType,
     isWhite,
     piece,
     blockSize,
@@ -119,6 +129,7 @@ const SquareTile = memo(function SquareTile({
     squareRefs,
 }: {
     pos: string;
+    gridType: 'square' | 'hex',
     isWhite: boolean;
     piece?: PlacedPiece & { position: string };
     blockSize: number;
@@ -138,13 +149,21 @@ const SquareTile = memo(function SquareTile({
         if (squareRefs.current) squareRefs.current[pos] = el;
     };
 
+    const clipPath = gridType === 'hex'
+        ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'
+        : 'none';
+
     return (
         <div
             ref={combinedRef}
-            className={` ${isWhite ? "bg-[#e9edcc]" : "bg-[#779954]"} ${isMoveFrom ? "move-from" : ""
+            className={` transition-colors duration-200 ${isWhite ? "bg-[#e9edcc]" : "bg-[#779954]"} ${isMoveFrom ? "move-from" : ""
                 } ${isMoveTo ? "move-to" : ""} m-0 aspect-square relative flex items-center justify-center ${selected ? "ring-4 ring-blue-500" : ""
                 }`}
-            style={{ width: blockSize, height: blockSize }}
+            style={{
+                width: blockSize,
+                height: blockSize,
+                clipPath: clipPath
+            }}
             onClick={() => onClick(pos)}
             onContextMenu={(e) => {
                 e.preventDefault();
@@ -199,11 +218,13 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
     const getPieceAt = (pos: string) => boardPieces.find((p) => p.position === pos);
 
     const toEngineSq = (pos: string): Square => {
+        if (board.gridType === 'hex') return pos as Square;
         const [col, row] = pos.split(',').map(Number);
         return `${col},${board.rows - 1 - row}`;
     };
 
     const fromEngineSq = (sq: Square): string => {
+        if (board.gridType === 'hex') return sq;
         const [col, row] = sq.split(',').map(Number);
         return `${col},${board.rows - 1 - row}`;
     };
@@ -288,7 +309,7 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
 
         // Initialize engine with custom board state and active squares
         const activeSquaresArr = board.activeSquares.map(s => toEngineSq(`${s.col},${s.row}`));
-        const customBoardObj = new BoardClass(enginePieces, activeSquaresArr, board.cols, board.rows);
+        const customBoardObj = new BoardClass(enginePieces, activeSquaresArr, board.cols, board.rows, board.gridType);
         return new Game(customBoardObj);
     }, [board, customCollection]);
 
@@ -322,7 +343,7 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
 
             // Initialize engine with restored pieces
             const activeSquaresArr = board.activeSquares.map(s => toEngineSq(`${s.col},${s.row}`));
-            const customBoardObj = new BoardClass(enginePieces, activeSquaresArr, board.cols, board.rows);
+            const customBoardObj = new BoardClass(enginePieces, activeSquaresArr, board.cols, board.rows, board.gridType);
             gameRef.current = new Game(customBoardObj);
 
             setMoveHistory(savedState.history || []);
@@ -631,24 +652,33 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
 
     // Render
     const activeKeys = new Set(board.activeSquares.map(s => `${s.col},${s.row}`));
+    const grid = gridMap[board.gridType] || gridMap.square;
+    const initialTiles = grid.generateInitialGrid(board.rows, board.cols);
 
-    const boardContent = [];
-    for (let row = 0; row < board.rows; row++) {
-        for (let col = 0; col < board.cols; col++) {
-            const pos = `${col},${row}`;
-            if (!activeKeys.has(pos)) {
-                boardContent.push(<div key={pos} style={{ width: blockSize, height: blockSize }} />);
-                continue;
-            }
+    const boardContent = initialTiles.map((coord) => {
+        const pos = grid.coordToString(coord);
+        if (!activeKeys.has(pos)) return null;
 
-            const isWhite = (row + col) % 2 === 0;
-            const displayPiece = getPieceAt(pos);
-            if (displayPiece) displayPiece.size = blockSize * 0.8;
+        const pixelPos = grid.getPixelPosition(coord, blockSize);
+        const isWhite = board.gridType === 'square'
+            ? ((coord.x || 0) + (coord.y || 0)) % 2 === 0
+            : ((coord.q || 0) + (coord.r || 0)) % 2 === 0;
 
-            boardContent.push(
-                <SquareTile
-                    key={pos}
+        const displayPiece = getPieceAt(pos);
+        if (displayPiece) displayPiece.size = blockSize * 0.8;
+
+        return (
+            <div
+                key={pos}
+                className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                style={{
+                    left: pixelPos.x + (board.gridType === 'hex' ? (Math.max(board.rows, board.cols) * 0.75 * blockSize) : 0),
+                    top: pixelPos.y + (board.gridType === 'hex' ? (Math.max(board.rows, board.cols) * 0.75 * blockSize) : 0),
+                }}
+            >
+                <BoardTile
                     pos={pos}
+                    gridType={board.gridType}
                     isWhite={isWhite}
                     piece={displayPiece}
                     blockSize={blockSize}
@@ -668,9 +698,9 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
                     isTurn={displayPiece ? (displayPiece.color === "white" ? "w" : "b") === currentTurn : false}
                     squareRefs={squareRefs}
                 />
-            );
-        }
-    }
+            </div>
+        );
+    });
 
     const markerOverlay = Array.from(redMarkedSquares).map(pos => {
         const el = squareRefs.current[pos];
@@ -715,12 +745,12 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
                     </button>
                 </div>
 
-                <div className="relative shadow-2xl rounded-lg border-6 border-stone-800 bg-stone-800">
+                <div className="relative shadow-2xl rounded-lg border-6 border-stone-800 bg-stone-800 flex items-center justify-center">
                     <div
-                        className="grid"
+                        className="relative"
                         style={{
-                            gridTemplateColumns: `repeat(${board.cols}, ${blockSize}px)`,
-                            gridTemplateRows: `repeat(${board.rows}, ${blockSize}px)`,
+                            width: board.gridType === 'square' ? board.cols * blockSize : (Math.max(board.rows, board.cols) * 1.5 * blockSize),
+                            height: board.gridType === 'square' ? board.rows * blockSize : (Math.max(board.rows, board.cols) * 1.5 * blockSize),
                         }}
                     >
                         <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
