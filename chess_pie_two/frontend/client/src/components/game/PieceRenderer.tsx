@@ -100,7 +100,7 @@ export default function PieceRenderer({
                     height={size}
                     width={size}
                     unoptimized
-                    className={`bg-transparent ${className}`}
+                    className={`bg-transparent ${className} ${color === 'black' ? 'dark:drop-shadow-[0_0_1.5px_rgba(255,255,255,0.6)]' : ''}`}
                     style={{ height: size, width: "auto", pointerEvents: "none" }}
                 />
             );

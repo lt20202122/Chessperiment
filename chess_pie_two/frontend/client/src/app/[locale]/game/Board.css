@@ -1,9 +1,12 @@
 /* Grundfarben für die Schachfelder */
 .white-square {
-  background-color: #f9fafb; /* Entspricht Tailwind's bg-gray-50 */
+  background-color: #ffffff;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.03);
 }
 .black-square {
-  background-color: #5d8643;
+  background-color: #769656;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 /* Letzter Zug: Startfeld */
 .move-from {

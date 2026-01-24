@@ -70,7 +70,11 @@ export default function Game() {
             </button>
 
             {/* Board Component with room context */}
-            <Board initialRoomId={roomId} gameModeVar={mode === 'computer' ? 'computer' : 'online'} />
+            <Board
+                initialRoomId={roomId}
+                gameModeVar={mode === 'computer' ? 'computer' : 'online'}
+                mode={mode as any}
+            />
         </div>
     );
 }

@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSquare, History, Info, Send, User, Monitor, Copy, Check, Share2, Swords, Trophy, Ghost } from 'lucide-react';
 import { getPieceImage, PieceType } from "./Data";
+import { useRouter } from "next/navigation";
 
 interface GameSidebarProps {
     myColor: "white" | "black" | null;
@@ -37,12 +38,13 @@ export default function GameSidebar({
     chatMessages = [], onSendMessage,
     currentRoom, playerCount,
     onResign, onOfferDraw, onStartComputerGame,
-    gameMode, setGameMode,
-    currentTurn, onLeaveGame,
+    gameMode, setGameMode, onLeaveGame,
+    currentTurn,
     onMoveClick,
     boardPieces = []
 }: GameSidebarProps) {
     const t = useTranslations();
+    const router = useRouter();
     const [msgInput, setMsgInput] = useState("");
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState("moves");
@@ -52,10 +54,10 @@ export default function GameSidebar({
     const materialStats = useMemo(() => {
         const values: Record<string, number> = { 'Pawn': 1, 'Knight': 3, 'Bishop': 3, 'Rook': 5, 'Queen': 9, 'King': 0 };
         const initialCounts: Record<string, number> = { 'Pawn': 8, 'Knight': 2, 'Bishop': 2, 'Rook': 2, 'Queen': 1, 'King': 1 };
-        
+
         const currentWhite: Record<string, number> = { 'Pawn': 0, 'Knight': 0, 'Bishop': 0, 'Rook': 0, 'Queen': 0, 'King': 0 };
         const currentBlack: Record<string, number> = { 'Pawn': 0, 'Knight': 0, 'Bishop': 0, 'Rook': 0, 'Queen': 0, 'King': 0 };
-        
+
         let whiteScore = 0;
         let blackScore = 0;
 
@@ -79,7 +81,7 @@ export default function GameSidebar({
 
         Object.keys(initialCounts).forEach(type => {
             if (type === 'King') return;
-            
+
             const whiteMissing = Math.max(0, initialCounts[type] - currentWhite[type]);
             for (let i = 0; i < whiteMissing; i++) capturedByBlack.push(type); // Black captured these white pieces
 
@@ -151,24 +153,26 @@ export default function GameSidebar({
 
         return (
             <div className="flex flex-col items-end gap-1">
-                 {scoreDiff > 0 && (
+                {scoreDiff > 0 && (
                     <div className="bg-stone-100 dark:bg-white/10 px-2 py-0.5 rounded-md text-[10px] font-black text-green-600 dark:text-green-400 tabular-nums">
                         +{scoreDiff}
                     </div>
-                 )}
-                 <div className="flex flex-wrap justify-end gap-0.5 max-w-[120px]">
+                )}
+                <div className="flex flex-wrap justify-end gap-1 max-w-[120px]">
                     {captured.map((type, idx) => (
-                        <div key={idx} className="relative w-4 h-4 opacity-80 hover:opacity-100 transition-opacity">
-                            <Image 
-                                src={getPieceImage("v3", capturedColor, type)} 
-                                alt={type}
-                                fill
-                                sizes="16px"
-                                className="object-contain"
-                            />
+                        <div key={idx} className="relative w-5 h-5 opacity-90 hover:opacity-100 transition-all hover:scale-110 flex items-center justify-center bg-stone-200/30 dark:bg-white/5 rounded-md border border-stone-200/50 dark:border-white/5 shadow-xs">
+                            <div className="relative w-4 h-4">
+                                <Image
+                                    src={getPieceImage("v3", capturedColor, type)}
+                                    alt={type}
+                                    fill
+                                    sizes="16px"
+                                    className={`object-contain ${capturedColor === 'black' ? 'dark:drop-shadow-[0_0_1px_rgba(255,255,255,0.8)]' : ''}`}
+                                />
+                            </div>
                         </div>
                     ))}
-                 </div>
+                </div>
             </div>
         );
     };

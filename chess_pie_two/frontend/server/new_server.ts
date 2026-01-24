@@ -42,8 +42,8 @@ class Game {
     chatMessages: { message: string, playerId: string }[];
     pendingMove: { to: Square, from: Square } | null;
 
-    constructor(creatorPlayerId: string) {
-        this.roomId = uuidv4().substring(0, 8).trim().toUpperCase();
+    constructor(creatorPlayerId: string, roomId?: string) {
+        this.roomId = roomId || uuidv4().substring(0, 8).trim().toUpperCase();
         this.players = { white: creatorPlayerId };
         this.status = "waiting";
         this.board_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -309,15 +309,33 @@ io.on("connection", (socket: Socket) => {
         if (game) callback(game.status);
     });
 
-    socket.on("create_room", () => {
+    socket.on("create_room", (data?: { roomId?: string }) => {
         const playerId = socketToPlayer.get(socket.id);
         if (!playerId) return;
         removeFromQueue(playerId);
-        const game = new Game(playerId);
-        games.set(game.roomId.toUpperCase(), game);
-        playerToRoom.set(playerId, game.roomId);
-        socket.join(game.roomId);
-        socket.emit("room_created", { roomId: game.roomId, color: "white" });
+
+        const requestedRoomId = data?.roomId?.trim().toUpperCase();
+        if (requestedRoomId) {
+            const existingGame = games.get(requestedRoomId);
+            if (existingGame) {
+                // If it's the same player who created it, just rejoin or accept it
+                if (existingGame.players.white === playerId || !existingGame.players.white) {
+                    playerToRoom.set(playerId, requestedRoomId);
+                    socket.join(requestedRoomId);
+                    socket.emit("room_created", { roomId: requestedRoomId, color: "white" });
+                    console.log(`[Create Room] Player ${playerId} reclaimed/rejoined room ${requestedRoomId}`);
+                    return;
+                }
+            }
+        }
+
+        const game = new Game(playerId, requestedRoomId);
+        const finalRoomId = game.roomId.toUpperCase();
+        games.set(finalRoomId, game);
+        playerToRoom.set(playerId, finalRoomId);
+        socket.join(finalRoomId);
+        socket.emit("room_created", { roomId: finalRoomId, color: "white" });
+        console.log(`[Create Room] Room ${finalRoomId} created by player ${playerId}`);
     });
 
     socket.on("join_room", (data) => {

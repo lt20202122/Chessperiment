@@ -15,8 +15,8 @@ export function UserPanel() {
 
     if (status === "loading") {
         return (
-            <div className="fixed bottom-6 right-6 z-[100]">
-                <div className="w-12 h-12 rounded-full bg-bg-secondary/40 backdrop-blur-md border border-amber-400/30 flex items-center justify-center">
+            <div className="fixed bottom-6 right-6 z-100">
+                <div className="w-12 h-12 rounded-full bg-islands/60 shadow-lg backdrop-blur-md border border-amber-400/30 flex items-center justify-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-amber-400"></div>
                 </div>
             </div>
@@ -24,14 +24,14 @@ export function UserPanel() {
     }
 
     return (
-        <div className="fixed bottom-6 right-6 z-[100]">
+        <div className="fixed bottom-6 right-6 z-100">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="mb-4 p-4 bg-bg-secondary/80 backdrop-blur-xl border border-amber-400/20 rounded-2xl shadow-2xl min-w-[200px]"
+                        className="mb-4 p-4 bg-islands/90 backdrop-blur-xl border border-amber-400/20 rounded-2xl shadow-2xl min-w-[200px]"
                     >
                         {session ? (
                             <div className="flex flex-col gap-3">
@@ -50,10 +50,10 @@ export function UserPanel() {
                                         </div>
                                     )}
                                     <div className="flex flex-col overflow-hidden">
-                                        <span className="text-sm font-bold text-white truncate">
+                                        <span className="text-sm font-bold text-text dark:text-white truncate">
                                             {session.user?.name}
                                         </span>
-                                        <span className="text-xs text-amber-400/60 truncate">
+                                        <span className="text-xs text-amber-600/70 dark:text-amber-400/60 truncate">
                                             {session.user?.email}
                                         </span>
                                     </div>
@@ -98,7 +98,7 @@ export function UserPanel() {
                 onClick={() => setIsOpen(!isOpen)}
                 className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-lg border ${isOpen
                     ? "bg-amber-400 border-amber-500 text-bg rotate-180"
-                    : "bg-bg-secondary/40 backdrop-blur-md border-amber-400/30 text-amber-400 hover:border-amber-400 active:scale-95"
+                    : "bg-islands/60 backdrop-blur-md border-amber-400/30 text-amber-600 dark:text-amber-400 hover:border-amber-400 active:scale-95"
                     }`}
             >
                 {session && !isOpen ? (

@@ -128,7 +128,7 @@ export default function ProfilePage() {
 
             <div className="container mx-auto px-4 py-8 max-w-6xl">
                 {/* Profile Header */}
-                <div className="bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-3xl p-8 mb-8">
+                <div className="bg-islands/70 backdrop-blur-xl border border-amber-400/20 shadow-xl rounded-3xl p-8 mb-8">
                     <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
                         {session?.user?.image ? (
                             <Image
@@ -146,10 +146,10 @@ export default function ProfilePage() {
                             </div>
                         )}
                         <div>
-                            <h1 className={`${bungee.className} text-4xl text-yellow-400 mb-2`}>
+                            <h1 className={`${bungee.className} text-4xl text-amber-600 dark:text-yellow-400 mb-2`}>
                                 {session?.user?.name}
                             </h1>
-                            <p className="text-amber-400/60">{session?.user?.email}</p>
+                            <p className="text-amber-700/60 dark:text-amber-400/60">{session?.user?.email}</p>
                         </div>
                     </div>
                 </div>
@@ -207,8 +207,8 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Recent Games */}
-                        <div className="bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-3xl p-8">
-                            <h2 className="text-2xl font-bold text-amber-400 mb-6 font-primary">
+                        <div className="bg-islands/70 backdrop-blur-xl border border-amber-400/20 shadow-xl rounded-3xl p-8">
+                            <h2 className="text-2xl font-bold text-amber-700 dark:text-amber-400 mb-6 font-primary">
                                 {t("recentGames")}
                             </h2>
 
@@ -237,10 +237,10 @@ export default function ProfilePage() {
 
 function StatCard({ icon, label, value, color }: any) {
     return (
-        <div className="bg-bg-secondary/50 backdrop-blur-xl border border-amber-400/20 rounded-2xl p-6">
+        <div className="bg-islands shadow-md border border-amber-400/10 rounded-2xl p-6 transition-all hover:shadow-lg">
             <div className={`${color} mb-3`}>{icon}</div>
-            <div className="text-3xl font-bold text-white mb-1">{value}</div>
-            <div className="text-sm text-amber-400/60">{label}</div>
+            <div className="text-3xl font-bold text-text dark:text-white mb-1">{value}</div>
+            <div className="text-sm text-amber-700/60 dark:text-amber-400/60">{label}</div>
         </div>
     );
 }
@@ -255,7 +255,7 @@ function GameHistoryCard({ game }: { game: GameHistoryItem }) {
     const date = new Date(game.timestamp.seconds * 1000).toLocaleDateString()
 
     return (
-        <div className="flex items-center justify-between p-4 bg-bg-secondary/30 border border-amber-400/10 rounded-xl">
+        <div className="flex items-center justify-between p-4 bg-islands/40 border border-amber-400/10 rounded-xl">
             <div className="flex items-center gap-4">
                 <div
                     className={`px-4 py-2 rounded-lg border font-bold uppercase ${resultColors[game.result]}`}
@@ -263,10 +263,10 @@ function GameHistoryCard({ game }: { game: GameHistoryItem }) {
                     {game.result}
                 </div>
                 <div>
-                    <p className="text-white font-medium truncate max-w-[120px] sm:max-w-xs">
+                    <p className="text-text dark:text-white font-medium truncate max-w-[120px] sm:max-w-xs">
                         {game.opponent || "Unknown Opponent"}
                     </p>
-                    <p className="text-sm text-amber-400/60">{date}</p>
+                    <p className="text-sm text-amber-700/60 dark:text-amber-400/60">{date}</p>
                 </div>
             </div>
             {game.roomId && (

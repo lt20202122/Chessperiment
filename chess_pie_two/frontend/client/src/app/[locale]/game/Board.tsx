@@ -5,6 +5,7 @@ import { Hand, MessageSquare, Info, History, Shield, Trophy, User, Gamepad2, Set
 import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import Back from "./Back";
 import GameEndEffect from "./GameEndEffect";
 import GameSidebar from "./GameSidebar";
@@ -224,12 +225,15 @@ export default function Board({
   initialRoomId,
   gameModeVar,
   initialFen,
+  mode,
 }: {
   initialRoomId?: string;
   gameModeVar?: "online" | "computer" | "local";
   initialFen?: string;
+  mode?: "create" | "join" | "computer";
 }) {
   const t = useTranslations("Multiplayer");
+  const router = useRouter();
   const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
   const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 5 } });
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { distance: 5 } });
@@ -516,16 +520,16 @@ export default function Board({
   useEffect(() => {
     if (sessionStatus === "loading" || !socket) return;
     const register = () => {
-      let pId = localStorage.getItem("playerId");
+      let pId = localStorage.getItem("chess_player_id");
 
       if (!pId && session?.user?.id) {
         pId = session.user.id;
-        localStorage.setItem("playerId", pId);
+        localStorage.setItem("chess_player_id", pId);
       }
 
       if (!pId) {
         pId = Math.random().toString(36).substring(2, 15);
-        localStorage.setItem("playerId", pId);
+        localStorage.setItem("chess_player_id", pId);
       }
 
       socket.emit("register_player", { playerId: pId });
@@ -534,7 +538,11 @@ export default function Board({
       // Check both gameModeVar (initial prop) and gameMode (state) to handle early registration
       const isComputerMode = gameModeVar === 'computer' || gameMode === 'computer';
       if (initialRoomId && !isComputerMode) {
-        socket.emit("join_room", { roomId: initialRoomId });
+        if (mode === 'create') {
+          socket.emit("create_room", { roomId: initialRoomId });
+        } else {
+          socket.emit("join_room", { roomId: initialRoomId });
+        }
       }
     };
     register();
@@ -573,7 +581,17 @@ export default function Board({
   }, [gameStatus, isSearching]); // Re-run when layout changes
 
 
-  const getPieceAt = (pos: string) => boardPieces.find(p => p.position === pos);
+  const displayPieces = useMemo(() => {
+    const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? (initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : null);
+    return activeFEN ? parseFen(activeFEN) : boardPieces;
+  }, [isViewingHistory, historyIndex, historyFens, initialFen, boardPieces]);
+
+  const activeTurn = useMemo(() => {
+    const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? (initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : null);
+    return activeFEN ? (activeFEN.split(' ')[1] as 'w' | 'b') : currentTurn;
+  }, [isViewingHistory, historyIndex, historyFens, initialFen, currentTurn]);
+
+  const getPieceAt = useCallback((pos: string) => displayPieces.find(p => p.position === pos), [displayPieces]);
 
   const executePromotion = (type: string) => {
     if (!promotionMove) return;
@@ -701,9 +719,8 @@ export default function Board({
     if (isViewingHistory && gameMode !== 'computer') return;
 
     // Determine the relevant pieces and turn based on history view or live view
-    const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? (initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : null);
-    const effectivePieces = activeFEN ? parseFen(activeFEN) : boardPieces;
-    const effectiveTurn = activeFEN ? (activeFEN.split(' ')[1] as 'w' | 'b') : currentTurn;
+    const effectivePieces = displayPieces;
+    const effectiveTurn = activeTurn;
 
     // Helper to get piece from the effective set
     const getEffectivePieceAt = (pPos: string) => effectivePieces.find(p => p.position === pPos);
@@ -729,7 +746,7 @@ export default function Board({
         }
       }
     }
-  }, [gameStatus, isViewingHistory, selectedPos, boardPieces, currentTurn, myColor, executeMove, gameMode, historyIndex, historyFens, initialFen]);
+  }, [gameStatus, isViewingHistory, selectedPos, displayPieces, activeTurn, myColor, executeMove, gameMode, historyIndex, historyFens, initialFen]);
 
   const navigateHistory = (dir: "prev" | "next" | "start" | "end") => {
     if (moveHistory.length === 0) return;
@@ -809,10 +826,7 @@ export default function Board({
   const cRange = myColor === "black" ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
   const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
-  const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? (initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : null);
-  const displayPieces = activeFEN ? parseFen(activeFEN) : boardPieces;
   const historyMove = isViewingHistory && historyIndex >= 0 ? historyMoves[historyIndex] : null;
-  const activeTurn = activeFEN ? (activeFEN.split(' ')[1] as 'w' | 'b') : currentTurn;
 
   for (const i of rRange) {
     for (const a of cRange) {
@@ -913,7 +927,7 @@ export default function Board({
         playerCount={playerCount} currentRoom={currentRoom} gameInfo={gameInfo} gameStatus={gameStatus as any}
         onResign={handleResign} onOfferDraw={() => { if (socket) socket.emit("offer_draw"); }}
         onStartComputerGame={startComputerGame} gameMode={gameMode} setGameMode={setGameMode}
-        currentTurn={currentTurn} onLeaveGame={() => { setGameStatus(""); setIsSearching(false); }}
+        currentTurn={currentTurn} onLeaveGame={() => { setGameStatus(""); setIsSearching(false); window.location.href = '/game'; }}
         onMoveClick={onMoveClick}
         boardPieces={displayPieces}
       />
@@ -926,7 +940,14 @@ export default function Board({
               {['Queen', 'Rook', 'Bishop', 'Knight'].map(t => (
                 <button key={t} onClick={() => executePromotion(t)} className="group p-6 bg-stone-100 dark:bg-stone-800/50 rounded-3xl hover:bg-stone-200 transition-all border border-transparent hover:border-amber-500 flex flex-col items-center gap-4">
                   <div className="w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Image src={getPieceImage(boardStyle, myColor || 'white', t as any)} alt={t} width={80} height={80} unoptimized />
+                    <Image
+                      src={getPieceImage(boardStyle, myColor || 'white', t as any)}
+                      alt={t}
+                      width={80}
+                      height={80}
+                      unoptimized
+                      className={myColor === 'black' ? 'dark:drop-shadow-[0_0_2px_rgba(255,255,255,0.7)]' : ''}
+                    />
                   </div>
                   <span className="text-sm font-black uppercase text-stone-400 group-hover:text-amber-500">{t}</span>
                 </button>

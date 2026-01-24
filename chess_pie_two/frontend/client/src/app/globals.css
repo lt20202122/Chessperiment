@@ -14,17 +14,17 @@
 
 :root {
   /* Common variables */
-  --bg: #f5f5f7;
-  --islands: #ececef;
-  --text: #1c1c1e;
+  --bg: #f2f2f5;
+  --islands: #ffffff;
+  --text: #111112;
   --accent: #5e5ce6;
   --accent-hover: #4848d1;
 
   /* Modern oklch values with fallback logic */
   @supports (color: oklch(0% 0 0)) {
-    --bg: oklch(96% 0.008 240);
-    --islands: oklch(92% 0.015 240);
-    --text: oklch(20% 0.03 240);
+    --bg: oklch(95% 0.006 240);
+    --islands: oklch(100% 0 0);
+    --text: oklch(15% 0.02 240);
     --accent: oklch(58% 0.18 250);
     --accent-hover: oklch(53% 0.18 250);
   }

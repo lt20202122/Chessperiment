@@ -14,7 +14,7 @@ export default function HomeLayout({
 
                 {/* Main Content (Center) - Appears first on mobile */}
                 <div className="order-1 lg:order-2 space-y-8 w-full">
-                    <section className='bg-islands lg:bg-white/30 lg:backdrop-blur-sm lg:transition-all lg:duration-300 shadow-islands min-h-[440px] p-4 md:p-6 rounded-3xl h-fit border border-gray-200/50 dark:border-stone-700/50 dark:lg:bg-stone-900/30'>
+                    <section className='bg-islands lg:bg-white/80 lg:backdrop-blur-md lg:transition-all lg:duration-300 shadow-islands min-h-[440px] p-4 md:p-6 rounded-3xl h-fit border border-gray-200 dark:border-stone-700/50 dark:lg:bg-stone-900/30'>
                         {children}
                     </section>
                 </div>

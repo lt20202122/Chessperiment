@@ -21,7 +21,7 @@ export default function LoginPage({ bungee }: { bungee: any }) {
                     </div>
                 )}
 
-                <p className="text-amber-800/60 dark:text-amber-400/60 text-center mb-10 text-lg font-medium">
+                <p className="text-amber-900/70 dark:text-amber-400/60 text-center mb-10 text-lg font-medium">
                     {t("signInToContinue")}
                 </p>
 
@@ -54,7 +54,7 @@ export default function LoginPage({ bungee }: { bungee: any }) {
                 </button>
 
                 <div className="mt-8 pt-8 border-t border-amber-400/10 text-center">
-                    <p className="text-amber-400/40 text-sm italic">
+                    <p className="text-amber-800/50 dark:text-amber-400/40 text-sm italic">
                         {t("readyToPlay")}
                     </p>
                 </div>

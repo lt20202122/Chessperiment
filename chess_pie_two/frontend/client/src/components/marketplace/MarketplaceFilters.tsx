@@ -45,9 +45,9 @@ export function MarketplaceFilters({
                     <button
                         key={filter.id}
                         onClick={() => onFilterChange(filter.id)}
-                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${activeFilter === filter.id
-                            ? 'bg-amber-400 text-black shadow-md scale-105'
-                            : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700'
+                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border ${activeFilter === filter.id
+                            ? 'bg-amber-400 text-black border-amber-500 shadow-md scale-105'
+                            : 'bg-islands dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
                             }`}
                     >
                         {/* Try to translate the label if possible, else use raw label */}
