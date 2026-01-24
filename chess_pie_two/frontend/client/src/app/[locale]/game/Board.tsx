@@ -235,8 +235,8 @@ export default function Board({
   const t = useTranslations("Multiplayer");
   const router = useRouter();
   const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
-  const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 5 } });
-  const touchSensor = useSensor(TouchSensor, { activationConstraint: { distance: 5 } });
+  const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 2 } });
+  const touchSensor = useSensor(TouchSensor, { activationConstraint: { distance: 2 } });
   const sensors = useSensors(pointerSensor, touchSensor);
   const socket = useSocket();
 
@@ -601,6 +601,27 @@ export default function Board({
     console.log(`[Board] Executing promotion: ${type} (${code}) for move: ${promotionMove.from}->${promotionMove.to}`);
 
     if (gameMode === "online") {
+      // Optimistic Visual Update for Promotion
+      const mover = boardPieces.find(p => p.position === promotionMove.from);
+      if (mover) {
+        const newPieces = boardPieces
+          .filter(p => p.position !== promotionMove.to && p.position !== promotionMove.from)
+          .map(p => ({ ...p }));
+
+        const promoTypeMap: any = { 'q': 'Queen', 'r': 'Rook', 'b': 'Bishop', 'n': 'Knight' };
+        newPieces.push({
+          ...mover,
+          position: promotionMove.to,
+          type: promoTypeMap[code] || 'Queen'
+        } as PieceType);
+
+        setBoardPieces(newPieces);
+        setLastMoveFrom(promotionMove.from);
+        setLastMoveTo(promotionMove.to);
+        setCurrentTurn(prev => prev === 'w' ? 'b' : 'w');
+        new Audio("/sounds/move-self.mp3").play().catch(() => { });
+      }
+
       if (socket) {
         socket.emit("move", { from: promotionMove.from, to: promotionMove.to, promotion: code });
       }
@@ -612,6 +633,22 @@ export default function Board({
 
   const executeMove = (from: string, to: string, promotion?: string) => {
     if (gameMode === "online") {
+      // Optimistic Visual Update
+      const mover = boardPieces.find(p => p.position === from);
+      if (mover) {
+        const newPieces = boardPieces
+          .filter(p => p.position !== to && p.position !== from)
+          .map(p => ({ ...p }));
+
+        newPieces.push({ ...mover, position: to } as PieceType);
+
+        setBoardPieces(newPieces);
+        setLastMoveFrom(from);
+        setLastMoveTo(to);
+        setCurrentTurn(prev => prev === 'w' ? 'b' : 'w');
+        new Audio("/sounds/move-self.mp3").play().catch(() => { });
+      }
+
       if (socket) socket.emit("move", { from, to, promotion });
       return true;
     }
@@ -790,6 +827,15 @@ export default function Board({
   const handleDeclineDraw = () => { if (socket && drawOffer === "pending") { socket.emit("decline_draw"); setDrawOffer(null); setToastMessage(t("drawOfferDeclinedByYou")); setShowToast(true); } };
   const handleAcceptDraw = () => { if (socket && drawOffer === "pending") { socket.emit("accept_draw"); setDrawOffer(null); } };
 
+  const handleContextMenu = useCallback((p: string) => {
+    setRedMarkedSquares(prev => {
+      const n = new Set(prev);
+      if (n.has(p)) n.delete(p);
+      else n.add(p);
+      return n;
+    });
+  }, []);
+
   const filterMessage = (message: string) => {
     return filter.clean(message);
   };
@@ -847,7 +893,7 @@ export default function Board({
         <SquareTile
           key={pos} pos={pos} isWhite={isWhiteSq} piece={piece} blockSize={blockSize}
           selected={selectedPos === pos} isMoveFrom={isMoveFrom} isMoveTo={isMoveTo}
-          onClick={handlePieceSelect} onContextMenu={p => setRedMarkedSquares(prev => { const n = new Set(prev); if (n.has(p)) n.delete(p); else n.add(p); return n; })}
+          onClick={handlePieceSelect} onContextMenu={handleContextMenu}
           boardStyle={boardStyle} isViewingHistory={isViewingHistory} gameStatus={gameStatus} myColor={myColor}
           amIAtTurn={amIAtTurn}
           squareRefs={squareRefs}
