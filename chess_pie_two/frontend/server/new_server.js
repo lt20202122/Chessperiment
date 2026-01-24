@@ -371,6 +371,16 @@ io.on("connection", (socket) => {
             return;
         }
         const roomId = data.roomId.trim().toUpperCase();
+        
+        // Handle computer games - no room needed, just acknowledge
+        if (roomId.startsWith("COMPUTER-")) {
+            console.log(`[Computer Game] Player ${playerId} starting computer game (no room needed)`);
+            // For computer games, we don't need rooms - everything is handled client-side
+            // Just emit a success response so the client knows it's ready
+            socket.emit("joined_room", { roomId, color: "white" });
+            return;
+        }
+        
         const game = games.get(roomId);
         console.log(`[Join Room Request] Room: ${roomId}, Player: ${playerId}. Game found: ${!!game}`);
         if (!game) {

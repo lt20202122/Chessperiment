@@ -530,14 +530,17 @@ export default function Board({
 
       socket.emit("register_player", { playerId: pId });
 
-      if (initialRoomId) {
+      // Don't join rooms for computer games - everything is handled client-side
+      // Check both gameModeVar (initial prop) and gameMode (state) to handle early registration
+      const isComputerMode = gameModeVar === 'computer' || gameMode === 'computer';
+      if (initialRoomId && !isComputerMode) {
         socket.emit("join_room", { roomId: initialRoomId });
       }
     };
     register();
     socket.on("connect", register);
     return () => { socket.off("connect", register); };
-  }, [session?.user?.id, sessionStatus, socket, initialRoomId]);
+  }, [session?.user?.id, sessionStatus, socket, initialRoomId, gameMode, gameModeVar]);
 
   useEffect(() => {
     if (initialFen) updateBoardState(initialFen);
