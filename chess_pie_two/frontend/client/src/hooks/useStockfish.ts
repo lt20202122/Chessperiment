@@ -45,11 +45,14 @@ export function useStockfish(currentFen: string, difficulty: number = 1300, onBe
     if (useServer) return; // Skip if using server
 
     let worker: Worker;
+    let isCleanedUp = false;
+    
     try {
       worker = new Worker('/stockfish/src/stockfish-17.1-lite-single-03e3232.js');
       workerRef.current = worker;
 
       worker.onmessage = (event: StockfishMessage) => {
+        if (isCleanedUp) return; // Ignore messages after cleanup
         const line = event.data;
         // console.log('Stockfish:', line);
 
@@ -64,7 +67,12 @@ export function useStockfish(currentFen: string, difficulty: number = 1300, onBe
         }
       };
 
+      // Configure Stockfish with memory limits to prevent OOM
       worker.postMessage('uci');
+      // CRITICAL: Limit hash table to 16MB (default is 128MB+)
+      worker.postMessage('setoption name Hash value 16');
+      // Limit threads to 1 for lower memory usage
+      worker.postMessage('setoption name Threads value 1');
       worker.postMessage('isready');
       worker.postMessage('ucinewgame');
     } catch (error) {
@@ -72,8 +80,17 @@ export function useStockfish(currentFen: string, difficulty: number = 1300, onBe
     }
 
     return () => {
-      worker?.terminate();
+      isCleanedUp = true;
+      if (worker) {
+        try {
+          worker.postMessage('quit');
+          worker.terminate();
+        } catch (e) {
+          console.error('Error terminating worker:', e);
+        }
+      }
       workerRef.current = null;
+      setIsReady(false);
     };
   }, [useServer]); // Re-run if useServer changes
 
@@ -104,8 +121,11 @@ export function useStockfish(currentFen: string, difficulty: number = 1300, onBe
         return;
     }
     workerRef.current.postMessage(`position fen ${targetFen}`);
-    const depth = Math.max(1, Math.min(20, Math.floor(difficulty / 150))); 
-    workerRef.current.postMessage(`go depth ${depth}`);
+    
+    // Limit search depth based on difficulty + add time constraint
+    const depth = Math.max(1, Math.min(15, Math.floor(difficulty / 150))); 
+    // Add movetime limit to prevent excessive computation (5 seconds max)
+    workerRef.current.postMessage(`go depth ${depth} movetime 5000`);
   }, [currentFen, difficulty, isReady, useServer, socket]);
 
   return { isReady, isThinking, requestMove };
