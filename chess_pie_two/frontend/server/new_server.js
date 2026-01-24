@@ -1,51 +1,61 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+import cors from "cors";
+import { v4 as uuidv4 } from "uuid";
+import { Chess } from "chess.js";
+import path from "path";
+import { createRequire } from "module";
+import * as os from "os";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
+// Load the loadEngine module - it's a CommonJS module that exports a function
+// The IIFE in loadEngine.js executes and should export the function directly
+const loadEnginePath = path.join(__dirname, "loadEngine.js");
+const fs = require("fs");
+const loadEngineCode = fs.readFileSync(loadEnginePath, "utf8");
+// Create a temporary module context to execute the IIFE
+const vm = require("vm");
+// Create a require function that can access Node.js built-in modules
+const nodeRequire = (moduleName) => {
+    if (moduleName === "child_process") return require("child_process");
+    if (moduleName === "path") return require("path");
+    if (moduleName === "fs") return require("fs");
+    // For other modules, try to require them
+    try {
+        return require(moduleName);
+    } catch (e) {
+        throw new Error(`Cannot find module '${moduleName}'`);
     }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const http_1 = __importDefault(require("http"));
-const socket_io_1 = require("socket.io");
-const cors_1 = __importDefault(require("cors"));
-const uuid_1 = require("uuid");
-const chess_js_1 = require("chess.js");
-const app = (0, express_1.default)();
-app.use((0, cors_1.default)());
-const server = http_1.default.createServer(app);
-const io = new socket_io_1.Server(server, {
+const loadEngineContext = {
+    module: { exports: {} },
+    exports: {},
+    require: nodeRequire,
+    __dirname: __dirname,
+    __filename: loadEnginePath,
+    console: console,
+    process: process,
+    Buffer: Buffer,
+    global: global,
+    setTimeout: setTimeout,
+    clearTimeout: clearTimeout,
+    setInterval: setInterval,
+    clearInterval: clearInterval
+};
+vm.createContext(loadEngineContext);
+vm.runInContext(loadEngineCode, loadEngineContext);
+const loadEngine = loadEngineContext.module.exports || loadEngineContext.exports || loadEngineContext.loadEngine;
+
+if (typeof loadEngine !== "function") {
+    throw new Error(`loadEngine is not a function. Got type: ${typeof loadEngine}, value: ${loadEngine}`);
+}
+const app = express();
+app.use(cors());
+const server = http.createServer(app);
+const io = new Server(server, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"],
@@ -53,7 +63,7 @@ const io = new socket_io_1.Server(server, {
 });
 class Game {
     constructor(creatorPlayerId) {
-        this.roomId = (0, uuid_1.v4)().substring(0, 8).trim().toUpperCase();
+        this.roomId = uuidv4().substring(0, 8).trim().toUpperCase();
         this.players = { white: creatorPlayerId };
         this.status = "waiting";
         this.board_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -93,7 +103,7 @@ const checkGameStatus = (game) => {
     try {
         if (!game)
             return false;
-        const chess = new chess_js_1.Chess(game.board_fen);
+        const chess = new Chess(game.board_fen);
         if (chess.isCheckmate()) {
             const winner = chess.turn() === "w" ? "Black" : "White";
             game.status = "ended";
@@ -127,6 +137,75 @@ const checkGameStatus = (game) => {
 };
 io.on("connection", (socket) => {
     console.log("connected:", socket.id);
+    // --- Server-Side Stockfish ---
+    socket.on("request_computer_move", (data) => {
+        const { fen, difficulty } = data;
+        console.log(`[Stockfish] Request for FEN: ${fen}, Diff: ${difficulty}`);
+        try {
+            const stockfishPath = path.join(__dirname, "node_modules", "stockfish", "src", "stockfish-17.1-8e4d048.js");
+            const engine = loadEngine(stockfishPath);
+            let hasResponded = false;
+            // Timeout after 15 seconds
+            const timeout = setTimeout(() => {
+                if (!hasResponded) {
+                    console.error("[Stockfish] Timeout waiting for move");
+                    hasResponded = true;
+                    try {
+                        engine.quit();
+                    }
+                    catch (e) {
+                        console.error("[Stockfish] Error quitting engine:", e);
+                    }
+                    socket.emit("computer_move_result", { bestMove: null });
+                }
+            }, 15000);
+            const skillLevel = Math.max(0, Math.min(20, Math.floor((difficulty - 400) / 100)));
+            const depth = Math.max(1, Math.min(20, Math.floor(difficulty / 150)));
+            console.log(`[Stockfish] Skill level: ${skillLevel}, Depth: ${depth}`);
+            // Initialize engine and send commands in sequence
+            engine.send("uci", () => {
+                console.log("[Stockfish] UCI initialized");
+                engine.send(`setoption name Skill Level value ${skillLevel}`, () => {
+                    console.log("[Stockfish] Skill level set");
+                    engine.send(`ucinewgame`, () => {
+                        console.log("[Stockfish] New game initialized");
+                        engine.send(`position fen ${fen}`, () => {
+                            console.log("[Stockfish] Position set");
+                            engine.send(`go depth ${depth}`, (result) => {
+                                if (hasResponded) {
+                                    console.log("[Stockfish] Already responded, ignoring duplicate");
+                                    return;
+                                }
+                                clearTimeout(timeout);
+                                hasResponded = true;
+                                console.log("[Stockfish] Raw output:", result);
+                                const match = result.match(/bestmove\s+(\S+)/);
+                                const bestMove = match ? match[1] : null;
+                                if (bestMove && bestMove !== '(none)') {
+                                    console.log("[Stockfish] Best move found:", bestMove);
+                                    socket.emit("computer_move_result", { bestMove });
+                                }
+                                else {
+                                    console.error("[Stockfish] No valid bestmove found in output:", result);
+                                    socket.emit("computer_move_result", { bestMove: null });
+                                }
+                                try {
+                                    engine.quit();
+                                }
+                                catch (e) {
+                                    console.error("[Stockfish] Error quitting engine:", e);
+                                }
+                            });
+                        });
+                    });
+                });
+            });
+        }
+        catch (e) {
+            console.error("[Stockfish] Error initializing engine:", e);
+            socket.emit("computer_move_result", { bestMove: null });
+        }
+    });
     socket.on("find_match", () => {
         const playerId = socketToPlayer.get(socket.id);
         if (!playerId)
@@ -347,12 +426,13 @@ io.on("connection", (socket) => {
         if (!color)
             return;
         try {
-            const chess = new chess_js_1.Chess(game.board_fen);
+            const chess = new Chess(game.board_fen);
             if (chess.turn() !== color)
                 return;
             const piece = chess.get(data.from);
-            const toRank = parseInt(data.to[1]);
-            const isPawnPromotion = piece && piece.type === "p" && ((piece.color === "w" && toRank === 8) || (piece.color === "b" && toRank === 1));
+            const toRank = parseInt(data.to.match(/\d+/)?.[0] || "0", 10);
+            const boardHeight = 8; // Default for chess.js, but prepared for future expansion
+            const isPawnPromotion = piece && piece.type === "p" && ((piece.color === "w" && toRank === boardHeight) || (piece.color === "b" && toRank === 1));
             console.log(`[Move Request] Room: ${roomId}, Player: ${playerId}, Move: ${data.from}->${data.to}, Promotion: ${data.promotion}, IsPromo: ${isPawnPromotion}`);
             if (isPawnPromotion && !data.promotion) {
                 console.log(`[Promotion Needed] Room: ${roomId}, Move: ${data.from}->${data.to}`);
@@ -418,7 +498,6 @@ io.on("connection", (socket) => {
         socketToPlayer.delete(socket.id);
     });
 });
-const os = __importStar(require("os"));
 const PORT = process.env.PORT || 3002;
 server.listen(PORT, "0.0.0.0", () => {
     console.log("Server running on port", PORT);

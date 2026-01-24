@@ -300,6 +300,11 @@ var loadEngine = (function ()
     };
 }());
 
+// Export for CommonJS
 if (typeof module !== "undefined" && module.exports) {
     module.exports = loadEngine;
+    // Also set as default for ES module compatibility
+    if (typeof module.exports.default === "undefined") {
+        module.exports.default = loadEngine;
+    }
 }

@@ -1,9 +1,11 @@
 "use client";
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSquare, History, Info, Send, User, Monitor, Copy, Check, Share2, Swords, Trophy, Ghost } from 'lucide-react';
+import { getPieceImage, PieceType } from "./Data";
 
 interface GameSidebarProps {
     myColor: "white" | "black" | null;
@@ -26,6 +28,7 @@ interface GameSidebarProps {
     currentTurn: 'w' | 'b';
     onLeaveGame: () => void;
     onMoveClick: (index: number) => void;
+    boardPieces: PieceType[];
 }
 
 export default function GameSidebar({
@@ -36,7 +39,8 @@ export default function GameSidebar({
     onResign, onOfferDraw, onStartComputerGame,
     gameMode, setGameMode,
     currentTurn, onLeaveGame,
-    onMoveClick
+    onMoveClick,
+    boardPieces = []
 }: GameSidebarProps) {
     const t = useTranslations();
     const [msgInput, setMsgInput] = useState("");
@@ -44,6 +48,58 @@ export default function GameSidebar({
     const [activeTab, setActiveTab] = useState("moves");
     const [hasUnreadChat, setHasUnreadChat] = useState(false);
     const chatEndRef = useRef<HTMLDivElement>(null);
+
+    const materialStats = useMemo(() => {
+        const values: Record<string, number> = { 'Pawn': 1, 'Knight': 3, 'Bishop': 3, 'Rook': 5, 'Queen': 9, 'King': 0 };
+        const initialCounts: Record<string, number> = { 'Pawn': 8, 'Knight': 2, 'Bishop': 2, 'Rook': 2, 'Queen': 1, 'King': 1 };
+        
+        const currentWhite: Record<string, number> = { 'Pawn': 0, 'Knight': 0, 'Bishop': 0, 'Rook': 0, 'Queen': 0, 'King': 0 };
+        const currentBlack: Record<string, number> = { 'Pawn': 0, 'Knight': 0, 'Bishop': 0, 'Rook': 0, 'Queen': 0, 'King': 0 };
+        
+        let whiteScore = 0;
+        let blackScore = 0;
+
+        boardPieces.forEach(p => {
+            const type = p.type;
+            const val = values[type] || 0;
+            if (p.color === 'white') {
+                currentWhite[type] = (currentWhite[type] || 0) + 1;
+                whiteScore += val;
+            } else {
+                currentBlack[type] = (currentBlack[type] || 0) + 1;
+                blackScore += val;
+            }
+        });
+
+        // Calculate captured pieces (Initial - Current)
+        // Captured BY White = Missing Black pieces
+        const capturedByWhite: string[] = [];
+        // Captured BY Black = Missing White pieces
+        const capturedByBlack: string[] = [];
+
+        Object.keys(initialCounts).forEach(type => {
+            if (type === 'King') return;
+            
+            const whiteMissing = Math.max(0, initialCounts[type] - currentWhite[type]);
+            for (let i = 0; i < whiteMissing; i++) capturedByBlack.push(type); // Black captured these white pieces
+
+            const blackMissing = Math.max(0, initialCounts[type] - currentBlack[type]);
+            for (let i = 0; i < blackMissing; i++) capturedByWhite.push(type); // White captured these black pieces
+        });
+
+        // Sort captured pieces by value for display
+        const sortByValue = (a: string, b: string) => (values[b] || 0) - (values[a] || 0);
+        capturedByWhite.sort(sortByValue);
+        capturedByBlack.sort(sortByValue);
+
+        return {
+            whiteScore,
+            blackScore,
+            capturedByWhite, // Black pieces captured by White
+            capturedByBlack, // White pieces captured by Black
+            diff: whiteScore - blackScore
+        };
+    }, [boardPieces]);
 
     useEffect(() => {
         if (activeTab === "chat") setHasUnreadChat(false);
@@ -85,6 +141,36 @@ export default function GameSidebar({
         } else {
             handleCopyRoom();
         }
+    };
+
+    const renderMaterialInfo = (playerColor: 'white' | 'black') => {
+        const isWhite = playerColor === 'white';
+        const captured = isWhite ? materialStats.capturedByWhite : materialStats.capturedByBlack; // Pieces this player HAS CAPTURED
+        const scoreDiff = isWhite ? materialStats.diff : -materialStats.diff;
+        const capturedColor = isWhite ? 'black' : 'white'; // The color of the pieces they captured
+
+        return (
+            <div className="flex flex-col items-end gap-1">
+                 {scoreDiff > 0 && (
+                    <div className="bg-stone-100 dark:bg-white/10 px-2 py-0.5 rounded-md text-[10px] font-black text-green-600 dark:text-green-400 tabular-nums">
+                        +{scoreDiff}
+                    </div>
+                 )}
+                 <div className="flex flex-wrap justify-end gap-0.5 max-w-[120px]">
+                    {captured.map((type, idx) => (
+                        <div key={idx} className="relative w-4 h-4 opacity-80 hover:opacity-100 transition-opacity">
+                            <Image 
+                                src={getPieceImage("v3", capturedColor, type)} 
+                                alt={type}
+                                fill
+                                sizes="16px"
+                                className="object-contain"
+                            />
+                        </div>
+                    ))}
+                 </div>
+            </div>
+        );
     };
 
     return (
@@ -246,6 +332,8 @@ export default function GameSidebar({
                                     </div>
                                 </div>
                             </div>
+                            {/* Material Info for Opponent */}
+                            {renderMaterialInfo(myColor === 'white' ? 'black' : 'white')}
                         </div>
 
                         {/* Player Info (You) */}
@@ -266,6 +354,8 @@ export default function GameSidebar({
                                     </div>
                                 </div>
                             </div>
+                            {/* Material Info for You */}
+                            {myColor && renderMaterialInfo(myColor)}
                         </div>
 
                         <button onClick={onLeaveGame} className="w-full py-4 mt-4 bg-stone-200/50 dark:bg-white/5 hover:bg-stone-200 dark:hover:bg-white/10 text-stone-600 dark:text-stone-400 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border border-transparent hover:border-stone-200 dark:hover:border-white/20">
@@ -282,7 +372,7 @@ export default function GameSidebar({
                         <span className="relative z-10">{t('Multiplayer.resign')}</span>
                         <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>
-                    <button onClick={onOfferDraw} disabled={gameStatus !== 'playing'} className="group relative py-4 px-4 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-30 border border-transparent hover:shadow-xl flex items-center justify-center overflow-hidden">
+                    <button onClick={onOfferDraw} disabled={gameStatus !== 'playing' || gameMode === 'computer'} className="group relative py-4 px-4 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-30 border border-transparent hover:shadow-xl flex items-center justify-center overflow-hidden">
                         <span className="relative z-10">{t('Multiplayer.offerDraw')}</span>
                         <div className="absolute inset-0 bg-linear-to-t from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>

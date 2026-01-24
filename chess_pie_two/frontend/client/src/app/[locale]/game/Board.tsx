@@ -757,6 +757,16 @@ export default function Board({
   };
 
 
+  const handleResign = () => {
+    if (gameMode === 'computer' || gameMode === 'local') {
+      setGameResult('loss');
+      setGameInfo(t("youLost"));
+      setGameStatus("ended");
+    } else {
+      if (socket) socket.emit("resign");
+    }
+  };
+
   const handleDeclineDraw = () => { if (socket && drawOffer === "pending") { socket.emit("decline_draw"); setDrawOffer(null); setToastMessage(t("drawOfferDeclinedByYou")); setShowToast(true); } };
   const handleAcceptDraw = () => { if (socket && drawOffer === "pending") { socket.emit("accept_draw"); setDrawOffer(null); } };
 
@@ -898,10 +908,11 @@ export default function Board({
         navigateHistory={navigateHistory} exitHistoryView={exitHistoryView} isViewingHistory={isViewingHistory}
         chatMessages={chatMessages} onSendMessage={handleSendMessage}
         playerCount={playerCount} currentRoom={currentRoom} gameInfo={gameInfo} gameStatus={gameStatus as any}
-        onResign={() => { if (socket) socket.emit("resign"); }} onOfferDraw={() => { if (socket) socket.emit("offer_draw"); }}
+        onResign={handleResign} onOfferDraw={() => { if (socket) socket.emit("offer_draw"); }}
         onStartComputerGame={startComputerGame} gameMode={gameMode} setGameMode={setGameMode}
         currentTurn={currentTurn} onLeaveGame={() => { setGameStatus(""); setIsSearching(false); }}
         onMoveClick={onMoveClick}
+        boardPieces={displayPieces}
       />
 
       {showPromotionDialog && (

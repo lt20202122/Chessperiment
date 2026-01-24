@@ -5,7 +5,15 @@ import cors from "cors";
 import { v4 as uuidv4 } from "uuid";
 import { Chess, type Square } from "chess.js";
 import path from "path";
+import { createRequire } from "module";
+import * as os from "os";
+import { fileURLToPath } from "url";
+
+const require = createRequire(import.meta.url);
 const loadEngine = require("./loadEngine");
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
@@ -123,30 +131,70 @@ io.on("connection", (socket: Socket) => {
         try {
             const stockfishPath = path.join(__dirname, "node_modules", "stockfish", "src", "stockfish-17.1-8e4d048.js");
             const engine = loadEngine(stockfishPath);
+            let hasResponded = false;
+            
+            // Timeout after 15 seconds
+            const timeout = setTimeout(() => {
+                if (!hasResponded) {
+                    console.error("[Stockfish] Timeout waiting for move");
+                    hasResponded = true;
+                    try {
+                        engine.quit();
+                    } catch (e) {
+                        console.error("[Stockfish] Error quitting engine:", e);
+                    }
+                    socket.emit("computer_move_result", { bestMove: null });
+                }
+            }, 15000);
             
             const skillLevel = Math.max(0, Math.min(20, Math.floor((difficulty - 400) / 100)));
             const depth = Math.max(1, Math.min(20, Math.floor(difficulty / 150)));
 
+            console.log(`[Stockfish] Skill level: ${skillLevel}, Depth: ${depth}`);
+
+            // Initialize engine and send commands in sequence
             engine.send("uci", () => {
-                engine.send(`setoption name Skill Level value ${skillLevel}`);
-                engine.send(`position fen ${fen}`);
-                engine.send(`go depth ${depth}`, (result: string) => {
-                    // result is usually the full output, but loadEngine buffers it? 
-                    // loadEngine 'go' callback receives the "bestmove ..." line or similar
-                    console.log("[Stockfish] Output:", result);
-                    const match = result.match(/bestmove\s+(\S+)/);
-                    const bestMove = match ? match[1] : null;
-                    
-                    if (bestMove) {
-                        socket.emit("computer_move_result", { bestMove });
-                    } else {
-                        console.error("[Stockfish] No bestmove found in output");
-                    }
-                    engine.quit();
+                console.log("[Stockfish] UCI initialized");
+                engine.send(`setoption name Skill Level value ${skillLevel}`, () => {
+                    console.log("[Stockfish] Skill level set");
+                    engine.send(`ucinewgame`, () => {
+                        console.log("[Stockfish] New game initialized");
+                        engine.send(`position fen ${fen}`, () => {
+                            console.log("[Stockfish] Position set");
+                            engine.send(`go depth ${depth}`, (result: string) => {
+                                if (hasResponded) {
+                                    console.log("[Stockfish] Already responded, ignoring duplicate");
+                                    return;
+                                }
+                                
+                                clearTimeout(timeout);
+                                hasResponded = true;
+                                
+                                console.log("[Stockfish] Raw output:", result);
+                                const match = result.match(/bestmove\s+(\S+)/);
+                                const bestMove = match ? match[1] : null;
+                                
+                                if (bestMove && bestMove !== '(none)') {
+                                    console.log("[Stockfish] Best move found:", bestMove);
+                                    socket.emit("computer_move_result", { bestMove });
+                                } else {
+                                    console.error("[Stockfish] No valid bestmove found in output:", result);
+                                    socket.emit("computer_move_result", { bestMove: null });
+                                }
+                                
+                                try {
+                                    engine.quit();
+                                } catch (e) {
+                                    console.error("[Stockfish] Error quitting engine:", e);
+                                }
+                            });
+                        });
+                    });
                 });
             });
         } catch (e) {
-            console.error("[Stockfish] Error:", e);
+            console.error("[Stockfish] Error initializing engine:", e);
+            socket.emit("computer_move_result", { bestMove: null });
         }
     });
 
@@ -464,8 +512,6 @@ io.on("connection", (socket: Socket) => {
         socketToPlayer.delete(socket.id);
     });
 });
-
-import * as os from 'os';
 
 const PORT = process.env.PORT || 3002;
 server.listen(PORT as number, "0.0.0.0", () => {

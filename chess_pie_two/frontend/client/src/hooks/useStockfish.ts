@@ -17,24 +17,27 @@ export function useStockfish(currentFen: string, difficulty: number = 1300, onBe
     onBestMoveRef.current = onBestMove;
   }, [onBestMove]);
 
-  // Server-side Logic
-  useEffect(() => {
-    if (!useServer || !socket) return;
+   // Server-side Logic
+   useEffect(() => {
+     if (!useServer || !socket) return;
 
-    const onComputerMove = (data: { bestMove: string }) => {
-      setIsThinking(false);
-      if (data.bestMove && data.bestMove !== '(none)') {
-        onBestMoveRef.current(data.bestMove);
-      }
-    };
+     const onComputerMove = (data: { bestMove: string | null }) => {
+       setIsThinking(false);
+       // Only call onBestMove if we have a valid move
+       if (data && data.bestMove && data.bestMove !== '(none)' && data.bestMove !== null) {
+         onBestMoveRef.current(data.bestMove);
+       } else {
+         console.warn('[Stockfish] No valid move received:', data);
+       }
+     };
 
-    socket.on("computer_move_result", onComputerMove);
-    setIsReady(true); // Server is assumed ready if connected
+     socket.on("computer_move_result", onComputerMove);
+     setIsReady(true); // Server is assumed ready if connected
 
-    return () => {
-      socket.off("computer_move_result", onComputerMove);
-    };
-  }, [socket, useServer]);
+     return () => {
+       socket.off("computer_move_result", onComputerMove);
+     };
+   }, [socket, useServer]);
 
 
   // Client-side Logic (Worker)
