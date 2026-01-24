@@ -15,6 +15,9 @@ const loadEngine = require("./loadEngine");
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Import Stockfish pool for efficient engine management
+import { stockfishPool } from "./stockfish-pool.js";
+
 const app = express();
 app.use(cors());
 
@@ -124,76 +127,22 @@ io.on("connection", (socket: Socket) => {
     console.log("connected:", socket.id);
 
     // --- Server-Side Stockfish ---
-    socket.on("request_computer_move", (data: { fen: string; difficulty: number }) => {
+    socket.on("request_computer_move", async (data: { fen: string; difficulty: number }) => {
         const { fen, difficulty } = data;
         console.log(`[Stockfish] Request for FEN: ${fen}, Diff: ${difficulty}`);
 
         try {
-            const stockfishPath = path.join(__dirname, "node_modules", "stockfish", "src", "stockfish-17.1-8e4d048.js");
-            const engine = loadEngine(stockfishPath);
-            let hasResponded = false;
+            const bestMove = await stockfishPool.getBestMove(fen, difficulty);
             
-            // Timeout after 15 seconds
-            const timeout = setTimeout(() => {
-                if (!hasResponded) {
-                    console.error("[Stockfish] Timeout waiting for move");
-                    hasResponded = true;
-                    try {
-                        engine.quit();
-                    } catch (e) {
-                        console.error("[Stockfish] Error quitting engine:", e);
-                    }
-                    socket.emit("computer_move_result", { bestMove: null });
-                }
-            }, 15000);
-            
-            const skillLevel = Math.max(0, Math.min(20, Math.floor((difficulty - 400) / 100)));
-            const depth = Math.max(1, Math.min(20, Math.floor(difficulty / 150)));
-
-            console.log(`[Stockfish] Skill level: ${skillLevel}, Depth: ${depth}`);
-
-            // Initialize engine and send commands in sequence
-            engine.send("uci", () => {
-                console.log("[Stockfish] UCI initialized");
-                engine.send(`setoption name Skill Level value ${skillLevel}`, () => {
-                    console.log("[Stockfish] Skill level set");
-                    engine.send(`ucinewgame`, () => {
-                        console.log("[Stockfish] New game initialized");
-                        engine.send(`position fen ${fen}`, () => {
-                            console.log("[Stockfish] Position set");
-                            engine.send(`go depth ${depth}`, (result: string) => {
-                                if (hasResponded) {
-                                    console.log("[Stockfish] Already responded, ignoring duplicate");
-                                    return;
-                                }
-                                
-                                clearTimeout(timeout);
-                                hasResponded = true;
-                                
-                                console.log("[Stockfish] Raw output:", result);
-                                const match = result.match(/bestmove\s+(\S+)/);
-                                const bestMove = match ? match[1] : null;
-                                
-                                if (bestMove && bestMove !== '(none)') {
-                                    console.log("[Stockfish] Best move found:", bestMove);
-                                    socket.emit("computer_move_result", { bestMove });
-                                } else {
-                                    console.error("[Stockfish] No valid bestmove found in output:", result);
-                                    socket.emit("computer_move_result", { bestMove: null });
-                                }
-                                
-                                try {
-                                    engine.quit();
-                                } catch (e) {
-                                    console.error("[Stockfish] Error quitting engine:", e);
-                                }
-                            });
-                        });
-                    });
-                });
-            });
-        } catch (e) {
-            console.error("[Stockfish] Error initializing engine:", e);
+            if (bestMove) {
+                console.log("[Stockfish] Best move found:", bestMove);
+                socket.emit("computer_move_result", { bestMove });
+            } else {
+                console.error("[Stockfish] No valid move found");
+                socket.emit("computer_move_result", { bestMove: null });
+            }
+        } catch (error) {
+            console.error("[Stockfish] Error processing move:", error);
             socket.emit("computer_move_result", { bestMove: null });
         }
     });
