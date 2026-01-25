@@ -9,17 +9,17 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         title: t('title'),
         description: t('description'),
         alternates: {
-            canonical: `https://chesspie.org/${locale}/editor/piece`,
+            canonical: `https://chessperiment.app/${locale}/editor/piece`,
             languages: {
-                'en': 'https://chesspie.org/en/editor/piece',
-                'de': 'https://chesspie.org/de/editor/piece'
+                'en': 'https://chessperiment.app/en/editor/piece',
+                'de': 'https://chessperiment.app/de/editor/piece'
             }
         },
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: `https://chesspie.org/${locale}/editor/piece`,
-            siteName: "ChessPie",
+            url: `https://chessperiment.app/${locale}/editor/piece`,
+            siteName: "chessperiment",
             images: [{ url: "/images/seo/og-editor.png", width: 1200, height: 630 }],
             type: "website",
         },
@@ -39,13 +39,13 @@ export default async function PiecePage({ params }: { params: Promise<{ locale: 
     const jsonLd_pieceEditor = {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-        "name": "ChessPie Piece Editor",
-        "url": `https://chesspie.org/${locale}/editor/piece`,
+        "name": "chessperiment Piece Editor",
+        "url": `https://chessperiment.app/${locale}/editor/piece`,
         "description": t('description'),
         "applicationCategory": "DesignApplication",
         "operatingSystem": "Web",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "provider": { "@type": "Organization", "name": "ChessPie", "url": `https://chesspie.org/${locale}` }
+        "provider": { "@type": "Organization", "name": "chessperiment", "url": `https://chessperiment.app/${locale}` }
     };
 
     return <>

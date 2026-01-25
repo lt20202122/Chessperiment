@@ -16,7 +16,7 @@ export async function BoardEditorHelp() {
                     <div>
                         <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">What is the Board Editor?</h3>
                         <p>
-                            The Board Editor is the tool you use to create custom game boards for ChessPie. A board defines the playing field: its size, which squares are playable, starting positions, and board-level rules.
+                            The Board Editor is the tool you use to create custom game boards for chessperiment. A board defines the playing field: its size, which squares are playable, starting positions, and board-level rules.
                         </p>
                         <p className="mt-2 font-medium italic">
                             In short: the Board Editor defines the structure of the game.
@@ -85,7 +85,7 @@ export async function BoardEditorHelp() {
                 <div>
                     <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Was ist der Board Editor?</h3>
                     <p>
-                        Der Board Editor ist das Werkzeug, mit dem du eigene Spielbretter für ChessPie erstellst. Ein Board definiert die Spielfläche: Größe, Felder, Startpositionen und spezielle Eigenschaften einzelner Felder. Damit kannst du klassische Schachbretter nachbauen oder völlig neue Varianten entwerfen.
+                        Der Board Editor ist das Werkzeug, mit dem du eigene Spielbretter für chessperiment erstellst. Ein Board definiert die Spielfläche: Größe, Felder, Startpositionen und spezielle Eigenschaften einzelner Felder. Damit kannst du klassische Schachbretter nachbauen oder völlig neue Varianten entwerfen.
                     </p>
                     <p className="mt-2 font-medium italic">
                         Kurz gesagt: Der Board Editor legt die Struktur des Spiels fest.
@@ -285,13 +285,13 @@ export async function GameHelp() {
     if (isEn) {
         return (
             <article className="w-full max-w-4xl mx-auto px-6 py-16 mt-12 border-t border-stone-200 dark:border-white/10">
-                <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight">Getting Started with ChessPie</h2>
+                <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight">Getting Started with chessperiment</h2>
                 <div className="grid md:grid-cols-2 gap-12 text-stone-600 dark:text-stone-400 leading-relaxed">
                     <div className="space-y-6">
                         <div>
                             <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Stockfish</h3>
                             <p>
-                                ChessPie can use Stockfish as an engine. Stockfish allows:
+                                chessperiment can use Stockfish as an engine. Stockfish allows:
                             </p>
                             <ul className="list-disc list-inside mt-4 space-y-2">
                                 <li>playing against an AI</li>
@@ -314,7 +314,7 @@ export async function GameHelp() {
                         <div className="bg-stone-100 dark:bg-white/5 p-6 rounded-2xl border border-stone-200 dark:border-white/10">
                             <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Chess rules</h3>
                             <p>
-                                ChessPie is conceptually based on chess, but extends it:
+                                chessperiment is conceptually based on chess, but extends it:
                             </p>
                             <ul className="list-disc list-inside mt-4 space-y-3">
                                 <li className="font-medium text-amber-600 dark:text-amber-400">classical rules only apply if you define them</li>
@@ -333,13 +333,13 @@ export async function GameHelp() {
 
     return (
         <article className="w-full max-w-4xl mx-auto px-6 py-16 mt-12 border-t border-stone-200 dark:border-white/10">
-            <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight">Einstieg in ChessPie</h2>
+            <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight">Einstieg in chessperiment</h2>
             <div className="grid md:grid-cols-2 gap-12 text-stone-600 dark:text-stone-400 leading-relaxed">
                 <div className="space-y-6">
                     <div>
                         <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Stockfish Engine</h3>
                         <p>
-                            ChessPie nutzt die Stockfish Engine zur Analyse und als KI-Gegner. Stockfish analysiert komplexe Stellungen und ermöglicht:
+                            chessperiment nutzt die Stockfish Engine zur Analyse und als KI-Gegner. Stockfish analysiert komplexe Stellungen und ermöglicht:
                         </p>
                         <ul className="list-disc list-inside mt-4 space-y-2">
                             <li>Spielen gegen eine KI</li>
@@ -360,7 +360,7 @@ export async function GameHelp() {
                     <div className="bg-stone-100 dark:bg-white/5 p-6 rounded-2xl border border-stone-200 dark:border-white/10">
                         <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Regeln & Konzepte</h3>
                         <p>
-                            ChessPie basiert konzeptionell auf Schach, erweitert dieses aber radikal:
+                            chessperiment basiert konzeptionell auf Schach, erweitert dieses aber radikal:
                         </p>
                         <ul className="list-disc list-inside mt-4 space-y-3">
                             <li className="font-medium text-amber-600 dark:text-amber-400">Standard-Regeln gelten nur, wenn du sie so definierst</li>

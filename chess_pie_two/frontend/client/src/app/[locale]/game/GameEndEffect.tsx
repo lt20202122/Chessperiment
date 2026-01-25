@@ -6,11 +6,19 @@ import { Crown, Handshake, ShieldX, X } from 'lucide-react';
 interface GameEndEffectProps {
     result: 'win' | 'loss' | 'draw';
     onClose?: () => void;
+    onRematch?: () => void;
+    onNextGame?: () => void;
+    rematchRequested?: boolean;
+    opponentRematchRequested?: boolean;
 }
 
 import Confetti from './Confetti';
+import { UserPlus, Swords } from 'lucide-react';
 
-export default function GameEndEffect({ result, onClose }: GameEndEffectProps) {
+export default function GameEndEffect({
+    result, onClose, onRematch, onNextGame,
+    rematchRequested, opponentRematchRequested
+}: GameEndEffectProps) {
     const t = useTranslations('GameEnd');
 
     const effects = {
@@ -77,6 +85,24 @@ export default function GameEndEffect({ result, onClose }: GameEndEffectProps) {
                     >
                         {text}
                     </motion.h1>
+
+                    <div className="flex flex-col gap-3 w-full mt-4">
+                        <button
+                            onClick={onRematch}
+                            disabled={rematchRequested}
+                            className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all active:scale-[0.98] flex items-center justify-center border-2 ${opponentRematchRequested ? 'bg-white text-amber-600 border-white shadow-xl animate-pulse' : (rematchRequested ? 'bg-white/20 text-white/50 border-transparent cursor-not-allowed' : 'bg-white/20 text-white border-white/40 hover:bg-white/30')}`}
+                        >
+                            <Swords size={20} className="mr-3" />
+                            {rematchRequested ? t('rematchRequested') : t('rematch')}
+                        </button>
+                        <button
+                            onClick={onNextGame}
+                            className="w-full py-4 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl flex items-center justify-center gap-3"
+                        >
+                            <UserPlus size={20} />
+                            {t('newGame')}
+                        </button>
+                    </div>
                 </div>
             </motion.div>
         </div>

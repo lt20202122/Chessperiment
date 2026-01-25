@@ -1,13 +1,13 @@
-# ChessPie
+# Chesspirement
 
-> **ChessPie** is a generative framework for highly custom chess variants.
+> **Chesspirement** is a generative framework for highly custom chess variants.
 > High-signal documentation for AI coding agents: [llms-full.txt](/llms-full.txt)
 
 ## Tool Calling & Navigation
 
 *   **Full Technical Docs**: [/llms-full.txt](/llms-full.txt) (Token Count: ~2k)
     *   *Contains*: Logic Manifesto, API Schemas, Block Editor Reference, Move Rule Cookbook.
-*   **Live Editor**: [chesspie.org/editor](https://chesspie.org/editor)
+*   **Live Editor**: [chesspirement.app/editor](https://chesspirement.app/editor)
 
 ## Capabilities Summary
 

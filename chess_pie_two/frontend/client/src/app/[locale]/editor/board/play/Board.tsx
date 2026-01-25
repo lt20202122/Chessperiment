@@ -126,7 +126,7 @@ const BoardTile = memo(function BoardTile({
     onContextMenu,
     boardStyle,
     isTurn,
-    squareRefs,
+    redMarked,
 }: {
     pos: string;
     gridType: 'square' | 'hex',
@@ -140,14 +140,9 @@ const BoardTile = memo(function BoardTile({
     onContextMenu: (p: string) => void;
     boardStyle: string;
     isTurn: boolean;
-    squareRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
+    redMarked: boolean;
 }) {
     const { setNodeRef } = useDroppable({ id: pos });
-
-    const combinedRef = (el: HTMLDivElement | null) => {
-        setNodeRef(el);
-        if (squareRefs.current) squareRefs.current[pos] = el;
-    };
 
     const clipPath = gridType === 'hex'
         ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'
@@ -155,7 +150,7 @@ const BoardTile = memo(function BoardTile({
 
     return (
         <div
-            ref={combinedRef}
+            ref={setNodeRef}
             className={` transition-colors duration-200 ${isWhite ? "bg-[#e9edcc]" : "bg-[#779954]"} ${isMoveFrom ? "move-from" : ""
                 } ${isMoveTo ? "move-to" : ""} m-0 aspect-square relative flex items-center justify-center ${selected ? "ring-4 ring-blue-500" : ""
                 }`}
@@ -170,6 +165,15 @@ const BoardTile = memo(function BoardTile({
                 onContextMenu(pos);
             }}
         >
+            {redMarked && (
+                <div
+                    className="absolute inset-0 z-10 pointer-events-none bg-red-500/40"
+                    style={{
+                        boxShadow: 'inset 0 0 15px rgba(239, 68, 68, 0.4)',
+                        clipPath: clipPath
+                    }}
+                />
+            )}
             {piece && <DraggablePiece piece={piece} size={piece.size ?? blockSize * 0.8} isTurn={isTurn} onClick={() => onClick(pos)} boardStyle={boardStyle} pixels={piece.pixels} />}
         </div>
     );
@@ -208,8 +212,6 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
     const [promotionPending, setPromotionPending] = useState<{ from: string; to: string } | null>(null);
     const [showKingWarning, setShowKingWarning] = useState(false);
     const [isShaking, setIsShaking] = useState(false);
-
-    const squareRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -694,29 +696,12 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
                     }}
                     boardStyle="v3"
                     isTurn={displayPiece ? (displayPiece.color === "white" ? "w" : "b") === currentTurn : false}
-                    squareRefs={squareRefs}
+                    redMarked={redMarkedSquares.has(pos)}
                 />
             </div>
         );
     });
 
-    const markerOverlay = Array.from(redMarkedSquares).map(pos => {
-        const el = squareRefs.current[pos];
-        if (!el) return null;
-        return (
-            <div
-                key={`red-${pos}`}
-                className="absolute z-10 pointer-events-none bg-red-500/40 rounded-sm"
-                style={{
-                    width: blockSize,
-                    height: blockSize,
-                    left: el.offsetLeft,
-                    top: el.offsetTop,
-                    boxShadow: 'inset 0 0 15px rgba(239, 68, 68, 0.4)'
-                }}
-            />
-        );
-    });
 
     return (
         <div className="flex flex-col xl:flex-row items-start justify-center gap-8 w-full max-w-[1800px]">
@@ -753,7 +738,6 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
                     >
                         <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
                             {boardContent}
-                            {markerOverlay}
                             <DragOverlay dropAnimation={null}>
                                 {activePiece && (() => {
                                     const p = getPieceAt(activePiece);

@@ -5,7 +5,7 @@ import { Hand, MessageSquare, Info, History, Shield, Trophy, User, Gamepad2, Set
 import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Back from "./Back";
 import GameEndEffect from "./GameEndEffect";
 import GameSidebar from "./GameSidebar";
@@ -165,8 +165,8 @@ const SquareTile = memo(function SquareTile({
   gameStatus,
   myColor,
   amIAtTurn,
-  squareRefs,
   gameMode,
+  redMarked,
 }: {
   pos: string;
   isWhite: boolean;
@@ -182,20 +182,15 @@ const SquareTile = memo(function SquareTile({
   gameStatus: string;
   myColor: "white" | "black" | null;
   amIAtTurn: boolean;
-  squareRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
   gameMode: string;
+  redMarked: boolean;
 }) {
   const { setNodeRef } = useDroppable({ id: pos });
-
-  const combinedRef = (el: HTMLDivElement | null) => {
-    setNodeRef(el);
-    squareRefs.current[pos] = el;
-  };
 
   return (
     <div
       key={pos}
-      ref={combinedRef}
+      ref={setNodeRef}
       className={`${isWhite ? "white-square" : "black-square"} ${isMoveFrom ? "move-from" : ""} ${isMoveTo ? "move-to" : ""} m-0 aspect-square relative flex items-center justify-center ${selected ? "ring-4 ring-inset ring-blue-500" : ""}`}
       style={{
         width: blockSize,
@@ -207,6 +202,9 @@ const SquareTile = memo(function SquareTile({
         onContextMenu(pos);
       }}
     >
+      {redMarked && (
+        <div className="absolute inset-0 z-10 pointer-events-none bg-red-500/40 rounded-sm" />
+      )}
       {piece && (
         <DraggablePiece
           piece={piece}
@@ -240,6 +238,7 @@ export default function Board({
 }) {
   const t = useTranslations("Multiplayer");
   const router = useRouter();
+  const params = useParams();
   const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: {
@@ -272,8 +271,8 @@ export default function Board({
   const [gameResult, setGameResult] = useState<'win' | 'loss' | 'draw' | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const squareRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [activePiece, setActivePiece] = useState<any>(null);
+  const previousStateRef = useRef<{ boardPieces: PieceType[], currentTurn: 'w' | 'b', lastMoveFrom: string | null, lastMoveTo: string | null } | null>(null);
 
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
   const [promotionMove, setPromotionMove] = useState<{ from: string; to: string; } | null>(null);
@@ -286,6 +285,8 @@ export default function Board({
   const [isSearching, setIsSearching] = useState(false);
   const { data: session, status: sessionStatus } = useSession();
   const [drawOffer, setDrawOffer] = useState<"pending" | "offered" | null>(null);
+  const [rematchRequested, setRematchRequested] = useState(false);
+  const [opponentRematchRequested, setOpponentRematchRequested] = useState(false);
 
   // --- Stockfish & Local Logic ---
   const [chess] = useState(() => new Chess());
@@ -296,7 +297,13 @@ export default function Board({
     setBoardPieces(newPieces);
     const parts = fen.split(' ');
     if (parts[1]) setCurrentTurn(parts[1] as 'w' | 'b');
-  }, []);
+    // Sink with local engine
+    try {
+      if (chess.fen() !== fen) {
+        chess.load(fen);
+      }
+    } catch (e) { }
+  }, [chess]);
 
   const startComputerGame = useCallback((elo = 1200) => {
     setGameMode("computer");
@@ -387,7 +394,7 @@ export default function Board({
   }, [initialRoomId, gameStatus, gameMode, currentRoom, startComputerGame]);
 
   useEffect(() => {
-    if (!socket || gameMode !== "online") return;
+    if (!socket || (gameMode !== "online" && gameMode !== "computer")) return;
 
     const onMove = (data: any) => {
       if (data.fen) {
@@ -433,6 +440,27 @@ export default function Board({
       if (data.history) {
         setMoveHistory(data.history);
         setHistoryIndex(data.history.length - 1);
+
+        // Reconstruct history FENs and Moves
+        try {
+          // Use initialFen if available, otherwise default to starting position
+          const tempChess = new Chess(initialFen || undefined);
+          const fens: string[] = [];
+          const moves: { from: string; to: string; san: string }[] = [];
+
+          for (const san of data.history) {
+            const move = tempChess.move(san);
+            if (move) {
+              fens.push(tempChess.fen());
+              moves.push({ from: move.from, to: move.to, san: move.san });
+            }
+          }
+
+          setHistoryFens(fens);
+          setHistoryMoves(moves);
+        } catch (err) {
+          console.error("Error reconstructing history:", err);
+        }
       }
 
       if (data.chatMessages) {
@@ -491,6 +519,15 @@ export default function Board({
       setGameInfo(`${t("error")}${data.message}`);
       setToastMessage(`${t("error")}${data.message}`);
       setShowToast(true);
+
+      // Implicitly revert optimistic move on error
+      if (previousStateRef.current) {
+        setBoardPieces(previousStateRef.current.boardPieces);
+        setCurrentTurn(previousStateRef.current.currentTurn);
+        setLastMoveFrom(previousStateRef.current.lastMoveFrom);
+        setLastMoveTo(previousStateRef.current.lastMoveTo);
+        previousStateRef.current = null;
+      }
     });
     socket.on("room_not_found", (data: any) => {
       setGameInfo(`${t("reasons.room_not_found")}`);
@@ -530,6 +567,18 @@ export default function Board({
       setToastMessage(t("drawAccepted"));
       setShowToast(true);
     });
+    socket.on("rematch_requested", () => {
+      setOpponentRematchRequested(true);
+      setToastMessage(t("opponentWantsRematch"));
+      setShowToast(true);
+    });
+    socket.on("rematch_accepted", (data: any) => {
+      router.push(`/${params.locale}/game/${data.newRoomId}`);
+    });
+    socket.on("quick_search_started", () => {
+      setIsSearching(true);
+      setGameStatus("waiting");
+    });
 
     return () => {
       socket.off("move"); socket.off("match_found"); socket.off("start_game");
@@ -537,6 +586,7 @@ export default function Board({
       socket.off("game_ended"); socket.off("opp_disconnected"); socket.off("error");
       socket.off("receive_fen"); socket.off("promotion_needed"); socket.off("promotion_done");
       socket.off("draw_offered"); socket.off("draw_declined"); socket.off("draw_accepted");
+      socket.off("rematch_requested"); socket.off("rematch_accepted"); socket.off("quick_search_started");
     };
   }, [socket, gameMode, updateBoardState, t]);
 
@@ -578,6 +628,20 @@ export default function Board({
   useEffect(() => {
     if (initialFen) updateBoardState(initialFen);
   }, [initialFen, updateBoardState]);
+
+  const handleRematchRequest = useCallback(() => {
+    if (socket) {
+      socket.emit("request_rematch");
+      setRematchRequested(true);
+    }
+  }, [socket]);
+
+  const handleNextGame = useCallback(() => {
+    if (socket) {
+      socket.emit("find_next_game");
+      // Status is handled by quick_search_started event
+    }
+  }, [socket]);
 
   const boardContainerRef = useRef<HTMLDivElement>(null);
 
@@ -640,6 +704,14 @@ export default function Board({
           type: promoTypeMap[code] || 'Queen'
         } as PieceType);
 
+        // Store state for possible revert on error
+        previousStateRef.current = {
+          boardPieces: [...boardPieces],
+          currentTurn,
+          lastMoveFrom,
+          lastMoveTo
+        };
+
         setBoardPieces(newPieces);
         setLastMoveFrom(promotionMove.from);
         setLastMoveTo(promotionMove.to);
@@ -666,6 +738,14 @@ export default function Board({
           .map(p => ({ ...p }));
 
         newPieces.push({ ...mover, position: to } as PieceType);
+
+        // Store state for possible revert on error
+        previousStateRef.current = {
+          boardPieces: [...boardPieces],
+          currentTurn,
+          lastMoveFrom,
+          lastMoveTo
+        };
 
         setBoardPieces(newPieces);
         setLastMoveFrom(from);
@@ -909,7 +989,7 @@ export default function Board({
       const pos = `${files[a]}${8 - i}`;
       const isWhiteSq = (i + a) % 2 === 0;
       const piece = displayPieces.find(p => p.position === pos);
-      if (piece) piece.size = blockSize * getGamePieceScale(piece.type);
+      const pieceSize = piece ? blockSize * getGamePieceScale(piece.type) : 0;
 
       const isMoveFrom = isViewingHistory ? historyMove?.from === pos : lastMoveFrom === pos;
       const isMoveTo = isViewingHistory ? historyMove?.to === pos : lastMoveTo === pos;
@@ -921,23 +1001,18 @@ export default function Board({
 
       boardContent.push(
         <SquareTile
-          key={pos} pos={pos} isWhite={isWhiteSq} piece={piece} blockSize={blockSize}
+          key={pos} pos={pos} isWhite={isWhiteSq} piece={piece ? { ...piece, size: pieceSize } : undefined} blockSize={blockSize}
           selected={selectedPos === pos} isMoveFrom={isMoveFrom} isMoveTo={isMoveTo}
           onClick={handlePieceSelect} onContextMenu={handleContextMenu}
           boardStyle={boardStyle} isViewingHistory={isViewingHistory} gameStatus={gameStatus} myColor={myColor}
           amIAtTurn={amIAtTurn}
-          squareRefs={squareRefs}
           gameMode={gameMode}
+          redMarked={redMarkedSquares.has(pos)}
         />
       );
     }
   }
 
-  const markerOverlay = Array.from(redMarkedSquares).map(pos => {
-    const el = squareRefs.current[pos];
-    if (!el) return null;
-    return <div key={`red-${pos}`} className="absolute z-10 pointer-events-none bg-red-500/40 rounded-sm" style={{ width: blockSize, height: blockSize, left: el.offsetLeft, top: el.offsetTop }} />;
-  });
 
   return (
     <div className="flex flex-col lg:flex-row h-dvh w-full overflow-hidden">
@@ -978,7 +1053,6 @@ export default function Board({
                     <div className="grid grid-cols-8 overflow-hidden rounded-lg shadow-inner" style={{ width: blockSize * 8, height: blockSize * 8 }}>
                       <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
                         {boardContent}
-                        {markerOverlay}
                         <DragOverlay dropAnimation={null}>
                           {activePiece ? (
                             <div style={{ width: blockSize, height: blockSize, display: 'flex', alignItems: 'center', justifyItems: 'center', pointerEvents: 'none' }}>
@@ -1003,9 +1077,13 @@ export default function Board({
         playerCount={playerCount} currentRoom={currentRoom} gameInfo={gameInfo} gameStatus={gameStatus as any}
         onResign={handleResign} onOfferDraw={() => { if (socket) socket.emit("offer_draw"); }}
         onStartComputerGame={startComputerGame} gameMode={gameMode} setGameMode={setGameMode}
-        currentTurn={currentTurn} onLeaveGame={() => { setGameStatus(""); setIsSearching(false); window.location.href = '/game'; }}
+        currentTurn={currentTurn} onLeaveGame={() => { setGameStatus(""); setIsSearching(false); window.location.href = `/${params.locale}/game`; }}
         onMoveClick={onMoveClick}
         boardPieces={displayPieces}
+        onRematch={handleRematchRequest}
+        onNextGame={handleNextGame}
+        rematchRequested={rematchRequested}
+        opponentRematchRequested={opponentRematchRequested}
       />
 
       {showPromotionDialog && (
@@ -1048,7 +1126,16 @@ export default function Board({
       )}
 
       {toastMessage && <Toast message={toastMessage} show={showToast} onClose={() => setShowToast(false)} />}
-      {gameResult && <GameEndEffect result={gameResult!} onClose={() => setGameResult(null)} />}
+      {gameResult && (
+        <GameEndEffect
+          result={gameResult!}
+          onClose={() => setGameResult(null)}
+          onRematch={handleRematchRequest}
+          onNextGame={handleNextGame}
+          rematchRequested={rematchRequested}
+          opponentRematchRequested={opponentRematchRequested}
+        />
+      )}
     </div>
   );
 }

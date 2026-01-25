@@ -6,7 +6,7 @@ export interface PieceState {
     color: "white" | "black" | string;
     position: Square;
     hasMoved?: boolean; // für Spezialregeln wie Rochade
-    customProps?: Record<string, any>; // für ChessPie-spezifische Regeln
+    customProps?: Record<string, any>; // für chessperiment-spezifische Regeln
 }
 
 export interface BoardState {

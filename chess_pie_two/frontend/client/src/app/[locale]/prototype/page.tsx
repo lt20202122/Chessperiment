@@ -1,7 +1,7 @@
 import PrototypeBoard from '@/components/prototype/PrototypeBoard';
 
 export const metadata = {
-    title: 'Engine Prototype | ChessPie',
+    title: 'Engine Prototype | chessperiment',
     description: 'Test custom piece logic and the logic-aware chess engine in this sandbox environment.',
 };
 

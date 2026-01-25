@@ -56,14 +56,14 @@ export async function GET(req: NextRequest) {
                         }}
                     >
                         <img
-                            src="https://chesspie.org/design.svg" // Assuming design.svg is a logo
-                            alt="ChessPie Logo"
+                            src="https://chessperiment.app/design.svg" // Assuming design.svg is a logo
+                            alt="chessperiment Logo"
                             width={150}
                             height={150}
                             style={{ marginBottom: '20px' }}
                         />
                         <p style={{ fontSize: 60, fontWeight: 'bold', margin: '0 0 10px 0' }}>
-                            ChessPie Game
+                            chessperiment Game
                         </p>
                         <p style={{ fontSize: 40, margin: '0', color: '#ffd700' }}>
                             Room: {roomId}
@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
                             </p>
                         )}
                         <p style={{ fontSize: 24, margin: '30px 0 0 0', opacity: 0.7 }}>
-                            Join the game at chesspie.org
+                            Join the game at chessperiment.app
                         </p>
                     </div>
                 </div>

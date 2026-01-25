@@ -10,16 +10,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: t('title'),
     description: t('description'),
     alternates: {
-      canonical: `https://chesspie.org/${locale}`,
+      canonical: `https://chessperiment.app/${locale}`,
       languages: {
-        'en': 'https://chesspie.org/en',
-        'de': 'https://chesspie.org/de'
+        'en': 'https://chessperiment.app/en',
+        'de': 'https://chessperiment.app/de'
       },
     },
     openGraph: {
       title: t('title'),
       description: t('description'),
-      url: `https://chesspie.org/${locale}`,
+      url: `https://chessperiment.app/${locale}`,
       type: "website",
       images: [{ url: "/images/seo/og-home.png", width: 1200, height: 630 }],
     },
@@ -41,20 +41,20 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     "@graph": [
       {
         "@type": "WebSite",
-        "@id": `https://chesspie.org/${locale}/#website`,
-        "url": `https://chesspie.org/${locale}`,
-        "name": "ChessPie",
+        "@id": `https://chessperiment.app/${locale}/#website`,
+        "url": `https://chessperiment.app/${locale}`,
+        "name": "chessperiment",
         "description": t('description'),
         "inLanguage": locale
       },
       {
         "@type": "Organization",
-        "@id": `https://chesspie.org/${locale}/#organization`,
-        "name": "ChessPie",
-        "url": `https://chesspie.org/${locale}`,
+        "@id": `https://chessperiment.app/${locale}/#organization`,
+        "name": "chessperiment",
+        "url": `https://chessperiment.app/${locale}`,
         "logo": {
           "@type": "ImageObject",
-          "url": "https://chesspie.org/icon.png"
+          "url": "https://chessperiment.app/icon.png"
         },
         "sameAs": []
       }

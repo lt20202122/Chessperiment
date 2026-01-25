@@ -21,16 +21,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         title: t('title'),
         description: t('description'),
         alternates: {
-            canonical: `https://chesspie.org/${locale}/marketplace`,
+            canonical: `https://chessperiment.app/${locale}/marketplace`,
             languages: {
-                'en': 'https://chesspie.org/en/marketplace',
-                'de': 'https://chesspie.org/de/marketplace'
+                'en': 'https://chessperiment.app/en/marketplace',
+                'de': 'https://chessperiment.app/de/marketplace'
             }
         },
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: `https://chesspie.org/${locale}/marketplace`,
+            url: `https://chessperiment.app/${locale}/marketplace`,
             type: "website",
         },
     };
@@ -48,7 +48,7 @@ export default async function MarketplacePage({ params }: { params: Promise<{ lo
             <main className="max-w-7xl mx-auto pt-24 px-4 pb-12">
                 <div className="mb-8 text-center">
                     <h2 className="text-4xl md:text-5xl font-black mb-4 bg-clip-text text-transparent bg-linear-to-r from-amber-500 to-orange-600">
-                        ChessPie Marketplace
+                        chessperiment Marketplace
                     </h2>
                     <p className="text-xl text-stone-500 dark:text-stone-400 max-w-2xl mx-auto">
                         Discover unique boards, stunning piece sets, and exclusive designs created by the community.

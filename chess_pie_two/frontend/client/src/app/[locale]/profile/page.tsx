@@ -14,7 +14,7 @@ import { getUserBoardsAction } from "@/app/actions/library";
 import { SavedBoard } from "@/lib/firestore";
 import { Library } from "lucide-react";
 
-const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.org');
+const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chessperiment.app');
 
 const bungee = Bungee({
     subsets: ["latin"],
@@ -42,16 +42,16 @@ interface GameHistoryItem {
 const jsonLdProfilePage = {
     "@context": "https://schema.org",
     "@type": "AboutPage", // alternativ WebPage
-    "url": "https://chesspie.org/profile",
-    "name": "Profile – ChessPie",
-    "description": "Erfahre mehr über die Profile und Features auf ChessPie, inklusive Benutzerstatistiken, Achievements und personalisierten Einstellungen.",
+    "url": "https://chessperiment.app/profile",
+    "name": "Profile – chessperiment",
+    "description": "Erfahre mehr über die Profile und Features auf chessperiment, inklusive Benutzerstatistiken, Achievements und personalisierten Einstellungen.",
     "publisher": {
         "@type": "Organization",
-        "name": "ChessPie",
-        "url": "https://chesspie.org",
+        "name": "chessperiment",
+        "url": "https://chessperiment.app",
         "logo": {
             "@type": "ImageObject",
-            "url": "https://chesspie.org/static/logo.svg"
+            "url": "https://chessperiment.app/static/logo.svg"
         }
     }
 };

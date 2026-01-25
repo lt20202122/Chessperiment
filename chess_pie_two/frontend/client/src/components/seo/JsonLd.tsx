@@ -1,14 +1,14 @@
 export default function JsonLd() {
     const siteInfo = {
-        name: "ChessPie",
-        url: "https://chesspie.org",
-        logo: "https://chesspie.org/logo.png",
+        name: "chessperiment",
+        url: "https://chessperiment.app",
+        logo: "https://chessperiment.app/logo.png",
         description: "The ultimate platform for custom chess. Create, share, and play unique chess variants.",
-        contactEmail: "contact.chesspie@gmail.com",
+        contactEmail: "contact.chessperiment@gmail.com",
         socialLinks: [
-            "https://twitter.com/chesspie",
-            "https://instagram.com/chesspie",
-            "https://youtube.com/@chesspie"
+            "https://twitter.com/chessperiment",
+            "https://instagram.com/chessperiment",
+            "https://youtube.com/@chessperiment"
         ]
     };
 
@@ -65,7 +65,7 @@ export default function JsonLd() {
                 "creator": {
                     "@id": `${siteInfo.url}/#organization`
                 },
-                "description": "ChessPie is a creation-first game platform that lets players design custom boards, pieces, and rules, play their own games, and share creations with others.",
+                "description": "chessperiment is a creation-first game platform that lets players design custom boards, pieces, and rules, play their own games, and share creations with others.",
                 "audience": {
                     "@type": "Audience",
                     "audienceType": "All ages"

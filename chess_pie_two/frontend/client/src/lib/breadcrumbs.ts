@@ -1,4 +1,4 @@
-const baseUrl = "https://chesspie.org";
+const baseUrl = "https://chessperiment.app";
 
 export function generateBreadcrumbs(pathname: string) {
     const allSegments = pathname.split("/").filter(Boolean);

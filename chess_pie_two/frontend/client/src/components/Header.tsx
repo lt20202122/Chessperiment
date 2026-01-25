@@ -30,11 +30,11 @@ export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen }: { pathna
                 <Link href="/" className="flex items-center gap-2 group/logo transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
                     <img
                         src="/logo.png"
-                        alt="ChessPie Logo"
+                        alt="chessperiment Logo"
                         className={`transition-all duration-300 ${small ? "h-8 w-8" : "h-12 w-12"} object-contain`}
                     />
                     <span className={`${bungee.className} [font-variant-caps:small-caps] ${small ? "text-2xl md:text-3xl lg:text-5xl text-amber-400/50 group-hover/logo:text-amber-400" : "text-4xl md:text-5xl lg:text-7xl text-amber-400"} caret-transparent drop-shadow-sm`}>
-                        ChessPie
+                        chessperiment
                     </span>
                 </Link>
             </div>

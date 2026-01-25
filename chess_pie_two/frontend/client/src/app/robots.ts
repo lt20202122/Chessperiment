@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/login/', '/api/'],
     },
-    sitemap: 'https://chesspie.org/sitemap.xml',
+    sitemap: 'https://chessperiment.app/sitemap.xml',
   };
 }

@@ -2,27 +2,27 @@
 import type { Metadata } from 'next';
 import { generateHreflangs } from '@/lib/hreflang';
 
-const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chesspie.org');
+const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chessperiment.app');
 
 export const metadata: Metadata = {
-    title: 'ChessPie User Profiles',
-    description: 'View and manage ChessPie user profiles.',
+    title: 'chessperiment User Profiles',
+    description: 'View and manage chessperiment user profiles.',
     openGraph: {
-        title: 'ChessPie User Profiles',
-        description: 'View and manage ChessPie user profiles.',
-        url: 'https://chesspie.org/en/profile',
-        siteName: 'ChessPie',
+        title: 'chessperiment User Profiles',
+        description: 'View and manage chessperiment user profiles.',
+        url: 'https://chessperiment.app/en/profile',
+        siteName: 'chessperiment',
         images: ['/images/seo/og-home.png'],
         type: 'website',
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'ChessPie User Profiles',
-        description: 'View and manage ChessPie user profiles.',
+        title: 'chessperiment User Profiles',
+        description: 'View and manage chessperiment user profiles.',
         images: ['/images/seo/og-home.png'],
     },
     alternates: {
-        canonical: "https://chesspie.org/en/profile", // absolute URL
+        canonical: "https://chessperiment.app/en/profile", // absolute URL
         languages: hreflangs.reduce((acc, tag) => {
             acc[tag.hrefLang] = tag.href;
             return acc;

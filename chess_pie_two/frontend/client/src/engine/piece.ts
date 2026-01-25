@@ -1,6 +1,7 @@
 import { Square, MoveRule } from './types';
 import { toCoords, toSquare } from './utils';
 import type { BoardClass } from './board';
+import { LogicRunner } from './logic/LogicRunner';
 
 export abstract class Piece {
     id: string;
@@ -62,7 +63,7 @@ export abstract class Piece {
 export class CustomPiece extends Piece {
     rules: MoveRule[];
     logic: any[];
-    variables: Record<string, number> = {};
+    variables: Record<string, any> = {};
     public isCustom = true;
 
     constructor(id: string, type: string, color: "white" | "black", position: Square, rules: any = [], logic: any = [], name?: string) {
@@ -71,275 +72,11 @@ export class CustomPiece extends Piece {
         this.logic = typeof logic === 'string' ? JSON.parse(logic) : (Array.isArray(logic) ? logic : []);
     }
 
-    // Execution Queue for preventing infinite loops
-    private pendingTriggers: Array<{ type: string, context: any }> = [];
-    private isExecutingLogic: boolean = false;
-
-    // Helper method to check if a variable name is a position preset
-    private isPositionVariable(varName: string): boolean {
-        return /^[A-H][1-8]$/.test(varName.toUpperCase());
-    }
-
-    // Helper method to check if current position matches a position variable
-    private isAtPosition(positionVar: string): boolean {
-        const normalized = positionVar.toUpperCase();
-        if (!this.isPositionVariable(normalized)) return false;
-        return this.position.toUpperCase() === normalized;
-    }
-
     executeLogic(triggerType: string, context: any, board: BoardClass) {
-        if (!this.logic || !Array.isArray(this.logic)) return;
-
-        // Queue trigger if already executing
-        if (this.isExecutingLogic) {
-            this.pendingTriggers.push({ type: triggerType, context });
-            return;
-        }
-
-        this.isExecutingLogic = true;
-        this._executeLogicInternal(triggerType, context, board);
-        
-        // Process pending triggers (max 20 iterations to prevent infinite loops)
-        let iterations = 0;
-        const MAX_ITERATIONS = 20;
-        
-        while (this.pendingTriggers.length > 0 && iterations < MAX_ITERATIONS) {
-            const pending = this.pendingTriggers.shift()!;
-            this._executeLogicInternal(pending.type, pending.context, board);
-            iterations++;
-        }
-        
-        if (this.pendingTriggers.length > 0) {
-            console.warn(`[Logic] Infinite loop risk detected for piece ${this.id}, stopping execution after ${MAX_ITERATIONS} recursive triggers.`);
-            this.pendingTriggers = [];
-        }
-        
-        this.isExecutingLogic = false;
+        LogicRunner.execute(this, triggerType, context, board);
     }
 
-    private _executeLogicInternal(triggerType: string, context: any, board: BoardClass) {
-        if (!this.logic) return;
 
-        // Find relevant triggers
-        const triggers = this.logic.filter((b: any) => b.type === 'trigger' && b.id === triggerType);
-        
-        if (triggers.length > 0) {
-            console.log(`[Logic] Executing "${triggerType}" for ${this.id} (${this.type}). Found ${triggers.length} matching blocks.`);
-        }
-
-        for (const trigger of triggers) {
-            let conditionsMet = true;
-            const vals = trigger.socketValues || {};
-
-            // Helper for matching piece types robustly (handles ID suffixes and case)
-            const matchesType = (p: Piece | null, expected: string) => {
-                if (!expected || expected === 'Any') return true;
-                if (!p) return false;
-                const pType = p.type.toLowerCase();
-                const pName = p.name.toLowerCase();
-                const exp = expected.toLowerCase();
-                
-                const isMatch = pType === exp || pType.startsWith(exp + '_') ||
-                              pName === exp || pName.startsWith(exp + '_');
-                
-                if (!isMatch) {
-                    console.log(`[Logic] Type mismatch: [Expected: ${expected}] vs [Captured: type=${p.type}, name=${p.name}]`);
-                }
-                
-                return isMatch;
-            };
-
-            if (triggerType === 'on-capture') {
-                if (vals.by && !matchesType(context.capturedPiece, vals.by)) {
-                    console.log(`[Logic] Condition failed for "on-capture": Expected ${vals.by}, but captured ${context.capturedPiece?.type}`);
-                    conditionsMet = false;
-                }
-            } else if (triggerType === 'on-captured') {
-                if (vals.by && !matchesType(context.attacker, vals.by)) {
-                    console.log(`[Logic] Condition failed for "on-captured": Expected attacker ${vals.by}, but attacked by ${context.attacker?.type}`);
-                    conditionsMet = false;
-                }
-            } else if (triggerType === 'on-threat') {
-                if (vals.by && !matchesType(context.attacker, vals.by)) {
-                    console.log(`[Logic] Condition failed for "on-threat": Expected attacker ${vals.by}, but attacked by ${context.attacker?.type}`);
-                    conditionsMet = false;
-                }
-            } else if (triggerType === 'on-environment') {
-                const [col, row] = toCoords(this.position);
-                const isWhiteSquare = (col + row) % 2 === 0;
-                
-                if (vals.condition === 'White Square' && !isWhiteSquare) {
-                    console.log(`[Logic] Condition failed for "on-environment": Not on White Square`);
-                    conditionsMet = false;
-                }
-                if (vals.condition === 'Black Square' && isWhiteSquare) {
-                    console.log(`[Logic] Condition failed for "on-environment": Not on Black Square`);
-                    conditionsMet = false;
-                }
-                if (vals.condition === 'Is Attacked' && !context.isAttacked) {
-                    console.log(`[Logic] Condition failed for "on-environment": Piece is not attacked`);
-                    conditionsMet = false;
-                }
-            } else if (triggerType === 'on-var') {
-                if (vals.varName) {
-                    const current = this.variables[vals.varName] || 0;
-                    const v = Number(vals.value);
-                    let met = true;
-                    switch (vals.op) {
-                        case '==': if (current !== v) met = false; break;
-                        case '!=': if (current === v) met = false; break;
-                        case '>': if (current <= v) met = false; break;
-                        case '<': if (current >= v) met = false; break;
-                        case '>=': if (current < v) met = false; break;
-                        case '<=': if (current > v) met = false; break;
-                    }
-                    if (!met) {
-                        console.log(`[Logic] Condition failed for "on-var": ${vals.varName} (${current}) ${vals.op} ${v} is false`);
-                        conditionsMet = met;
-                    }
-                }
-            } else if (triggerType === 'variable-trigger') {
-                if (vals.variableName && vals.value !== undefined) {
-                    let current: any;
-                    let met = true;
-                    
-                    // Check if this is a position variable
-                    if (this.isPositionVariable(vals.variableName)) {
-                        current = this.isAtPosition(vals.variableName) ? 1 : 0;
-                    } else {
-                        current = this.variables[vals.variableName];
-                    }
-                    
-                    const comparisonType = vals.comparisonType || 'Number';
-                    
-                    switch (comparisonType) {
-                        case 'Number':
-                            const currentNum = Number(current) || 0;
-                            const targetNum = Number(vals.value);
-                            if (currentNum !== targetNum) met = false;
-                            break;
-                        case 'Text':
-                            const currentText = String(current || '');
-                            const targetText = String(vals.value);
-                            if (currentText !== targetText) met = false;
-                            break;
-                        case 'Boolean':
-                            const currentBool = Boolean(current);
-                            const targetBool = vals.value.toLowerCase() === 'true' || vals.value === '1';
-                            if (currentBool !== targetBool) met = false;
-                            break;
-                    }
-                    
-                    if (!met) {
-                        console.log(`[Logic] Condition failed for "variable-trigger": ${vals.variableName} (${current}) != ${vals.value} (${comparisonType})`);
-                        conditionsMet = met;
-                    }
-                }
-            }
-
-            if (conditionsMet) {
-                if (trigger.childId) {
-                    console.log(`[Logic] Conditions met for ${trigger.id} (instance ${trigger.instanceId}). Executing child ${trigger.childId}`);
-                    this.runBlock(trigger.childId, context, board);
-                } else {
-                    console.log(`[Logic] Conditions met for ${trigger.id}, but NO action (childId) is connected.`);
-                }
-            }
-        }
-    }
-
-    private runBlock(blockId: string, context: any, board: BoardClass) {
-        const block = this.logic.find((b: any) => b.instanceId === blockId);
-        if (!block) return;
-
-        const vals = block.socketValues || {};
-
-        switch (block.id) {
-            case 'kill':
-                // Determine target based on socket value
-                if (vals.target === 'Attacker' && context.attacker) {
-                    board.setPiece(context.attacker.position, null);
-                } else {
-                    // Default: kill the piece this logic belongs to (this piece)
-                    board.setPiece(this.position, null);
-                }
-                break;
-            case 'transformation':
-                if (vals.target) {
-                    const newPiece = Piece.create(this.id, vals.target, this.color, this.position);
-                    newPiece.hasMoved = this.hasMoved;
-                    board.setPiece(this.position, newPiece);
-                }
-                break;
-            case 'modify-var':
-                if (vals.varName && vals.op && vals.value !== undefined) {
-                    const current = this.variables[vals.varName] || 0;
-                    let next = current;
-                    const v = Number(vals.value);
-                    if (vals.op === '+=') next += v;
-                    else if (vals.op === '-=') next -= v;
-                    else if (vals.op === '=') next = v;
-                    this.variables[vals.varName] = next;
-                    
-                    // Trigger on-var check after modification
-                    this.executeLogic('on-var', { varName: vals.varName, value: next }, board);
-                }
-                break;
-            case 'cooldown':
-                if (vals.duration) {
-                    this.variables['cooldown'] = Number(vals.duration);
-                }
-                break;
-            case 'charge':
-                if (vals.turns) {
-                    this.variables['charge'] = Number(vals.turns);
-                }
-                break;
-            case 'mode':
-                if (vals.mode) {
-                    this.variables['mode'] = vals.mode === 'On' ? 1 : 0;
-                }
-                break;
-            case 'prevent':
-                if (context.prevented !== undefined) context.prevented = true;
-                // Generic prevent also sets specific flags if they exist
-                if (context.movePrevented !== undefined) context.movePrevented = true;
-                if (context.capturePrevented !== undefined) context.capturePrevented = true;
-                break;
-            case 'prevent-move':
-                if (context.movePrevented !== undefined) context.movePrevented = true;
-                break;
-            case 'prevent-capture':
-                if (context.capturePrevented !== undefined) context.capturePrevented = true;
-                break;
-            case 'affect-adjacent':
-                const [col, row] = toCoords(this.position);
-                const adjacentSquares = [
-                    [col-1, row], [col+1, row], [col, row-1], [col, row+1],
-                    [col-1, row-1], [col-1, row+1], [col+1, row-1], [col+1, row+1]
-                ];
-                
-                for (const [c, r] of adjacentSquares) {
-                    const sq = toSquare([c, r]);
-                    const targetPiece = board.getPiece(sq);
-                    if (targetPiece && targetPiece instanceof CustomPiece) {
-                        // Apply specific effects to target
-                        if (vals.effect === 'cooldown' && vals.value) {
-                             targetPiece.variables['cooldown'] = Number(vals.value);
-                        } else if (vals.effect === 'charge' && vals.value) {
-                             targetPiece.variables['charge'] = Number(vals.value);
-                        } else if (vals.effect === 'modify-var' && vals.varName && vals.value) {
-                             targetPiece.variables[vals.varName] = Number(vals.value);
-                        }
-                    }
-                }
-                break;
-        }
-
-        if (block.childId) {
-            this.runBlock(block.childId, context, board);
-        }
-    }
 
     updateTurnState(board: BoardClass) {
         // Cooldown processing
@@ -354,18 +91,7 @@ export class CustomPiece extends Piece {
                 this.executeLogic('on-cooldown-end', {}, board);
             }
         }
-        
-        // Charge processing
-        if (this.variables['charge'] && this.variables['charge'] > 0) {
-            this.variables['charge']--;
-            
-            // Trigger on-charge-tick
-            this.executeLogic('on-charge-tick', { remaining: this.variables['charge'] }, board);
-            
-            if (this.variables['charge'] === 0) {
-                this.executeLogic('on-charge-complete', {}, board);
-            }
-        }
+
 
         // Fire on-turn-start trigger for general logic
         this.executeLogic('on-turn-start', {}, board);

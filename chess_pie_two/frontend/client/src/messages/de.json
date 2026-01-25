@@ -61,7 +61,7 @@
         "marketplaceBetaMessage": "Unser Marktplatz wird zurzeit stark weiterentwickelt. Freu dich auf einzigartige Figuren-Designs und benutzerdefinierte Bretter!"
     },
     "Multiplayer": {
-        "title": "Chesspie Multiplayer",
+        "title": "chessperiment Multiplayer",
         "description": "Tritt gegen Freunde oder die KI an in spannenden Schachpartien",
         "createRoom": "Raum erstellen",
         "roomCode": "Raumcode",
@@ -187,10 +187,14 @@
         "copied": "Kopiert",
         "typeMessage": "Nachricht eingeben...",
         "practiceVsComputer": "Gegen Computer üben",
-"joinMyGameTitle": "Tritt meinem ChessPie-Spiel bei!",
+"joinMyGameTitle": "Tritt meinem chessperiment-Spiel bei!",
         "joinMyGameText": "Tritt meinem Schachspiel bei! Raumcode: {room}",
         "connecting": "Verbinden...",
-        "quicksearch": "Schnelle Suche"
+        "quicksearch": "Schnelle Suche",
+        "rematch": "Revanche",
+        "newGame": "Neues Spiel",
+        "opponentWantsRematch": "Gegner möchte eine Revanche!",
+        "rematchRequested": "Revanche angefragt"
     },
     "GameSidebar": {
         "info": "Info",
@@ -398,7 +402,10 @@
     "GameEnd": {
         "win": "Du hast gewonnen!",
         "loss": "Du hast verloren!",
-        "draw": "Unentschieden!"
+        "draw": "Unentschieden!",
+        "rematch": "Revanche",
+        "newGame": "Neues Spiel",
+        "rematchRequested": "Angefragt"
     },
     "Announcements": {
         "title": "Neues & Updates",
@@ -413,11 +420,11 @@
     "LegalNotice": {
         "title": "Impressum - Rechtliche Hinweise",
         "providerHeading": "Anbieter",
-        "providerName": "Lars Thoroe - ChessPie",
+        "providerName": "Lars Thoroe - chessperiment",
         "providerAddress": "Ahlerfeld 29, 38527 Meine",
         "contactHeading": "Kontakt",
         "emailLabel": "E-Mail:",
-        "emailValue": "contact.chesspie@gmail.com",
+        "emailValue": "contact.chessperiment@gmail.com",
         "phoneLabel": "Telefon:",
         "phoneValue": "+49 1517 4288065",
         "copyrightHeading": "Urheberrechtshinweis",
@@ -436,7 +443,7 @@
         "title": "Datenschutzerklärung (DSGVO)",
         "lastUpdated": "(Stand: Juli 2024)",
         "controllerHeading": "1. Verantwortlicher",
-        "controllerText": "Verantwortlich für die Datenverarbeitung auf dieser Website ist:\n\nLasse Mauritz - ChessPie\nAdresse: Ahlerfeld 29, 38527 Meine\nE-Mail: contact.chesspie@gmail.com\n\nWebsite: https://chesspie.org",
+        "controllerText": "Verantwortlich für die Datenverarbeitung auf dieser Website ist:\n\nLasse Mauritz - chessperiment\nAdresse: Ahlerfeld 29, 38527 Meine\nE-Mail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
         "generalHeading": "2. Allgemeine Hinweise",
         "generalText": "Der Schutz Ihrer Daten ist uns wichtig. Wir verarbeiten personenbezogene Daten nur, wenn es für die Bereitstellung unserer Dienste erforderlich ist und halten uns an die Datenschutz-Grundverordnung (DSGVO).",
         "collectionHeading": "3. Daten, die wir erheben",
@@ -468,10 +475,10 @@
     "SEO": {
         "Footer": {
             "title": "Häufig gestellte Fragen",
-            "whatIsChessPie": "Was ist ChessPie?",
-            "whatIsChessPieAnswer": "ChessPie ist die ultimative Plattform für individuelles Schach. Du kannst deine eigenen Bretter entwerfen, eigene Figuren Pixel für Pixel erstellen und einzigartige Schachvarianten online mit Freunden spielen.",
-            "isItFree": "Ist ChessPie kostenlos?",
-            "isItFreeAnswer": "Ja, ChessPie ist derzeit komplett kostenlos nutzbar. Du kannst spielen, erstellen und teilen ohne Kosten.",
+            "whatIschessperiment": "Was ist chessperiment?",
+            "whatIschessperimentAnswer": "chessperiment ist die ultimative Plattform für individuelles Schach. Du kannst deine eigenen Bretter entwerfen, eigene Figuren Pixel für Pixel erstellen und einzigartige Schachvarianten online mit Freunden spielen.",
+            "isItFree": "Ist chessperiment kostenlos?",
+            "isItFreeAnswer": "Ja, chessperiment ist derzeit komplett kostenlos nutzbar. Du kannst spielen, erstellen und teilen ohne Kosten.",
             "canIPlayFriends": "Kann ich mit Freunden spielen?",
             "canIPlayFriendsAnswer": "Absolut! Teile einfach deinen Raumcode oder Link und spiele deine eigenen Varianten sofort im Browser.",
             "legal": "Rechtliches",
@@ -482,11 +489,11 @@
         "Home": {
             "title": "Benutzerdefiniertes Schach Spielen & Erstellen",
             "description": "Die ultimative Plattform für individuelles Schach. Erstelle eigene Schachfiguren, designe Bretter und spiele einzigartige Varianten online.",
-            "h1": "ChessPie - Spielen, erstellen, teilen",
+            "h1": "chessperiment - Spielen, erstellen, teilen",
             "p": "Gestalte einzigartige Schachsets, passe dein Brett an und spiele Multiplayer-Schachvarianten online."
         },
         "Game": {
-            "title": "Schach Online Spielen | Kostenloser Multiplayer | ChessPie",
+            "title": "Schach Online Spielen | Kostenloser Multiplayer | chessperiment",
             "description": "Spiele Schach online mit Freunden auf eigenen Brettern. Schnell, kostenlos und ohne Registrierung.",
             "h1": "Schach Online Spielen"
         },
@@ -496,16 +503,16 @@
             "h1": "Benutzerdefinierter Schachbrett-Editor",
             "seoContent": {
                 "heading": "Erstelle und teile deine eigenen Schachbretter",
-                "text": "Mit dem ChessPie Schachbrett Editor kannst du ganz einfach benutzerdefinierte 8x8, 10x10 oder andere Brettgrößen entwerfen. Passe Farben an, erstelle Startpositionen und teile deine Kreationen. Ideal für Schachvarianten, Feenschach und kreative Schach-Puzzles."
+                "text": "Mit dem chessperiment Schachbrett Editor kannst du ganz einfach benutzerdefinierte 8x8, 10x10 oder andere Brettgrößen entwerfen. Passe Farben an, erstelle Startpositionen und teile deine Kreationen. Ideal für Schachvarianten, Feenschach und kreative Schach-Puzzles."
             }
         },
         "EditorPiece": {
-            "title": "Pixel Schachfiguren Editor | Eigene Figuren Erstellen | ChessPie",
+            "title": "Pixel Schachfiguren Editor | Eigene Figuren Erstellen | chessperiment",
             "description": "Designe deine eigenen Schachfiguren mit unserem Pixel-Editor. Erstelle Könige, Damen und Märchenschach-Figuren.",
             "h1": "Schachfiguren Designer"
         },
         "Marketplace": {
-            "title": "ChessPie Marktplatz | Schach-Sets Herunterladen",
+            "title": "chessperiment Marktplatz | Schach-Sets Herunterladen",
             "description": "Durchsuche und lade von der Community erstellte Schachbretter und Figurensets herunter.",
             "h1": "Schachvarianten Marktplatz"
         },
@@ -515,26 +522,31 @@
                 "h1": "Schachpartie Analyse"
             },        "LegalNotice": {
             "title": "Impressum - Rechtliche Hinweise",
-            "description": "Rechtliche Informationen und Kontakt details für ChessPie."
+            "description": "Rechtliche Informationen und Kontakt details für chessperiment."
         },
         "PrivacyPolicy": {
             "title": "Datenschutzerklärung",
-            "description": "Erfahre, wie wir deine Daten bei ChessPie schützen."
+            "description": "Erfahre, wie wir deine Daten bei chessperiment schützen."
         },
         "Login": {
-            "title": "Anmelden bei ChessPie",
-            "description": "Melde dich bei ChessPie an, um deine Kreationen zu speichern und auf dein Profil zuzugreifen.",
-            "h1": "Bei ChessPie Anmelden"
+            "title": "Anmelden bei chessperiment",
+            "description": "Melde dich bei chessperiment an, um deine Kreationen zu speichern und auf dein Profil zuzugreifen.",
+            "h1": "Bei chessperiment Anmelden"
         },
         "Announcements": {
-            "title": "ChessPie Neuigkeiten & Updates",
-            "description": "Bleib auf dem Laufenden mit den neuesten Funktionen und Updates von ChessPie.",
+            "title": "chessperiment Neuigkeiten & Updates",
+            "description": "Bleib auf dem Laufenden mit den neuesten Funktionen und Updates von chessperiment.",
             "h1": "Aktuelle Neuigkeiten"
         },
         "About": {
-            "title": "Über ChessPie | Die Custom Chess Plattform",
-            "description": "Erfahre mehr über ChessPie, unsere Mission und die Funktionen, die uns einzigartig machen.",
-            "h1": "Über ChessPie"
+            "title": "Über chessperiment | Die Custom Chess Plattform",
+            "description": "Erfahre mehr über chessperiment, unsere Mission und die Funktionen, die uns einzigartig machen.",
+            "h1": "Über chessperiment"
+        },
+        "PieceEditorFAQ": {
+            "title": "Figuren-Editor FAQ | Visuelle Programmierung Hilfe | chessperiment",
+            "description": "Erfahre, wie du den Figuren-Editor, Logik-Blöcke und Zugregeln verwendest. Detaillierte Anleitung für das Erstellen eigener Schachfiguren.",
+            "h1": "Technische FAQ zum Figuren-Editor"
         }
     },
     "Library": {
@@ -566,8 +578,8 @@
         "backHome": "Zurück zum Spiel"
     },
     "About": {
-        "title": "Über ChessPie",
-        "intro": "ChessPie (chesspie.org) ist eine Web-Plattform, die sich der Erstellung hochgradig anpassbarer Schachvarianten widmet. Im Gegensatz zu herkömmlichen Schach-Webseiten ermöglicht ChessPie den Nutzern, ihre eigenen einzigartigen Spiele zu entwerfen – mit voller Kontrolle über Bretter, Figuren, Regeln und Interaktionen.",
+        "title": "Über Chessperiment",
+        "intro": "Chessperiment (chessperiment.app) ist eine Web-Plattform, die sich der Erstellung hochgradig anpassbarer Schachvarianten widmet. Im Gegensatz zu herkömmlichen Schach-Webseiten ermöglicht Chessperiment den Nutzern, ihre eigenen einzigartigen Spiele zu entwerfen – mit voller Kontrolle über Bretter, Figuren, Regeln und Interaktionen.",
         "features": {
             "title": "Hauptmerkmale",
             "customBoards": {
@@ -589,11 +601,49 @@
         },
         "mission": {
             "title": "Unsere Mission",
-            "description": "ChessPie existiert, um die Grenzen der Kreativität im Schach zu erweitern. Wir möchten jedem, vom Anfänger bis zum Fortgeschrittenen, die Möglichkeit geben, völlig neue Schacherlebnisse zu erfinden, zu teilen und zu spielen."
+            "description": "Chessperiment existiert, um die Grenzen der Kreativität im Schach zu erweitern. Wir möchten jedem, vom Anfänger bis zum Fortgeschrittenen, die Möglichkeit geben, völlig neue Schacherlebnisse zu erfinden, zu teilen und zu spielen."
         },
         "developer": {
             "title": "Über den Entwickler",
-            "description": "ChessPie wird von einem einzelnen Entwickler entwickelt, der auf Reddit und GitHub aktiv ist. Erst vor wenigen Wochen gestartet, hat die Plattform bereits über 100 Nutzer angezogen, die die endlosen Möglichkeiten des anpassbaren Schachs erkunden."
+            "description": "Chessperiment wird von einem einzelnen Entwickler entwickelt, der auf Reddit und GitHub aktiv ist. Erst vor wenigen Wochen gestartet, hat die Plattform bereits über 100 Nutzer angezogen, die die endlosen Möglichkeiten des anpassbaren Schachs erkunden."
+        }
+    },
+    "PieceEditorFAQ": {
+        "title": "Figuren-Editor FAQ",
+        "description": "Alles was du über die Erstellung von eigenen Figuren mit komplexer Logik wissen musst.",
+        "sections": {
+            "general": {
+                "title": "Allgemeine Konzepte",
+                "q1": "Was ist der Figuren-Editor?",
+                "a1": "Der Figuren-Editor ermöglicht es dir, das Aussehen und die Bewegungslogik deiner eigenen Schachfiguren zu gestalten. Er besteht aus einem Pixel-Editor (64x64) und zwei Logik-Editoren: dem Visuellen Zug-Editor für geometrische Einschränkungen und dem Visuellen Logik-Editor (Block-Editor) für ereignisgesteuertes Verhalten.",
+                "q2": "Was sind Vektorbeschränkungen?",
+                "a2": "Anstatt fester Muster verwendet die Engine geometrische Vektoren. Ein Zug wird durch seinen Versatz in X- (horizontal) und Y- (vertikal) Richtung definiert. Dies ermöglicht flexible Definitionen wie 'beliebige Distanz auf der Diagonale' oder 'genau 2 Felder horizontal'."
+            },
+            "moveEditor": {
+                "title": "Visueller Zug-Editor",
+                "q1": "Wie definiere ich grundlegende Bewegungen?",
+                "a1": "Du definierst Regeln mit Variablen: diffX (horizontaler Schritt), diffY (vertikaler Schritt), absDiffX (absoluter horizontaler Abstand) und absDiffY (absoluter vertikaler Abstand). Wenn ein Zug deinen Bedingungen entspricht, wird er als 'Erlaubt' (legal) oder 'Verboten' (illegal) markiert.",
+                "q2": "Was ist der Unterschied zwischen Gleiten und Springen?",
+                "a2": "Aktuell basieren benutzerdefinierte Züge standardmäßig auf 'Teleportation'. Wenn du eine Regel für ein Zielfeld definierst, springt die Figur dorthin. Zukünftige Updates werden 'Kollisionseigenschaften' einführen, um das Gleitverhalten (wobei Zwischenfelder leer sein müssen) umzuschalten."
+            },
+            "logicEditor": {
+                "title": "Visueller Logik-Editor (Block-Editor)",
+                "q1": "Wie funktionieren Trigger?",
+                "a1": "Trigger sind die Startpunkte deiner Logikketten (z.B. 'beim Schlagen', 'beim Bewegen', 'beim Geschlagenwerden'). Sie lösen aus, wenn ein bestimmtes Ereignis eintritt. Du musst Effekt-Blöcke an diese Trigger andocken, damit sie ausgeführt werden.",
+                "q2": "Was ist 'Aktion verhindern'?",
+                "a2": "Der Block 'Aktion verhindern' (Prevent Default) ist ein mächtiges Terminal, das die Engine daran hindert, ihre Standardaktion auszuführen. Zum Beispiel macht das Platzieren innerhalb von 'beim Geschlagenwerden' die Figur unbesiegbar, da das Schlagereignis abgebrochen wird.",
+                "q3": "Kann ich Figuren transformieren?",
+                "a3": "Ja. Mit dem Block 'Transformation' kannst du eine Figur in einen anderen Typ verwandeln. Dies wird häufig für Bauernumwandlungen oder spezielle 'Phönix'-Figuren verwendet, die sich verwandeln anstatt zu sterben.",
+                "q4": "Wie funktionieren Variablen?",
+                "a4": "Du kannst den Block 'Variable ändern' verwenden, um numerische Werte (wie 'Leben' oder 'Wut-Stacks') zu erhöhen oder zu verringern. Du kannst dann den Trigger 'bei Variable' verwenden, um zu reagieren, wenn eine Variable einen bestimmten Schwellenwert erreicht."
+            },
+            "troubleshooting": {
+                "title": "Fehlerbehebung",
+                "q1": "Warum löst meine Logik nicht aus?",
+                "a1": "Stelle sicher, dass deine Blöcke physisch aneinander angedockt sind. Frei schwebende Blöcke werden nicht ausgeführt. Überprüfe auch den Kontext des Triggers: 'beim Schlagen' löst *während* des Schlagens aus, während 'beim Bewegen' erst auslöst, nachdem das Brett bereits aktualisiert wurde.",
+                "q2": "Funktioniert 'Aktion verhindern' bei 'bei Bedrohung'?",
+                "a2": "Nein. 'bei Bedrohung' ist eine passive Prüfung zur Hervorhebung. Du kannst eine Bedrohung nicht 'verhindern'; du kannst nur den Zug oder das Schlagen verhindern, das sie verursacht."
+            }
         }
     }
 }

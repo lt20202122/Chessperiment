@@ -1,10 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, Undo2, Redo2, Type, Box, Loader2, Palette, ChevronDown, Check, Move, RefreshCw } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { Save, Plus, Trash2, Undo2, Redo2, Type, Box, Loader2, Palette, ChevronDown, Check, Move, RefreshCw, HelpCircle } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 import { PieceSet, CustomPiece } from '@/lib/firestore';
 import PieceRenderer from '@/components/game/PieceRenderer';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 
 interface PieceEditorSidebarProps {
     sets: (PieceSet & { id: string })[];
@@ -56,6 +57,7 @@ export default function PieceEditorSidebar({
     onGenerateInvertedPiece
 }: PieceEditorSidebarProps) {
     const t = useTranslations('Editor.Piece');
+    const locale = useLocale();
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; pieceId: string } | null>(null);
 
     const activeSet = sets.find(s => s.id === currentSetId);
@@ -90,9 +92,14 @@ export default function PieceEditorSidebar({
             {/* Header / Active Set */}
             <div className="mb-10 shrink-0">
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
-                        {t('sidebarTitle')}
-                    </h2>
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
+                            {t('sidebarTitle')}
+                        </h2>
+                        <Link href={`/${locale}/editor/piece/faq`} target="_blank" className="p-1.5 rounded-xl bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-400 hover:text-amber-500 hover:border-amber-500/50 transition-all shadow-sm" title="FAQ">
+                            <HelpCircle size={16} />
+                        </Link>
+                    </div>
                     <div className="relative group/sets">
                         <button
                             className="p-2 rounded-xl bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white dark:hover:text-bg transition-all active:scale-95 flex items-center gap-2"

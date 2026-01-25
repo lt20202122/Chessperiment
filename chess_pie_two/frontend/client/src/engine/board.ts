@@ -213,29 +213,6 @@ export class BoardClass {
                 return false;
             }
 
-            // --- Pre-Move Environment Trigger ---
-            if (pieceToMove && (pieceToMove as any).isCustom) {
-                // on-leave-square trigger
-                const leaveContext = { square: from, prevented: false, movePrevented: false };
-                (pieceToMove as any).executeLogic('on-leave-square', leaveContext, this);
-                if (leaveContext.prevented || leaveContext.movePrevented) {
-                     console.log(`[Move] Prevented by on-leave-square logic`);
-                     return false;
-                }
-
-                // on-enter-threatened-square trigger
-                // Check if target square is attached by enemy
-                const oppColor = piece.color === 'white' ? 'black' : 'white';
-                if (this.isSquareAttacked(to, oppColor)) {
-                    const threatContext = { square: to, prevented: false, movePrevented: false };
-                    (pieceToMove as any).executeLogic('on-enter-threatened-square', threatContext, this);
-                     if (threatContext.prevented || threatContext.movePrevented) {
-                         console.log(`[Move] Prevented by on-enter-threatened-square logic`);
-                         return false;
-                    }
-                }
-            }
-
             // No prevention - execute the move normally
             // If this was a capture and no transformation occurred, remove the captured piece first
             if (isCapture) {
@@ -247,13 +224,6 @@ export class BoardClass {
             pieceToMove.hasMoved = true;
             this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
             
-            // --- Post-Move Environment Trigger ---
-            if (pieceToMove && (pieceToMove as any).isCustom) {
-                // on-enter-square trigger
-                const enterContext = { square: to }; // Cannot be prevented as move is done
-                (pieceToMove as any).executeLogic('on-enter-square', enterContext, this);
-            }
-
             // Turn Lifecycle: Update all custom pieces and fire environment triggers
             const allSquares = this.getSquares();
             for (const s in allSquares) {
