@@ -6,7 +6,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node new_server.ts"
+    "start": "node new_server.js",
+    "dev": "nodemon new_server.js"
+  },
+  "engines": {
+    "node": ">=14.8.0"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +20,7 @@
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "nodemon": "^3.1.11",
+    "redis": "^5.10.0",
     "socket.io": "^4.8.1",
     "stockfish": "^17.1.0",
     "ts-node": "^10.9.2",

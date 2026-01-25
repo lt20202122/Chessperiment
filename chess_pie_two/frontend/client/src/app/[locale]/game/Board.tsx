@@ -89,7 +89,7 @@ const DraggablePiece = memo(function DraggablePiece({
   piece: PieceType;
   size: number;
   amIAtTurn: boolean;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent | React.TouchEvent) => void;
   boardStyle: string;
   isViewingHistory: boolean;
   gameStatus: string;
@@ -131,7 +131,10 @@ const DraggablePiece = memo(function DraggablePiece({
       ref={setNodeRef}
       {...(canDrag ? { ...attributes, ...listeners } : {})}
       style={style}
-      onClick={onClick}
+      onClick={(e) => {
+        // Only stop propagation if we are dragging/active
+        onClick(e);
+      }}
     >
       <Image
         src={getPieceImage(boardStyle, piece.color, piece.type)}
@@ -193,7 +196,7 @@ const SquareTile = memo(function SquareTile({
     <div
       key={pos}
       ref={combinedRef}
-      className={`${isWhite ? "white-square" : "black-square"} ${isMoveFrom ? "move-from" : ""} ${isMoveTo ? "move-to" : ""} m-0 aspect-square relative flex items-center justify-center ${selected ? "ring-4 ring-blue-500" : ""}`}
+      className={`${isWhite ? "white-square" : "black-square"} ${isMoveFrom ? "move-from" : ""} ${isMoveTo ? "move-to" : ""} m-0 aspect-square relative flex items-center justify-center ${selected ? "ring-4 ring-inset ring-blue-500" : ""}`}
       style={{
         width: blockSize,
         height: blockSize,
@@ -209,7 +212,10 @@ const SquareTile = memo(function SquareTile({
           piece={piece}
           size={piece.size as number}
           amIAtTurn={amIAtTurn}
-          onClick={() => onClick(pos)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick(pos);
+          }}
           boardStyle={boardStyle}
           isViewingHistory={isViewingHistory}
           gameStatus={gameStatus}
@@ -235,8 +241,17 @@ export default function Board({
   const t = useTranslations("Multiplayer");
   const router = useRouter();
   const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
-  const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 2 } });
-  const touchSensor = useSensor(TouchSensor, { activationConstraint: { distance: 2 } });
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 8,
+    },
+  });
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 250,
+      tolerance: 10,
+    },
+  });
   const sensors = useSensors(pointerSensor, touchSensor);
   const socket = useSocket();
 
@@ -338,7 +353,7 @@ export default function Board({
     } catch (e) { }
   }, [chess, updateBoardState, myColor, t]);
 
-  const { requestMove, isReady } = useStockfish(chess.fen(), difficulty, onBestMove);
+  const { requestMove, isReady } = useStockfish(currentRoom, difficulty, onBestMove);
 
   useEffect(() => {
     if (gameMode === 'computer' && isReady && gameStatus === 'playing') {

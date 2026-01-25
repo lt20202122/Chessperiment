@@ -11,7 +11,7 @@ export function MobileMenu({ locale, isMenuOpen, setIsMenuOpen }: { locale: stri
         <>
             {/* Mobile Nav Overlay */}
             {isMenuOpen && (
-                <div className="fixed inset-0 bg-bg z-[100] flex flex-col items-center justify-start pt-32 px-8 animate-in slide-in-from-top duration-500">
+                <div className="fixed inset-0 bg-bg z-100 flex flex-col items-center justify-start pt-32 px-8 animate-in slide-in-from-top duration-500">
                     {/* Close button inside overlay */}
                     <button
                         className="absolute top-6 right-6 p-4 text-amber-400 hover:scale-110 transition-transform active:scale-95 bg-amber-400/10 rounded-2xl"
@@ -75,6 +75,14 @@ export function MobileMenu({ locale, isMenuOpen, setIsMenuOpen }: { locale: stri
                             onClick={() => setIsMenuOpen(false)}
                         >
                             <span>{t('login')}</span>
+                            <div className="w-2 h-2 rounded-full bg-amber-400/20 group-hover:bg-accent group-hover:scale-150 transition-all opacity-0 group-hover:opacity-100" />
+                        </Link>
+                        <Link
+                            href="/about"
+                            className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            <span>{t('about')}</span>
                             <div className="w-2 h-2 rounded-full bg-amber-400/20 group-hover:bg-accent group-hover:scale-150 transition-all opacity-0 group-hover:opacity-100" />
                         </Link>
                     </div>

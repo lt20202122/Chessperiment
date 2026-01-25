@@ -1,0 +1,54 @@
+# Chessperiment
+
+> Chessperiment is a web-based sandbox for designing, experimenting with, and playing custom chess variants.  
+> It focuses on flexible board layouts, customizable pieces, and rule experimentation rather than standard chess play.
+
+## Core Capabilities
+
+- Custom Variant Design  
+  Chessperiment allows users to create their own chess variants by defining board layouts, starting positions, pieces, and movement rules.
+
+- Custom Piece Definitions  
+  Pieces can be configured with non-standard movement patterns, including directional moves, jumps, and board-dependent behavior.
+
+- Flexible Board Layouts  
+  Boards are not limited to the classic 8×8 grid. Chessperiment supports custom sizes and alternative board geometries, including experimental layouts.
+
+- Rule Experimentation  
+  The platform is designed to explore alternative rulesets and mechanics beyond orthodox chess, with an emphasis on prototyping and iteration.
+
+- Variant Sharing  
+  Created variants can be saved and shared so others can explore and test custom designs.
+
+## Technical Notes
+
+- Data Model  
+  Variants are represented using structured, machine-readable configurations (e.g. JSON-style rule definitions).
+
+- Engine Scope  
+  Chessperiment uses a custom rule interpreter focused on validating moves and rules defined by the user.  
+  It is not a traditional chess engine and does not rely on standard chess libraries.
+
+- Platform  
+  Runs entirely in the browser and is intended for experimentation, editing, and play within a web environment.
+
+## Intended Use
+
+Chessperiment is aimed at:
+- experimenting with chess mechanics  
+- designing custom boards and pieces  
+- exploring non-standard variants  
+- learning and prototyping abstract strategy games inspired by chess
+
+It is not limited to competitive play and is not focused on classical chess optimization.
+
+## Resources
+
+- Board Editor  
+  https://chessperiment.app/editor/board/faq
+
+- Documentation (work in progress)  
+  https://chessperiment.app/docs
+
+- Piece Editor
+  https://chessperiment.app/editor/piece/faq
