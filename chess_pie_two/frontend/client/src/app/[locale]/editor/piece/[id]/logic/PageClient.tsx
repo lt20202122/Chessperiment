@@ -42,6 +42,7 @@ interface SocketConfig {
     type: 'number' | 'text' | 'select';
     label?: string;
     options?: string[];
+    acceptsVariable?: boolean;
 }
 
 interface BlockInstance extends BlockTemplate {
@@ -92,10 +93,8 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'Trigger',
         color: '#FFD700',
         description: 'Triggers when the piece moves.',
-        sockets: [
-            { id: 'by', type: 'select', label: 'by', options: ['Any', 'Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }
-        ],
-        width: 220
+        sockets: [],
+        width: 140
     },
     {
         id: 'on-captured',
@@ -108,33 +107,6 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
             { id: 'by', type: 'select', label: 'by', options: ['Any', 'Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }
         ],
         width: 220
-    },
-    {
-        id: 'on-leave-square',
-        type: 'trigger',
-        label: 'onLeaveSquare',
-        category: 'Trigger',
-        color: '#FFD700',
-        description: 'Triggers when THIS piece leaves its current square.',
-        width: 180
-    },
-    {
-        id: 'on-enter-square',
-        type: 'trigger',
-        label: 'onEnterSquare',
-        category: 'Trigger',
-        color: '#FFD700',
-        description: 'Triggers when THIS piece enters its destination square.',
-        width: 180
-    },
-    {
-        id: 'on-enter-threatened-square',
-        type: 'trigger',
-        label: 'onEnterThreatenedSquare',
-        category: 'Trigger',
-        color: '#FFD700',
-        description: 'Triggers when THIS piece enters a square that is under attack by the opponent.',
-        width: 240
     },
     {
         id: 'on-environment',
@@ -156,26 +128,13 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         color: '#FFD700',
         description: 'Triggers when a variable meets a condition.',
         sockets: [
-            { id: 'varName', type: 'text', label: 'Var' },
+            { id: 'varName', type: 'text', label: 'Var', acceptsVariable: true },
             { id: 'op', type: 'select', options: ['==', '!=', '>', '<', '>=', '<='] },
-            { id: 'value', type: 'number' }
+            { id: 'value', type: 'text' }
         ],
         width: 280
     },
-    {
-        id: 'variable-trigger',
-        type: 'trigger',
-        label: 'Variable Trigger',
-        category: 'Trigger',
-        color: '#FF6347',
-        description: 'Triggers when any variable equals a specific value (number, text, or boolean).',
-        sockets: [
-            { id: 'variableName', type: 'text', label: 'Variable' },
-            { id: 'comparisonType', type: 'select', label: 'Type', options: ['Number', 'Text', 'Boolean'] },
-            { id: 'value', type: 'text', label: 'Value' }
-        ],
-        width: 320
-    },
+
     {
         id: 'cooldown',
         type: 'effect',
@@ -188,30 +147,6 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
             { id: 'unit', type: 'select', options: ['seconds', 'half-moves', 'full-moves'] }
         ],
         width: 320
-    },
-    {
-        id: 'charge',
-        type: 'effect',
-        label: 'Charge',
-        category: 'Effects',
-        color: '#4169E1',
-        description: 'Charges an ability over multiple moves.',
-        sockets: [
-            { id: 'turns', type: 'number', label: 'moves' }
-        ],
-        width: 180
-    },
-    {
-        id: 'mode',
-        type: 'effect',
-        label: 'Mode',
-        category: 'Effects',
-        color: '#4169E1',
-        description: 'Changes the mode or state of the piece.',
-        sockets: [
-            { id: 'mode', type: 'text', label: 'Set' }
-        ],
-        width: 200
     },
     {
         id: 'transformation',
@@ -233,7 +168,7 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         color: '#4169E1',
         description: 'Modifies a variable value.',
         sockets: [
-            { id: 'varName', type: 'text' },
+            { id: 'varName', type: 'text', acceptsVariable: true },
             { id: 'op', type: 'select', options: ['+=', '-=', '='] },
             { id: 'value', type: 'number' }
         ],
@@ -490,6 +425,29 @@ export default function LogicPageClient({ id }: { id: string }) {
 
         if (!currentTemplate) return;
 
+        // Check for drop into socket
+        if (over && over.data.current && over.data.current.type === 'socket' && currentTemplate.type === 'variable') {
+            const { blockId, socketId } = over.data.current;
+            setCanvasBlocks(prev => prev.map(b => {
+                if (b.instanceId === blockId) {
+                    return {
+                        ...b,
+                        socketValues: {
+                            ...b.socketValues,
+                            [socketId]: { type: 'variable', id: currentTemplate.id, name: currentTemplate.label }
+                        }
+                    };
+                }
+                return b;
+            }));
+
+            // If dragging an existing variable block from canvas, remove it (move behavior)
+            if (active.data.current?.block) {
+                setCanvasBlocks(prev => prev.filter(b => b.instanceId !== active.id));
+            }
+            return;
+        }
+
         const canvasElement = document.getElementById('canvas');
         if (!canvasElement) return;
 
@@ -690,7 +648,7 @@ export default function LogicPageClient({ id }: { id: string }) {
                                         />
                                     </div>
                                 </div>
-                                
+
                                 {/* Custom Variables Section */}
                                 <div>
                                     <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">Custom Variables</h3>
@@ -708,7 +666,7 @@ export default function LogicPageClient({ id }: { id: string }) {
                                         />
                                     ))}
                                 </div>
-                                
+
                                 <AnimatePresence>
                                     {isCreatingVar ? (
                                         <motion.div
@@ -955,7 +913,9 @@ function BlockComponent({
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [showTooltip, setShowTooltip] = useState(false);
 
-    const width = block.width || (block.type === 'variable' ? VARIABLE_WIDTH : DEFAULT_WIDTH);
+    const filledVariablesCount = Object.values(block.socketValues || {}).filter((v: any) => v && v.type === 'variable').length;
+    const extraWidth = filledVariablesCount * 100;
+    const width = (block.width || (block.type === 'variable' ? VARIABLE_WIDTH : DEFAULT_WIDTH)) + extraWidth;
     const height = BLOCK_HEIGHT;
     const hasNotch = block.type !== 'variable';
 
@@ -1073,31 +1033,12 @@ function BlockComponent({
                 <span className="font-black text-xs text-[rgba(0,0,0,0.7)] uppercase tracking-wider">{block.label}</span>
 
                 {block.sockets?.map(socket => (
-                    <div key={socket.id} className="flex items-center gap-1 bg-black/10 rounded px-1.5 py-0.5">
-                        {socket.label && <span className="text-[9px] font-bold text-black/50">{socket.label}</span>}
-                        {socket.type === 'select' ? (
-                            <select
-                                value={block.socketValues[socket.id] || ''}
-                                onChange={(e) => onUpdateSocket?.(socket.id, e.target.value)}
-                                className="bg-transparent text-[10px] font-bold text-black border-none outline-none min-w-[40px] appearance-none cursor-pointer"
-                                onClick={(e) => e.stopPropagation()}
-                                onPointerDown={(e) => e.stopPropagation()}
-                            >
-                                <option value="">-</option>
-                                {socket.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
-                        ) : (
-                            <input
-                                type={socket.type === 'number' ? 'number' : 'text'}
-                                value={block.socketValues[socket.id] || ''}
-                                onChange={(e) => onUpdateSocket?.(socket.id, e.target.value)}
-                                className="bg-transparent text-[10px] font-bold text-black border-none outline-none w-[40px] text-center"
-                                placeholder="..."
-                                onClick={(e) => e.stopPropagation()}
-                                onPointerDown={(e) => e.stopPropagation()}
-                            />
-                        )}
-                    </div>
+                    <SocketComponent
+                        key={socket.id}
+                        socket={socket}
+                        block={block}
+                        onUpdateSocket={onUpdateSocket}
+                    />
                 ))}
             </div>
 
@@ -1122,6 +1063,79 @@ function BlockComponent({
                     </motion.div>
                 )}
             </AnimatePresence>
+        </div>
+    );
+}
+
+function SocketComponent({
+    socket,
+    block,
+    onUpdateSocket
+}: {
+    socket: SocketConfig,
+    block: BlockInstance | (BlockTemplate & { instanceId: string; socketValues: any }),
+    onUpdateSocket?: (socketId: string, value: any) => void
+}) {
+    const { setNodeRef, isOver } = useDroppable({
+        id: `socket-${block.instanceId}-${socket.id}`,
+        data: {
+            type: 'socket',
+            blockId: block.instanceId,
+            socketId: socket.id
+        },
+        disabled: !socket.acceptsVariable
+    });
+
+    const currentValue = block.socketValues[socket.id];
+    // Check if value is a dropped variable object
+    const isVariable = currentValue && typeof currentValue === 'object' && currentValue.type === 'variable';
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors ${isOver ? 'bg-orange-500/50 ring-2 ring-orange-500' : 'bg-black/10'
+                }`}
+        >
+            {socket.label && <span className="text-[9px] font-bold text-black/50">{socket.label}</span>}
+
+            {isVariable ? (
+                <div className="flex items-center gap-1 bg-orange-500 text-white rounded px-2 py-0.5 text-[10px] font-bold shadow-sm">
+                    <span>{currentValue.name || 'VAR'}</span>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onUpdateSocket?.(socket.id, undefined);
+                        }}
+                        className="ml-1 hover:text-black/50"
+                    >
+                        ×
+                    </button>
+                </div>
+            ) : socket.type === 'select' ? (
+                <select
+                    value={currentValue || ''}
+                    onChange={(e) => onUpdateSocket?.(socket.id, e.target.value)}
+                    className="bg-transparent text-[10px] font-bold text-black border-none outline-none min-w-[40px] appearance-none cursor-pointer"
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                >
+                    <option value="">-</option>
+                    {socket.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+            ) : (
+                <input
+                    type={socket.type === 'number' ? 'number' : 'text'}
+                    value={currentValue || ''}
+                    onChange={(e) => {
+                        if (socket.type === 'number' && parseFloat(e.target.value) < 0) return;
+                        onUpdateSocket?.(socket.id, e.target.value)
+                    }}
+                    className="bg-transparent text-[10px] font-bold text-black border-none outline-none w-[40px] text-center"
+                    placeholder="..."
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                />
+            )}
         </div>
     );
 }

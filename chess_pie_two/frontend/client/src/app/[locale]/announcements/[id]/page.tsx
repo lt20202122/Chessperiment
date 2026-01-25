@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: any }) {
     const locale = resolvedParams?.locale || 'en';
     const announcement = announcements.find(a => a.id === id);
 
-    if (!announcement) return { title: 'Not Found | ChessPie' };
+    if (!announcement) return { title: 'Not Found | chessperiment' };
 
     const t = await getTranslations({ locale, namespace: 'SEO.Announcements' });
 

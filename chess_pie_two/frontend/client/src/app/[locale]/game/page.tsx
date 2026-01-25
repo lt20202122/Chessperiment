@@ -14,8 +14,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: `https://chesspie.org/${locale}/game`,
-            siteName: 'ChessPie',
+            url: `https://chessperiment.app/${locale}/game`,
+            siteName: 'chessperiment',
             images: [{ url: '/images/seo/og-game.png', width: 1200, height: 630 }],
             type: 'website',
         },
@@ -26,10 +26,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
             images: ['/images/seo/twitter-image.png'],
         },
         alternates: {
-            canonical: `https://chesspie.org/${locale}/game`,
+            canonical: `https://chessperiment.app/${locale}/game`,
             languages: {
-                'en': 'https://chesspie.org/en/game',
-                'de': 'https://chesspie.org/de/game'
+                'en': 'https://chessperiment.app/en/game',
+                'de': 'https://chessperiment.app/de/game'
             }
         },
     };
@@ -42,8 +42,8 @@ export default async function Game({ params }: { params: Promise<{ locale: strin
     const jsonLd_gameIndex = {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-        "name": "ChessPie Games",
-        "url": `https://chesspie.org/${locale}/game`,
+        "name": "chessperiment Games",
+        "url": `https://chessperiment.app/${locale}/game`,
         "applicationCategory": "GameApplication",
         "operatingSystem": "Web",
         "offers": {

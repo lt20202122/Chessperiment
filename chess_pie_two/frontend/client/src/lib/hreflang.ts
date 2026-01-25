@@ -12,7 +12,7 @@ interface HreflangEntry {
  * @param path relative URL ohne /[locale], z.B. "/game" oder "/editor/board"
  * @param locales Array aller unterstützten Sprachen
  * @param defaultLocale Default-Locale für x-default
- * @param baseUrl Basis-URL, z.B. https://chesspie.org
+ * @param baseUrl Basis-URL, z.B. https://chessperiment.app
  */
 export function generateHreflangs(
     path: string,

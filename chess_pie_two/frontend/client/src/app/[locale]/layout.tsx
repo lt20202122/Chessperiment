@@ -15,6 +15,7 @@ import { Providers } from "../providers";
 import { Analytics } from "@vercel/analytics/next"
 import { SEOFooter } from "@/components/SEOFooter";
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { NameChangeAnnouncement } from "@/components/NameChangeAnnouncement";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
 
   // UPDATED: Use your new domain here
-  const siteUrl = "https://chessperiment.com";
+  const siteUrl = "https://chessperiment.app";
   const localeUrl = `${siteUrl}/${locale}`;
 
   return {
@@ -74,21 +75,22 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       type: "website",
       locale: locale === "de" ? "de_DE" : "en_US",
       url: localeUrl,
-      siteName: "Chessperiment",
-      title: "Chessperiment | Design & Play Custom Chess Variants",
-      description: "Define custom piece logic and create unique chess worlds.",
+      siteName: "ChessPie",
+      title: "ChessPie | Play, Create & Share Custom Chess Variants",
+      description: "Design custom chess pieces, create unique boards, and play chess variants with friends.",
       images: [
         {
           url: "/images/seo/og-home.png",
           width: 1200,
           height: 630,
-          alt: "Chessperiment - Custom Chess Platform",
+          alt: "ChessPie - Custom Chess Platform",
+          type: "image/png",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Chessperiment | Custom Chess Sandbox",
+      title: "chessperiment | Custom Chess Sandbox",
       description: "Create your own chess world. Design pieces, boards and play online.",
       images: ["/images/seo/twitter-image.png"],
     },
@@ -138,6 +140,7 @@ export default async function RootLayout({
               disableTransitionOnChange
             >
               <Providers>
+                <NameChangeAnnouncement />
                 <Analytics />
                 <SpeedInsights />
                 <UserPanel />

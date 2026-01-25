@@ -7,7 +7,7 @@ export function SEOFooter() {
     const t = useTranslations('SEO.Footer');
 
     const faqs = [
-        { q: 'whatIsChessPie', a: 'whatIsChessPieAnswer' },
+        { q: 'whatIschessperiment', a: 'whatIschessperimentAnswer' },
         { q: 'isItFree', a: 'isItFreeAnswer' },
         { q: 'canIPlayFriends', a: 'canIPlayFriendsAnswer' },
     ];
@@ -57,10 +57,10 @@ export function SEOFooter() {
                             </ul>
                         </div>
                         <div className='flex flex-col gap-2'>
-                            <h3 className='font-bold text-stone-900 dark:text-white uppercase tracking-widest text-sm'>ChessPie</h3>
+                            <h3 className='font-bold text-stone-900 dark:text-white uppercase tracking-widest text-sm'>chessperiment</h3>
                             <p className='text-stone-500 text-sm'>
                                 Designed and built for chess enthusiasts. <br />
-                                &copy; {new Date().getFullYear()} ChessPie.
+                                &copy; {new Date().getFullYear()} chessperiment.
                             </p>
                         </div>
                     </div>

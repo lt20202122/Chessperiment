@@ -2,6 +2,8 @@ import Btn from "./Buttons"
 import { getTranslations } from 'next-intl/server';
 import { HelpArticlesAll } from "@/components/help/HelpArticles";
 
+const siteUrl = "https://chesspie.org";
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'SEO.Home' });
@@ -10,18 +12,25 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: t('title'),
     description: t('description'),
     alternates: {
-      canonical: `https://chesspie.org/${locale}`,
+      canonical: `${siteUrl}/${locale}`,
       languages: {
-        'en': 'https://chesspie.org/en',
-        'de': 'https://chesspie.org/de'
+        'en': `${siteUrl}/en`,
+        'de': `${siteUrl}/de`
       },
     },
     openGraph: {
       title: t('title'),
       description: t('description'),
-      url: `https://chesspie.org/${locale}`,
+      url: `${siteUrl}/${locale}`,
       type: "website",
-      images: [{ url: "/images/seo/og-home.png", width: 1200, height: 630 }],
+      images: [
+        {
+          url: "/images/seo/og-home.png",
+          width: 1200,
+          height: 630,
+          type: "image/png"
+        }
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -41,20 +50,20 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     "@graph": [
       {
         "@type": "WebSite",
-        "@id": `https://chesspie.org/${locale}/#website`,
-        "url": `https://chesspie.org/${locale}`,
+        "@id": `${siteUrl}/${locale}/#website`,
+        "url": `${siteUrl}/${locale}`,
         "name": "ChessPie",
         "description": t('description'),
         "inLanguage": locale
       },
       {
         "@type": "Organization",
-        "@id": `https://chesspie.org/${locale}/#organization`,
+        "@id": `${siteUrl}/${locale}/#organization`,
         "name": "ChessPie",
-        "url": `https://chesspie.org/${locale}`,
+        "url": `${siteUrl}/${locale}`,
         "logo": {
           "@type": "ImageObject",
-          "url": "https://chesspie.org/icon.png"
+          "url": `${siteUrl}/icon.png`
         },
         "sameAs": []
       }

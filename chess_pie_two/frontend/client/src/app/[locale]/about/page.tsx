@@ -11,10 +11,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         title: t("title"),
         description: t("description"),
         alternates: {
-            canonical: `https://chesspie.org/${locale}/about`,
+            canonical: `https://chessperiment.app/${locale}/about`,
             languages: {
-                "en": "https://chesspie.org/en/about",
-                "de": "https://chesspie.org/de/about"
+                "en": "https://chessperiment.app/en/about",
+                "de": "https://chessperiment.app/de/about"
             }
         },
     };
@@ -62,7 +62,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                             transition={{ duration: 0.5 }}
                         >
                             <Link href="/" className="inline-flex items-center space-x-2 text-sm font-medium text-orange-600 dark:text-orange-400 hover:text-orange-500 transition-colors mb-8">
-                                <span>← ChessPie</span>
+                                <span>← chessperiment</span>
                             </Link>
                             <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl bg-clip-text text-transparent bg-linear-to-r from-orange-600 to-amber-600 dark:from-orange-400 dark:to-amber-400">
                                 {t("title")}
@@ -148,9 +148,9 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                             className="absolute left-1/2 top-1/2 -z-10 h-[400px] w-[800px] -translate-x-1/2 -translate-y-1/2 [mask-image:radial-gradient(closest-side,white,transparent)] opacity-40 group-hover:opacity-60 transition-opacity duration-700"
                             aria-hidden="true"
                         >
-                            <circle cx="512" cy="512" r="512" fill="url(#chesspie-gradient)" />
+                            <circle cx="512" cy="512" r="512" fill="url(#chessperiment-gradient)" />
                             <defs>
-                                <radialGradient id="chesspie-gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(512 512) rotate(90) scale(512)">
+                                <radialGradient id="chessperiment-gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(512 512) rotate(90) scale(512)">
                                     <stop stopColor="#f97316" />
                                     <stop offset="0.6" stopColor="#fbbf24" />
                                     <stop offset="1" stopColor="#5e5ce6" />
@@ -191,7 +191,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                                 GitHub <ExternalLink className="w-4 h-4" />
                             </a>
                             <a
-                                href="https://www.reddit.com/r/ChessPie/"
+                                href="https://www.reddit.com/r/chessperiment/"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-1 text-sm font-semibold leading-6 text-stone-900 dark:text-stone-50 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"

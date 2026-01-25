@@ -9,16 +9,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         title: t('title'),
         description: t('description'),
         alternates: {
-            canonical: "https://chesspie.org/en/features/analyze",
+            canonical: "https://chessperiment.app/en/features/analyze",
             languages: {
-                'en': 'https://chesspie.org/en/features/analyze',
-                'de': 'https://chesspie.org/de/features/analyze'
+                'en': 'https://chessperiment.app/en/features/analyze',
+                'de': 'https://chessperiment.app/de/features/analyze'
             }
         },
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: "https://chesspie.org/en/features/analyze",
+            url: "https://chessperiment.app/en/features/analyze",
             type: "website",
         },
         twitter: {

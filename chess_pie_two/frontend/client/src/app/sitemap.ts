@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://chesspie.org';
+  const baseUrl = 'https://chessperiment.app';
   const locales = ['en', 'de'];
   
   // List of known static routes

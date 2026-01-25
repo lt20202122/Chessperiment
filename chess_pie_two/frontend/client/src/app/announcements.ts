@@ -22,13 +22,13 @@ export interface Announcement {
 
 const announcements: Announcement[] = [
     {
-        id: 'chesspie-launch',
+        id: 'chessperiment-launch',
         date: '2026-01-20',
         author: 'Lasse T.',
         image: '/announcements/launch.png',
         title: {
-            en: 'Welcome to ChessPie: The Future of Custom Chess!',
-            de: 'Willkommen bei ChessPie: Die Zukunft des individuellen Schachs!'
+            en: 'Welcome to chessperiment: The Future of Custom Chess!',
+            de: 'Willkommen bei chessperiment: Die Zukunft des individuellen Schachs!'
         },
         shortDescription: {
             en: 'Create, play, and share your own chess pieces and rules. Explore a new dimension of the game.',
@@ -36,8 +36,8 @@ const announcements: Announcement[] = [
         },
         content: {
             en: `
-                <p>Welcome to ChessPie! We're incredibly excited to finally launch the ultimate platform for custom chess enthusiasts. ChessPie isn't just about playing chess; it's about making it your own.</p>
-                <h3>What can you do on ChessPie?</h3>
+                <p>Welcome to chessperiment! We're incredibly excited to finally launch the ultimate platform for custom chess enthusiasts. chessperiment isn't just about playing chess; it's about making it your own.</p>
+                <h3>What can you do on chessperiment?</h3>
                 <ul>
                     <li><strong>Custom Piece Editor:</strong> Use our pixel-art editor to draw your own pieces. Whether it's a dragon, a wizard, or a futuristic tank, you decide the look!</li>
                     <li><strong>Visual Logic Builder:</strong> Give your pieces unique powers! Our Scratch-like logic editor allows you to define movements, capture rules, and special effects without writing a single line of code.</li>
@@ -50,8 +50,8 @@ const announcements: Announcement[] = [
                 <p><strong>Lasse T.</strong></p>
             `,
             de: `
-                <p>Willkommen bei ChessPie! Wir freuen uns riesig, endlich die ultimative Plattform für Fans von individuellem Schach zu starten. Bei ChessPie geht es nicht nur darum, Schach zu spielen – es geht darum, es zu deinem eigenen Spiel zu machen.</p>
-                <h3>Was kannst du auf ChessPie machen?</h3>
+                <p>Willkommen bei chessperiment! Wir freuen uns riesig, endlich die ultimative Plattform für Fans von individuellem Schach zu starten. Bei chessperiment geht es nicht nur darum, Schach zu spielen – es geht darum, es zu deinem eigenen Spiel zu machen.</p>
+                <h3>Was kannst du auf chessperiment machen?</h3>
                 <ul>
                     <li><strong>Eigener Figuren-Editor:</strong> Nutze unseren Pixel-Art-Editor, um deine eigenen Figuren zu zeichnen. Ob Drache, Zauberer oder futuristischer Panzer – du bestimmst das Aussehen!</li>
                     <li><strong>Visueller Logik-Editor:</strong> Gib deinen Figuren einzigartige Kräfte! Unser Scratch-ähnlicher Logik-Editor ermöglicht es dir, Bewegungen, Schlagregeln und Spezialeffekte zu definieren, ohne eine einzige Zeile Code zu schreiben.</li>

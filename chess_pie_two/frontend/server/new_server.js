@@ -91,6 +91,7 @@ class Game {
     this.history = [];
     this.chatMessages = [];
     this.pendingMove = null;
+    this.rematchRequests = [];
   }
   addPlayer(playerId) {
     if (!this.players.black) {
@@ -118,6 +119,7 @@ async function saveGame(game) {
       history: game.history,
       chatMessages: game.chatMessages,
       pendingMove: game.pendingMove,
+      rematchRequests: game.rematchRequests || [],
     });
     await redisClient.set(`game:${game.roomId}`, gameData, {
       EX: 3600 * 24, // Expire after 24 hours
@@ -583,7 +585,14 @@ io.on("connection", (socket) => {
     if (!color) return;
     try {
       const chess = new Chess(game.board_fen);
-      if (chess.turn() !== color) return;
+      if (chess.turn() !== color) {
+        console.warn(
+          `[Move Rejected] Wrong turn in room ${roomId}. Expected: ${chess.turn()}, Got: ${color}`,
+        );
+        socket.emit("error", { message: "Not your turn" });
+        socket.emit("receive_fen", { board_fen: game.board_fen });
+        return;
+      }
       const piece = chess.get(data.from);
       const toRank = parseInt(data.to.match(/\d+/)?.[0] || "0", 10);
       const boardHeight = 8; // Default for chess.js, but prepared for future expansion
@@ -640,7 +649,11 @@ io.on("connection", (socket) => {
       }
     } catch (err) {
       console.error(`[Move Error] Room ${roomId}:`, err);
-      socket.emit("error", { message: "Legal move validation error" });
+      socket.emit("error", { message: "Move validation error" });
+      const currentRoomGame = roomId ? await getGame(roomId) : null;
+      if (currentRoomGame) {
+        socket.emit("receive_fen", { board_fen: currentRoomGame.board_fen });
+      }
     }
   });
 
@@ -670,6 +683,50 @@ io.on("connection", (socket) => {
       }
       io.to(roomId).emit("chat_message", { message: data.message, playerId });
     }
+  });
+
+  socket.on("request_rematch", async () => {
+    const playerId = socketToPlayer.get(socket.id);
+    const roomId = playerId ? await getPlayerRoom(playerId) : null;
+    const game = roomId ? await getGame(roomId) : null;
+
+    if (!game || game.status !== "ended") return;
+
+    if (!game.rematchRequests) game.rematchRequests = [];
+    if (!game.rematchRequests.includes(playerId)) {
+      game.rematchRequests.push(playerId);
+      await saveGame(game);
+
+      // Notify other player
+      socket.to(roomId).emit("rematch_requested", { from: playerId });
+
+      // Check if both agreed
+      if (game.rematchRequests.length >= 2) {
+        // Create new game - Swap colors
+        const newGame = new Game(game.players.black); // winner of previous or just swap
+        newGame.addPlayer(game.players.white);
+        newGame.status = "playing";
+
+        games.set(newGame.roomId.toUpperCase(), newGame);
+        await saveGame(newGame);
+
+        // Map players to new room
+        await savePlayerRoom(newGame.players.white, newGame.roomId);
+        await savePlayerRoom(newGame.players.black, newGame.roomId);
+
+        io.to(roomId).emit("rematch_accepted", { newRoomId: newGame.roomId });
+      }
+    }
+  });
+
+  socket.on("find_next_game", async () => {
+    const playerId = socketToPlayer.get(socket.id);
+    if (!playerId) return;
+
+    console.log("Find next game requested:", playerId);
+    await addToSearchQueue(playerId);
+    socket.emit("quick_search_started");
+    matchmake();
   });
 
   socket.on("disconnect", () => {

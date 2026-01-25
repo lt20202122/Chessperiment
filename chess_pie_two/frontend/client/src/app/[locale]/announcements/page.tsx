@@ -10,19 +10,19 @@ export async function generateMetadata({ params }: { params: any }) {
     const t = await getTranslations({ locale, namespace: 'SEO.Announcements' });
 
     return {
-        title: t('title') || 'ChessPie News',
+        title: t('title') || 'chessperiment News',
         description: t('description'),
         alternates: {
-            canonical: `https://chesspie.org/${locale}/announcements`,
+            canonical: `https://chessperiment.app/${locale}/announcements`,
             languages: {
-                'en': 'https://chesspie.org/en/announcements',
-                'de': 'https://chesspie.org/de/announcements'
+                'en': 'https://chessperiment.app/en/announcements',
+                'de': 'https://chessperiment.app/de/announcements'
             }
         },
         openGraph: {
-            title: t('title') || 'ChessPie News',
+            title: t('title') || 'chessperiment News',
             description: t('description'),
-            url: `https://chesspie.org/${locale}/announcements`,
+            url: `https://chessperiment.app/${locale}/announcements`,
             type: "website",
             images: [{ url: "/images/seo/og-home.png", width: 1200, height: 630 }],
         },

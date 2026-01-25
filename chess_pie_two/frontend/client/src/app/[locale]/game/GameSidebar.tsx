@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, History, Info, Send, User, Monitor, Copy, Check, Share2, Swords, Trophy, Ghost } from 'lucide-react';
+import { MessageSquare, History, Info, Send, User, Monitor, Copy, Check, Share2, Swords, Trophy, Ghost, UserPlus } from 'lucide-react';
 import { getPieceImage, PieceType } from "./Data";
 import { useRouter } from "next/navigation";
 
@@ -30,6 +30,10 @@ interface GameSidebarProps {
     onLeaveGame: () => void;
     onMoveClick: (index: number) => void;
     boardPieces: PieceType[];
+    onRematch?: () => void;
+    onNextGame?: () => void;
+    rematchRequested?: boolean;
+    opponentRematchRequested?: boolean;
 }
 
 export default function GameSidebar({
@@ -41,7 +45,11 @@ export default function GameSidebar({
     gameMode, setGameMode, onLeaveGame,
     currentTurn,
     onMoveClick,
-    boardPieces = []
+    boardPieces = [],
+    onRematch,
+    onNextGame,
+    rematchRequested,
+    opponentRematchRequested
 }: GameSidebarProps) {
     const t = useTranslations();
     const router = useRouter();
@@ -380,6 +388,25 @@ export default function GameSidebar({
                         <span className="relative z-10">{t('Multiplayer.offerDraw')}</span>
                         <div className="absolute inset-0 bg-linear-to-t from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>
+                    {gameStatus === 'ended' && (
+                        <>
+                            <button
+                                onClick={onRematch}
+                                disabled={rematchRequested}
+                                className={`col-span-1 shadow-lg py-4 px-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] flex items-center justify-center overflow-hidden border-2 ${opponentRematchRequested ? 'bg-amber-500 text-white border-amber-300 animate-pulse' : (rematchRequested ? 'bg-stone-200 dark:bg-stone-800 text-stone-400 border-transparent' : 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white border-amber-500/50')}`}
+                            >
+                                <Swords size={16} className="mr-2" />
+                                <span>{opponentRematchRequested && !rematchRequested ? t('Multiplayer.rematch') : (rematchRequested ? t('Multiplayer.rematchRequested') : t('Multiplayer.rematch'))}</span>
+                            </button>
+                            <button
+                                onClick={onNextGame}
+                                className="col-span-1 py-4 px-4 bg-linear-to-r from-blue-500 to-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:shadow-lg shadow-blue-500/20 active:scale-[0.98] flex items-center justify-center gap-2 overflow-hidden group"
+                            >
+                                <UserPlus size={16} />
+                                <span>{t('Multiplayer.newGame')}</span>
+                            </button>
+                        </>
+                    )}
                     {gameMode === 'local' && (
                         <button onClick={() => onStartComputerGame(1500)} className="col-span-2 py-4 px-4 bg-linear-to-r from-amber-500 to-orange-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:shadow-lg shadow-amber-500/20 active:scale-[0.99] flex items-center justify-center gap-3 overflow-hidden group">
                             <Monitor size={18} className="group-hover:scale-110 transition-transform" />

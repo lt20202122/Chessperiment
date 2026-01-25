@@ -10,10 +10,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         title: t('title'),
         description: t('description'),
         alternates: {
-            canonical: `https://chesspie.org/${locale}/privacy-policy`,
+            canonical: `https://chessperiment.app/${locale}/privacy-policy`,
             languages: {
-                'en': 'https://chesspie.org/en/privacy-policy',
-                'de': 'https://chesspie.org/de/privacy-policy'
+                'en': 'https://chessperiment.app/en/privacy-policy',
+                'de': 'https://chessperiment.app/de/privacy-policy'
             }
         },
     };
@@ -27,7 +27,7 @@ export default async function PrivacyPolicy({ params }: { params: Promise<{ loca
         <div className={styles.container}>
             <div className="mb-6">
                 <Link href="/" className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 transition-colors">
-                    ← ChessPie
+                    ← chessperiment
                 </Link>
             </div>
             <h1 className={styles.title}>{t("title")}</h1>

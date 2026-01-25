@@ -8,13 +8,13 @@ import { getTranslations } from 'next-intl/server';
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = await params;
     const t = await getTranslations({ locale, namespace: 'SEO.Login' });
-    const hreflangs = generateHreflangs('/login', ['de', 'en'], 'en', 'https://chesspie.org');
+    const hreflangs = generateHreflangs('/login', ['de', 'en'], 'en', 'https://chessperiment.app');
 
     return {
         title: t('title'),
         description: t('description'),
         alternates: {
-            canonical: "https://chesspie.org/en/login",
+            canonical: "https://chessperiment.app/en/login",
             languages: hreflangs.reduce((acc, tag) => {
                 acc[tag.hrefLang] = tag.href;
                 return acc;
@@ -23,8 +23,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: 'https://chesspie.org/en/login',
-            siteName: 'ChessPie',
+            url: 'https://chessperiment.app/en/login',
+            siteName: 'chessperiment',
             images: ['/images/seo/og-home.png'],
             type: 'website',
         },

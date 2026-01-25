@@ -10,10 +10,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         title: t('title'),
         description: t('description'),
         alternates: {
-            canonical: `https://chesspie.org/${locale}/legal-notice`,
+            canonical: `https://chessperiment.app/${locale}/legal-notice`,
             languages: {
-                'en': 'https://chesspie.org/en/legal-notice',
-                'de': 'https://chesspie.org/de/legal-notice'
+                'en': 'https://chessperiment.app/en/legal-notice',
+                'de': 'https://chessperiment.app/de/legal-notice'
             }
         },
     };
@@ -26,8 +26,8 @@ export default async function LegalNotice({ params }: { params: Promise<{ locale
     return (
         <div className={styles.container}>
             <div className="mb-6">
-                 <Link href="/" className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 transition-colors">
-                    ← ChessPie
+                <Link href="/" className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 transition-colors">
+                    ← chessperiment
                 </Link>
             </div>
             <h1 className={styles.title}>{t("title")}</h1>

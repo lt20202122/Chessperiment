@@ -9,16 +9,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         title: t('title'),
         description: t('description'),
         alternates: {
-            canonical: `https://chesspie.org/${locale}/editor/board`,
+            canonical: `https://chessperiment.app/${locale}/editor/board`,
             languages: {
-                'en': 'https://chesspie.org/en/editor/board',
-                'de': 'https://chesspie.org/de/editor/board'
+                'en': 'https://chessperiment.app/en/editor/board',
+                'de': 'https://chessperiment.app/de/editor/board'
             }
         },
         openGraph: {
             title: t('title'),
             description: t('description'),
-            url: `https://chesspie.org/${locale}/editor/board`,
+            url: `https://chessperiment.app/${locale}/editor/board`,
             type: "website",
             images: [{ url: "/images/seo/og-editor.png", width: 1200, height: 630 }],
         },
@@ -38,13 +38,13 @@ export default async function Board({ params }: { params: Promise<{ locale: stri
     const jsonLd_boardEditor = {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-        "name": "ChessPie Board Editor",
-        "url": `https://chesspie.org/${locale}/editor/board`,
+        "name": "chessperiment Board Editor",
+        "url": `https://chessperiment.app/${locale}/editor/board`,
         "description": t('description'),
         "applicationCategory": "DesignApplication",
         "operatingSystem": "Web",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "provider": { "@type": "Organization", "name": "ChessPie", "url": `https://chesspie.org/${locale}` },
+        "provider": { "@type": "Organization", "name": "chessperiment", "url": `https://chessperiment.app/${locale}` },
         "featureList": ["Grid editor", "Tile coloring", "Custom starting positions"]
     };
 

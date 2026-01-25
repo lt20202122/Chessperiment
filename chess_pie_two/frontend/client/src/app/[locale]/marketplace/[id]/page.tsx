@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: Props) {
     if (!item) return { title: 'Item Not Found' };
 
     return {
-        title: `${item.title} - ChessPie Marketplace`,
-        description: item.description || `Buy ${item.title} by ${item.author} on ChessPie.`,
+        title: `${item.title} - chessperiment Marketplace`,
+        description: item.description || `Buy ${item.title} by ${item.author} on chessperiment.`,
     };
 }
 

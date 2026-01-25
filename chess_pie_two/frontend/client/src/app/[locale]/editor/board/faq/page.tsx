@@ -33,8 +33,8 @@ const faqs = [
             de: 'Wie speichere und teile ich mein benutzerdefiniertes Brett?'
         },
         answer: {
-            en: 'Currently, boards are saved locally in your browser. In the future, you will be able to publish your creations to the ChessPie community or export them as JSON files. Sharing links will also be available.',
-            de: 'Derzeit werden Bretter lokal in Ihrem Browser gespeichert. Zukünftig können Sie Ihre Kreationen in der ChessPie-Community veröffentlichen oder als JSON-Dateien exportieren. Auch das Teilen von Links wird möglich sein.'
+            en: 'Currently, boards are saved locally in your browser. In the future, you will be able to publish your creations to the chessperiment community or export them as JSON files. Sharing links will also be available.',
+            de: 'Derzeit werden Bretter lokal in Ihrem Browser gespeichert. Zukünftig können Sie Ihre Kreationen in der chessperiment-Community veröffentlichen oder als JSON-Dateien exportieren. Auch das Teilen von Links wird möglich sein.'
         }
     },
     {
@@ -67,18 +67,18 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale } = await params;
-    const title = locale === 'de' ? "ChessPie Board Editor FAQ – Alle Antworten" : "ChessPie Board Editor FAQ – All Answers";
+    const title = locale === 'de' ? "chessperiment Board Editor FAQ – Alle Antworten" : "chessperiment Board Editor FAQ – All Answers";
     const description = locale === 'de'
-        ? "Hier findest du alle häufigen Fragen zum ChessPie Board Editor, inklusive Tipps zum Erstellen eigener Boards und Figuren."
-        : "Here you will find all frequently asked questions about the ChessPie Board Editor, including tips for creating your own boards and pieces.";
+        ? "Hier findest du alle häufigen Fragen zum chessperiment Board Editor, inklusive Tipps zum Erstellen eigener Boards und Figuren."
+        : "Here you will find all frequently asked questions about the chessperiment Board Editor, including tips for creating your own boards and pieces.";
 
-    const hreflangs = generateHreflangs('/editor/board/faq', ['de', 'en'], locale as Locale, 'https://chesspie.org');
+    const hreflangs = generateHreflangs('/editor/board/faq', ['de', 'en'], locale as Locale, 'https://chessperiment.app');
 
     return {
         title: title,
         description: description,
         alternates: {
-            canonical: `https://chesspie.org/${locale}/editor/board/faq`,
+            canonical: `https://chessperiment.app/${locale}/editor/board/faq`,
             languages: hreflangs.reduce((acc, tag) => {
                 acc[tag.hrefLang] = tag.href;
                 return acc;
@@ -87,15 +87,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         openGraph: {
             title: title,
             description: description,
-            url: `https://chesspie.org/${locale}/editor/board/faq`,
-            images: ['https://chesspie.org/editor-board-faq.png'],
+            url: `https://chessperiment.app/${locale}/editor/board/faq`,
+            images: ['https://chessperiment.app/editor-board-faq.png'],
             type: "website"
         },
         twitter: {
             card: "summary_large_image",
             title: title,
             description: description,
-            images: ['https://chesspie.org/editor-board-faq.png'],
+            images: ['https://chessperiment.app/editor-board-faq.png'],
         },
     };
 }
