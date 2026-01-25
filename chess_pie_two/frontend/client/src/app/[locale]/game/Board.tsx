@@ -314,7 +314,15 @@ export default function Board({
     setLastMoveTo(null);
     setCurrentTurn('w');
     setDifficulty(elo);
-  }, [chess, updateBoardState]);
+
+    // Join server room for computer games to enable server-side state tracking
+    const playerId = localStorage.getItem("chess_player_id") || "unknown";
+    const compRoomId = `COMPUTER-${playerId}-${Date.now()}`;
+    setCurrentRoom(compRoomId);
+    if (socket) {
+      socket.emit("join_room", { roomId: compRoomId, isComputer: true });
+    }
+  }, [chess, updateBoardState, socket]);
 
   // We need a stable callback for stockfish
   const onBestMove = useCallback((move: string) => {
@@ -549,14 +557,16 @@ export default function Board({
 
       socket.emit("register_player", { playerId: pId });
 
-      // Don't join rooms for computer games - everything is handled client-side
-      // Check both gameModeVar (initial prop) and gameMode (state) to handle early registration
-      const isComputerMode = gameModeVar === 'computer' || gameMode === 'computer';
-      if (initialRoomId && !isComputerMode) {
+      // Handle room joining: computer games need server-side tracking too
+      if (initialRoomId) {
+        const isComputerMode = gameModeVar === 'computer' || gameMode === 'computer';
         if (mode === 'create') {
           socket.emit("create_room", { roomId: initialRoomId });
         } else {
-          socket.emit("join_room", { roomId: initialRoomId });
+          socket.emit("join_room", {
+            roomId: initialRoomId,
+            isComputer: isComputerMode
+          });
         }
       }
     };
@@ -730,6 +740,11 @@ export default function Board({
           });
           setHistoryFens(prev => [...prev, newFen]);
           setHistoryMoves(prev => [...prev, { from, to, san }]);
+
+          // Sync with server for computer games (so server knows the board state)
+          if (gameMode === 'computer' && socket) {
+            socket.emit("move", { from, to, promotion });
+          }
 
           if (chess.isGameOver()) {
             if (chess.isCheckmate()) {
