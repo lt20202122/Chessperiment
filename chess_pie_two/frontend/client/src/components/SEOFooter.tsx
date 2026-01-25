@@ -40,6 +40,11 @@ export function SEOFooter() {
                             <h3 className='font-bold text-stone-900 dark:text-white uppercase tracking-widest text-sm mb-4'>{t('legal')}</h3>
                             <ul className='space-y-2'>
                                 <li>
+                                    <Link href="/about" className="text-stone-500 hover:text-accent transition-colors text-sm">
+                                        {t('about')}
+                                    </Link>
+                                </li>
+                                <li>
                                     <Link href="/privacy-policy" className="text-stone-500 hover:text-accent transition-colors text-sm">
                                         {t('privacyPolicy')}
                                     </Link>

@@ -19,7 +19,8 @@
         "pieceEditor": "Figuren-Editor",
         "marketplace": "Marktplatz",
         "library": "Bibliothek",
-        "notifications": "Benachrichtigungen"
+        "notifications": "Benachrichtigungen",
+        "about": "Über uns"
     },
     "Marketplace": {
         "title": "Marktplatz",
@@ -475,7 +476,8 @@
             "canIPlayFriendsAnswer": "Absolut! Teile einfach deinen Raumcode oder Link und spiele deine eigenen Varianten sofort im Browser.",
             "legal": "Rechtliches",
             "privacyPolicy": "Datenschutzerklärung",
-            "legalNotice": "Impressum"
+            "legalNotice": "Impressum",
+            "about": "Über uns"
         },
         "Home": {
             "title": "Benutzerdefiniertes Schach Spielen & Erstellen",
@@ -528,6 +530,11 @@
             "title": "ChessPie Neuigkeiten & Updates",
             "description": "Bleib auf dem Laufenden mit den neuesten Funktionen und Updates von ChessPie.",
             "h1": "Aktuelle Neuigkeiten"
+        },
+        "About": {
+            "title": "Über ChessPie | Die Custom Chess Plattform",
+            "description": "Erfahre mehr über ChessPie, unsere Mission und die Funktionen, die uns einzigartig machen.",
+            "h1": "Über ChessPie"
         }
     },
     "Library": {
@@ -557,5 +564,36 @@
         "title": "404 - Figur nicht gefunden",
         "description": "Es scheint, als wäre dieser Zug ungültig. Die Seite, die du suchst, existiert nicht oder wurde verschoben.",
         "backHome": "Zurück zum Spiel"
+    },
+    "About": {
+        "title": "Über ChessPie",
+        "intro": "ChessPie (chesspie.org) ist eine Web-Plattform, die sich der Erstellung hochgradig anpassbarer Schachvarianten widmet. Im Gegensatz zu herkömmlichen Schach-Webseiten ermöglicht ChessPie den Nutzern, ihre eigenen einzigartigen Spiele zu entwerfen – mit voller Kontrolle über Bretter, Figuren, Regeln und Interaktionen.",
+        "features": {
+            "title": "Hauptmerkmale",
+            "customBoards": {
+                "title": "Benutzerdefinierte Bretter",
+                "description": "Erstelle Bretter in jeder Form und Größe, die deiner Vision entsprechen."
+            },
+            "pieceEditor": {
+                "title": "Fortgeschrittener Figuren-Editor",
+                "description": "Designe Figuren mit einzigartigen Bewegungen und Fähigkeiten."
+            },
+            "visualScripting": {
+                "title": "Visuelle Programmierung",
+                "description": "Nutze Drag-and-Drop für Trigger, Effekte und Variablen – ähnlich wie in Scratch –, um komplexe Spielmechaniken ohne Programmierung zu erstellen."
+            },
+            "variants": {
+                "title": "Nutzererstellte Varianten",
+                "description": "Experimentiere und spiele deine eigenen Schachvarianten oder probiere die Kreationen anderer aus."
+            }
+        },
+        "mission": {
+            "title": "Unsere Mission",
+            "description": "ChessPie existiert, um die Grenzen der Kreativität im Schach zu erweitern. Wir möchten jedem, vom Anfänger bis zum Fortgeschrittenen, die Möglichkeit geben, völlig neue Schacherlebnisse zu erfinden, zu teilen und zu spielen."
+        },
+        "developer": {
+            "title": "Über den Entwickler",
+            "description": "ChessPie wird von einem einzelnen Entwickler entwickelt, der auf Reddit und GitHub aktiv ist. Erst vor wenigen Wochen gestartet, hat die Plattform bereits über 100 Nutzer angezogen, die die endlosen Möglichkeiten des anpassbaren Schachs erkunden."
+        }
     }
 }

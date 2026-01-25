@@ -5,7 +5,7 @@ type StockfishMessage = {
   data: string;
 };
 
-export function useStockfish(currentFen: string, difficulty: number = 1300, onBestMove: (move: string) => void, useServer: boolean = true) {
+export function useStockfish(roomId: string, difficulty: number = 1300, onBestMove: (move: string) => void, useServer: boolean = true) {
   const workerRef = useRef<Worker | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
@@ -102,14 +102,14 @@ export function useStockfish(currentFen: string, difficulty: number = 1300, onBe
   }, [difficulty, isReady, useServer]);
 
   const requestMove = useCallback((fenOverride?: string) => {
-    const targetFen = fenOverride || currentFen;
     setIsThinking(true);
 
     if (useServer) {
-        if (socket) {
-            socket.emit("request_computer_move", { fen: targetFen, difficulty });
+        if (socket && roomId) {
+            // SECURITY: Only send roomId, server provides the FEN
+            socket.emit("request_computer_move", { roomId, difficulty });
         } else {
-            console.warn("Socket not available for server stockfish");
+            console.warn("Socket or RoomId not available for server stockfish");
             setIsThinking(false);
         }
         return;
@@ -120,13 +120,16 @@ export function useStockfish(currentFen: string, difficulty: number = 1300, onBe
         setIsThinking(false);
         return;
     }
-    workerRef.current.postMessage(`position fen ${targetFen}`);
+    
+    // For local worker, we still need the FEN
+    const targetFen = fenOverride;
+    if (targetFen) workerRef.current.postMessage(`position fen ${targetFen}`);
     
     // Limit search depth based on difficulty + add time constraint
     const depth = Math.max(1, Math.min(15, Math.floor(difficulty / 150))); 
     // Add movetime limit to prevent excessive computation (5 seconds max)
     workerRef.current.postMessage(`go depth ${depth} movetime 5000`);
-  }, [currentFen, difficulty, isReady, useServer, socket]);
+  }, [roomId, difficulty, isReady, useServer, socket]);
 
   return { isReady, isThinking, requestMove };
 }

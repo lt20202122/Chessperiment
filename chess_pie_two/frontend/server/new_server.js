@@ -8,6 +8,8 @@ import path from "path";
 import { createRequire } from "module";
 import * as os from "os";
 import { fileURLToPath } from "url";
+import { createClient } from "redis";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
@@ -61,6 +63,16 @@ if (typeof loadEngine !== "function") {
 // Import Stockfish pool for efficient engine management
 import { stockfishPool } from "./stockfish-pool.js";
 
+// Redis client initialization
+const redisClient = createClient({
+  url: process.env.REDIS_URL || "redis://localhost:6379",
+});
+
+redisClient.on("error", (err) => console.error("Redis Client Error", err));
+
+await redisClient.connect();
+console.log("Connected to Redis");
+
 const app = express();
 app.use(cors());
 const server = http.createServer(app);
@@ -93,18 +105,138 @@ class Game {
 }
 const games = new Map();
 const playerToRoom = new Map();
+
+// Redis helpers
+async function saveGame(game) {
+  if (!game || !game.roomId) return;
+  try {
+    const gameData = JSON.stringify({
+      roomId: game.roomId,
+      players: game.players,
+      status: game.status,
+      board_fen: game.board_fen,
+      history: game.history,
+      chatMessages: game.chatMessages,
+      pendingMove: game.pendingMove,
+    });
+    await redisClient.set(`game:${game.roomId}`, gameData, {
+      EX: 3600 * 24, // Expire after 24 hours
+    });
+  } catch (err) {
+    console.error("Error saving game to Redis:", err);
+  }
+}
+
+async function getGame(roomId) {
+  if (games.has(roomId)) return games.get(roomId);
+  try {
+    const data = await redisClient.get(`game:${roomId}`);
+    if (data) {
+      const parsed = JSON.parse(data);
+      const game = new Game(parsed.players.white);
+      Object.assign(game, parsed);
+      games.set(roomId, game);
+      // Re-map players
+      if (game.players.white) playerToRoom.set(game.players.white, roomId);
+      if (game.players.black) playerToRoom.set(game.players.black, roomId);
+      return game;
+    }
+  } catch (err) {
+    console.error("Error getting game from Redis:", err);
+  }
+  return null;
+}
+
 const socketToPlayer = new Map();
 const playerToSocket = new Map();
-const searchQueue = [];
-const removeFromQueue = (playerId) => {
-  const index = searchQueue.indexOf(playerId);
-  if (index > -1) {
-    searchQueue.splice(index, 1);
+
+// Redis search queue helper
+async function addToSearchQueue(playerId) {
+  try {
+    await redisClient.rPush("searchQueue", playerId);
+  } catch (err) {
+    console.error("Error adding to search queue:", err);
+  }
+}
+
+async function removeFromQueue(playerId) {
+  try {
+    // Note: LREM removes occurances. 0 means all.
+    await redisClient.lRem("searchQueue", 0, playerId);
     console.log("Removed player from search queue:", playerId);
     const sid = playerToSocket.get(playerId);
     if (sid) io.to(sid).emit("search_cancelled");
+  } catch (err) {
+    console.error("Error removing from search queue:", err);
   }
-};
+}
+
+async function matchmake() {
+  try {
+    const queueLen = await redisClient.lLen("searchQueue");
+    if (queueLen < 2) return;
+
+    const p1 = await redisClient.lPop("searchQueue");
+    const p2 = await redisClient.lPop("searchQueue");
+
+    if (!p1 || !p2) {
+      if (p1) await redisClient.rPush("searchQueue", p1);
+      if (p2) await redisClient.rPush("searchQueue", p2);
+      return;
+    }
+
+    const s1Id = playerToSocket.get(p1);
+    const s2Id = playerToSocket.get(p2);
+    const socket1 = s1Id ? io.sockets.sockets.get(s1Id) : null;
+    const socket2 = s2Id ? io.sockets.sockets.get(s2Id) : null;
+
+    if (!socket1) {
+      await redisClient.rPush("searchQueue", p2);
+      return;
+    }
+    if (!socket2) {
+      await redisClient.rPush("searchQueue", p1);
+      return;
+    }
+
+    const game = new Game(p1);
+    game.addPlayer(p2);
+    game.status = "playing";
+    games.set(game.roomId, game);
+    await saveGame(game);
+    await savePlayerRoom(p1, game.roomId);
+    await savePlayerRoom(p2, game.roomId);
+
+    const p1IsWhite = Math.random() > 0.5;
+    if (!p1IsWhite) {
+      game.players.white = p2;
+      game.players.black = p1;
+      await saveGame(game);
+    }
+
+    socket1.join(game.roomId);
+    socket2.join(game.roomId);
+
+    io.to(s1Id).emit("match_found", {
+      roomId: game.roomId,
+      color: p1IsWhite ? "white" : "black",
+      fen: game.board_fen,
+      status: "playing",
+    });
+    io.to(s2Id).emit("match_found", {
+      roomId: game.roomId,
+      color: p1IsWhite ? "black" : "white",
+      fen: game.board_fen,
+      status: "playing",
+    });
+
+    // Check if more can be matched
+    matchmake();
+  } catch (err) {
+    console.error("Error in matchmaking:", err);
+  }
+}
+
 const checkGameStatus = (game) => {
   try {
     if (!game) return false;
@@ -142,21 +274,67 @@ const checkGameStatus = (game) => {
     return false;
   }
 };
+
+// Redis mapping helper
+async function savePlayerRoom(playerId, roomId) {
+  try {
+    await redisClient.set(`playerRoom:${playerId}`, roomId, {
+      EX: 3600 * 24,
+    });
+    playerToRoom.set(playerId, roomId);
+  } catch (err) {
+    console.error("Error saving playerRoom to Redis:", err);
+  }
+}
+
+async function getPlayerRoom(playerId) {
+  if (playerToRoom.has(playerId)) return playerToRoom.get(playerId);
+  try {
+    const roomId = await redisClient.get(`playerRoom:${playerId}`);
+    if (roomId) {
+      playerToRoom.set(playerId, roomId);
+      return roomId;
+    }
+  } catch (err) {
+    console.error("Error getting playerRoom from Redis:", err);
+  }
+  return null;
+}
+
 io.on("connection", (socket) => {
   console.log("connected:", socket.id);
   // --- Server-Side Stockfish (POOLED - MEMORY EFFICIENT) ---
   socket.on("request_computer_move", async (data) => {
-    const { fen, difficulty } = data;
-    console.log(`[Stockfish] Request for FEN: ${fen}, Diff: ${difficulty}`);
+    const { roomId, difficulty } = data;
+    const playerId = socketToPlayer.get(socket.id);
+
+    // SECURITY: Get state from server, NOT from client FEN
+    const game = roomId ? await getGame(roomId) : null;
+
+    if (!game) {
+      console.error(`[Stockfish] Unauthorized or invalid room: ${roomId}`);
+      return;
+    }
+
+    if (game.status !== "playing") {
+      console.warn(`[Stockfish] Game not in progress: ${game.status}`);
+      return;
+    }
+
+    console.log(
+      `[Stockfish] Thinking for Room: ${roomId}, FEN: ${game.board_fen}, Diff: ${difficulty}`,
+    );
 
     try {
-      const bestMove = await stockfishPool.getBestMove(fen, difficulty);
+      const bestMove = await stockfishPool.getBestMove(
+        game.board_fen,
+        difficulty,
+      );
 
       if (bestMove) {
         console.log("[Stockfish] Best move found:", bestMove);
         socket.emit("computer_move_result", { bestMove });
       } else {
-        console.error("[Stockfish] No valid move found");
         socket.emit("computer_move_result", { bestMove: null });
       }
     } catch (error) {
@@ -164,78 +342,40 @@ io.on("connection", (socket) => {
       socket.emit("computer_move_result", { bestMove: null });
     }
   });
-  socket.on("find_match", () => {
+
+  socket.on("find_match", async () => {
     const playerId = socketToPlayer.get(socket.id);
     if (!playerId) return;
     console.log("Quick search requested from socket:", socket.id);
     console.log("✅ Player entered quick search:", playerId);
-    if (!searchQueue.includes(playerId)) {
-      searchQueue.push(playerId);
-    }
+    await addToSearchQueue(playerId);
     socket.emit("quick_search_started");
-    while (searchQueue.length >= 2) {
-      const p1 = searchQueue[0];
-      const p2 = searchQueue[1];
-      const s1Id = playerToSocket.get(p1);
-      const s2Id = playerToSocket.get(p2);
-      const socket1 = s1Id ? io.sockets.sockets.get(s1Id) : null;
-      const socket2 = s2Id ? io.sockets.sockets.get(s2Id) : null;
-      if (!socket1) {
-        searchQueue.shift();
-        continue;
-      }
-      if (!socket2) {
-        searchQueue.splice(1, 1);
-        continue;
-      }
-      searchQueue.shift();
-      searchQueue.shift();
-      const game = new Game(p1);
-      game.addPlayer(p2);
-      game.status = "playing";
-      games.set(game.roomId, game);
-      playerToRoom.set(p1, game.roomId);
-      playerToRoom.set(p2, game.roomId);
-      const p1IsWhite = Math.random() > 0.5;
-      if (!p1IsWhite) {
-        game.players.white = p2;
-        game.players.black = p1;
-      }
-      socket1.join(game.roomId);
-      socket2.join(game.roomId);
-      io.to(s1Id).emit("match_found", {
-        roomId: game.roomId,
-        color: p1IsWhite ? "white" : "black",
-        fen: game.board_fen,
-        status: "playing",
-      });
-      io.to(s2Id).emit("match_found", {
-        roomId: game.roomId,
-        color: p1IsWhite ? "black" : "white",
-        fen: game.board_fen,
-        status: "playing",
-      });
-    }
+    matchmake();
   });
-  socket.on("cancel_search", () => {
+
+  socket.on("cancel_search", async () => {
     const playerId = socketToPlayer.get(socket.id);
-    if (playerId) removeFromQueue(playerId);
+    if (playerId) await removeFromQueue(playerId);
   });
-  socket.on("register_player", (data) => {
+
+  socket.on("register_player", async (data) => {
     const playerId = data.playerId;
     const oldPlayerId = socketToPlayer.get(socket.id);
     if (oldPlayerId && oldPlayerId !== playerId) {
       console.log(
         `🔄 Identity transfer on socket ${socket.id}: ${oldPlayerId} -> ${playerId}`,
       );
-      const roomId = playerToRoom.get(oldPlayerId);
+      const roomId = await getPlayerRoom(oldPlayerId);
       if (roomId) {
-        const game = games.get(roomId);
+        const game = await getGame(roomId);
         if (game) {
           if (game.players.white === oldPlayerId) game.players.white = playerId;
           if (game.players.black === oldPlayerId) game.players.black = playerId;
-          playerToRoom.set(playerId, roomId);
+          await saveGame(game);
+          await savePlayerRoom(playerId, roomId);
+          // Cleanup old mapping potentially, but Redis handles expiry
           playerToRoom.delete(oldPlayerId);
+          await redisClient.del(`playerRoom:${oldPlayerId}`);
         }
       }
       const qIdx = searchQueue.indexOf(oldPlayerId);
@@ -250,9 +390,9 @@ io.on("connection", (socket) => {
     console.log(
       `[Register] Player ${playerId} registered on socket ${socket.id}. Active games: ${games.size}`,
     );
-    const roomId = playerToRoom.get(playerId);
+    const roomId = await getPlayerRoom(playerId);
     if (roomId) {
-      const game = games.get(roomId);
+      const game = await getGame(roomId);
       if (game && game.status !== "ended") {
         socket.join(roomId);
         const color = game.getColorForPlayer(playerId);
@@ -270,17 +410,19 @@ io.on("connection", (socket) => {
       }
     }
   });
-  socket.on("offer_draw", () => {
+
+  socket.on("offer_draw", async () => {
     const playerId = socketToPlayer.get(socket.id);
-    const roomId = playerId ? playerToRoom.get(playerId) : null;
+    const roomId = playerId ? await getPlayerRoom(playerId) : null;
     if (roomId) socket.to(roomId).emit("draw_offered", { from: playerId });
   });
-  socket.on("accept_draw", () => {
+  socket.on("accept_draw", async () => {
     const playerId = socketToPlayer.get(socket.id);
-    const roomId = playerId ? playerToRoom.get(playerId) : null;
-    const game = roomId ? games.get(roomId) : null;
+    const roomId = playerId ? await getPlayerRoom(playerId) : null;
+    const game = roomId ? await getGame(roomId) : null;
     if (game && game.status === "playing") {
       game.status = "ended";
+      await saveGame(game);
       io.to(roomId).emit("game_ended", {
         reason: "Draw Accepted",
         result: "0",
@@ -288,40 +430,44 @@ io.on("connection", (socket) => {
       });
     }
   });
-  socket.on("decline_draw", () => {
+  socket.on("decline_draw", async () => {
     const playerId = socketToPlayer.get(socket.id);
-    const roomId = playerId ? playerToRoom.get(playerId) : null;
+    const roomId = playerId ? await getPlayerRoom(playerId) : null;
     if (roomId) socket.to(roomId).emit("draw_declined");
   });
-  socket.on("request_fen", () => {
+
+  socket.on("request_fen", async () => {
     const playerId = socketToPlayer.get(socket.id);
-    const roomId = playerId ? playerToRoom.get(playerId) : null;
-    const game = roomId ? games.get(roomId) : null;
+    const roomId = playerId ? await getPlayerRoom(playerId) : null;
+    const game = roomId ? await getGame(roomId) : null;
     if (game) socket.emit("receive_fen", { board_fen: game.board_fen });
   });
-  socket.on("request_history", () => {
+  socket.on("request_history", async () => {
     const playerId = socketToPlayer.get(socket.id);
-    const roomId = playerId ? playerToRoom.get(playerId) : null;
-    const game = roomId ? games.get(roomId) : null;
+    const roomId = playerId ? await getPlayerRoom(playerId) : null;
+    const game = roomId ? await getGame(roomId) : null;
     if (game) socket.emit("receive_history", { history: game.history });
   });
-  socket.on("request_game_status", (callback) => {
+  socket.on("request_game_status", async (callback) => {
     const playerId = socketToPlayer.get(socket.id);
-    const roomId = playerId ? playerToRoom.get(playerId) : null;
-    const game = roomId ? games.get(roomId) : null;
+    const roomId = playerId ? await getPlayerRoom(playerId) : null;
+    const game = roomId ? await getGame(roomId) : null;
     if (game) callback(game.status);
   });
-  socket.on("create_room", () => {
+
+  socket.on("create_room", async () => {
     const playerId = socketToPlayer.get(socket.id);
     if (!playerId) return;
     removeFromQueue(playerId);
     const game = new Game(playerId);
     games.set(game.roomId.toUpperCase(), game);
-    playerToRoom.set(playerId, game.roomId);
+    await saveGame(game);
+    await savePlayerRoom(playerId, game.roomId);
     socket.join(game.roomId);
     socket.emit("room_created", { roomId: game.roomId, color: "white" });
   });
-  socket.on("join_room", (data) => {
+
+  socket.on("join_room", async (data) => {
     const playerId = socketToPlayer.get(socket.id);
     if (!playerId || !data.roomId) {
       socket.emit("error", {
@@ -331,18 +477,44 @@ io.on("connection", (socket) => {
     }
     const roomId = data.roomId.trim().toUpperCase();
 
-    // Handle computer games - no room needed, just acknowledge
-    if (roomId.startsWith("COMPUTER-")) {
+    // Handle computer games - Create a persistent server-side game object
+    if (data.isComputer || roomId.startsWith("COMPUTER-")) {
+      const compRoomId = roomId.startsWith("COMPUTER-")
+        ? roomId
+        : `COMPUTER-${playerId}`;
       console.log(
-        `[Computer Game] Player ${playerId} starting computer game (no room needed)`,
+        `[Computer Game] Initializing server-side state for Room: ${compRoomId}`,
       );
-      // For computer games, we don't need rooms - everything is handled client-side
-      // Just emit a success response so the client knows it's ready
-      socket.emit("joined_room", { roomId, color: "white" });
+
+      let game = await getGame(compRoomId);
+      if (!game) {
+        game = new Game(playerId);
+        game.roomId = compRoomId;
+        game.players.black = "STOCKFISH";
+        game.status = "playing";
+        games.set(compRoomId, game);
+      }
+
+      await saveGame(game);
+      await savePlayerRoom(playerId, compRoomId);
+      socket.join(compRoomId);
+      socket.emit("joined_room", { roomId: compRoomId, color: "white" });
+
+      // If rejoining, send current state
+      if (game.history.length > 0) {
+        socket.emit("rejoin_game", {
+          roomId: compRoomId,
+          color: "white",
+          fen: game.board_fen,
+          status: game.status,
+          history: game.history,
+          chatMessages: game.chatMessages,
+        });
+      }
       return;
     }
 
-    const game = games.get(roomId);
+    const game = await getGame(roomId);
     console.log(
       `[Join Room Request] Room: ${roomId}, Player: ${playerId}. Game found: ${!!game}`,
     );
@@ -358,7 +530,7 @@ io.on("connection", (socket) => {
       console.log(
         `[Join Room] Player ${playerId} already in room ${roomId}. Sending rejoin.`,
       );
-      playerToRoom.set(playerId, roomId);
+      await savePlayerRoom(playerId, roomId);
       socket.join(roomId);
       socket.emit("rejoin_game", {
         roomId,
@@ -386,12 +558,14 @@ io.on("connection", (socket) => {
       return;
     }
     game.addPlayer(playerId);
-    playerToRoom.set(playerId, roomId);
+    await saveGame(game);
+    await savePlayerRoom(playerId, roomId);
     socket.join(roomId);
     removeFromQueue(playerId);
     socket.emit("joined_room", { roomId, color: "black" });
     if (game.players.white && game.players.black) {
       game.status = "playing";
+      await saveGame(game);
       io.to(roomId).emit("start_game", {
         roomId,
         fen: game.board_fen,
@@ -399,10 +573,11 @@ io.on("connection", (socket) => {
       });
     }
   });
-  socket.on("move", (data) => {
+
+  socket.on("move", async (data) => {
     const playerId = socketToPlayer.get(socket.id);
-    const roomId = playerId ? playerToRoom.get(playerId) : null;
-    const game = roomId ? games.get(roomId) : null;
+    const roomId = playerId ? await getPlayerRoom(playerId) : null;
+    const game = roomId ? await getGame(roomId) : null;
     if (!game || game.status !== "playing") return;
     const color = game.getColorForPlayer(playerId);
     if (!color) return;
@@ -426,6 +601,7 @@ io.on("connection", (socket) => {
         );
         socket.emit("promotion_needed", { from: data.from, to: data.to });
         game.pendingMove = { from: data.from, to: data.to };
+        await saveGame(game);
         return;
       }
       const moveResult = chess.move({
@@ -439,6 +615,7 @@ io.on("connection", (socket) => {
         game.history.push(moveResult.san);
         game.pendingMove = null; // Clear any pending promotion
         const status = checkGameStatus(game);
+        await saveGame(game);
         io.to(roomId).emit("move", {
           from: moveResult.from,
           to: moveResult.to,
@@ -466,13 +643,15 @@ io.on("connection", (socket) => {
       socket.emit("error", { message: "Legal move validation error" });
     }
   });
-  socket.on("resign", () => {
+
+  socket.on("resign", async () => {
     const playerId = socketToPlayer.get(socket.id);
-    const roomId = playerId ? playerToRoom.get(playerId) : null;
-    const game = roomId ? games.get(roomId) : null;
+    const roomId = playerId ? await getPlayerRoom(playerId) : null;
+    const game = roomId ? await getGame(roomId) : null;
     if (game && game.status === "playing") {
       const myColor = game.getColorForPlayer(playerId);
       game.status = "ended";
+      await saveGame(game);
       io.to(roomId).emit("game_ended", {
         reason: "Resigned",
         result: myColor === "w" ? "b" : "w",
@@ -480,16 +659,19 @@ io.on("connection", (socket) => {
       });
     }
   });
-  socket.on("chat_message", (data) => {
+  socket.on("chat_message", async (data) => {
     const playerId = socketToPlayer.get(socket.id);
-    const roomId = playerId ? playerToRoom.get(playerId) : null;
+    const roomId = playerId ? await getPlayerRoom(playerId) : null;
     if (roomId) {
-      const game = games.get(roomId);
-      if (game)
+      const game = await getGame(roomId);
+      if (game) {
         game.chatMessages.push({ message: data.message, playerId: playerId });
+        await saveGame(game);
+      }
       io.to(roomId).emit("chat_message", { message: data.message, playerId });
     }
   });
+
   socket.on("disconnect", () => {
     const playerId = socketToPlayer.get(socket.id);
     if (playerId && playerToSocket.get(playerId) === socket.id) {

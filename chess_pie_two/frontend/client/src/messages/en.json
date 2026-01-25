@@ -10,7 +10,8 @@
         "boardEditor": "Board Editor",
         "pieceEditor": "Piece Editor",
         "marketplace": "Marketplace",
-        "library": "Library"
+        "library": "Library",
+        "about": "About"
     },
     "Marketplace": {
         "title": "Marketplace",
@@ -477,7 +478,8 @@
             "canIPlayFriendsAnswer": "Absolutely! Just share your room code or link and play your custom variants instantly in your browser.",
             "legal": "Legal",
             "privacyPolicy": "Privacy Policy",
-            "legalNotice": "Legal Notice"
+            "legalNotice": "Legal Notice",
+            "about": "About"
         },
         "Home": {
             "title": "Create and share Custom Chess!",
@@ -530,6 +532,11 @@
             "title": "ChessPie News & Announcements",
             "description": "Stay updated with the latest features, updates, and community news from ChessPie.",
             "h1": "Latest News"
+        },
+        "About": {
+            "title": "About ChessPie | The Custom Chess Platform",
+            "description": "Learn more about ChessPie, our mission to redefine chess creativity, and the features that make it unique.",
+            "h1": "About ChessPie"
         }
     },
     "Library": {
@@ -559,5 +566,36 @@
         "title": "404 - Piece Not Found",
         "description": "It looks like this move was illegal. The page you are looking for does not exist or has been shifted.",
         "backHome": "Return to the Game"
+    },
+    "About": {
+        "title": "About ChessPie",
+        "intro": "ChessPie (chesspie.org) is a web platform dedicated to creating highly customizable chess variants. Unlike traditional chess websites, ChessPie lets users design their own unique games with complete control over boards, pieces, rules, and interactions.",
+        "features": {
+            "title": "Key Features",
+            "customBoards": {
+                "title": "Custom Boards",
+                "description": "Create boards in any shape and size to fit your vision."
+            },
+            "pieceEditor": {
+                "title": "Advanced Piece Editor",
+                "description": "Design pieces with unique movements and abilities."
+            },
+            "visualScripting": {
+                "title": "Visual Scripting",
+                "description": "Drag-and-drop triggers, effects, and variables—similar to Scratch—to build complex game mechanics without coding."
+            },
+            "variants": {
+                "title": "User-Created Variants",
+                "description": "Experiment and play your own chess variants or try out variants made by others."
+            }
+        },
+        "mission": {
+            "title": "Our Mission",
+            "description": "ChessPie exists to push the boundaries of chess creativity. We want everyone, from beginners to advanced users, to be able to invent, share, and play completely new chess experiences."
+        },
+        "developer": {
+            "title": "About the Developer",
+            "description": "ChessPie is developed by a single creator, active on Reddit and GitHub. Started just a few weeks ago, the platform has already attracted over 100 users who are exploring the endless possibilities of customizable chess."
+        }
     }
 }
