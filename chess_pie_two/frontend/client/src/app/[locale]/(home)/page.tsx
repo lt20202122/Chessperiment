@@ -2,6 +2,8 @@ import Btn from "./Buttons"
 import { getTranslations } from 'next-intl/server';
 import { HelpArticlesAll } from "@/components/help/HelpArticles";
 
+const siteUrl = "https://chesspie.org";
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'SEO.Home' });
@@ -10,18 +12,25 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: t('title'),
     description: t('description'),
     alternates: {
-      canonical: `https://chessperiment.app/${locale}`,
+      canonical: `${siteUrl}/${locale}`,
       languages: {
-        'en': 'https://chessperiment.app/en',
-        'de': 'https://chessperiment.app/de'
+        'en': `${siteUrl}/en`,
+        'de': `${siteUrl}/de`
       },
     },
     openGraph: {
       title: t('title'),
       description: t('description'),
-      url: `https://chessperiment.app/${locale}`,
+      url: `${siteUrl}/${locale}`,
       type: "website",
-      images: [{ url: "/images/seo/og-home.png", width: 1200, height: 630 }],
+      images: [
+        {
+          url: "/images/seo/og-home.png",
+          width: 1200,
+          height: 630,
+          type: "image/png"
+        }
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -41,20 +50,20 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     "@graph": [
       {
         "@type": "WebSite",
-        "@id": `https://chessperiment.app/${locale}/#website`,
-        "url": `https://chessperiment.app/${locale}`,
-        "name": "chessperiment",
+        "@id": `${siteUrl}/${locale}/#website`,
+        "url": `${siteUrl}/${locale}`,
+        "name": "ChessPie",
         "description": t('description'),
         "inLanguage": locale
       },
       {
         "@type": "Organization",
-        "@id": `https://chessperiment.app/${locale}/#organization`,
-        "name": "chessperiment",
-        "url": `https://chessperiment.app/${locale}`,
+        "@id": `${siteUrl}/${locale}/#organization`,
+        "name": "ChessPie",
+        "url": `${siteUrl}/${locale}`,
         "logo": {
           "@type": "ImageObject",
-          "url": "https://chessperiment.app/icon.png"
+          "url": `${siteUrl}/icon.png`
         },
         "sameAs": []
       }
