@@ -38,53 +38,59 @@ export const viewport: Viewport = {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
 
-  const siteUrl = "https://chesspie.org";
+  // UPDATED: Use your new domain here
+  const siteUrl = "https://chessperiment.com";
   const localeUrl = `${siteUrl}/${locale}`;
 
   return {
     metadataBase: new URL(siteUrl),
     title: {
-      default: "ChessPie | Custom Chess Platform",
-      template: "%s | ChessPie",
+      default: "Chessperiment | Custom Chess Logic Sandbox",
+      template: "%s | Chessperiment",
     },
-    description: "Create individual chess pieces, design unique boards, and play custom chess online with friends.",
+    description: "The most powerful sandbox for chess variants. Define custom piece logic, design irregular boards, and play online.",
     keywords: [
-      "chess", "custom chess", "chess editor", "board game designer", "chess variants",
-      "pixel art chess", "custom chess board", "piece generator", "creative chess",
-      "online chess board editor", "chess variant creator", "create your own chess rules",
-      "chess pieces designer", "online chess variant", "chess rules simulator",
-      "play custom chess online", "chess game creator"
+      "chessperiment", "chess variants", "chess logic engine", "custom chess pieces",
+      "board game sandbox", "non-grid chess", "chess rules creator"
     ],
     authors: [{ name: "Lasse Thoroe" }],
     creator: "Lasse Thoroe",
-    publisher: "ChessPie",
+    publisher: "Chessperiment",
     robots: "index, follow",
+
+    // --- LLMS IMPLEMENTATION START ---
+    icons: {
+      icon: "/icon.png",
+      shortcut: "/favicon.ico",
+      apple: "/apple-icon.png",
+      other: {
+        rel: "llms",
+        url: "/llms.txt",
+      },
+    },
+    // --- LLMS IMPLEMENTATION END ---
+
     openGraph: {
       type: "website",
       locale: locale === "de" ? "de_DE" : "en_US",
       url: localeUrl,
-      siteName: "ChessPie",
-      title: "ChessPie | Play, Create & Share Custom Chess Variants",
-      description: "Design custom chess pieces, create unique boards, and play chess variants with friends.",
+      siteName: "Chessperiment",
+      title: "Chessperiment | Design & Play Custom Chess Variants",
+      description: "Define custom piece logic and create unique chess worlds.",
       images: [
         {
           url: "/images/seo/og-home.png",
           width: 1200,
           height: 630,
-          alt: "ChessPie - Custom Chess Platform",
+          alt: "Chessperiment - Custom Chess Platform",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "ChessPie | Play custom chess",
+      title: "Chessperiment | Custom Chess Sandbox",
       description: "Create your own chess world. Design pieces, boards and play online.",
       images: ["/images/seo/twitter-image.png"],
-    },
-    icons: {
-      icon: "/icon.png",
-      shortcut: "/favicon.ico",
-      apple: "/apple-icon.png",
     },
     alternates: {
       canonical: localeUrl,

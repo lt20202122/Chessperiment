@@ -1,0 +1,17 @@
+# ChessPie
+
+> **ChessPie** is a generative framework for highly custom chess variants.
+> High-signal documentation for AI coding agents: [llms-full.txt](/llms-full.txt)
+
+## Tool Calling & Navigation
+
+*   **Full Technical Docs**: [/llms-full.txt](/llms-full.txt) (Token Count: ~2k)
+    *   *Contains*: Logic Manifesto, API Schemas, Block Editor Reference, Move Rule Cookbook.
+*   **Live Editor**: [chesspie.org/editor](https://chesspie.org/editor)
+
+## Capabilities Summary
+
+*   **Logic Engine**: Vector-based move constraints (`diffX`, `diffY`) instead of static patterns to support arbitrarily sized boards.
+*   **Event System**: Scratch-like block editor for reactive logic (`onCapture`, `Transformation`).
+*   **Rendering**: Frontend-agnostic piece rendering (PNG/SVG) with visual feedback.
+*   **Infrastructure**: Next.js 14, TypeScript, Firebase (Store), Socket.io (Realtime).
