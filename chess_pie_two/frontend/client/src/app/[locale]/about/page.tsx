@@ -150,7 +150,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                         >
                             <circle cx="512" cy="512" r="512" fill="url(#chesspie-gradient)" />
                             <defs>
-                                <radialGradient id="chesspie-gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradTransform="translate(512 512) rotate(90) scale(512)">
+                                <radialGradient id="chesspie-gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(512 512) rotate(90) scale(512)">
                                     <stop stopColor="#f97316" />
                                     <stop offset="0.6" stopColor="#fbbf24" />
                                     <stop offset="1" stopColor="#5e5ce6" />
