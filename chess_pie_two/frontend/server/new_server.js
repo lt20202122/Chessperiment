@@ -307,6 +307,7 @@ io.on("connection", (socket) => {
   console.log("connected:", socket.id);
   // --- Server-Side Stockfish (POOLED - MEMORY EFFICIENT) ---
   socket.on("request_computer_move", async (data) => {
+    console.log("Requested computer move");
     const { roomId, difficulty } = data;
     const playerId = socketToPlayer.get(socket.id);
 
@@ -335,6 +336,41 @@ io.on("connection", (socket) => {
 
       if (bestMove) {
         console.log("[Stockfish] Best move found:", bestMove);
+
+        // Apply the move to the server-side game state
+        const chess = new Chess(game.board_fen);
+        const moveResult = chess.move({
+          from: bestMove.substring(0, 2),
+          to: bestMove.substring(2, 4),
+          promotion: bestMove.length > 4 ? bestMove.substring(4, 5) : "q",
+        });
+
+        if (moveResult) {
+          game.board_fen = chess.fen();
+          game.history.push(moveResult.san);
+
+          const status = checkGameStatus(game);
+          await saveGame(game);
+
+          // Broadcast the move to everyone in the room
+          io.to(roomId).emit("move", {
+            from: moveResult.from,
+            to: moveResult.to,
+            promotion: moveResult.promotion,
+            san: moveResult.san,
+            fen: game.board_fen,
+            gameStatus: game.status,
+          });
+
+          if (game.status === "ended" && status) {
+            io.to(roomId).emit("game_ended", {
+              reason: status.gameInfo,
+              result: status.result,
+              status: "ended",
+            });
+          }
+        }
+
         socket.emit("computer_move_result", { bestMove });
       } else {
         socket.emit("computer_move_result", { bestMove: null });

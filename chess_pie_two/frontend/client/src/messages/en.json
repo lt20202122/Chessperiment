@@ -672,12 +672,10 @@
     "CreationGuide": {
         "title": "Creation Guide",
         "subtitle": "Complete all steps to launch.",
-        "saveDraft": "Save Draft",
         "steps": {
             "1": {
                 "title": "Board Setup",
-                "description": "Define grid size, shape, and initial active squares for the playing field.",
-                "status": "In Progress"
+                "description": "Define grid size, shape, and initial active squares for the playing field."
             },
             "2": {
                 "title": "Pieces",

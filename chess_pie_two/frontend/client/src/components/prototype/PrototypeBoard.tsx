@@ -40,8 +40,10 @@ function DraggablePiece({ piece, size, amIAtTurn }: { piece: Piece; size: number
     );
 }
 
+import KillEffect from '@/components/game/KillEffect';
+
 // droppable Square Component
-function BoardSquare({ pos, isWhite, piece, size, onSelect, isSelected, amIAtTurn }: any) {
+function BoardSquare({ pos, isWhite, piece, size, onSelect, isSelected, amIAtTurn, effects, onEffectComplete }: any) {
     const { setNodeRef, isOver } = useDroppable({ id: pos });
 
     return (
@@ -58,6 +60,16 @@ function BoardSquare({ pos, isWhite, piece, size, onSelect, isSelected, amIAtTur
             {piece && (
                 <DraggablePiece piece={piece} size={size * 0.85} amIAtTurn={amIAtTurn} />
             )}
+
+            <AnimatePresence>
+                {effects.map((effect: any) => (
+                    <KillEffect
+                        key={effect.id}
+                        size={size}
+                        onComplete={() => onEffectComplete(effect.id)}
+                    />
+                ))}
+            </AnimatePresence>
 
             {/* Coordinate Labels */}
             {pos[1] === '1' && (
@@ -80,17 +92,33 @@ export default function PrototypeBoard() {
     const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
     const [activePiece, setActivePiece] = useState<Piece | null>(null);
     const [logs, setLogs] = useState<{ msg: string, type: 'info' | 'move' | 'effect' }[]>([]);
+    const [activeEffects, setActiveEffects] = useState<{ id: number, type: string, position: Square }[]>([]);
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-        useSensor(TouchSensor, { activationConstraint: { distance: 5 } })
+        useSensor(PointerSensor, { activationConstraint: { distance: 0 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 0 } })
     );
 
     const squares = useMemo(() => board.getSquares(), [board]);
     const currentTurn = board.getTurn();
 
-    const addLog = (msg: string, type: 'info' | 'move' | 'effect' = 'info') => {
+    const addLog = useCallback((msg: string, type: 'info' | 'move' | 'effect' = 'info') => {
         setLogs(prev => [{ msg, type }, ...prev].slice(0, 50));
+    }, []);
+
+    useEffect(() => {
+        const handleEffect = (effect: { type: string, position: Square }) => {
+            const id = Date.now() + Math.random();
+            setActiveEffects(prev => [...prev, { ...effect, id }]);
+            addLog(`Effect: ${effect.type} at ${effect.position}`, 'effect');
+        };
+
+        board.addEffectListener(handleEffect);
+        return () => board.removeEffectListener(handleEffect);
+    }, [board, addLog]);
+
+    const handleEffectComplete = (id: number) => {
+        setActiveEffects(prev => prev.filter(e => e.id !== id));
     };
 
     const handleDragStart = (e: DragStartEvent) => {
@@ -106,12 +134,17 @@ export default function PrototypeBoard() {
             const to = over.id as Square;
 
             const success = game.makeMove(from, to);
+            if (!success) {
+                console.warn(`[Prototype] Move from ${from} to ${to} was rejected or prevented.`);
+            }
+            // Always sync state, as logic might have changed pieces even if move was 'rejected' (e.g. kill effect)
+            const newBoard = game.getBoard().clone();
+            setBoard(newBoard);
+
             if (success) {
-                const newBoard = game.getBoard().clone(); // Force re-render
-                setBoard(newBoard);
                 addLog(`Move: ${from} to ${to}`, 'move');
             } else {
-                addLog(`Illegal Move: ${from} to ${to}`, 'info');
+                addLog(`Move rejected/prevented: ${from} to ${to}`, 'info');
             }
         }
     };
@@ -152,6 +185,8 @@ export default function PrototypeBoard() {
                                             onSelect={setSelectedSquare}
                                             isSelected={selectedSquare === pos}
                                             amIAtTurn={squares[pos]?.color === currentTurn}
+                                            effects={activeEffects.filter(e => e.position === pos)}
+                                            onEffectComplete={handleEffectComplete}
                                         />
                                     );
                                 })
@@ -249,8 +284,8 @@ export default function PrototypeBoard() {
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     className={`p-3 rounded-xl text-xs font-medium border ${log.type === 'move' ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/30 text-blue-700 dark:text-blue-400' :
-                                            log.type === 'effect' ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
-                                                'bg-stone-50 dark:bg-stone-800 border-stone-100 dark:border-stone-700 text-stone-600 dark:text-stone-400'
+                                        log.type === 'effect' ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
+                                            'bg-stone-50 dark:bg-stone-800 border-stone-100 dark:border-stone-700 text-stone-600 dark:text-stone-400'
                                         }`}
                                 >
                                     <span className="font-bold mr-2">[{new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>

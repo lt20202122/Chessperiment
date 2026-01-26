@@ -670,12 +670,10 @@
     "CreationGuide": {
         "title": "Erstellungs-Guide",
         "subtitle": "Schließe alle Schritte ab, um zu starten.",
-        "saveDraft": "Entwurf speichern",
         "steps": {
             "1": {
                 "title": "Brett-Setup",
-                "description": "Definiere Rastergröße, Form und initiale aktive Felder für das Spielfeld.",
-                "status": "In Bearbeitung"
+                "description": "Definiere Rastergröße, Form und initiale aktive Felder für das Spielfeld."
             },
             "2": {
                 "title": "Figuren",

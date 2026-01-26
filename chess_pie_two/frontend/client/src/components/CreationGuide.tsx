@@ -10,8 +10,6 @@ import {
     Zap,
     Palette,
     Rocket,
-    Save,
-    ChevronRight,
     HelpCircle
 } from "lucide-react"
 
@@ -37,37 +35,31 @@ export function CreationGuide() {
             id: 1,
             title: t("steps.1.title"),
             description: t("steps.1.description"),
-            status: t("steps.1.status"),
-            icon: <Grid3X3 size={20} />,
-            active: true
+            icon: <Grid3X3 size={20} />
         },
         {
             id: 2,
             title: t("steps.2.title"),
             description: t("steps.2.description"),
-            icon: <Shapes size={20} />,
-            active: false
+            icon: <Shapes size={20} />
         },
         {
             id: 3,
             title: t("steps.3.title"),
             description: t("steps.3.description"),
-            icon: <Zap size={20} />,
-            active: false
+            icon: <Zap size={20} />
         },
         {
             id: 4,
             title: t("steps.4.title"),
             description: t("steps.4.description"),
-            icon: <Palette size={20} />,
-            active: false
+            icon: <Palette size={20} />
         },
         {
             id: 5,
             title: t("steps.5.title"),
             description: t("steps.5.description"),
             icon: <Rocket size={20} />,
-            active: false,
             isLast: true
         }
     ]
@@ -138,7 +130,7 @@ export function CreationGuide() {
                                             <svg className="absolute left-[18px] top-[40px] w-6 h-12 pointer-events-none z-0 overflow-visible" fill="none" viewBox="0 0 24 48">
                                                 <path
                                                     d={index % 2 === 0 ? "M4 0C4 20 20 20 20 48" : "M20 0C20 28 4 28 4 48"}
-                                                    stroke={step.active ? "#fbbf24" : "rgba(120, 113, 108, 0.3)"}
+                                                    stroke="rgba(120, 113, 108, 0.3)"
                                                     strokeDasharray="4 4"
                                                     strokeWidth="2"
                                                 />
@@ -147,38 +139,22 @@ export function CreationGuide() {
 
                                         {/* Step Circle */}
                                         <div className={`absolute left-0 top-0 w-10 h-10 rounded-full font-bold text-lg flex items-center justify-center shadow-lg transition-all duration-300 z-10 
-                                            ${step.active
-                                                ? "bg-amber-400 text-bg ring-4 ring-amber-400/20"
-                                                : "bg-surface-dark border-2 border-stone-700 text-stone-500 group-hover:border-amber-400 group-hover:text-amber-400"
-                                            }`}
+                                            bg-surface-dark border-2 border-stone-700 text-stone-500 group-hover:border-amber-400 group-hover:text-amber-400`}
                                         >
                                             {step.id === 5 ? <Rocket size={18} /> : step.id}
                                         </div>
 
                                         {/* Step Content */}
                                         <div className="pt-0.5">
-                                            <h3 className={`font-bold transition-colors ${step.active ? "text-amber-400" : "text-stone-400 group-hover:text-stone-200"}`}>
+                                            <h3 className="font-bold transition-colors text-stone-400 group-hover:text-stone-200">
                                                 {step.title}
                                             </h3>
                                             <p className="text-xs text-stone-500 leading-relaxed mt-1 opacity-80">
                                                 {step.description}
                                             </p>
-                                            {step.status && (
-                                                <span className="inline-block mt-2 text-[10px] font-bold text-amber-400 uppercase tracking-widest bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
-                                                    {step.status}
-                                                </span>
-                                            )}
                                         </div>
                                     </div>
                                 ))}
-                            </div>
-
-                            {/* Footer */}
-                            <div className="p-4 border-t border-white/5 bg-white/5">
-                                <button className="w-full py-3 px-4 bg-amber-400 text-bg font-bold rounded-xl shadow-lg hover:bg-amber-300 transition-all active:scale-[0.98] flex justify-center items-center gap-2">
-                                    <span>{t("saveDraft")}</span>
-                                    <Save size={16} />
-                                </button>
                             </div>
                         </motion.aside>
                     </>

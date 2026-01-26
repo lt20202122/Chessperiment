@@ -12,6 +12,7 @@ export class BoardClass {
     public readonly height: number;
     public gridType: 'square' | 'hex';
     private grid: GridType;
+    private effectListeners: ((effect: { type: string, position: Square }) => void)[] = [];
 
     constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[], width: number = 8, height: number = 8, gridType: 'square' | 'hex' = 'square') {
         this.width = width;
@@ -20,6 +21,18 @@ export class BoardClass {
         this.grid = gridType === 'hex' ? new HexGrid() : new SquareGrid();
         const squares = initialPieces || this.setupInitialBoard();
         this.stateManager = new BoardStateManager(squares, activeSquares);
+    }
+
+    addEffectListener(fn: (effect: { type: string, position: Square }) => void) {
+        this.effectListeners.push(fn);
+    }
+
+    removeEffectListener(fn: (effect: { type: string, position: Square }) => void) {
+        this.effectListeners = this.effectListeners.filter(l => l !== fn);
+    }
+
+    triggerEffect(type: string, position: Square) {
+        this.effectListeners.forEach(fn => fn({ type, position }));
     }
 
     getGrid(): GridType {
@@ -174,43 +187,49 @@ export class BoardClass {
                 if (moveContext.prevented || moveContext.movePrevented) {
                     movePrevented = true;
                 }
+            }
 
-                // on-capture trigger (only if move not prevented and it's a capture)
-                if (!movePrevented && isCapture) {
-                    const captureContext = { from, to, capturedPiece: destinationPiece, prevented: false, movePrevented: false, capturePrevented: false };
-                    (pieceToMove as any).executeLogic('on-capture', captureContext, this);
+            // on-capture trigger (only if move not prevented and it's a capture)
+            // This MUST be outside the pieceToMove.isCustom check so standard pieces can capture custom pieces
+            if (!movePrevented && isCapture) {
+                const commonContext = { 
+                    attacker: pieceToMove,
+                    capturedPiece: destinationPiece,
+                    from, to, 
+                    prevented: false, 
+                    movePrevented: false, 
+                    capturePrevented: false 
+                };
+
+                // 1. Fire on attacker (Active)
+                if ((pieceToMove as any).isCustom) {
+                    (pieceToMove as any).executeLogic('on-capture', commonContext, this);
+                    if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
+                        movePrevented = true;
+                    }
+                }
+
+                // 2. Fire on victim (Passive)
+                if (destinationPiece && (destinationPiece as any).isCustom) {
+                    (destinationPiece as any).executeLogic('on-capture', commonContext, this);
+                    (destinationPiece as any).executeLogic('on-captured', commonContext, this);
                     
-                    // Refresh piece again in case capture logic transformed it
-                    pieceToMove = this.getPiece(from) || pieceToMove;
-
-                    if (captureContext.prevented || captureContext.capturePrevented) {
+                    if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
                         capturePrevented = true;
-                    } else if (destinationPiece && (destinationPiece as any).isCustom) {
-                        // Check passive on-captured trigger on the victim
-                        const victimContext = { attacker: pieceToMove, from, to, prevented: false, movePrevented: false, capturePrevented: false };
-                        (destinationPiece as any).executeLogic('on-captured', victimContext, this);
-                        
-                        // Victim might have transformed too! (Rare but possible)
-                        destinationPiece = this.getPiece(to) || destinationPiece;
-
-                        if (victimContext.prevented || victimContext.movePrevented || victimContext.capturePrevented) {
-                            capturePrevented = true;
-                        }
                     }
                 }
             }
 
             // NOW decide what to do based on prevention flags
-            if (movePrevented) {
-                // Move was prevented - piece stays at origin, nothing happens
-                console.log(`[Move] Prevented by on-move logic`);
-                return false;
-            }
-
-            if (capturePrevented) {
-                // Capture was prevented - move is cancelled, piece stays at origin ("Bounce Back")
-                console.log(`[Move] Capture prevented by on-capture logic - Bounce Back`);
-                return false;
+            if (movePrevented || capturePrevented) {
+                // Check if the attacker was KILLED or removed during logic execution
+                if (this.getPiece(from) !== pieceToMove) {
+                    // Mark move as processed (success) so UI syncs and piece disappears, 
+                    // but don't place it at 'to' and end turn.
+                    this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
+                    return true;
+                }
+                return false; 
             }
 
             // No prevention - execute the move normally

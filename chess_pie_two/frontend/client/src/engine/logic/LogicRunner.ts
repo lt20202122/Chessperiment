@@ -84,16 +84,17 @@ export class LogicRunner {
 
         switch (trigger.id) {
             case 'on-capture':
-                // "by" is actually "captured piece type" in the context of "I captured X"
-                // The template label says "by" which is confusing for "on-capture" (Active). 
-                // In Step 1, I saw: onCapture sockets: [ { id: 'by', ... } ]
-                // Usually "onCapture" means "I captured something". The "by" probably filters WHAT I captured?
-                // Or works as "onCaptured" (Passive)?
-                // Let's assume onCapture (Active) -> "by" means "target piece type".
-                return matchesType(context.capturedPiece, vals.by);
-
-            case 'on-captured': // Passive: I was captured BY ...
-                return matchesType(context.attacker, vals.by);
+            case 'on-captured':
+                // Smart trigger: handles both "I captured something" and "I was captured"
+                // If we are the victim (context.attacker exists and it's not us)
+                if (context.attacker && context.attacker.id !== piece.id) {
+                    return matchesType(context.attacker, vals.by);
+                }
+                // If we are the attacker (context.capturedPiece exists and it's not us)
+                if (context.capturedPiece && context.capturedPiece.id !== piece.id) {
+                    return matchesType(context.capturedPiece, vals.by);
+                }
+                return false;
 
             case 'on-threat': // Passive: I am threatened BY ...
                 return matchesType(context.attacker, vals.by);
@@ -152,10 +153,19 @@ export class LogicRunner {
 
         switch (block.id) {
             case 'kill':
-                const targetPos = (vals.target === 'Attacker' && context.attacker) 
-                    ? context.attacker.position 
-                    : piece.position;
-                board.setPiece(targetPos, null);
+                const isAttackerTarget = vals.target === 'Attacker';
+                const targetPiece = isAttackerTarget ? context.attacker : piece;
+                
+                if (targetPiece) {
+                    const tPos = targetPiece.position;
+                    board.setPiece(tPos, null);
+                    board.triggerEffect('kill', tPos);
+
+                    // If the piece itself or the active attacker is killed, stop the move
+                    if (targetPiece.id === piece.id || (context.attacker && targetPiece.id === context.attacker.id)) {
+                        context.movePrevented = true;
+                    }
+                }
                 break;
 
             case 'transformation':

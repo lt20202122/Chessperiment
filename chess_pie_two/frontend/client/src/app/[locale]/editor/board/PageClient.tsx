@@ -10,7 +10,7 @@ export type EditMode = 'shape' | 'pieces';
 
 
 
-export default function PageClient() {
+export default function PageClient({ children }: { children?: React.ReactNode }) {
     const t = useTranslations('Editor.Board');
     const [editMode, setEditMode] = useState<EditMode>('shape');
     const [selectedPiece, setSelectedPiece] = useState({ type: 'Pawn', color: 'white' });
@@ -123,7 +123,7 @@ export default function PageClient() {
                         generateBoardData={setBoardCallback}
                         customCollection={customCollection}
                     />
-
+                    {children}
                 </div>
             </EditorLayout>
         </>

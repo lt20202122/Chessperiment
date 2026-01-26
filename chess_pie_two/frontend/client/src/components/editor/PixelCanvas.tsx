@@ -42,9 +42,14 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
         const cellSize = canvas.width / gridSize;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw grid/background
-        ctx.fillStyle = '#f5f5f5'; // Light stone
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Draw checkerboard background for better visibility (classic transparency pattern)
+        const checkerSize = cellSize * 2; // Twice the grid size for visibility
+        for (let y = 0; y < canvas.height; y += checkerSize) {
+            for (let x = 0; x < canvas.width; x += checkerSize) {
+                ctx.fillStyle = (Math.floor(x / checkerSize) + Math.floor(y / checkerSize)) % 2 === 0 ? '#fafafa' : '#e5e5e5';
+                ctx.fillRect(x, y, checkerSize, checkerSize);
+            }
+        }
 
         // Draw pixels
         for (let y = 0; y < gridSize; y++) {
@@ -176,7 +181,7 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
 
             {/* Canvas Container */}
             <div
-                className="bg-stone-300 dark:bg-stone-950 p-1 rounded-sm shadow-xl border border-stone-400/50"
+                className="bg-stone-400 dark:bg-stone-900 p-1 rounded-sm shadow-xl border border-stone-400/50"
             >
                 <canvas
                     ref={canvasRef}

@@ -247,8 +247,8 @@ export default function Board({
   });
   const touchSensor = useSensor(TouchSensor, {
     activationConstraint: {
-      delay: 250,
-      tolerance: 10,
+      delay: 0,
+      tolerance: 0,
     },
   });
   const sensors = useSensors(pointerSensor, touchSensor);
@@ -309,6 +309,14 @@ export default function Board({
     // Prevent multiple initializations if already in a running computer game
     if (gameMode === 'computer' && gameStatus === 'playing' && myColor === 'white') return;
 
+    const pId = localStorage.getItem("chess_player_id");
+    if (!pId) {
+      console.error("[startComputerGame] No player ID found");
+      return;
+    }
+
+    const compRoomId = `COMPUTER-${pId}`;
+
     setGameMode("computer");
     setGameStatus("playing");
     setMyColor("white"); // FORCE WHITE for computer games
@@ -324,11 +332,14 @@ export default function Board({
     setLastMoveTo(null);
     setCurrentTurn('w');
     setDifficulty(elo);
-    setCurrentRoom("LOCAL-COMPUTER");
+    setCurrentRoom(compRoomId);
     setPlayerCount(1);
 
-    // NO socket emits here - we keep everything local for computer mode
-  }, [chess, updateBoardState, gameMode, gameStatus, myColor]);
+    // Join the computer game room on the server
+    if (socket) {
+      socket.emit("join_room", { roomId: compRoomId, isComputer: true });
+    }
+  }, [chess, updateBoardState, gameMode, gameStatus, myColor, socket]);
 
   // We need a stable callback for stockfish
   const onBestMove = useCallback((move: string) => {
@@ -730,7 +741,8 @@ export default function Board({
   };
 
   const executeMove = (from: string, to: string, promotion?: string) => {
-    if (gameMode === "online") {
+    // 1. Send move to server if in online or computer mode
+    if (gameMode === "online" || gameMode === "computer") {
       // Optimistic Visual Update
       const mover = boardPieces.find(p => p.position === from);
       if (mover) {
@@ -756,13 +768,15 @@ export default function Board({
       }
 
       if (socket) socket.emit("move", { from, to, promotion });
-      return true;
+
+      // If online mode, we stop here and wait for server "move" event
+      if (gameMode === "online") return true;
     }
 
-    // Computer / Local Mode
+    // 2. Handle local updates for Computer or Local mode
     if (gameMode === 'computer' || gameMode === 'local') {
       try {
-        // Handle history rewrite for computer mode
+        // Handle history rewrite if viewing history
         if (isViewingHistory && gameMode === 'computer') {
           let fenToLoad = initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
           if (historyIndex >= 0) {
@@ -807,6 +821,7 @@ export default function Board({
           return false;
         }
 
+        // Standard execution for Computer or Local
         const moveResult = chess.move({ from, to, promotion: promotion || 'q' });
         if (moveResult) {
           const newFen = chess.fen();
@@ -821,11 +836,6 @@ export default function Board({
           });
           setHistoryFens(prev => [...prev, newFen]);
           setHistoryMoves(prev => [...prev, { from, to, san }]);
-
-          // Sync with server for computer games (so server knows the board state)
-          if (gameMode === 'computer' && socket) {
-            socket.emit("move", { from, to, promotion });
-          }
 
           if (chess.isGameOver()) {
             if (chess.isCheckmate()) {

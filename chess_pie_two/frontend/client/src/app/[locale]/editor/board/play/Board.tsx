@@ -16,6 +16,7 @@ import {
     useSensor,
     useSensors,
     PointerSensor,
+    TouchSensor,
 } from "@dnd-kit/core";
 import { getPieceImage, PieceType } from "../../../game/Data";
 import PieceRenderer from "@/components/game/PieceRenderer";
@@ -112,6 +113,8 @@ const DraggablePiece = memo(function DraggablePiece({
     );
 });
 
+import KillEffect from "@/components/game/KillEffect";
+
 // --- BoardTile ---
 const BoardTile = memo(function BoardTile({
     pos,
@@ -127,6 +130,8 @@ const BoardTile = memo(function BoardTile({
     boardStyle,
     isTurn,
     redMarked,
+    effects,
+    onEffectComplete,
 }: {
     pos: string;
     gridType: 'square' | 'hex',
@@ -141,6 +146,8 @@ const BoardTile = memo(function BoardTile({
     boardStyle: string;
     isTurn: boolean;
     redMarked: boolean;
+    effects: any[];
+    onEffectComplete: (id: number) => void;
 }) {
     const { setNodeRef } = useDroppable({ id: pos });
 
@@ -175,6 +182,16 @@ const BoardTile = memo(function BoardTile({
                 />
             )}
             {piece && <DraggablePiece piece={piece} size={piece.size ?? blockSize * 0.8} isTurn={isTurn} onClick={() => onClick(pos)} boardStyle={boardStyle} pixels={piece.pixels} />}
+
+            <AnimatePresence>
+                {effects.map((effect: any) => (
+                    <KillEffect
+                        key={effect.id}
+                        size={blockSize}
+                        onComplete={() => onEffectComplete(effect.id)}
+                    />
+                ))}
+            </AnimatePresence>
         </div>
     );
 });
@@ -212,10 +229,33 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
     const [promotionPending, setPromotionPending] = useState<{ from: string; to: string } | null>(null);
     const [showKingWarning, setShowKingWarning] = useState(false);
     const [isShaking, setIsShaking] = useState(false);
+    const [activeEffects, setActiveEffects] = useState<{ id: number, type: string, position: string }[]>([]);
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+        useSensor(PointerSensor, { activationConstraint: { distance: 0 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 0 } })
     );
+
+    const handleEffectComplete = (id: number) => {
+        setActiveEffects(prev => prev.filter(e => e.id !== id));
+    };
+
+    useEffect(() => {
+        if (!gameRef.current) return;
+        const boardObj = gameRef.current.getBoard();
+
+        const onEffect = (effect: { type: string, position: Square }) => {
+            const editorPos = fromEngineSq(effect.position);
+            setActiveEffects(prev => [...prev, {
+                id: Date.now() + Math.random(),
+                type: effect.type,
+                position: editorPos
+            }]);
+        };
+
+        boardObj.addEffectListener(onEffect);
+        return () => boardObj.removeEffectListener(onEffect);
+    }, [gameRef.current]);
 
     const getPieceAt = (pos: string) => boardPieces.find((p) => p.position === pos);
 
@@ -269,6 +309,8 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
     };
 
     const buildGameFromProps = useCallback(() => {
+        console.log(`[Board Init] customCollection keys:`, Object.keys(customCollection));
+
         const enginePieces: Record<Square, Piece | null> = {};
         Object.entries(board.placedPieces).forEach(([pos, piece]) => {
             const enginePos = toEngineSq(pos);
@@ -283,9 +325,23 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
             }
 
             if (!customPieceData) {
+                // Try stripping color suffix if it exists in the type
+                const typeWithoutColor = piece.type.replace(/_white$|_black$/, '');
+                customPieceData = customCollection[typeWithoutColor];
+            }
+
+            if (!customPieceData) {
                 // Search by name or originalId
                 customPieceData = Object.values(customCollection).find((p: any) =>
                     (p.name === piece.type || p.originalId === piece.type) && p.color === piece.color
+                );
+            }
+
+            if (!customPieceData) {
+                // Last resort: search by ID match (ignoring color suffix)
+                const typeWithoutColor = piece.type.replace(/_white$|_black$/, '');
+                customPieceData = Object.values(customCollection).find((p: any) =>
+                    (p.id === typeWithoutColor || p.originalId === typeWithoutColor) && p.color === piece.color
                 );
             }
 
@@ -697,6 +753,8 @@ export default function Board({ board, headerContent }: { board: CustomBoard, he
                     boardStyle="v3"
                     isTurn={displayPiece ? (displayPiece.color === "white" ? "w" : "b") === currentTurn : false}
                     redMarked={redMarkedSquares.has(pos)}
+                    effects={activeEffects.filter(e => e.position === pos)}
+                    onEffectComplete={handleEffectComplete}
                 />
             </div>
         );
