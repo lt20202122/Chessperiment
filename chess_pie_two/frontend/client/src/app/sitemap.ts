@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/editor/board',
     '/editor/board/faq',
     '/editor/piece',
+    '/editor/piece/faq',
     '/marketplace',
     '/game',
     '/announcements',
@@ -17,7 +18,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/login',
     '/features/analyze',
     '/legal-notice',
-    '/privacy-policy'
+    '/privacy-policy',
+    '/about',
+    '/profile'
   ];
 
   return routes.flatMap((route) => 

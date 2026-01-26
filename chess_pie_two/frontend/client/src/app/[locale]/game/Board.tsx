@@ -306,6 +306,9 @@ export default function Board({
   }, [chess]);
 
   const startComputerGame = useCallback((elo = 1200) => {
+    // Prevent multiple initializations if already in a running computer game
+    if (gameMode === 'computer' && gameStatus === 'playing') return;
+
     setGameMode("computer");
     setGameStatus("playing");
     setMyColor("white");
@@ -321,15 +324,11 @@ export default function Board({
     setLastMoveTo(null);
     setCurrentTurn('w');
     setDifficulty(elo);
+    setCurrentRoom("LOCAL-COMPUTER");
+    setPlayerCount(1);
 
-    // Join server room for computer games to enable server-side state tracking
-    const playerId = localStorage.getItem("chess_player_id") || "unknown";
-    const compRoomId = `COMPUTER-${playerId}-${Date.now()}`;
-    setCurrentRoom(compRoomId);
-    if (socket) {
-      socket.emit("join_room", { roomId: compRoomId, isComputer: true });
-    }
-  }, [chess, updateBoardState, socket]);
+    // NO socket emits here - we keep everything local for computer mode
+  }, [chess, updateBoardState, gameMode, gameStatus]);
 
   // We need a stable callback for stockfish
   const onBestMove = useCallback((move: string) => {
@@ -368,13 +367,17 @@ export default function Board({
     } catch (e) { }
   }, [chess, updateBoardState, myColor, t]);
 
-  const { requestMove, isReady } = useStockfish(currentRoom, difficulty, onBestMove);
+  const { requestMove, isReady } = useStockfish(currentRoom, difficulty, onBestMove, false); // Force Local
 
   useEffect(() => {
     if (gameMode === 'computer' && isReady && gameStatus === 'playing') {
       const isComputerTurn = chess.turn() !== (myColor === 'white' ? 'w' : 'b');
       if (isComputerTurn) {
-        requestMove(chess.fen());
+        // Add a slight delay for realism
+        const timer = setTimeout(() => {
+          requestMove(chess.fen());
+        }, 300);
+        return () => clearTimeout(timer);
       }
     }
   }, [isReady, currentTurn, gameMode, gameStatus, myColor, chess, requestMove]);
@@ -383,15 +386,16 @@ export default function Board({
     // Auto-start computer game if mode is computer and status is empty/waiting
     if (gameMode === 'computer' && (gameStatus === "" || gameStatus === "waiting")) {
       let elo = 1200;
-      if (currentRoom && currentRoom.startsWith("computer-")) {
+      if (currentRoom && currentRoom.includes("-")) {
         const parts = currentRoom.split("-");
-        if (parts[1]) elo = parseInt(parts[1]) || 1200;
+        const potentialElo = parseInt(parts[parts.length - 1]);
+        if (!isNaN(potentialElo)) elo = potentialElo;
       }
       startComputerGame(elo);
     } else if (initialRoomId && gameStatus === "" && gameMode !== 'computer') {
       setGameStatus("waiting");
     }
-  }, [initialRoomId, gameStatus, gameMode, currentRoom, startComputerGame]);
+  }, [initialRoomId, gameStatus, gameMode, startComputerGame]); // Removed currentRoom to prevent loop
 
   useEffect(() => {
     if (!socket || (gameMode !== "online" && gameMode !== "computer")) return;
@@ -486,8 +490,14 @@ export default function Board({
     socket.on("room_created", (data: any) => {
       setCurrentRoom(data.roomId);
       setMyColor("white");
-      setGameStatus("waiting");
-      setPlayerCount(1);
+      // Only set to waiting if NOT a computer room
+      if (!data.roomId?.startsWith("COMPUTER-")) {
+        setGameStatus("waiting");
+        setPlayerCount(1);
+      } else {
+        setGameStatus("playing");
+        setPlayerCount(1);
+      }
     });
     socket.on("joined_room", (data: any) => {
       setCurrentRoom(data.roomId);
@@ -608,14 +618,13 @@ export default function Board({
       socket.emit("register_player", { playerId: pId });
 
       // Handle room joining: computer games need server-side tracking too
-      if (initialRoomId) {
-        const isComputerMode = gameModeVar === 'computer' || gameMode === 'computer';
+      // Handle room joining: multiplayer games only
+      if (initialRoomId && gameModeVar !== 'computer' && gameMode !== 'computer') {
         if (mode === 'create') {
           socket.emit("create_room", { roomId: initialRoomId });
         } else {
           socket.emit("join_room", {
-            roomId: initialRoomId,
-            isComputer: isComputerMode
+            roomId: initialRoomId
           });
         }
       }
@@ -821,8 +830,8 @@ export default function Board({
           setHistoryFens(prev => [...prev, newFen]);
           setHistoryMoves(prev => [...prev, { from, to, san }]);
 
-          // Sync with server for computer games (so server knows the board state)
-          if (gameMode === 'computer' && socket) {
+          // Sync with server ONLY for online games
+          if ((gameMode as string) === 'online' && socket) {
             socket.emit("move", { from, to, promotion });
           }
 
@@ -995,8 +1004,9 @@ export default function Board({
       const isMoveTo = isViewingHistory ? historyMove?.to === pos : lastMoveTo === pos;
 
       const amIAtTurn = gameStatus === "playing" && (
-        (!isViewingHistory && (myColor ? currentTurn === (myColor === "white" ? "w" : "b") : gameMode === 'local')) ||
-        (isViewingHistory && gameMode === 'computer' && (myColor ? activeTurn === (myColor === "white" ? "w" : "b") : false))
+        (gameMode === 'computer' && !isViewingHistory && activeTurn === (myColor === 'white' ? 'w' : 'b')) ||
+        (gameMode === 'local' && !isViewingHistory) ||
+        (gameMode === 'online' && !isViewingHistory && (myColor ? activeTurn === (myColor === "white" ? "w" : "b") : false))
       );
 
       boardContent.push(
