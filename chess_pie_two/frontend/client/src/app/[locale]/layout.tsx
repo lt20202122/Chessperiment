@@ -75,15 +75,15 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       type: "website",
       locale: locale === "de" ? "de_DE" : "en_US",
       url: localeUrl,
-      siteName: "ChessPie",
-      title: "ChessPie | Play, Create & Share Custom Chess Variants",
+      siteName: "Chessperiment",
+      title: "Chessperiment | Custom Chess Logic Sandbox",
       description: "Design custom chess pieces, create unique boards, and play chess variants with friends.",
       images: [
         {
           url: "/images/seo/og-home.png",
           width: 1200,
           height: 630,
-          alt: "ChessPie - Custom Chess Platform",
+          alt: "Chessperiment - Custom Chess Platform",
           type: "image/png",
         },
       ],

@@ -80,7 +80,7 @@ export default async function PieceEditorFaqPage({ params }: { params: Promise<{
                         >
                             Back to Editor
                         </Link>
-                        <a href="https://github.com/Chess-Pie" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold leading-6 text-white group flex items-center gap-1">
+                        <a href="https://github.com/lt20202122/chessPIE" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold leading-6 text-white group flex items-center gap-1">
                             GitHub Repository <span className="group-hover:translate-x-1 transition-transform">→</span>
                         </a>
                     </div>

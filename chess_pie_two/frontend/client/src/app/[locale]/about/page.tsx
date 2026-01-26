@@ -116,7 +116,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
             {/* Mission Section */}
             <section className="py-24 sm:py-32">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <motion.div 
+                    <motion.div
                         whileHover={{ scale: 1.01 }}
                         transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         className="relative isolate overflow-hidden bg-stone-950 dark:bg-stone-900 px-6 py-24 text-center shadow-2xl rounded-3xl sm:px-16 border border-white/10 group backdrop-blur-sm"
@@ -136,7 +136,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                                     Start Creating
                                 </Link>
                                 <Link href="/game" className="group/link text-sm font-semibold leading-6 text-white flex items-center gap-1 hover:text-orange-300 transition-colors">
-                                    {t("features.variants.title")} 
+                                    {t("features.variants.title")}
                                     <span className="group-hover/link:translate-x-1 transition-transform" aria-hidden="true">→</span>
                                 </Link>
                             </div>
@@ -145,7 +145,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                         {/* Background SVG Decoration with Enhanced Gradient */}
                         <svg
                             viewBox="0 0 1024 1024"
-                            className="absolute left-1/2 top-1/2 -z-10 h-[400px] w-[800px] -translate-x-1/2 -translate-y-1/2 [mask-image:radial-gradient(closest-side,white,transparent)] opacity-40 group-hover:opacity-60 transition-opacity duration-700"
+                            className="absolute left-1/2 top-1/2 -z-10 h-[400px] w-[800px] -translate-x-1/2 -translate-y-1/2 mask-[radial-gradient(closest-side,white,transparent)] opacity-40 group-hover:opacity-60 transition-opacity duration-700"
                             aria-hidden="true"
                         >
                             <circle cx="512" cy="512" r="512" fill="url(#chessperiment-gradient)" />
@@ -157,10 +157,10 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                                 </radialGradient>
                             </defs>
                         </svg>
-                        
+
                         {/* Animated Glow Effect */}
                         <div className="absolute inset-0 -z-10 bg-linear-to-tr from-orange-500/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        
+
                         {/* Decorative borders */}
                         <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-orange-500/50 to-transparent" />
                         <div className="absolute bottom-0 left-0 w-full h-px bg-linear-to-r from-transparent via-accent/50 to-transparent" />
@@ -183,7 +183,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                         </p>
                         <div className="mt-10 flex gap-x-6">
                             <a
-                                href="https://github.com/Chess-Pie"
+                                href="https://github.com/lt20202122/chessPIE"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-1 text-sm font-semibold leading-6 text-stone-900 dark:text-stone-50 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"

@@ -2,7 +2,7 @@ import Btn from "./Buttons"
 import { getTranslations } from 'next-intl/server';
 import { HelpArticlesAll } from "@/components/help/HelpArticles";
 
-const siteUrl = "https://chesspie.org";
+const siteUrl = "https://chessperiment.app";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

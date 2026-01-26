@@ -1,3 +1,4 @@
+import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
 import LobbyPage from "./LobbyPage"
 import { GameHelp } from '@/components/help/HelpArticles';
@@ -61,6 +62,21 @@ export default async function Game({ params }: { params: Promise<{ locale: strin
         />
         <h1 className="sr-only">{t('h1')}</h1>
         <LobbyPage />
+        <section className="container mx-auto px-4 py-12 prose dark:prose-invert max-w-4xl text-center">
+            <h2>{t('seoContent.heading')}</h2>
+            <p>{t('seoContent.text')}</p>
+            <div className="flex flex-wrap justify-center gap-4 mt-8 not-prose">
+                <Link href="/editor/board" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
+                    → Create a New Board
+                </Link>
+                <Link href="/marketplace" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
+                    → Browse Community Sets
+                </Link>
+                <Link href="/library" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
+                    → Your Saved Games
+                </Link>
+            </div>
+        </section>
         <GameHelp />
     </>
 }

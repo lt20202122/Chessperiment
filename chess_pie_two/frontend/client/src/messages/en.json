@@ -495,9 +495,13 @@
             "p": "Design unique chess sets, customize your board, and play multiplayer chess variants online."
         },
         "Game": {
-            "title": "Play Custom Chess Online | Free Multiplayer | chessperiment",
+            "title": "Play Custom Chess | Multiplayer | chessperiment",
             "description": "Play chess online with friends using custom boards and pieces. Fast, free, and no registration required for quick play.",
-            "h1": "Play Chess Online"
+            "h1": "Play Custom Chess Online with Friends",
+            "seoContent": {
+                "heading": "Experience the Next Generation of Chess Variants",
+                "text": "Join the chessperiment community and play unique chess variants online with friends or against our integrated Stockfish AI. Our platform allows you to use custom boards and piece sets designed by creators around the world. Whether you're interested in testing a new piece logic you just created or want to jump into a match with standard rules on an irregular board, our smooth multiplayer experience has you covered. Start a private match by sharing a room code, or join the lobby to find other players. With real-time move validation and advanced engine analysis, chessperiment offers a robust environment for both casual play and competitive testing of new game mechanics."
+            }
         },
         "EditorBoard": {
             "title": "Chess Board Editor - Design Custom Boards",
@@ -505,18 +509,26 @@
             "h1": "Custom Chess Board Editor",
             "seoContent": {
                 "heading": "Create and Share Custom Chess Boards",
-                "text": "With the chessperiment Chess Board Editor, you can easily design custom 8x8, 10x10, or other board sizes. Customize colors, create starting positions, and share your creations. Perfect for chess variants, fairy chess, and creative chess puzzles."
+                "text": "With the chessperiment Chess Board Editor, you can easily design custom 8x8, 10x10, or any irregular board sizes. Customize colors, create complex starting positions, and share your creations with the world. Whether you are building a classic chess variant, exploring fairy chess concepts, or designing creative chess puzzles, our grid-based editor provides the flexibility you need. Define playable areas, block squares to create obstacles, and test your new game mechanics instantly in your browser. Our platform supports advanced board configurations that go beyond the standard grid, allowing for truly unique strategic battlefields."
             }
         },
         "EditorPiece": {
             "title": "Pixel Chess Piece Editor | Create Custom Pieces | chessperiment",
             "description": "Design your own chess pieces with our pixel art editor. Create unique kings, queens, and custom fairy pieces.",
-            "h1": "Chess Piece Designer"
+            "h1": "Chess Piece Designer",
+            "seoContent": {
+                "heading": "Design and Logic for Custom Chess Pieces",
+                "text": "The chessperiment Piece Editor is a comprehensive tool for creating unique chess pieces from scratch. Use our 64x64 pixel art canvas to design the visual representation of your piece, and then use our intuitive move editor to define its strategic capabilities. You can create sliding pieces, leapers, or even complex pieces with move-dependent logic. Our platform allows you to specify exactly how a piece moves, captures, and interacts with other elements on the board. Whether you are recreating historical chess variants or inventing something entirely new, the Piece Editor provides the technical precision required for high-level game design. Save your creations in sets and import them into any board configuration for immediate play."
+            }
         },
         "Marketplace": {
             "title": "chessperiment Marketplace | Download Custom Chess Sets",
             "description": "Browse and download community-created chess boards and piece sets. Enhance your game with unique designs.",
-            "h1": "Chess Variant Marketplace"
+            "h1": "Chess Variant Marketplace",
+            "seoContent": {
+                "heading": "Discover and Share Custom Chess Assets",
+                "text": "The chessperiment Marketplace is the central hub for our creative community. Explore a vast collection of custom chess boards, pixel-perfect piece sets, and unique board designs shared by users worldwide. Whether you are looking for a minimalist aesthetic or a complex medieval theme, our marketplace offers a wide variety of assets to customize your chess experience. You can browse through free sets or discover premium content crafted by expert designers. Every item in the marketplace can be easily integrated into your library and used in your games. Share your own creations to build your reputation as a chess variant designer and contribute to the growing ecosystem of custom board games."
+            }
         },
             "Analyze": {
                 "title": "Analyze Chess Games with Stockfish",
@@ -541,9 +553,9 @@
             "h1": "Latest News"
         },
         "About": {
-            "title": "About chessperiment | The Custom Chess Platform",
+            "title": "About Chessperiment | The Custom Chess Platform",
             "description": "Learn more about chessperiment, our mission to redefine chess creativity, and the features that make it unique.",
-            "h1": "About chessperiment"
+            "h1": "About Chessperiment - Redefining Chess Creativity"
         },
         "PieceEditorFAQ": {
             "title": "Piece Editor FAQ | Visual Scripting Help | chessperiment",

@@ -1,3 +1,4 @@
+import { Link } from "@/i18n/navigation";
 import PageClient from "./PageClient";
 import { getTranslations } from 'next-intl/server';
 import { BoardEditorHelp } from "@/components/help/HelpArticles";
@@ -55,8 +56,19 @@ export default async function Board({ params }: { params: Promise<{ locale: stri
         />
         <PageClient />
         <section className="container mx-auto px-4 py-12 prose dark:prose-invert max-w-4xl text-center">
-            <h2>{t('seoContent.heading')}</h2>
+            <h1>{t('seoContent.heading')}</h1>
             <p>{t('seoContent.text')}</p>
+            <div className="flex flex-wrap justify-center gap-4 mt-8 not-prose">
+                <Link href="/editor/piece" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
+                    → Design Custom Pieces
+                </Link>
+                <Link href="/library" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
+                    → View Your Library
+                </Link>
+                <Link href="/game" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
+                    → Play Online Now
+                </Link>
+            </div>
         </section>
         <BoardEditorHelp />
     </>
