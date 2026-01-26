@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronDown, Send, MessageSquareQuote } from "lucide-react";
+import { X, ChevronDown, Send, MessageSquareQuote, Loader2 } from "lucide-react";
+import { submitReferralAction } from "@/app/actions/survey";
 
 export const ReferralSurvey = () => {
     const [isVisible, setIsVisible] = useState(false);
@@ -10,6 +11,7 @@ export const ReferralSurvey = () => {
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [otherText, setOtherText] = useState("");
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         // Check if user has already answered or dismissed
@@ -31,14 +33,20 @@ export const ReferralSurvey = () => {
         "Other"
     ];
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const finalAnswer = selectedOption === "Other" ? `Other: ${otherText}` : selectedOption;
+        if (!finalAnswer) return;
 
-        // In a real app, you'd send this to your backend/analytics
-        console.log("Submit Referral:", finalAnswer);
-
-        localStorage.setItem("referral_survey_status", "answered");
-        setIsVisible(false);
+        setIsSubmitting(true);
+        try {
+            await submitReferralAction(finalAnswer);
+            localStorage.setItem("referral_survey_status", "answered");
+            setIsVisible(false);
+        } catch (error) {
+            console.error("Failed to submit survey:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleDismiss = () => {
@@ -149,10 +157,15 @@ export const ReferralSurvey = () => {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 onClick={handleSubmit}
-                                className="mt-4 w-full bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-stone-900 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.97]"
+                                disabled={isSubmitting}
+                                className="mt-4 w-full bg-linear-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-stone-900 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.97] disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                <Send size={14} />
-                                <span>Submit</span>
+                                {isSubmitting ? (
+                                    <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                    <Send size={14} />
+                                )}
+                                <span>{isSubmitting ? "Sending..." : "Submit"}</span>
                             </motion.button>
                         )}
                     </div>
