@@ -1,12 +1,12 @@
-# Chesspirement Technical Documentation & Logic Manifesto ('llms-full.txt')
+# chessperiment Technical Documentation & Logic Manifesto ('llms-full.txt')
 
-> **System Purpose**: Chesspirement is a generative platform for custom chess variants, allowing users to define pieces with complex move algorithms, visual logic flows, and reactive event triggers. This document flattens the core logic, schema definitions, and visual scripting reference for AI ingestion.
+> **System Purpose**: chessperiment is a generative platform for custom chess variants, allowing users to define pieces with complex move algorithms, visual logic flows, and reactive event triggers. This document flattens the core logic, schema definitions, and visual scripting reference for AI ingestion.
 
 ---
 
 ## 1. The Logic Manifesto
 
-Chesspirement moves beyond standard FIDE chess rules by introducing a "Logic Layer" on top of the standard grid. While the underlying board is a standard 8x8 (resizeable) grid, piece behavior is defined by **Move Rules** and **Event Blocks**.
+chessperiment moves beyond standard FIDE chess rules by introducing a "Logic Layer" on top of the standard grid. While the underlying board is a standard 8x8 (resizeable) grid, piece behavior is defined by **Move Rules** and **Event Blocks**.
 
 ### The "Non-Grid" Abstraction
 Although visually utilizing a grid, the logic engine treats movement as a set of **Vector Constraints** rather than fixed patterns. A "Knight Jump" is not "2 up 1 right" but rather `(absDiffX === 1 AND absDiffY === 2) OR (absDiffX === 2 AND absDiffY === 1)`.

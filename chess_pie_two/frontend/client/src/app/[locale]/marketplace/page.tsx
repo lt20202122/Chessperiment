@@ -1,3 +1,4 @@
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { Star, Filter, ShoppingCart, Heart } from 'lucide-react';
@@ -141,6 +142,22 @@ export default async function MarketplacePage({ params }: { params: Promise<{ lo
                     </div>
                 </div>
             </main>
+
+            <section className="container mx-auto px-4 py-12 prose dark:prose-invert max-w-4xl text-center">
+                <h2>{t('seoContent.heading')}</h2>
+                <p>{t('seoContent.text')}</p>
+                <div className="flex flex-wrap justify-center gap-4 mt-8 not-prose">
+                    <Link href="/editor/board" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
+                        → Design Your Own Board
+                    </Link>
+                    <Link href="/editor/piece" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
+                        → Design Your Own Pieces
+                    </Link>
+                    <Link href="/library" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
+                        → Manage Your Collection
+                    </Link>
+                </div>
+            </section>
         </div>
     );
 }

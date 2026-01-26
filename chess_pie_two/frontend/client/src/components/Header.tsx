@@ -2,13 +2,19 @@
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { Bungee } from "next/font/google";
+import { Outfit, JetBrains_Mono } from "next/font/google";
 import { Menu, X } from 'lucide-react';
 
-const bungee = Bungee({
+const outfit = Outfit({
     display: "swap",
     subsets: ["latin"],
-    weight: ["400"],
+    weight: ["300", "400", "500", "600", "700", "800", "900"],
+});
+
+const mono = JetBrains_Mono({
+    display: "swap",
+    subsets: ["latin"],
+    weight: ["400", "700"],
 });
 
 export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen }: { pathname: string, locale: string, isMenuOpen: boolean, setIsMenuOpen: (val: boolean) => void }) {
@@ -27,15 +33,33 @@ export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen }: { pathna
                 >
                     {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
                 </button>
-                <Link href="/" className="flex items-center gap-2 group/logo transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
-                    <img
-                        src="/logo.png"
-                        alt="chessperiment Logo"
-                        className={`transition-all duration-300 ${small ? "h-8 w-8" : "h-12 w-12"} object-contain`}
-                    />
-                    <span className={`${bungee.className} [font-variant-caps:small-caps] ${small ? "text-2xl md:text-3xl lg:text-5xl text-amber-400/50 group-hover/logo:text-amber-400" : "text-4xl md:text-5xl lg:text-7xl text-amber-400"} caret-transparent drop-shadow-sm`}>
-                        chessperiment
-                    </span>
+                <Link href="/" className="flex items-center gap-3 group/logo transition-all duration-500 hover:scale-[1.01] active:scale-[0.98]">
+                    <div className="relative">
+                        <img
+                            src="/logo.png"
+                            alt="chessperiment Logo"
+                            className={`transition-all duration-500 ${small ? "h-8 w-8" : "h-12 w-12"} object-contain group-hover/logo:rotate-12 group-hover/logo:scale-110`}
+                        />
+                        <div className="absolute inset-0 bg-amber-400 blur-xl opacity-0 group-hover/logo:opacity-20 transition-opacity duration-700 rounded-full" />
+                    </div>
+                    <div className="flex items-center">
+                        <span className={`${outfit.className} tracking-tight leading-none ${small ? "text-2xl md:text-3xl" : "text-4xl md:text-5xl lg:text-6xl"} select-none pr-1`}>
+                            <span className="font-black bg-clip-text text-transparent bg-linear-to-br from-amber-300 via-amber-500 to-orange-600 drop-shadow-sm">
+                                chess
+                            </span>
+                        </span>
+                        <div className="flex items-center relative group/periment">
+                            {/* Decorative background for "periment" */}
+                            <div className="absolute -inset-x-1 -inset-y-0.5 bg-amber-400/5 dark:bg-amber-400/10 rounded-md opacity-0 group-hover/logo:opacity-100 transition-opacity duration-500" />
+
+                            <span className={`${mono.className} ${small ? "text-base md:text-lg" : "text-lg md:text-xl lg:text-2xl"} text-stone-500/80 dark:text-stone-400/80 tracking-tighter flex items-center relative z-10`}>
+                                <span className="text-amber-500/30 group-hover/logo:text-amber-400/60 transition-colors duration-500 mr-0.5 font-bold">[</span>
+                                <span className="group-hover/logo:text-stone-700 dark:group-hover/logo:text-stone-200 transition-colors duration-300">periment</span>
+                                <span className="text-amber-500/30 group-hover/logo:text-amber-400/60 transition-colors duration-500 ml-0.5 font-bold">]</span>
+                                <span className="w-1 h-4 lg:h-5 bg-amber-500 ml-1.5 animate-[pulse_1s_infinite] opacity-0 group-hover/logo:opacity-100 transition-opacity" />
+                            </span>
+                        </div>
+                    </div>
                 </Link>
             </div>
 

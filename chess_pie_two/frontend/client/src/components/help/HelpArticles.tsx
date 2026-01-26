@@ -275,7 +275,7 @@ export async function PieceEditorHelp() {
     );
 }
 
-export async function GameHelp() {
+export async function GameHelp({ type = 'lobby' }: { type?: 'homepage' | 'lobby' }) {
     const locale = await getLocale();
     const isEn = locale === 'en';
     const isDe = locale === 'de';
@@ -285,44 +285,48 @@ export async function GameHelp() {
     if (isEn) {
         return (
             <article className="w-full max-w-4xl mx-auto px-6 py-16 mt-12 border-t border-stone-200 dark:border-white/10">
-                <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight">Getting Started with chessperiment</h2>
+                <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight">
+                    {type === 'homepage' ? 'Chess Variants Rules' : 'Online Play Guide'}
+                </h2>
                 <div className="grid md:grid-cols-2 gap-12 text-stone-600 dark:text-stone-400 leading-relaxed">
                     <div className="space-y-6">
                         <div>
-                            <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Stockfish</h3>
+                            <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">
+                                {type === 'homepage' ? 'Engine Analysis' : 'Stockfish AI Integration'}
+                            </h3>
                             <p>
-                                chessperiment can use Stockfish as an engine. Stockfish allows:
+                                {type === 'homepage'
+                                    ? "chessperiment uses the Stockfish engine to analyze game positions and provide strategic feedback on custom boards."
+                                    : "Challenge yourself by playing against the Stockfish AI. You can test your custom chess variants and see how a top-tier engine evaluates your new pieces."}
                             </p>
-                            <ul className="list-disc list-inside mt-4 space-y-2">
-                                <li>playing against an AI</li>
-                                <li>position analysis</li>
-                                <li>comparing different boards and rule sets</li>
-                            </ul>
-                            <p className="mt-4 text-sm opacity-80 italic">Depending on the complexity of the rules, engine behavior may vary.</p>
                         </div>
 
                         <div>
-                            <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Room Code</h3>
+                            <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">
+                                {type === 'homepage' ? 'Social Play' : 'Inviting Friends'}
+                            </h3>
                             <p>
-                                A room code lets you share games easily: other players can join directly, making it ideal for private matches or testing.
+                                {type === 'homepage'
+                                    ? "Create private rooms and play with friends using your own custom rules. Every game is unique."
+                                    : "Simply share your room code to start a match. No complex setup required – just send the link and start playing your variant immediately."}
                             </p>
-                            <p className="mt-2 text-sm opacity-80 italic">The code ensures that all players use the same rules, boards, and pieces.</p>
                         </div>
                     </div>
 
                     <div className="space-y-6">
                         <div className="bg-stone-100 dark:bg-white/5 p-6 rounded-2xl border border-stone-200 dark:border-white/10">
-                            <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Chess rules</h3>
+                            <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">
+                                {type === 'homepage' ? 'Custom Rules' : 'Fair Play & Logic'}
+                            </h3>
                             <p>
-                                chessperiment is conceptually based on chess, but extends it:
+                                {type === 'homepage'
+                                    ? "Standard chess rules are only a baseline. You have the power to override anything and create entirely new logic."
+                                    : "Our real-time engine ensures that all moves follow your custom defined logic. Fair play is maintained through server-side validation of every move."}
                             </p>
-                            <ul className="list-disc list-inside mt-4 space-y-3">
-                                <li className="font-medium text-amber-600 dark:text-amber-400">classical rules only apply if you define them</li>
-                                <li>deviations are explicitly allowed</li>
-                                <li>custom rule sets override standard chess</li>
-                            </ul>
                             <p className="mt-6 text-sm italic">
-                                The system is rule-driven: “chess” is not the default — your configuration is.
+                                {type === 'homepage'
+                                    ? "Experiment with logic blocks to build games that haven't been seen before."
+                                    : "Join matches across different time zones and enjoy lag-free chess with custom assets."}
                             </p>
                         </div>
                     </div>
@@ -333,42 +337,48 @@ export async function GameHelp() {
 
     return (
         <article className="w-full max-w-4xl mx-auto px-6 py-16 mt-12 border-t border-stone-200 dark:border-white/10">
-            <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight">Einstieg in chessperiment</h2>
+            <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight">
+                {type === 'homepage' ? 'Schachvarianten Regeln' : 'Online Spiel-Anleitung'}
+            </h2>
             <div className="grid md:grid-cols-2 gap-12 text-stone-600 dark:text-stone-400 leading-relaxed">
                 <div className="space-y-6">
                     <div>
-                        <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Stockfish Engine</h3>
+                        <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">
+                            {type === 'homepage' ? 'Engine Analyse' : 'Stockfish KI Integration'}
+                        </h3>
                         <p>
-                            chessperiment nutzt die Stockfish Engine zur Analyse und als KI-Gegner. Stockfish analysiert komplexe Stellungen und ermöglicht:
+                            {type === 'homepage'
+                                ? "chessperiment nutzt die Stockfish-Engine, um Spielpositionen zu analysieren und strategisches Feedback auf individuellen Brettern zu geben."
+                                : "Fordere dich selbst heraus, indem du gegen die Stockfish KI spielst. Teste deine Schachvarianten und sieh, wie die Engine deine neuen Figuren bewertet."}
                         </p>
-                        <ul className="list-disc list-inside mt-4 space-y-2">
-                            <li>Spielen gegen eine KI</li>
-                            <li>Detaillierte Analyse von Positionen</li>
-                            <li>Vergleich unterschiedlicher Boards und Regeln</li>
-                        </ul>
                     </div>
 
                     <div>
-                        <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Room Codes</h3>
+                        <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">
+                            {type === 'homepage' ? 'Soziales Spiel' : 'Freunde Einladen'}
+                        </h3>
                         <p>
-                            Mit einem Room Code kannst du deine Spiele und Experimente teilen. Der Code stellt sicher, dass alle Spieler mit denselben Regeln, Boards und Pieces spielen.
+                            {type === 'homepage'
+                                ? "Erstelle private Räume und spiele mit Freunden nach deinen eigenen Regeln. Jedes Spiel ist ein Unikat."
+                                : "Teile einfach deinen Raumcode, um ein Match zu starten. Keine komplizierte Einrichtung nötig – Link senden und sofort loslegen."}
                         </p>
                     </div>
                 </div>
 
                 <div className="space-y-6">
                     <div className="bg-stone-100 dark:bg-white/5 p-6 rounded-2xl border border-stone-200 dark:border-white/10">
-                        <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">Regeln & Konzepte</h3>
+                        <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">
+                            {type === 'homepage' ? 'Eigene Regeln' : 'Fairplay & Logik'}
+                        </h3>
                         <p>
-                            chessperiment basiert konzeptionell auf Schach, erweitert dieses aber radikal:
+                            {type === 'homepage'
+                                ? "Standard-Schachregeln sind nur die Basis. Du hast die Macht, alles zu überschreiben und völlig neue Logiken zu erschaffen."
+                                : "Unsere Real-Time Engine stellt sicher, dass alle Züge deiner definierten Logik folgen. Fairplay wird durch serverseitige Validierung garantiert."}
                         </p>
-                        <ul className="list-disc list-inside mt-4 space-y-3">
-                            <li className="font-medium text-amber-600 dark:text-amber-400">Standard-Regeln gelten nur, wenn du sie so definierst</li>
-                            <li>Abweichungen sind ausdrücklich erlaubt</li>
-                            <li>Eigene Regelsets haben Vorrang vor Standard-Schach</li>
-                        </ul>
                         <p className="mt-6 text-sm italic">
-                            Das Spielsystem ist regelgetrieben: Nicht „Schach“ ist der Standard, sondern das, was du konfigurierst.
+                            {type === 'homepage'
+                                ? "Experimentiere mit Logik-Blöcken, um Spiele zu bauen, die die Welt noch nicht gesehen hat."
+                                : "Spiele verzögerungsfrei mit deinen eigenen Designs gegen Spieler aus der ganzen Welt."}
                         </p>
                     </div>
                 </div>
@@ -382,7 +392,7 @@ export function HelpArticlesAll() {
         <div className="space-y-0">
             <BoardEditorHelp />
             <PieceEditorHelp />
-            <GameHelp />
+            <GameHelp type="homepage" />
         </div>
     );
 }
