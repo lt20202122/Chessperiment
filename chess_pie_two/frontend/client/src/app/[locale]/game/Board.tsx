@@ -769,15 +769,15 @@ export default function Board({
 
       if (socket) socket.emit("move", { from, to, promotion });
 
-      // If online mode, we stop here and wait for server "move" event
-      if (gameMode === "online") return true;
+      // If online or computer mode, we stop here and wait for server "move" event
+      if (gameMode === "online" || gameMode === "computer") return true;
     }
 
-    // 2. Handle local updates for Computer or Local mode
-    if (gameMode === 'computer' || gameMode === 'local') {
+    // 2. Handle local updates for Local mode only
+    if (gameMode === 'local') {
       try {
         // Handle history rewrite if viewing history
-        if (isViewingHistory && gameMode === 'computer') {
+        if (isViewingHistory) {
           let fenToLoad = initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
           if (historyIndex >= 0) {
             fenToLoad = historyFens[historyIndex];
@@ -821,7 +821,7 @@ export default function Board({
           return false;
         }
 
-        // Standard execution for Computer or Local
+        // Standard execution for Local mode
         const moveResult = chess.move({ from, to, promotion: promotion || 'q' });
         if (moveResult) {
           const newFen = chess.fen();

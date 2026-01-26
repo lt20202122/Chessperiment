@@ -324,6 +324,16 @@ io.on("connection", (socket) => {
       return;
     }
 
+    // Verify it's actually the computer's turn
+    const chess = new Chess(game.board_fen);
+    const playerColor = game.getColorForPlayer(playerId);
+    if (chess.turn() === playerColor) {
+      console.warn(
+        `[Stockfish] Computer move requested for room ${roomId} but it's ${playerColor}'s turn!`,
+      );
+      return;
+    }
+
     console.log(
       `[Stockfish] Thinking for Room: ${roomId}, FEN: ${game.board_fen}, Diff: ${difficulty}`,
     );
