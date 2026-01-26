@@ -659,5 +659,42 @@
                 "a2": "No. 'onThreat' is a passive check used for highlighting. You cannot 'prevent' a threat; you can only prevent the move or capture that causes it."
             }
         }
+    },
+    "Onboarding": {
+        "editorTitle": "Board Editor",
+        "editorMessage": "Create your own, your first board.",
+        "playTitle": "Play",
+        "playMessage": "Play against others with your custom creations.",
+        "next": "Next",
+        "finish": "Got it!",
+        "skip": "Skip"
+    },
+    "CreationGuide": {
+        "title": "Creation Guide",
+        "subtitle": "Complete all steps to launch.",
+        "saveDraft": "Save Draft",
+        "steps": {
+            "1": {
+                "title": "Board Setup",
+                "description": "Define grid size, shape, and initial active squares for the playing field.",
+                "status": "In Progress"
+            },
+            "2": {
+                "title": "Pieces",
+                "description": "Create custom units, define movement patterns, and attack rules."
+            },
+            "3": {
+                "title": "Rules & Logic",
+                "description": "Set win conditions, special zones, promotion rules, and turn structure."
+            },
+            "4": {
+                "title": "Design",
+                "description": "Customize board themes, colors, piece skins, and visual effects."
+            },
+            "5": {
+                "title": "Launch",
+                "description": "Publish to the marketplace or invite friends for a private match."
+            }
+        }
     }
 }

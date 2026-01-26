@@ -306,9 +306,12 @@ export default function Board({
   }, [chess]);
 
   const startComputerGame = useCallback((elo = 1200) => {
+    // Prevent multiple initializations if already in a running computer game
+    if (gameMode === 'computer' && gameStatus === 'playing' && myColor === 'white') return;
+
     setGameMode("computer");
     setGameStatus("playing");
-    setMyColor("white");
+    setMyColor("white"); // FORCE WHITE for computer games
     chess.reset();
     const fen = chess.fen();
     updateBoardState(fen);
@@ -321,15 +324,11 @@ export default function Board({
     setLastMoveTo(null);
     setCurrentTurn('w');
     setDifficulty(elo);
+    setCurrentRoom("LOCAL-COMPUTER");
+    setPlayerCount(1);
 
-    // Join server room for computer games to enable server-side state tracking
-    const playerId = localStorage.getItem("chess_player_id") || "unknown";
-    const compRoomId = `COMPUTER-${playerId}-${Date.now()}`;
-    setCurrentRoom(compRoomId);
-    if (socket) {
-      socket.emit("join_room", { roomId: compRoomId, isComputer: true });
-    }
-  }, [chess, updateBoardState, socket]);
+    // NO socket emits here - we keep everything local for computer mode
+  }, [chess, updateBoardState, gameMode, gameStatus, myColor]);
 
   // We need a stable callback for stockfish
   const onBestMove = useCallback((move: string) => {
@@ -607,17 +606,19 @@ export default function Board({
 
       socket.emit("register_player", { playerId: pId });
 
-      // Handle room joining: computer games need server-side tracking too
-      if (initialRoomId) {
-        const isComputerMode = gameModeVar === 'computer' || gameMode === 'computer';
+      // Handle room joining: multiplayer games only
+      const isComputerMode = gameModeVar === 'computer' || gameMode === 'computer';
+      if (initialRoomId && !isComputerMode) {
         if (mode === 'create') {
           socket.emit("create_room", { roomId: initialRoomId });
         } else {
           socket.emit("join_room", {
-            roomId: initialRoomId,
-            isComputer: isComputerMode
+            roomId: initialRoomId
           });
         }
+      } else if (isComputerMode) {
+        // Ensure we are white even if we came from a route that might suggest otherwise
+        setMyColor("white");
       }
     };
     register();

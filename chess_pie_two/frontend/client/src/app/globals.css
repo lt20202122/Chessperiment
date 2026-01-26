@@ -10,6 +10,10 @@
   --color-text: var(--text);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --z-index-100: 100;
+  --z-index-110: 110;
+  --z-index-120: 120;
+  --z-index-9999: 9999;
 }
 
 :root {
@@ -77,30 +81,6 @@ body {
     --islands: #2c2c2e !important;
   }
 
-  * {
-    /* Disable transitions on mobile to prevent lag during page load/layout shifts */
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
-  }
-
-  /* Restore animation duration for spinner animations */
-  .animate-spin,
-  .animate-spin-slow,
-  .animate-pulse,
-  .animate-bounce {
-    animation-duration: revert !important;
-  }
-
-  .backdrop-blur-sm,
-  .backdrop-blur-md,
-  .backdrop-blur-lg,
-  .backdrop-blur-xl,
-  .backdrop-blur-2xl {
-    /* Disable expensive backdrop-blur on mobile */
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
   body {
     transition: none !important;
   }
@@ -132,4 +112,21 @@ body {
 }
 .pseudos-links-regular {
   @apply active:text-amber-600 transition-colors duration-250;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #fbbf24;
+  border-radius: 10px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #f59e0b;
 }

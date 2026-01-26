@@ -16,6 +16,10 @@ import { Analytics } from "@vercel/analytics/next"
 import { SEOFooter } from "@/components/SEOFooter";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { NameChangeAnnouncement } from "@/components/NameChangeAnnouncement";
+import { ReferralSurvey } from "@/components/ReferralSurvey";
+import { OnboardingTour } from "@/components/OnboardingTour";
+import { CreationGuide } from "@/components/CreationGuide";
+
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -145,6 +149,9 @@ export default async function RootLayout({
                 <SpeedInsights />
                 <UserPanel />
                 <ThemeToggle />
+                <ReferralSurvey />
+                <CreationGuide />
+                <OnboardingTour />
                 <HeaderWrapper />
                 {children}
                 <SEOFooter />

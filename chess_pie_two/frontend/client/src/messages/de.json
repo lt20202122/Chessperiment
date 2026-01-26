@@ -657,5 +657,42 @@
                 "a2": "Nein. 'bei Bedrohung' ist eine passive Prüfung zur Hervorhebung. Du kannst eine Bedrohung nicht 'verhindern'; du kannst nur den Zug oder das Schlagen verhindern, das sie verursacht."
             }
         }
+    },
+    "Onboarding": {
+        "editorTitle": "Board Editor",
+        "editorMessage": "Erstellen Sie Ihr eigenes, Ihr erstes Brett.",
+        "playTitle": "Spielen",
+        "playMessage": "Spielen Sie gegen andere mit Ihren eigenen Kreationen.",
+        "next": "Weiter",
+        "finish": "Verstanden!",
+        "skip": "Überspringen"
+    },
+    "CreationGuide": {
+        "title": "Erstellungs-Guide",
+        "subtitle": "Schließe alle Schritte ab, um zu starten.",
+        "saveDraft": "Entwurf speichern",
+        "steps": {
+            "1": {
+                "title": "Brett-Setup",
+                "description": "Definiere Rastergröße, Form und initiale aktive Felder für das Spielfeld.",
+                "status": "In Bearbeitung"
+            },
+            "2": {
+                "title": "Figuren",
+                "description": "Erstelle eigene Einheiten, definiere Bewegungsmuster und Angriffsregeln."
+            },
+            "3": {
+                "title": "Regeln & Logik",
+                "description": "Lege Siegbedingungen, Spezialzonen, Beförderungsregeln und Zugstruktur fest."
+            },
+            "4": {
+                "title": "Design",
+                "description": "Passe Brett-Themes, Farben, Figuren-Skins und visuelle Effekte an."
+            },
+            "5": {
+                "title": "Launch",
+                "description": "Im Marketplace veröffentlichen oder Freunde zu einem privaten Match einladen."
+            }
+        }
     }
 }
