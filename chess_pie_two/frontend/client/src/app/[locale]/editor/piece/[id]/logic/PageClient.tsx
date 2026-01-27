@@ -307,7 +307,7 @@ export default function LogicPageClient({ id }: { id: string }) {
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 5,
+                distance: 0,
             },
         })
     );

@@ -530,17 +530,28 @@ io.on("connection", (socket) => {
       const compRoomId = roomId.startsWith("COMPUTER-")
         ? roomId
         : `COMPUTER-${playerId}`;
-      console.log(
-        `[Computer Game] Initializing server-side state for Room: ${compRoomId}`,
-      );
 
       let game = await getGame(compRoomId);
-      if (!game) {
+
+      // If no game exists OR if it was already ended, we start a fresh session
+      // This ensures "Play Again" or fresh starts work correctly for Stockfish.
+      if (!game || game.status === "ended") {
+        console.log(
+          `[Computer Game] Initializing fresh state for Room: ${compRoomId}`,
+        );
         game = new Game(playerId);
         game.roomId = compRoomId;
         game.players.black = "STOCKFISH";
         game.status = "playing";
         games.set(compRoomId, game);
+      } else {
+        console.log(
+          `[Computer Game] Resuming existing game for Room: ${compRoomId}`,
+        );
+        // Ensure the current socket player is mapped to this room's white player
+        if (compRoomId.includes(playerId)) {
+          game.players.white = playerId;
+        }
       }
 
       await saveGame(game);

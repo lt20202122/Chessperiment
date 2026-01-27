@@ -242,7 +242,7 @@ export default function Board({
   const [boardPieces, setBoardPieces] = useState<PieceType[]>(pieces);
   const pointerSensor = useSensor(PointerSensor, {
     activationConstraint: {
-      distance: 8,
+      distance: 0,
     },
   });
   const touchSensor = useSensor(TouchSensor, {
@@ -309,10 +309,10 @@ export default function Board({
     // Prevent multiple initializations if already in a running computer game
     if (gameMode === 'computer' && gameStatus === 'playing' && myColor === 'white') return;
 
-    const pId = localStorage.getItem("chess_player_id");
+    let pId = localStorage.getItem("chess_player_id");
     if (!pId) {
-      console.error("[startComputerGame] No player ID found");
-      return;
+      pId = Math.random().toString(36).substring(2, 15);
+      localStorage.setItem("chess_player_id", pId);
     }
 
     const compRoomId = `COMPUTER-${pId}`;
@@ -411,8 +411,14 @@ export default function Board({
         updateBoardState(data.fen);
         setHistoryFens(prev => [...prev, data.fen]);
       }
+
+      // Determine if sound should play (don't play if it matches our optimistic move)
+      const isNewMove = data.from !== previousStateRef.current?.lastMoveFrom ||
+        data.to !== previousStateRef.current?.lastMoveTo;
+
       setLastMoveFrom(data.from);
       setLastMoveTo(data.to);
+
       if (data.san) {
         setMoveHistory(prev => {
           const next = [...prev, data.san];
@@ -423,7 +429,14 @@ export default function Board({
       }
       if (data.gameStatus) setGameStatus(data.gameStatus);
       setIsViewingHistory(false);
-      new Audio("/sounds/move-self.mp3").play().catch(() => { });
+
+      if (isNewMove && !previousStateRef.current) {
+        new Audio("/sounds/move-self.mp3").play().catch(() => { });
+      }
+      // After processing the move, clear the optimistic state if it matched
+      if (!isNewMove) {
+        previousStateRef.current = null;
+      }
     };
 
     const onGameStateInit = (data: any) => {
@@ -495,14 +508,22 @@ export default function Board({
     });
     socket.on("room_created", (data: any) => {
       setCurrentRoom(data.roomId);
-      setMyColor("white");
+      setMyColor(data.color || "white");
       setGameStatus("waiting");
       setPlayerCount(1);
     });
     socket.on("joined_room", (data: any) => {
       setCurrentRoom(data.roomId);
-      setMyColor("black");
-      setGameStatus("waiting");
+
+      const isComputer = data.roomId.startsWith("COMPUTER-");
+      setMyColor(data.color || (isComputer ? "white" : "black"));
+
+      // For computer games, we move directly to playing
+      if (isComputer) {
+        setGameStatus("playing");
+      } else {
+        setGameStatus("waiting");
+      }
       setPlayerCount(2);
     });
     socket.on("game_ended", (data: any) => {
