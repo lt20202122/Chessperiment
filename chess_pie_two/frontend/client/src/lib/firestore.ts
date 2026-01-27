@@ -483,3 +483,41 @@ export async function togglePieceSetStar(setId: string, userId: string): Promise
     await setRef.update({ isStarred: !currentStarred, updatedAt: new Date() })
     return !currentStarred
 }
+
+export async function deleteUserAccount(userId: string) {
+    if (!db) throw new Error("Firestore not initialized")
+
+    const batch = db.batch()
+
+    // 1. Delete userStats
+    const statsRef = db.collection("userStats").doc(userId)
+    batch.delete(statsRef)
+
+    // 2. Delete gameHistory
+    const historySnapshot = await db.collection("gameHistory").where("userId", "==", userId).get()
+    historySnapshot.docs.forEach(doc => batch.delete(doc.ref))
+
+    // 3. Delete boards
+    const boardsSnapshot = await db.collection("boards").where("userId", "==", userId).get()
+    boardsSnapshot.docs.forEach(doc => batch.delete(doc.ref))
+
+    // 4. Delete customPieces
+    const piecesSnapshot = await db.collection("customPieces").where("userId", "==", userId).get()
+    piecesSnapshot.docs.forEach(doc => batch.delete(doc.ref))
+
+    // 5. Delete pieceSets
+    const setsSnapshot = await db.collection("pieceSets").where("userId", "==", userId).get()
+    setsSnapshot.docs.forEach(doc => batch.delete(doc.ref))
+
+    // 6. Delete NextAuth related data
+    const userRef = db.collection("users").doc(userId)
+    batch.delete(userRef)
+
+    const accountsSnapshot = await db.collection("accounts").where("userId", "==", userId).get()
+    accountsSnapshot.docs.forEach(doc => batch.delete(doc.ref))
+
+    const sessionsSnapshot = await db.collection("sessions").where("userId", "==", userId).get()
+    sessionsSnapshot.docs.forEach(doc => batch.delete(doc.ref))
+
+    await batch.commit()
+}

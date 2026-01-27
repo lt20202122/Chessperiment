@@ -60,10 +60,16 @@ export default async function LegalNotice({ params }: { params: Promise<{ locale
                 <h2 className={styles.heading}>{t("socialMediaHeading")}</h2>
                 <p className={styles.text}>{t("socialMediaText")}</p>
                 <p className={styles.text}>
-                    {t("youtubeLabel")} /
+                    {t("youtubeLabel")}:{" "}
+                    <a href={t("youtubeValue")} target="_blank" rel="noopener noreferrer" className={styles.link}>
+                        {t("youtubeValue")}
+                    </a>
                 </p>
                 <p className={styles.text}>
-                    {t("otherProfilesLabel")} /
+                    {t("otherProfilesLabel")}:{" "}
+                    <a href={t("otherProfilesValue")} target="_blank" rel="noopener noreferrer" className={styles.link}>
+                        {t("otherProfilesValue")}
+                    </a>
                 </p>
             </section>
 
@@ -72,7 +78,7 @@ export default async function LegalNotice({ params }: { params: Promise<{ locale
                 <p className={styles.text}>
                     {t("odrText")}{" "}
                     <a
-                        href="https://consumer-redress.ec.europa.eu/"
+                        href="https://ec.europa.eu/consumers/odr"
                         target="_blank"
                         rel="noopener noreferrer"
                         className={styles.link}

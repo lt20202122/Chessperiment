@@ -1,8 +1,8 @@
 "use client"
 
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { Bungee } from "next/font/google"
 import { Trophy, Target, TrendingUp, Calendar } from "lucide-react"
 import type { Metadata } from "next"
@@ -11,8 +11,19 @@ import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LibraryGrid from "@/components/editor/LibraryGrid";
 import { getUserBoardsAction } from "@/app/actions/library";
+import { deleteAccountAction } from "@/app/actions/auth";
 import { SavedBoard } from "@/lib/firestore";
-import { Library } from "lucide-react";
+import { Library, Trash2, AlertTriangle } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const hreflangs = generateHreflangs('/game', ['de', 'en'], 'en', 'https://chessperiment.app');
 
@@ -63,6 +74,8 @@ export default function ProfilePage() {
     const [history, setHistory] = useState<GameHistoryItem[]>([])
     const [boards, setBoards] = useState<SavedBoard[]>([])
     const [loading, setLoading] = useState(true)
+    const [isPending, startTransition] = useTransition()
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
     useEffect(() => {
         if (status === "authenticated") {
@@ -119,6 +132,17 @@ export default function ProfilePage() {
         ? ((stats.wins / stats.gamesPlayed) * 100).toFixed(1)
         : "0.0"
 
+    const handleDeleteAccount = () => {
+        startTransition(async () => {
+            const result = await deleteAccountAction();
+            if (result.success) {
+                await signOut({ callbackUrl: "/" });
+            } else {
+                alert(result.error || "Failed to delete account");
+            }
+        });
+    };
+
     return (
         <>
             <script
@@ -145,11 +169,47 @@ export default function ProfilePage() {
                                 </span>
                             </div>
                         )}
-                        <div>
+                        <div className="flex-1">
                             <h1 className={`${bungee.className} text-4xl text-amber-600 dark:text-yellow-400 mb-2`}>
                                 {session?.user?.name}
                             </h1>
                             <p className="text-amber-700/60 dark:text-amber-400/60">{session?.user?.email}</p>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" className="border-red-500/50 text-red-500 hover:bg-red-500/10 gap-2">
+                                        <Trash2 size={16} />
+                                        Delete Account
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="bg-stone-900 border-stone-800 text-white">
+                                    <DialogHeader>
+                                        <DialogTitle className="flex items-center gap-2 text-red-500">
+                                            <AlertTriangle />
+                                            Are you absolutely sure?
+                                        </DialogTitle>
+                                        <DialogDescription className="text-stone-400">
+                                            This action cannot be undone. This will permanently delete your
+                                            account and remove all your data (boards, pieces, stats) from our servers.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <DialogFooter className="mt-6 flex gap-2">
+                                        <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} disabled={isPending}>
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            variant="destructive"
+                                            onClick={handleDeleteAccount}
+                                            disabled={isPending}
+                                            className="bg-red-600 hover:bg-red-700"
+                                        >
+                                            {isPending ? "Deleting..." : "Permanently Delete Account"}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                         </div>
                     </div>
                 </div>

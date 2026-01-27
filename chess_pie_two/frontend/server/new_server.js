@@ -2,6 +2,7 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
+import filter from "leo-profanity";
 import { v4 as uuidv4 } from "uuid";
 import { Chess } from "chess.js";
 import path from "path";
@@ -74,11 +75,32 @@ await redisClient.connect();
 console.log("Connected to Redis");
 
 const app = express();
-app.use(cors());
+
+// Security: Use specific origins for CORS in production
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://chessperiment.app",
+  "https://www.chessperiment.app",
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === "development") {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+  }),
+);
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
   },
 });
@@ -406,6 +428,9 @@ io.on("connection", (socket) => {
     if (playerId) await removeFromQueue(playerId);
   });
 
+  // SECURITY NOTE: This event currently trusts the playerId provided by the client.
+  // In a production environment, this should be verified using a session token (JWT)
+  // obtained from the NextAuth session.
   socket.on("register_player", async (data) => {
     const playerId = data.playerId;
     const oldPlayerId = socketToPlayer.get(socket.id);
@@ -722,12 +747,21 @@ io.on("connection", (socket) => {
     const playerId = socketToPlayer.get(socket.id);
     const roomId = playerId ? await getPlayerRoom(playerId) : null;
     if (roomId) {
+      // Server-side sanitization to prevent malicious clients from bypassing filters
+      const sanitizedMessage = filter.clean(data.message);
+
       const game = await getGame(roomId);
       if (game) {
-        game.chatMessages.push({ message: data.message, playerId: playerId });
+        game.chatMessages.push({
+          message: sanitizedMessage,
+          playerId: playerId,
+        });
         await saveGame(game);
       }
-      io.to(roomId).emit("chat_message", { message: data.message, playerId });
+      io.to(roomId).emit("chat_message", {
+        message: sanitizedMessage,
+        playerId,
+      });
     }
   });
 
