@@ -58,6 +58,7 @@ class StockfishPool {
   constructor() {
     this.engine = null;
     this.isInitialized = false;
+    this.initializationFailed = false;
     this.isProcessing = false;
     this.queue = [];
     this.initializeEngine();
@@ -72,16 +73,49 @@ class StockfishPool {
         "src",
         "stockfish-17.1-lite-single-03e3232.js", // Use LITE version
       );
-      this.engine = loadEngine(stockfishPath);
 
-      if (!this.engine) {
-        console.error("[Stockfish Pool] Failed to load engine");
+      console.log(
+        `[Stockfish Pool] Attempting to load engine from: ${stockfishPath}`,
+      );
+
+      if (!fs.existsSync(stockfishPath)) {
+        console.error(
+          `[Stockfish Pool] Engine file NOT FOUND at: ${stockfishPath}`,
+        );
+        console.error(`[Stockfish Pool] __dirname is: ${__dirname}`);
+        this.initializationFailed = true;
+        this.processQueue();
         return;
       }
 
+      this.engine = loadEngine(stockfishPath);
+
+      if (!this.engine) {
+        console.error(
+          "[Stockfish Pool] Failed to load engine (loadEngine returned null)",
+        );
+        this.initializationFailed = true;
+        this.processQueue();
+        return;
+      }
+
+      // Initialize with timeout
+      let initTimeout = setTimeout(() => {
+        if (!this.isInitialized) {
+          console.error(
+            "[Stockfish Pool] Engine initialization TIMED OUT waiting for uciok",
+          );
+          this.initializationFailed = true;
+          this.processQueue();
+        }
+      }, 5000);
+
       // Configure with memory limits
+      console.log("[Stockfish Pool] Sending uci command...");
       this.engine.send("uci", () => {
+        clearTimeout(initTimeout);
         if (!this.engine) return;
+        console.log("[Stockfish Pool] Received uciok. Configuring options...");
 
         // CRITICAL: Set hash table to 32MB (good balance for server)
         this.engine.send("setoption name Hash value 32", () => {
@@ -99,11 +133,22 @@ class StockfishPool {
       });
     } catch (error) {
       console.error("[Stockfish Pool] Failed to initialize engine:", error);
+      this.initializationFailed = true;
+      this.processQueue();
     }
   }
 
   processQueue() {
     if (this.queue.length > 0 && !this.isProcessing) {
+      // If initialization failed, reject everything
+      if (this.initializationFailed) {
+        while (this.queue.length > 0) {
+          const next = this.queue.shift();
+          if (next) next(true); // pass true for "failed"
+        }
+        return;
+      }
+
       const next = this.queue.shift();
       if (next) next();
     }
@@ -111,9 +156,19 @@ class StockfishPool {
 
   async getBestMove(fen, difficulty) {
     return new Promise((resolve) => {
-      const executeMove = () => {
+      const executeMove = (failed = false) => {
+        if (failed || this.initializationFailed) {
+          console.error(
+            "[Stockfish Pool] Engine initialization failed, rejecting move request",
+          );
+          resolve(null);
+          return;
+        }
+
         if (!this.engine || !this.isInitialized) {
-          console.error("[Stockfish Pool] Engine not ready");
+          console.error(
+            "[Stockfish Pool] Engine not ready (should be validated by processQueue)",
+          );
           resolve(null);
           this.isProcessing = false;
           this.processQueue();

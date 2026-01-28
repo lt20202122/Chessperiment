@@ -378,7 +378,14 @@ export default function Board({
     } catch (e) { }
   }, [chess, updateBoardState, myColor, t]);
 
-  const { requestMove, isReady } = useStockfish(currentRoom, difficulty, onBestMove);
+  const { requestMove, isReady, error: stockfishError } = useStockfish(currentRoom, difficulty, onBestMove);
+
+  useEffect(() => {
+    if (stockfishError) {
+      setToastMessage(stockfishError);
+      setShowToast(true);
+    }
+  }, [stockfishError]);
 
   useEffect(() => {
     if (gameMode === 'computer' && isReady && gameStatus === 'playing') {
