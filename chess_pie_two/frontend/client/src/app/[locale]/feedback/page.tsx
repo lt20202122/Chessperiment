@@ -14,6 +14,7 @@ export default function FeedbackPage() {
     const [message, setMessage] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [error, setError] = useState("");
 
     const feedbackOptions = [
         {
@@ -21,7 +22,7 @@ export default function FeedbackPage() {
             icon: <Bug className="w-8 h-8" />,
             title: t("reportBug.title"),
             description: t("reportBug.description"),
-            color: "red",
+            colorClass: "text-red-500 dark:text-red-400",
             gradient: "from-red-500 to-rose-600"
         },
         {
@@ -29,7 +30,7 @@ export default function FeedbackPage() {
             icon: <Lightbulb className="w-8 h-8" />,
             title: t("featureSuggestion.title"),
             description: t("featureSuggestion.description"),
-            color: "blue",
+            colorClass: "text-blue-500 dark:text-blue-400",
             gradient: "from-blue-500 to-cyan-600"
         },
         {
@@ -37,7 +38,7 @@ export default function FeedbackPage() {
             icon: <MessageCircle className="w-8 h-8" />,
             title: t("generalFeedback.title"),
             description: t("generalFeedback.description"),
-            color: "amber",
+            colorClass: "text-amber-500 dark:text-amber-400",
             gradient: "from-amber-500 to-orange-600"
         }
     ];
@@ -45,20 +46,39 @@ export default function FeedbackPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setError("");
 
-        // Simulate submission
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setIsSubmitting(false);
-        setIsSubmitted(true);
+        try {
+            const response = await fetch("/api/feedback", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    type: selectedType,
+                    email,
+                    message,
+                }),
+            });
 
-        // Reset form after 3 seconds
-        setTimeout(() => {
-            setIsSubmitted(false);
-            setSelectedType(null);
-            setMessage("");
-            setEmail("");
-        }, 3000);
+            if (!response.ok) {
+                throw new Error("Failed to send feedback");
+            }
+
+            setIsSubmitted(true);
+
+            // Reset form after 3 seconds
+            setTimeout(() => {
+                setIsSubmitted(false);
+                setSelectedType(null);
+                setMessage("");
+                setEmail("");
+            }, 3000);
+        } catch (err) {
+            setError(t("error"));
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const getPlaceholder = () => {
@@ -79,10 +99,14 @@ export default function FeedbackPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <Link href="/" className="inline-flex items-center space-x-2 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors mb-6">
+                        <Link 
+                            href="/" 
+                            className="inline-flex items-center space-x-2 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors mb-6"
+                            aria-label={t("backToHome")}
+                        >
                             <span>← chessperiment</span>
                         </Link>
-                        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl bg-clip-text text-transparent bg-linear-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 mb-4">
+                        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 mb-4">
                             {t("title")}
                         </h1>
                         <p className="text-lg leading-8 text-stone-600 dark:text-stone-400">
@@ -111,9 +135,10 @@ export default function FeedbackPage() {
                                         transition={{ duration: 0.5, delay: index * 0.1 }}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
+                                        aria-label={`Select ${option.title}`}
                                     >
-                                        <div className={`absolute inset-0 bg-linear-to-br ${option.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-                                        <div className={`flex justify-center mb-4 text-${option.color}-500 dark:text-${option.color}-400`}>
+                                        <div className={`absolute inset-0 bg-gradient-to-br ${option.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                                        <div className={`flex justify-center mb-4 ${option.colorClass}`}>
                                             {option.icon}
                                         </div>
                                         <h3 className="text-xl font-bold text-stone-900 dark:text-stone-50 mb-3 text-center">
@@ -141,7 +166,7 @@ export default function FeedbackPage() {
                                 {t("thankYou")}
                             </h2>
                             <p className="text-stone-600 dark:text-stone-400">
-                                We appreciate your input and will review it soon.
+                                {t("thankYouMessage")}
                             </p>
                         </motion.div>
                     ) : (
@@ -164,6 +189,12 @@ export default function FeedbackPage() {
                                     </button>
                                 </div>
 
+                                {error && (
+                                    <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400">
+                                        {error}
+                                    </div>
+                                )}
+
                                 <div className="space-y-6">
                                     <div>
                                         <label htmlFor="email" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
@@ -184,7 +215,7 @@ export default function FeedbackPage() {
 
                                     <div>
                                         <label htmlFor="message" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
-                                            Message *
+                                            {t("messageLabel")} *
                                         </label>
                                         <textarea
                                             id="message"
@@ -200,12 +231,12 @@ export default function FeedbackPage() {
                                     <button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="w-full bg-linear-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
                                         {isSubmitting ? (
                                             <>
                                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                Submitting...
+                                                {t("submitting")}
                                             </>
                                         ) : (
                                             <>

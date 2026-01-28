@@ -716,10 +716,14 @@
             "placeholder": "Share your feedback..."
         },
         "submit": "Submit Feedback",
+        "submitting": "Submitting...",
         "cancel": "Cancel",
         "thankYou": "Thank you for your feedback!",
+        "thankYouMessage": "We appreciate your input and will review it soon.",
         "error": "Something went wrong. Please try again.",
-        "emailPlaceholder": "Your email (optional)"
+        "emailPlaceholder": "Your email (optional)",
+        "messageLabel": "Message",
+        "backToHome": "Back to home"
     },
     "SEO": {
         "Feedback": {

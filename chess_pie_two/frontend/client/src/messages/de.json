@@ -19,12 +19,9 @@
         "pieceEditor": "Figuren-Editor",
         "marketplace": "Marktplatz",
         "library": "Bibliothek",
+        "notifications": "Benachrichtigungen",
         "about": "Über uns",
         "feedback": "Feedback"
-    },
-        "library": "Bibliothek",
-        "notifications": "Benachrichtigungen",
-        "about": "Über uns"
     },
     "Marketplace": {
         "title": "Marktplatz",
@@ -717,10 +714,14 @@
             "placeholder": "Teilen Sie Ihr Feedback..."
         },
         "submit": "Feedback senden",
+        "submitting": "Wird gesendet...",
         "cancel": "Abbrechen",
         "thankYou": "Vielen Dank für Ihr Feedback!",
+        "thankYouMessage": "Wir schätzen Ihren Beitrag und werden ihn bald prüfen.",
         "error": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
-        "emailPlaceholder": "Ihre E-Mail (optional)"
+        "emailPlaceholder": "Ihre E-Mail (optional)",
+        "messageLabel": "Nachricht",
+        "backToHome": "Zurück zur Startseite"
     },
     "SEO": {
         "Feedback": {
