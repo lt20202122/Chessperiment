@@ -5,8 +5,8 @@ import { GripVertical, GripHorizontal, Plus, X, Minus, ZoomIn, ZoomOut, Info } f
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { getPieceImage } from '@/app/[locale]/game/Data';
-import { EditMode } from '@/app/[locale]/editor/board/PageClient';
+import { getPieceImage } from '@/lib/gameData';
+import { EditMode } from '@/types/editor';
 import PieceRenderer from '@/components/game/PieceRenderer';
 import { SquareGrid } from '@/lib/grid/SquareGrid';
 import { HexGrid } from '@/lib/grid/HexGrid';

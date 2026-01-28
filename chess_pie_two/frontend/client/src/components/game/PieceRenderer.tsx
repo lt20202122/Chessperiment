@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { getPieceImage } from '@/app/[locale]/game/Data';
+import { getPieceImage } from '@/lib/gameData';
 import PieceStateIndicators from './PieceStateIndicators';
 
 interface PieceRendererProps {

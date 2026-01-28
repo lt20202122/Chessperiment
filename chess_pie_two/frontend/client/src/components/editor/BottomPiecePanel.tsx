@@ -6,7 +6,7 @@ import { CustomPiece } from '@/types/firestore';
 import { useTranslations } from 'next-intl';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
-import { getPieceImage } from '@/app/[locale]/game/Data';
+import { getPieceImage } from '@/lib/gameData';
 import PieceRenderer from '@/components/game/PieceRenderer';
 
 interface BottomPiecePanelProps {

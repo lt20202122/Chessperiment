@@ -12,7 +12,7 @@ import BoardEditor from '@/components/editor/BoardEditor';
 import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BottomPiecePanel from '@/components/editor/BottomPiecePanel';
 
-export type EditMode = 'shape' | 'pieces';
+import { EditMode } from '@/types/editor';
 
 interface PageClientProps {
     projectId: string;

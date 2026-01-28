@@ -2,7 +2,7 @@
 import React from 'react';
 import { SavedBoard } from '@/types/firestore';
 import Image from 'next/image';
-import { getPieceImage } from '@/app/[locale]/game/Data';
+import { getPieceImage } from '@/lib/gameData';
 
 import { SquareGrid } from '@/lib/grid/SquareGrid';
 import { HexGrid } from '@/lib/grid/HexGrid';
