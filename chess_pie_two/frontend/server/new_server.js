@@ -63,15 +63,43 @@ if (typeof loadEngine !== "function") {
 // Import Stockfish pool for efficient engine management
 import { stockfishPool } from "./stockfish-pool.js";
 
-// Redis client initialization
-const redisClient = createClient({
-  url: process.env.REDIS_URL || "redis://localhost:6379",
-});
+// Redis client initialization (optional for development)
+let redisClient = null;
+let redisEnabled = false;
 
-redisClient.on("error", (err) => console.error("Redis Client Error", err));
+async function initRedis() {
+  return new Promise(async (resolve) => {
+    const timeout = setTimeout(() => {
+      console.warn("⚠️  Redis connection timeout - running without persistence. Multiplayer matchmaking will be disabled.");
+      console.warn("   For full functionality, start Redis: docker run -d -p 6379:6379 redis");
+      resolve(false);
+    }, 3000); // 3 second timeout
 
-await redisClient.connect();
-console.log("Connected to Redis");
+    try {
+      const client = createClient({
+        url: process.env.REDIS_URL || "redis://localhost:6379",
+      });
+
+      client.on("error", (err) => {
+        // Suppress repeated connection errors after first attempt
+      });
+
+      await client.connect();
+      clearTimeout(timeout);
+      redisClient = client;
+      redisEnabled = true;
+      console.log("✅ Connected to Redis");
+      resolve(true);
+    } catch (err) {
+      clearTimeout(timeout);
+      console.warn("⚠️  Redis not available - running without persistence. Multiplayer matchmaking will be disabled.");
+      console.warn("   For full functionality, start Redis: docker run -d -p 6379:6379 redis");
+      resolve(false);
+    }
+  });
+}
+
+await initRedis();
 
 const app = express();
 app.use(cors());
@@ -109,7 +137,7 @@ const playerToRoom = new Map();
 
 // Redis helpers
 async function saveGame(game) {
-  if (!game || !game.roomId) return;
+  if (!game || !game.roomId || !redisEnabled || !redisClient) return;
   try {
     const gameData = JSON.stringify({
       roomId: game.roomId,
@@ -131,6 +159,7 @@ async function saveGame(game) {
 
 async function getGame(roomId) {
   if (games.has(roomId)) return games.get(roomId);
+  if (!redisEnabled || !redisClient) return null;
   try {
     const data = await redisClient.get(`game:${roomId}`);
     if (data) {
@@ -154,6 +183,10 @@ const playerToSocket = new Map();
 
 // Redis search queue helper
 async function addToSearchQueue(playerId) {
+  if (!redisEnabled || !redisClient) {
+    console.warn("Matchmaking disabled - Redis not available");
+    return;
+  }
   try {
     await redisClient.rPush("searchQueue", playerId);
   } catch (err) {
@@ -162,6 +195,7 @@ async function addToSearchQueue(playerId) {
 }
 
 async function removeFromQueue(playerId) {
+  if (!redisEnabled || !redisClient) return;
   try {
     // Note: LREM removes occurances. 0 means all.
     await redisClient.lRem("searchQueue", 0, playerId);
@@ -174,6 +208,7 @@ async function removeFromQueue(playerId) {
 }
 
 async function matchmake() {
+  if (!redisEnabled || !redisClient) return;
   try {
     const queueLen = await redisClient.lLen("searchQueue");
     if (queueLen < 2) return;
@@ -193,11 +228,11 @@ async function matchmake() {
     const socket2 = s2Id ? io.sockets.sockets.get(s2Id) : null;
 
     if (!socket1) {
-      await redisClient.rPush("searchQueue", p2);
+      if (redisClient) await redisClient.rPush("searchQueue", p2);
       return;
     }
     if (!socket2) {
-      await redisClient.rPush("searchQueue", p1);
+      if (redisClient) await redisClient.rPush("searchQueue", p1);
       return;
     }
 
@@ -279,11 +314,12 @@ const checkGameStatus = (game) => {
 
 // Redis mapping helper
 async function savePlayerRoom(playerId, roomId) {
+  playerToRoom.set(playerId, roomId);
+  if (!redisEnabled || !redisClient) return;
   try {
     await redisClient.set(`playerRoom:${playerId}`, roomId, {
       EX: 3600 * 24,
     });
-    playerToRoom.set(playerId, roomId);
   } catch (err) {
     console.error("Error saving playerRoom to Redis:", err);
   }
@@ -291,6 +327,7 @@ async function savePlayerRoom(playerId, roomId) {
 
 async function getPlayerRoom(playerId) {
   if (playerToRoom.has(playerId)) return playerToRoom.get(playerId);
+  if (!redisEnabled || !redisClient) return null;
   try {
     const roomId = await redisClient.get(`playerRoom:${playerId}`);
     if (roomId) {
@@ -423,7 +460,9 @@ io.on("connection", (socket) => {
           await savePlayerRoom(playerId, roomId);
           // Cleanup old mapping potentially, but Redis handles expiry
           playerToRoom.delete(oldPlayerId);
-          await redisClient.del(`playerRoom:${oldPlayerId}`);
+          if (redisEnabled && redisClient) {
+            await redisClient.del(`playerRoom:${oldPlayerId}`);
+          }
         }
       }
       const qIdx = searchQueue.indexOf(oldPlayerId);
