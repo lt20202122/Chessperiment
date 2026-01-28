@@ -19,6 +19,10 @@
         "pieceEditor": "Figuren-Editor",
         "marketplace": "Marktplatz",
         "library": "Bibliothek",
+        "about": "Über uns",
+        "feedback": "Feedback"
+    },
+        "library": "Bibliothek",
         "notifications": "Benachrichtigungen",
         "about": "Über uns"
     },
@@ -691,6 +695,37 @@
                 "title": "Launch",
                 "description": "Im Marketplace veröffentlichen oder Freunde zu einem privaten Match einladen."
             }
+        }
+    },
+    "Feedback": {
+        "title": "Teilen Sie Ihr Feedback",
+        "subtitle": "Helfen Sie uns, chessperiment zu verbessern, indem Sie Ihre Gedanken teilen",
+        "selectPrompt": "Was möchten Sie teilen?",
+        "reportBug": {
+            "title": "Fehler melden",
+            "description": "Haben Sie etwas gefunden, das nicht funktioniert? Lassen Sie es uns wissen, damit wir es beheben können.",
+            "placeholder": "Beschreiben Sie den Fehler, den Sie festgestellt haben..."
+        },
+        "featureSuggestion": {
+            "title": "Feature-Vorschlag",
+            "description": "Haben Sie eine Idee für eine neue Funktion? Wir würden sie gerne hören.",
+            "placeholder": "Teilen Sie Ihre Feature-Idee..."
+        },
+        "generalFeedback": {
+            "title": "Allgemeines Feedback",
+            "description": "Irgendwelche anderen Gedanken, Kommentare oder Vorschläge?",
+            "placeholder": "Teilen Sie Ihr Feedback..."
+        },
+        "submit": "Feedback senden",
+        "cancel": "Abbrechen",
+        "thankYou": "Vielen Dank für Ihr Feedback!",
+        "error": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
+        "emailPlaceholder": "Ihre E-Mail (optional)"
+    },
+    "SEO": {
+        "Feedback": {
+            "title": "Feedback",
+            "description": "Teilen Sie Ihr Feedback, melden Sie Fehler oder schlagen Sie neue Funktionen für chessperiment vor"
         }
     }
 }

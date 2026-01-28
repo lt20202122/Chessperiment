@@ -11,7 +11,8 @@
         "pieceEditor": "Piece Editor",
         "marketplace": "Marketplace",
         "library": "Library",
-        "about": "About"
+        "about": "About",
+        "feedback": "Feedback"
     },
     "Marketplace": {
         "title": "Marketplace",
@@ -693,6 +694,37 @@
                 "title": "Launch",
                 "description": "Publish to the marketplace or invite friends for a private match."
             }
+        }
+    },
+    "Feedback": {
+        "title": "Share Your Feedback",
+        "subtitle": "Help us improve chessperiment by sharing your thoughts",
+        "selectPrompt": "What would you like to share?",
+        "reportBug": {
+            "title": "Report a Bug",
+            "description": "Found something that's not working? Let us know so we can fix it.",
+            "placeholder": "Describe the bug you encountered..."
+        },
+        "featureSuggestion": {
+            "title": "Feature Suggestion",
+            "description": "Have an idea for a new feature? We'd love to hear it.",
+            "placeholder": "Share your feature idea..."
+        },
+        "generalFeedback": {
+            "title": "General Feedback",
+            "description": "Any other thoughts, comments, or suggestions?",
+            "placeholder": "Share your feedback..."
+        },
+        "submit": "Submit Feedback",
+        "cancel": "Cancel",
+        "thankYou": "Thank you for your feedback!",
+        "error": "Something went wrong. Please try again.",
+        "emailPlaceholder": "Your email (optional)"
+    },
+    "SEO": {
+        "Feedback": {
+            "title": "Feedback",
+            "description": "Share your feedback, report bugs, or suggest new features for chessperiment"
         }
     }
 }
