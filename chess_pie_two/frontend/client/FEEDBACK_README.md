@@ -6,42 +6,41 @@ This feature allows users to submit feedback, bug reports, and feature suggestio
 
 ### 1. Install Dependencies
 
-The feedback feature uses Nodemailer to send emails. Dependencies should already be installed, but if needed:
+The feedback feature uses Resend to send emails. Dependencies should already be installed, but if needed:
 
 ```bash
-npm install nodemailer @types/nodemailer
+npm install resend
 ```
 
-### 2. Configure Email Credentials
+### 2. Configure Resend API Key
 
-Create a `.env.local` file in the `client` directory with the following variables:
+The project already has a Resend API key configured in `.env.local`. No additional setup is needed!
+
+If you need to update it, edit `.env.local` in the `client` directory:
 
 ```env
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASSWORD=your-gmail-app-password
+RESEND_API_KEY=re_your_api_key_here
 ```
 
-**Important:** For Gmail, you MUST use an App Password, not your regular password.
+**Note:** The Resend API key should already be configured in your existing `.env.local` file.
 
-#### How to create a Gmail App Password:
+#### How to get a Resend API Key (if needed):
 
-1. Go to your Google Account settings: https://myaccount.google.com/
-2. Navigate to Security
-3. Enable 2-Step Verification (if not already enabled)
-4. Search for "App Passwords" and create a new one
-5. Select "Mail" and "Other (Custom name)"
-6. Copy the generated 16-character password
-7. Use this password in your `.env.local` file
+1. Go to https://resend.com
+2. Sign up or log in to your account
+3. Navigate to API Keys section
+4. Create a new API key
+5. Copy the key and add it to your `.env.local` file
 
 ### 3. Destination Email
 
 Feedback emails are currently sent to: **contact.chesspie@gmail.com**
 
 To change this, edit the file:
-`src/app/api/feedback/route.ts` and update line 30:
+`src/app/api/feedback/route.ts` and update line 25:
 
 ```typescript
-to: "your-email@example.com",
+to: ["your-email@example.com"],
 ```
 
 ## How It Works
@@ -49,7 +48,7 @@ to: "your-email@example.com",
 1. **Frontend**: Users select a feedback type (Bug Report, Feature Suggestion, or General Feedback)
 2. **Form**: They fill out an optional email field and required message field
 3. **API**: The form submits to `/api/feedback` endpoint
-4. **Email**: Nodemailer sends the feedback via Gmail SMTP to the configured address
+4. **Email**: Resend sends the feedback to the configured address
 5. **Confirmation**: User sees a success message
 
 ## File Structure
@@ -75,19 +74,28 @@ src/
 
 ### Email not sending?
 
-1. Check that `EMAIL_USER` and `EMAIL_PASSWORD` are set in `.env.local`
-2. Verify you're using an App Password, not your regular password
+1. Check that `RESEND_API_KEY` is set in `.env.local`
+2. Verify your Resend API key is valid
 3. Check the server console for error messages
-4. Make sure 2FA is enabled on your Google account
+4. Make sure your Resend account is in good standing
 
-### Gmail blocking sign-in attempts?
+### Resend errors?
 
-- Use an App Password instead of your regular password
-- Make sure "Less secure app access" is NOT needed (App Passwords are more secure)
+- Verify your API key is correct
+- Check that your Resend account has sending permissions
+- Review Resend logs at https://resend.com/logs
 
 ## Security Notes
 
 - Never commit `.env.local` to version control
-- Use App Passwords instead of regular passwords
-- Consider using a dedicated email account for sending feedback
-- In production, use environment variables from your hosting platform
+- Use environment variables from your hosting platform in production
+- Resend API keys should be kept secure
+- Consider rate limiting the feedback endpoint to prevent abuse
+
+## Advantages of Resend
+
+- **Simple Setup**: No Gmail App Passwords or SMTP configuration needed
+- **Reliable**: Built for transactional emails
+- **Fast**: Quick delivery times
+- **Monitoring**: Easy to track emails in Resend dashboard
+- **Professional**: Uses proper email infrastructure
