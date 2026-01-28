@@ -727,6 +727,19 @@
         "Feedback": {
             "title": "Feedback",
             "description": "Teilen Sie Ihr Feedback, melden Sie Fehler oder schlagen Sie neue Funktionen für chessperiment vor"
+        },
+        "Footer": {
+            "title": "Häufig gestellte Fragen",
+            "whatIschessperiment": "Was ist chessperiment?",
+            "whatIschessperimentAnswer": "chessperiment ist eine Plattform zum Erstellen und Spielen von benutzerdefinierten Schachvarianten. Gestalten Sie einzigartige Bretter, erstellen Sie benutzerdefinierte Figuren mit besonderen Fähigkeiten und spielen Sie mit Ihren eigenen Regeln gegen Freunde oder KI.",
+            "isItFree": "Ist chessperiment kostenlos?",
+            "isItFreeAnswer": "Ja! chessperiment ist vollständig kostenlos nutzbar. Sie können unbegrenzt benutzerdefinierte Bretter und Figuren erstellen, Spiele spielen und Ihre Kreationen kostenlos mit der Community teilen.",
+            "canIPlayFriends": "Kann ich mit meinen Freunden spielen?",
+            "canIPlayFriendsAnswer": "Auf jeden Fall! Sie können private Spielräume erstellen und Ihre Freunde einladen, Ihre benutzerdefinierten Schachvarianten zusammen zu spielen. Teilen Sie einfach den Spiel-Link mit ihnen.",
+            "legal": "Rechtliches",
+            "about": "Über uns",
+            "privacyPolicy": "Datenschutzerklärung",
+            "legalNotice": "Impressum"
         }
     }
 }

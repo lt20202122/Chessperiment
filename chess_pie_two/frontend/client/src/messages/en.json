@@ -729,6 +729,19 @@
         "Feedback": {
             "title": "Feedback",
             "description": "Share your feedback, report bugs, or suggest new features for chessperiment"
+        },
+        "Footer": {
+            "title": "Frequently Asked Questions",
+            "whatIschessperiment": "What is chessperiment?",
+            "whatIschessperimentAnswer": "chessperiment is a platform for creating and playing custom chess variants. Design unique boards, create custom pieces with special abilities, and play against friends or AI with your own rules.",
+            "isItFree": "Is chessperiment free to use?",
+            "isItFreeAnswer": "Yes! chessperiment is completely free to use. You can create unlimited custom boards and pieces, play games, and share your creations with the community at no cost.",
+            "canIPlayFriends": "Can I play with my friends?",
+            "canIPlayFriendsAnswer": "Absolutely! You can create private game rooms and invite your friends to play your custom chess variants together. Simply share the game link with them.",
+            "legal": "Legal",
+            "about": "About",
+            "privacyPolicy": "Privacy Policy",
+            "legalNotice": "Legal Notice"
         }
     }
 }
