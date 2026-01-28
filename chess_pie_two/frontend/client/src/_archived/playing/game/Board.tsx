@@ -65,13 +65,13 @@ const parseFen = (fen: string): PieceType[] => {
 
 const getGamePieceScale = (type: string) => {
   switch (type.toLowerCase()) {
-    case "king": return 0.96;
-    case "queen": return 0.94;
-    case "bishop": return 0.88;
-    case "knight": return 0.88;
-    case "rook": return 0.82;
-    case "pawn": return 0.78;
-    default: return 0.85;
+    case 'king': return 0.98;
+    case 'queen': return 0.96;
+    case 'bishop': return 0.92;
+    case 'knight': return 0.92;
+    case 'rook': return 0.88;
+    case 'pawn': return 0.85;
+    default: return 0.95;
   }
 };
 
@@ -311,7 +311,7 @@ export default function Board({
 
     let pId = localStorage.getItem("chess_player_id");
     if (!pId) {
-      pId = Math.random().toString(36).substring(2, 15);
+      pId = crypto.randomUUID();
       localStorage.setItem("chess_player_id", pId);
     }
 
@@ -333,50 +333,21 @@ export default function Board({
     setCurrentTurn('w');
     setDifficulty(elo);
     setCurrentRoom(compRoomId);
-    setPlayerCount(1);
+    setPlayerCount(2); // In computer game, we are 2 (player + cpu)
 
     // Join the computer game room on the server
     if (socket) {
-      socket.emit("join_room", { roomId: compRoomId, isComputer: true });
+      socket.emit("join_room", { roomId: compRoomId, isComputer: true, pId });
     }
   }, [chess, updateBoardState, gameMode, gameStatus, myColor, socket]);
 
   // We need a stable callback for stockfish
   const onBestMove = useCallback((move: string) => {
-    const from = move.substring(0, 2);
-    const to = move.substring(2, 4);
-    const promotion = move.length > 4 ? move.substring(4, 5) : undefined;
-    try {
-      const result = chess.move({ from, to, promotion: promotion || 'q' });
-      if (result) {
-        const newFen = chess.fen();
-        updateBoardState(newFen);
-        new Audio("/sounds/move-self.mp3").play().catch(() => { });
-
-        setLastMoveFrom(from);
-        setLastMoveTo(to);
-        const san = result.san;
-        setMoveHistory(prev => {
-          const next = [...prev, san];
-          setHistoryIndex(next.length - 1);
-          return next;
-        });
-        setHistoryFens(prev => [...prev, newFen]);
-        setHistoryMoves(prev => [...prev, { from, to, san }]);
-
-        if (chess.isGameOver()) {
-          if (chess.isCheckmate()) {
-            setGameResult(chess.turn() === myColor?.charAt(0) ? 'loss' : 'win');
-            setGameInfo(t("checkmate"));
-          } else {
-            setGameResult('draw');
-            setGameInfo(t("draw"));
-          }
-          setTimeout(() => setGameStatus("ended"), 2000);
-        }
-      }
-    } catch (e) { }
-  }, [chess, updateBoardState, myColor, t]);
+    // With server as authority, we don't necessarily need to apply move locally here.
+    // However, if we want to be safe, we can log it.
+    // The server should broadcast a 'move' event which handles everything.
+    console.log('[Stockfish] Best move received from server:', move);
+  }, []);
 
   const { requestMove, isReady } = useStockfish(currentRoom, difficulty, onBestMove);
 
@@ -393,9 +364,10 @@ export default function Board({
     // Auto-start computer game if mode is computer and status is empty/waiting
     if (gameMode === 'computer' && (gameStatus === "" || gameStatus === "waiting")) {
       let elo = 1200;
-      if (currentRoom && currentRoom.startsWith("computer-")) {
+      if (currentRoom && currentRoom.toUpperCase().startsWith("COMPUTER-")) {
         const parts = currentRoom.split("-");
-        if (parts[1]) elo = parseInt(parts[1]) || 1200;
+        // If it's COMPUTER-1500-UUID or similar
+        if (parts[1] && !isNaN(parseInt(parts[1]))) elo = parseInt(parts[1]);
       }
       startComputerGame(elo);
     } else if (initialRoomId && gameStatus === "" && gameMode !== 'computer') {
@@ -407,14 +379,14 @@ export default function Board({
     if (!socket || (gameMode !== "online" && gameMode !== "computer")) return;
 
     const onMove = (data: any) => {
+      // Clear optimistic state first if it matched
+      const matchedOptimistic = data.from === previousStateRef.current?.lastMoveFrom &&
+        data.to === previousStateRef.current?.lastMoveTo;
+
       if (data.fen) {
         updateBoardState(data.fen);
         setHistoryFens(prev => [...prev, data.fen]);
       }
-
-      // Determine if sound should play (don't play if it matches our optimistic move)
-      const isNewMove = data.from !== previousStateRef.current?.lastMoveFrom ||
-        data.to !== previousStateRef.current?.lastMoveTo;
 
       setLastMoveFrom(data.from);
       setLastMoveTo(data.to);
@@ -430,11 +402,12 @@ export default function Board({
       if (data.gameStatus) setGameStatus(data.gameStatus);
       setIsViewingHistory(false);
 
-      if (isNewMove && !previousStateRef.current) {
+      // Play sound if NOT an optimistic move we already played sound for
+      if (!matchedOptimistic) {
         new Audio("/sounds/move-self.mp3").play().catch(() => { });
-      }
-      // After processing the move, clear the optimistic state if it matched
-      if (!isNewMove) {
+        previousStateRef.current = null;
+      } else {
+        // Just clear the ref if it was matched
         previousStateRef.current = null;
       }
     };
@@ -509,13 +482,15 @@ export default function Board({
     socket.on("room_created", (data: any) => {
       setCurrentRoom(data.roomId);
       setMyColor(data.color || "white");
-      setGameStatus("waiting");
-      setPlayerCount(1);
+      const isComp = data.roomId?.startsWith("COMPUTER-");
+      setGameStatus(isComp ? "playing" : "waiting");
+      setPlayerCount(isComp ? 2 : 1);
     });
     socket.on("joined_room", (data: any) => {
       setCurrentRoom(data.roomId);
 
       const isComputer = data.roomId.startsWith("COMPUTER-");
+      // For computer games, force white if we are the human player
       setMyColor(data.color || (isComputer ? "white" : "black"));
 
       // For computer games, we move directly to playing
@@ -632,7 +607,7 @@ export default function Board({
       }
 
       if (!pId) {
-        pId = Math.random().toString(36).substring(2, 15);
+        pId = crypto.randomUUID();
         localStorage.setItem("chess_player_id", pId);
       }
 
@@ -753,7 +728,8 @@ export default function Board({
       }
 
       if (socket) {
-        socket.emit("move", { from: promotionMove.from, to: promotionMove.to, promotion: code });
+        const pId = localStorage.getItem("chess_player_id");
+        socket.emit("move", { from: promotionMove.from, to: promotionMove.to, promotion: code, pId });
       }
     } else {
       executeMove(promotionMove.from, promotionMove.to, code);
@@ -788,7 +764,10 @@ export default function Board({
         new Audio("/sounds/move-self.mp3").play().catch(() => { });
       }
 
-      if (socket) socket.emit("move", { from, to, promotion });
+      if (socket) {
+        const pId = localStorage.getItem("chess_player_id");
+        socket.emit("move", { from, to, promotion, pId });
+      }
 
       // If online or computer mode, we stop here and wait for server "move" event
       if (gameMode === "online" || gameMode === "computer") return true;

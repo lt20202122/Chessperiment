@@ -16,7 +16,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Save } from 'lucide-react';
 import { getCustomPieceAction, saveCustomPieceAction } from '@/app/actions/library';
-import { CustomPiece } from '@/lib/firestore';
+import { CustomPiece } from '@/types/firestore';
 
 // Constants
 const BLOCK_HEIGHT = 50;
@@ -63,12 +63,24 @@ interface GhostState {
 // Mock Templates
 const BLOCK_TEMPLATES: BlockTemplate[] = [
     {
-        id: 'on-capture',
+        id: 'on-is-captured',
         type: 'trigger',
-        label: 'onCapture',
+        label: 'onIsCaptured',
         category: 'Trigger',
         color: '#FFD700',
-        description: 'Triggers when a piece is captured.',
+        description: 'Triggers when this piece is captured.',
+        sockets: [
+            { id: 'by', type: 'select', label: 'by', options: ['Any', 'Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }
+        ],
+        width: 220
+    },
+    {
+        id: 'on-captures',
+        type: 'trigger',
+        label: 'onCaptures',
+        category: 'Trigger',
+        color: '#FFD700',
+        description: 'Triggers when this piece captures another.',
         sockets: [
             { id: 'by', type: 'select', label: 'by', options: ['Any', 'Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }
         ],
@@ -95,18 +107,6 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         description: 'Triggers when the piece moves.',
         sockets: [],
         width: 140
-    },
-    {
-        id: 'on-captured',
-        type: 'trigger',
-        label: 'onCaptured',
-        category: 'Trigger',
-        color: '#FFD700',
-        description: 'Triggers when THIS piece is captured by another piece.',
-        sockets: [
-            { id: 'by', type: 'select', label: 'by', options: ['Any', 'Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }
-        ],
-        width: 220
     },
     {
         id: 'on-environment',

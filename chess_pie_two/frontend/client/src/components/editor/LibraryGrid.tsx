@@ -2,10 +2,13 @@
 import React, { useState } from 'react';
 import { Star, Trash2, LayoutGrid, Calendar, MoreVertical, Play, Edit2, Shield, Layout, Box } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SavedBoard, PieceSet } from '@/lib/firestore';
+import { SavedBoard, PieceSet } from '@/types/firestore';
 import { toggleBoardStarAction, deleteBoardAction, togglePieceSetStarAction, deletePieceSetAction } from '@/app/actions/library';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
+import { importToProject } from '@/lib/firestore-client';
+import ProjectSelectModal from './ProjectSelectModal';
+import { Download } from 'lucide-react';
 
 type LibraryItem = (SavedBoard & { _type: 'board' }) | (PieceSet & { _type: 'set' });
 
@@ -23,7 +26,27 @@ export default function LibraryGrid({ initialBoards, initialSets }: { initialBoa
     }));
     const [searchTerm, setSearchTerm] = useState('');
     const [showOnlyStarred, setShowOnlyStarred] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [selectedItemForImport, setSelectedItemForImport] = useState<LibraryItem | null>(null);
     const router = useRouter();
+
+    const handleImportClick = (item: LibraryItem) => {
+        setSelectedItemForImport(item);
+        setIsImportModalOpen(true);
+    };
+
+    const handleProjectSelect = async (projectId: string) => {
+        if (!selectedItemForImport) return;
+
+        try {
+            await importToProject(projectId, selectedItemForImport, selectedItemForImport._type);
+            alert(t('importSuccess'));
+            setIsImportModalOpen(false);
+        } catch (error) {
+            console.error('Import failed:', error);
+            alert('Import failed. Please try again.');
+        }
+    };
 
     const handleToggleStar = async (id: string, type: 'board' | 'set') => {
         try {
@@ -103,6 +126,7 @@ export default function LibraryGrid({ initialBoards, initialSets }: { initialBoa
                                 item={item}
                                 onToggleStar={() => handleToggleStar(item.id!, item._type)}
                                 onDelete={() => handleDelete(item.id!, item._type)}
+                                onImport={() => handleImportClick(item)}
                                 t={t as any}
                             />
                         ))}
@@ -112,17 +136,25 @@ export default function LibraryGrid({ initialBoards, initialSets }: { initialBoa
                                 item={item}
                                 onToggleStar={() => handleToggleStar(item.id!, item._type)}
                                 onDelete={() => handleDelete(item.id!, item._type)}
+                                onImport={() => handleImportClick(item)}
                                 t={t as any}
                             />
                         ))}
                     </AnimatePresence>
                 </div>
             )}
+
+            <ProjectSelectModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onSelect={handleProjectSelect}
+                title={selectedItemForImport?._type === 'board' ? t('importBoardTitle') : t('importSetTitle')}
+            />
         </div>
     );
 }
 
-function LibraryCard({ item, onToggleStar, onDelete, t }: { item: LibraryItem, onToggleStar: () => void, onDelete: () => void, t: (key: string) => string }) {
+function LibraryCard({ item, onToggleStar, onDelete, onImport, t }: { item: LibraryItem, onToggleStar: () => void, onDelete: () => void, onImport: () => void, t: (key: string) => string }) {
     const router = useRouter();
     const isBoard = item._type === 'board';
 
@@ -171,6 +203,11 @@ function LibraryCard({ item, onToggleStar, onDelete, t }: { item: LibraryItem, o
     const handleDeleteClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         onDelete();
+    };
+
+    const handleImportClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onImport();
     };
 
     return (
@@ -243,6 +280,13 @@ function LibraryCard({ item, onToggleStar, onDelete, t }: { item: LibraryItem, o
                         title={isBoard ? "Delete Board" : "Delete Piece"}
                     >
                         <Trash2 size={18} />
+                    </button>
+                    <button
+                        onClick={handleImportClick}
+                        className="p-2.5 bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white border border-blue-500/20 rounded-xl transition-all"
+                        title={t('importToProject')}
+                    >
+                        <Download size={18} />
                     </button>
                 </div>
             </div>

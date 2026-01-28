@@ -9,9 +9,10 @@ interface PixelCanvasProps {
     setPixels: (pixels: string[][]) => void;
     commitPixels: (pixels: string[][]) => void;
     selectedPieceId: string | null;
+    image?: string;
 }
 
-const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedPieceId }: PixelCanvasProps) => {
+const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedPieceId, image }: PixelCanvasProps) => {
     const t = useTranslations('Editor.Piece');
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [drawColor, setDrawColor] = useState('#000000');
@@ -51,6 +52,28 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
             }
         }
 
+        // Draw background image if provided
+        if (image) {
+            const img = new (globalThis.Image || Image)();
+            img.src = image;
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                // Redraw pixels on top of image
+                for (let y = 0; y < gridSize; y++) {
+                    for (let x = 0; x < gridSize; x++) {
+                        const color = internalPixels.current[y][x];
+                        if (color !== 'transparent') {
+                            ctx.fillStyle = color;
+                            ctx.fillRect(x * cellSize, y * cellSize, cellSize + 0.5, cellSize + 0.5);
+                        }
+                    }
+                }
+            };
+            if (img.complete) {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            }
+        }
+
         // Draw pixels
         for (let y = 0; y < gridSize; y++) {
             for (let x = 0; x < gridSize; x++) {
@@ -61,7 +84,7 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
                 }
             }
         }
-    }, [gridSize]);
+    }, [gridSize, image]);
 
     const handleAction = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         const canvas = canvasRef.current;
@@ -205,7 +228,7 @@ const PixelCanvas = memo(({ gridSize, pixels, setPixels, commitPixels, selectedP
                     style={{
                         width: 'min(90vw, 512px)',
                         height: 'min(90vw, 512px)',
-                        imageRendering: 'pixelated'
+                        imageRendering: image ? 'auto' : 'pixelated'
                     }}
                 />
             </div>

@@ -181,24 +181,6 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                         <p className="mt-6 text-lg leading-8 text-stone-600 dark:text-stone-400">
                             {t("developer.description")}
                         </p>
-                        <div className="mt-10 flex gap-x-6">
-                            <a
-                                href="https://github.com/lt20202122/chessPIE"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-sm font-semibold leading-6 text-stone-900 dark:text-stone-50 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
-                            >
-                                GitHub <ExternalLink className="w-4 h-4" />
-                            </a>
-                            <a
-                                href="https://www.reddit.com/r/chessperiment/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-sm font-semibold leading-6 text-stone-900 dark:text-stone-50 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
-                            >
-                                Reddit <ExternalLink className="w-4 h-4" />
-                            </a>
-                        </div>
                     </div>
                 </div>
             </section>

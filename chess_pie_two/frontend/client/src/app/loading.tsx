@@ -1,13 +1,7 @@
 import { Square } from 'ldrs/react'
 import Link from 'next/link'
 import 'ldrs/react/Square.css'
-import { Bungee } from "next/font/google";
-
-const bungee = Bungee({
-    subsets: ["latin"],
-    weight: ["400"],
-    display: "swap"
-});
+import { bungee } from "@/lib/fonts";
 
 export default function Loading() {
     return (

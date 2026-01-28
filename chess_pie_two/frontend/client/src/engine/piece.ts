@@ -98,7 +98,7 @@ export class CustomPiece extends Piece {
 
         // Environment checks
         const [col, row] = toCoords(this.position);
-        const isWhiteSquare = (col + row) % 2 === 0;
+        const isWhiteSquare = (col + row) % 2 !== 0;
         this.executeLogic('on-environment', { 
             isWhiteSquare, 
             isBlackSquare: !isWhiteSquare,

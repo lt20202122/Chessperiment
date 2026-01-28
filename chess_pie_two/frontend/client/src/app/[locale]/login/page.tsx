@@ -1,8 +1,7 @@
 import LoginPage from "./LoginPage"
-import { Bungee } from "next/font/google"
+import { bungee } from "@/lib/fonts";
 import type { Metadata } from "next";
 import { generateHreflangs } from '@/lib/hreflang';
-
 import { getTranslations } from 'next-intl/server';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
@@ -40,12 +39,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         },
     };
 }
-
-const bungee = Bungee({
-    subsets: ["latin"],
-    display: "swap",
-    weight: ["400"],
-})
 
 export default async function LoginPageServerSide({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = await params;

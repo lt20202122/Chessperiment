@@ -203,7 +203,7 @@ export class BoardClass {
 
                 // 1. Fire on attacker (Active)
                 if ((pieceToMove as any).isCustom) {
-                    (pieceToMove as any).executeLogic('on-capture', commonContext, this);
+                    (pieceToMove as any).executeLogic('on-captures', commonContext, this);
                     if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
                         movePrevented = true;
                     }
@@ -211,8 +211,7 @@ export class BoardClass {
 
                 // 2. Fire on victim (Passive)
                 if (destinationPiece && (destinationPiece as any).isCustom) {
-                    (destinationPiece as any).executeLogic('on-capture', commonContext, this);
-                    (destinationPiece as any).executeLogic('on-captured', commonContext, this);
+                    (destinationPiece as any).executeLogic('on-is-captured', commonContext, this);
                     
                     if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
                         capturePrevented = true;

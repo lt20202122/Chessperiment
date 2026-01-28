@@ -11,7 +11,28 @@
         "pieceEditor": "Piece Editor",
         "marketplace": "Marketplace",
         "library": "Library",
-        "about": "About"
+        "about": "About",
+        "editor": "Editor"
+    },
+    "Projects": {
+        "title": "Your Projects",
+        "subtitle": "Manage your custom chess environments and piece sets.",
+        "createNew": "Create New Project",
+        "noProjects": "You haven't created any projects yet.",
+        "searchPlaceholder": "Search projects...",
+        "deleteConfirm": "Are you sure you want to delete this project? This will remove all associated board and piece data.",
+        "saveSuccess": "Project saved successfully!",
+        "unnamedProject": "Unnamed Project",
+        "lastUpdated": "Last updated",
+        "piecesCount": "{count} pieces",
+        "gridSize": "{rows}x{cols} grid",
+        "createProject": "Create Project",
+        "projectName": "Project Name",
+        "projectDescription": "Project Description",
+        "rows": "Rows",
+        "cols": "Columns",
+        "creating": "Creating project...",
+        "importing": "Importing..."
     },
     "Marketplace": {
         "title": "Marketplace",
@@ -187,7 +208,7 @@
         "copied": "Copied",
         "typeMessage": "Type a message...",
         "practiceVsComputer": "Practice vs Computer",
-"joinMyGameTitle": "Join my chessperiment game!",
+        "joinMyGameTitle": "Join my chessperiment game!",
         "joinMyGameText": "Join my chess game with room code: {room}",
         "connecting": "Connecting...",
         "quicksearch": "Quick Search",
@@ -212,9 +233,31 @@
         "black": "Black"
     },
     "Editor": {
+        "myProjects": "My Projects",
+        "newProject": "New Project",
+        "projectsActive": "projects active",
+        "unnamedProject": "Unnamed Project",
+        "backToProjects": "Back to Projects",
+        "createFirstProject": "Create your first project",
+        "noProjects": "No projects yet",
+        "noProjectsDescription": "Your creative journey starts here. Design a unique board or create a custom piece to get started.",
+        "deleteConfirm": "Are you sure you want to delete this project? This action cannot be undone.",
+        "migrating": "Migrating your data",
+        "migratingDescription": "We're upgrading your workspace to the new project-based system. This will only take a moment.",
+        "projectNameLabel": "Project Name",
+        "projectNamePlaceholder": "e.g. My Epic Chess Variant",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "What's special about this project?",
+        "rowsLabel": "Rows",
+        "colsLabel": "Columns",
+        "createProject": "Create Project",
+        "lastEdited": "Last edited",
+        "piecesCount": "custom pieces",
+        "editBoard": "Edit Board",
+        "deleteProject": "Delete Project",
         "Board": {
             "badge": "Board Editor",
-            "title": "Design your \u003caccent\u003eBattlefields\u003c/accent\u003e",
+            "title": "Design your <accent>Battlefields</accent>",
             "description": "Create custom chess configurations. Drag edges to resize, click to toggle squares.",
             "actionsTitle": "Board Actions",
             "presets": "Presets",
@@ -255,6 +298,39 @@
             "createFirstSet": "Create your first piece set",
             "saveSuccess": "Board saved successfully",
             "saveBoard": "Save Board",
+            "gridType": "Grid",
+            "gridSquare": "Square",
+            "gridHex": "Hex",
+            "confirmGridSwitch": "Switching grid type will reset the board. Continue?",
+            "radius": "Radius",
+            "gridSize": "Grid Size",
+            "symmetry": "Symmetry",
+            "symNone": "None",
+            "symH": "H",
+            "symV": "V",
+            "symR": "R",
+            "clear": "Clear",
+            "standard": "Standard",
+            "guide": "Guide",
+            "zoom": "Zoom",
+            "HexGuide": {
+                "title": "Hexagonal Guide",
+                "generalTitle": "General Movement",
+                "generalDesc": "On a hexagonal grid, pieces move along 3 main axes (6 directions) instead of 2.",
+                "pawn": "Pawn",
+                "pawnDesc": "Moves 1 hex forward. Captures to the 2 hexes diagonally forward (same color hexes).",
+                "rook": "Rook",
+                "rookDesc": "Moves any distance in 6 orthogonal directions (through hex sides).",
+                "bishop": "Bishop",
+                "bishopDesc": "Moves any distance in 6 diagonal directions (through hex corners).",
+                "knight": "Knight",
+                "knightDesc": "L-shape: 2 steps orthogonally then 1 step 60° (jumps over others).",
+                "king": "King",
+                "kingDesc": "1 step in any of the 12 directions (6 orthogonal + 6 diagonal).",
+                "queen": "Queen",
+                "queenDesc": "Combines Rook and Bishop movement (12 directions total).",
+                "note": "Note: This editor follows axial coordinate logic. Actual movement depends on your custom logic or chosen variant (e.g. Glinski vs McCooey)."
+            },
             "Play": {
                 "noValidation": "No move validation",
                 "validation": "Move validation",
@@ -267,9 +343,7 @@
                 "customPieces": "Custom Creations",
                 "noCustomPieces": "No custom pieces yet"
             }
-
         },
-
         "Piece": {
             "title": "Design Your <accent>Chess Pieces</accent>",
             "description": "Create pixel-perfect custom chess pieces with our intuitive 64x64 editor.",
@@ -322,6 +396,9 @@
             "eraser": "Eraser",
             "clearCanvas": "Clear Canvas",
             "comingSoon": "Coming Soon",
+            "confirmPixelate": "Do you want this picture to be able to be edited?",
+            "imageUploadLabel": "Visual Base",
+            "uploadPicture": "Upload Picture",
             "comingEndOfJanuary": "Available end of January 2026",
             "saveToSetModal": {
                 "title": "Save Piece",
@@ -356,6 +433,26 @@
             }
         }
     },
+    "EditorSidebar": {
+        "boardEditor": "Board Editor",
+        "pieceEditor": "Piece Editor",
+        "back": "Back to Projects",
+        "save": "Save Changes",
+        "saved": "Saved",
+        "saving": "Saving..."
+    },
+    "BottomPiecePanel": {
+        "white": "White",
+        "black": "Black",
+        "standardPieces": "Standard Pieces",
+        "customPieces": "Custom Pieces",
+        "title": "Piece Palette",
+        "description": "Select a piece to place it on the board."
+    },
+    "ProjectView": {
+        "boardViewComingSoon": "Board view coming soon",
+        "boardDim": "{rows}×{cols} board"
+    },
     "Auth": {
         "signInToContinue": "Sign in to continue your journey",
         "continueWithGoogle": "Continue with Google",
@@ -372,7 +469,13 @@
         "recentGames": "Recent Games",
         "notLoggedIn": "Not Logged In",
         "noGamesYet": "No games played yet. Start playing to see your history!",
-        "winRate": "Win Rate"
+        "winRate": "Win Rate",
+        "deleteAccount": "Delete Account",
+        "deleteAccountConfirmTitle": "Delete Account?",
+        "deleteAccountConfirmDesc": "This action is permanent. All your stats, game history, custom boards, and piece sets will be deleted forever. This cannot be undone.",
+        "deletePermanently": "Delete Permanently",
+        "cancel": "Cancel",
+        "rename": "Rename"
     },
     "Sidebar": {
         "viewAll": "View All",
@@ -387,7 +490,6 @@
         "game": "game",
         "boards": "Boards"
     },
-
     "GameEnd": {
         "win": "You won!",
         "loss": "You lost!",
@@ -422,7 +524,7 @@
     "LegalNotice": {
         "title": "Legal Notice - Contact & Info",
         "providerHeading": "Provider",
-        "providerName": "Lasse Mauritz - chessperiment",
+        "providerName": "Lars Thoroe",
         "providerAddress": "Ahlerfeld 29, 38527 Meine, Germany",
         "contactHeading": "Contact",
         "emailLabel": "Email:",
@@ -530,11 +632,17 @@
                 "text": "The chessperiment Marketplace is the central hub for our creative community. Explore a vast collection of custom chess boards, pixel-perfect piece sets, and unique board designs shared by users worldwide. Whether you are looking for a minimalist aesthetic or a complex medieval theme, our marketplace offers a wide variety of assets to customize your chess experience. You can browse through free sets or discover premium content crafted by expert designers. Every item in the marketplace can be easily integrated into your library and used in your games. Share your own creations to build your reputation as a chess variant designer and contribute to the growing ecosystem of custom board games."
             }
         },
-            "Analyze": {
-                "title": "Analyze Chess Games with Stockfish",
-                "description": "Analyze your chess games with the powerful Stockfish engine. Improve your strategy and learn from your mistakes.",
-                "h1": "Chess Analysis Tool"
-            },        "LegalNotice": {
+        "Analyze": {
+            "title": "Analyze Chess Games with Stockfish",
+            "description": "Analyze your chess games with the powerful Stockfish engine. Improve your strategy and learn from your mistakes.",
+            "h1": "Chess Analysis Tool"
+        },
+        "Editor": {
+            "title": "Project Editor | custom chessperiment",
+            "description": "Manage your custom chess projects. Create unique battlefields, design pixel-perfect piece sets, and organize your chess creations.",
+            "h1": "Your Project Workspace"
+        },
+        "LegalNotice": {
             "title": "Legal Notice - Contact & Info",
             "description": "Legal information and contact details for chessperiment."
         },
@@ -573,6 +681,16 @@
         "saveBoard": "Save Board",
         "namePrompt": "Give your board a name",
         "boardName": "Board Name",
+        "importToProject": "Import to Project",
+        "importSuccess": "Item successfully imported to your project!",
+        "selectProject": "Select a Project",
+        "selectProjectDesc": "Choose which project you want to import this item into.",
+        "loadingProjects": "Loading your projects...",
+        "noProjectsFound": "No projects found. Create one to start importing!",
+        "createNewProject": "Create New Project",
+        "importWarning": "Imported items will be available in your project's palette.",
+        "importBoardTitle": "Import Board to Project",
+        "importSetTitle": "Import Piece Set to Project",
         "preview": "Preview",
         "publish": "Publish",
         "play": "Play",
@@ -591,7 +709,7 @@
         "description": "It looks like this move was illegal. The page you are looking for does not exist or has been shifted.",
         "backHome": "Return to the Game"
     },
-    "About": {
+    "AboutPage": {
         "title": "About Chessperiment",
         "intro": "Chessperiment (chessperiment.app) is a web platform dedicated to creating highly customizable chess variants. Unlike traditional chess websites, Chessperiment lets users design their own unique games with complete control over boards, pieces, rules, and interactions.",
         "features": {
@@ -622,77 +740,10 @@
             "description": "Chessperiment is developed by a single creator, active on Reddit and GitHub. Started just a few weeks ago, the platform has already attracted over 100 users who are exploring the endless possibilities of customizable chess."
         }
     },
-    "PieceEditorFAQ": {
-        "title": "Advanced Piece Editor FAQ",
-        "description": "Everything you need to know about creating custom pieces with complex logic.",
-        "sections": {
-            "general": {
-                "title": "General Concepts",
-                "q1": "What is the Piece Editor?",
-                "a1": "The Piece Editor allows you to design the visual appearance and the movement logic of your custom chess pieces. It consists of a Pixel Editor (64x64) and two logic editors: the Visual Move Editor for geometric constraints and the Visual Logic Editor (Block Editor) for event-driven behavior.",
-                "q2": "What are Vector Constraints?",
-                "a2": "Instead of fixed patterns, the engine uses geometric vectors. A move is defined by its displacement in X (horizontal) and Y (vertical) directions. This allows for flexible definitions like 'any distance on the diagonal' or 'exactly 2 squares horizontally'."
-            },
-            "moveEditor": {
-                "title": "Visual Move Editor",
-                "q1": "How do I define basic movement?",
-                "a1": "You define rules using variables: diffX (horizontal step), diffY (vertical step), absDiffX (absolute horizontal distance), and absDiffY (absolute vertical distance). If a move matches your conditions, it is marked as 'Allow' (legal) or 'Disallow' (illegal).",
-                "q2": "What is the difference between sliding and jumping?",
-                "a2": "Currently, custom moves are 'Teleport' based by default. If you define a rule for a target square, the piece jumps there. Future updates will introduce 'Collision' properties to toggle sliding behavior (where intermediate squares must be empty)."
-            },
-            "logicEditor": {
-                "title": "Visual Logic Editor (Block Editor)",
-                "q1": "How do Triggers work?",
-                "a1": "Triggers are the starting points of your logic chains (e.g., 'onCapture', 'onMove', 'onCaptured'). They fire when a specific event occurs. You must snap Effect blocks to these Triggers to make them execute.",
-                "q2": "What is 'Prevent Default'?",
-                "a2": "The 'Prevent Default' block is a powerful terminal that stops the engine from performing its standard action. For example, placing it inside 'onCaptured' makes the piece invincible because the capture event is canceled.",
-                "q3": "Can I transform pieces?",
-                "a3": "Yes. Using the 'Transformation' block, you can turn a piece into another type. This is commonly used for pawn promotion or special 'Phoenix' pieces that transform instead of dying.",
-                "q4": "How do variables work?",
-                "a4": "You can use the 'Modify Var' block to increment or decrement numeric values (like 'Health' or 'Rage stacks'). You can then use the 'onVar' trigger to react when a variable reaches a certain threshold."
-            },
-            "troubleshooting": {
-                "title": "Troubleshooting",
-                "q1": "Why isn't my logic firing?",
-                "a1": "Ensure that your blocks are physically snapped together. Floating blocks will not execute. Also, check the trigger context: 'onCapture' fires *during* the capture, while 'onMove' fires *after* the board has already updated.",
-                "q2": "Does 'Prevent Default' work on 'onThreat'?",
-                "a2": "No. 'onThreat' is a passive check used for highlighting. You cannot 'prevent' a threat; you can only prevent the move or capture that causes it."
-            }
-        }
-    },
     "Onboarding": {
         "editorTitle": "Board Editor",
         "editorMessage": "Create your own, your first board.",
         "playTitle": "Play",
-        "playMessage": "Play against others with your custom creations.",
-        "next": "Next",
-        "finish": "Got it!",
-        "skip": "Skip"
-    },
-    "CreationGuide": {
-        "title": "Creation Guide",
-        "subtitle": "Complete all steps to launch.",
-        "steps": {
-            "1": {
-                "title": "Board Setup",
-                "description": "Define grid size, shape, and initial active squares for the playing field."
-            },
-            "2": {
-                "title": "Pieces",
-                "description": "Create custom units, define movement patterns, and attack rules."
-            },
-            "3": {
-                "title": "Rules & Logic",
-                "description": "Set win conditions, special zones, promotion rules, and turn structure."
-            },
-            "4": {
-                "title": "Design",
-                "description": "Customize board themes, colors, piece skins, and visual effects."
-            },
-            "5": {
-                "title": "Launch",
-                "description": "Publish to the marketplace or invite friends for a private match."
-            }
-        }
+        "playMessage": "Play against others with your custom creations."
     }
 }

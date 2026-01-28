@@ -9,6 +9,7 @@ interface PieceRendererProps {
     color: string;
     size: number;
     pixels?: string[][]; // Optional: direct pixels from Firestore/Library
+    image?: string; // NEW: non-pixelated image
     boardStyle?: string;
     className?: string;
     // New props for visual feedback
@@ -19,43 +20,57 @@ interface PieceRendererProps {
     recentEffect?: string | null;
 }
 
-export const PixelPiece = ({ pixels, size, className }: { pixels: string[][], size: number, className?: string }) => {
+export const PixelPiece = ({ pixels, image, size, className }: { pixels?: string[][], image?: string, size: number, className?: string }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas || !pixels) return;
+        if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        const rows = pixels.length;
-        const cols = pixels[0]?.length || 0;
-        if (rows === 0 || cols === 0) return;
-
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const scale = Math.min(canvas.width / cols, canvas.height / rows);
-        const offsetX = (canvas.width - cols * scale) / 2;
-        const offsetY = (canvas.height - rows * scale) / 2;
+        const render = async () => {
+            if (image) {
+                const img = new globalThis.Image();
+                img.src = image;
+                await new Promise((resolve) => {
+                    img.onload = resolve;
+                });
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            }
 
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                const color = pixels[r][c];
-                if (color && color !== 'transparent') {
-                    ctx.fillStyle = color;
-                    // Use floor/ceil to avoid gaps between pixels
-                    ctx.fillRect(
-                        Math.floor(offsetX + c * scale),
-                        Math.floor(offsetY + r * scale),
-                        Math.ceil(scale),
-                        Math.ceil(scale)
-                    );
+            if (pixels) {
+                const rows = pixels.length;
+                const cols = pixels[0]?.length || 0;
+                if (rows === 0 || cols === 0) return;
+
+                const scale = Math.min(canvas.width / cols, canvas.height / rows);
+                const offsetX = (canvas.width - cols * scale) / 2;
+                const offsetY = (canvas.height - rows * scale) / 2;
+
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const color = pixels[r][c];
+                        if (color && color !== 'transparent') {
+                            ctx.fillStyle = color;
+                            ctx.fillRect(
+                                Math.floor(offsetX + c * scale),
+                                Math.floor(offsetY + r * scale),
+                                Math.ceil(scale),
+                                Math.ceil(scale)
+                            );
+                        }
+                    }
                 }
             }
-        }
-    }, [pixels, size]);
+        };
+
+        render();
+    }, [pixels, image, size]);
 
     return (
         <canvas
@@ -63,7 +78,7 @@ export const PixelPiece = ({ pixels, size, className }: { pixels: string[][], si
             width={size}
             height={size}
             className={className}
-            style={{ width: size, height: size, imageRendering: 'pixelated' }}
+            style={{ width: size, height: size, imageRendering: image ? 'auto' : 'pixelated' }}
         />
     );
 };
@@ -73,6 +88,7 @@ export default function PieceRenderer({
     color,
     size,
     pixels,
+    image,
     boardStyle = "v3",
     className = "",
     variables,
@@ -83,10 +99,11 @@ export default function PieceRenderer({
 }: PieceRendererProps) {
     // Render piece content
     let pieceContent: React.ReactNode;
+    const isWhite = color === 'white';
 
     // If we have direct pixels (from Library), use them
-    if (pixels) {
-        pieceContent = <PixelPiece pixels={pixels} size={size} className={className} />;
+    if (pixels || image) {
+        pieceContent = <PixelPiece pixels={pixels} image={image} size={size} className={className} />;
     } else {
         // Check if it's a standard piece
         const standardPieces = ['pawn', 'rook', 'knight', 'bishop', 'queen', 'king'];
@@ -109,8 +126,8 @@ export default function PieceRenderer({
             if (typeof window !== 'undefined') {
                 const collection = JSON.parse(localStorage.getItem('piece_collection') || '{}');
                 const customPiece = Object.values(collection).find((p: any) => p.name === type && p.color === color) as any;
-                if (customPiece && customPiece.pixels) {
-                    pieceContent = <PixelPiece pixels={customPiece.pixels} size={size} className={className} />;
+                if (customPiece && (customPiece.pixels || customPiece.image)) {
+                    pieceContent = <PixelPiece pixels={customPiece.pixels} image={customPiece.image} size={size} className={className} />;
                 } else {
                     // Fallback: Show a generic placeholder or the type name
                     pieceContent = (

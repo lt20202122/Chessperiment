@@ -81,16 +81,16 @@ export class LogicRunner {
             const exp = expected.toLowerCase();
             return pType === exp || pType.startsWith(exp + '_') || pName === exp || pName.startsWith(exp + '_');
         };
-
         switch (trigger.id) {
-            case 'on-capture':
-            case 'on-captured':
-                // Smart trigger: handles both "I captured something" and "I was captured"
-                // If we are the victim (context.attacker exists and it's not us)
+            case 'on-is-captured':
+                // Triggers when this piece is the victim of a capture
                 if (context.attacker && context.attacker.id !== piece.id) {
                     return matchesType(context.attacker, vals.by);
                 }
-                // If we are the attacker (context.capturedPiece exists and it's not us)
+                return false;
+
+            case 'on-captures':
+                // Triggers when this piece is the attacker in a capture
                 if (context.capturedPiece && context.capturedPiece.id !== piece.id) {
                     return matchesType(context.capturedPiece, vals.by);
                 }
@@ -104,7 +104,7 @@ export class LogicRunner {
 
             case 'on-environment':
                 const [col, row] = toCoords(piece.position);
-                const isWhiteSquare = (col + row) % 2 === 0;
+                const isWhiteSquare = (col + row) % 2 !== 0;
                 if (vals.condition === 'White Square') return isWhiteSquare;
                 if (vals.condition === 'Black Square') return !isWhiteSquare;
                 if (vals.condition === 'Is Attacked') return context.isAttacked || false;

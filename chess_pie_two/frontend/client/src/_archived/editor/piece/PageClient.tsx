@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { getUserPieceSetsAction, getCustomPieceAction, savePieceSetAction, saveCustomPieceAction, getSetPiecesAction, deleteCustomPieceAction } from '@/app/actions/library';
-import { PieceSet, CustomPiece } from '@/lib/firestore';
+import { PieceSet, CustomPiece } from '@/types/firestore';
 import { invertLightness } from '@/lib/colors';
 
 export default function PageClient({ children }: { children?: React.ReactNode }) {
@@ -35,6 +35,8 @@ export default function PageClient({ children }: { children?: React.ReactNode })
     const [currentPixelsBlack, setCurrentPixelsBlack] = useState<string[][]>(
         Array(64).fill(null).map(() => Array(64).fill('transparent'))
     );
+    const [currentImageWhite, setCurrentImageWhite] = useState<string | undefined>(undefined);
+    const [currentImageBlack, setCurrentImageBlack] = useState<string | undefined>(undefined);
 
     // The color we are currently EDITING
     const [editingColor, setEditingColor] = useState<'white' | 'black'>('white');
@@ -133,6 +135,8 @@ export default function PageClient({ children }: { children?: React.ReactNode })
                 setCurrentSetId(piece.setId);
                 setCurrentPixelsWhite(piece.pixelsWhite || (piece as any).pixels || Array(64).fill(Array(64).fill('transparent')));
                 setCurrentPixelsBlack(piece.pixelsBlack || Array(64).fill(Array(64).fill('transparent')));
+                setCurrentImageWhite(piece.imageWhite);
+                setCurrentImageBlack(piece.imageBlack);
                 setCurrentMoves(piece.moves || []);
                 setCurrentName(piece.name);
                 setSelectedPieceId(pieceId);
@@ -150,6 +154,8 @@ export default function PageClient({ children }: { children?: React.ReactNode })
             setSelectedPieceId(pieceId);
             setCurrentPixelsWhite(piece.pixelsWhite);
             setCurrentPixelsBlack(piece.pixelsBlack);
+            setCurrentImageWhite(piece.imageWhite);
+            setCurrentImageBlack(piece.imageBlack);
             setCurrentMoves(piece.moves || []);
             setCurrentName(piece.name);
             setEditingPieceId(pieceId);
@@ -182,7 +188,7 @@ export default function PageClient({ children }: { children?: React.ReactNode })
         }
     };
 
-    const handleSavePiece = async (overrides?: { pixelsWhite?: string[][], pixelsBlack?: string[][], moves?: any[], name?: string }) => {
+    const handleSavePiece = async (overrides?: { pixelsWhite?: string[][], pixelsBlack?: string[][], imageWhite?: string, imageBlack?: string, moves?: any[], name?: string }) => {
         if (!currentSetId) {
             setIsSaveModalOpen(true);
             return;
@@ -197,6 +203,8 @@ export default function PageClient({ children }: { children?: React.ReactNode })
                 name: overrides?.name ?? currentName,
                 pixelsWhite: overrides?.pixelsWhite ?? currentPixelsWhite,
                 pixelsBlack: overrides?.pixelsBlack ?? currentPixelsBlack,
+                imageWhite: overrides?.imageWhite ?? currentImageWhite,
+                imageBlack: overrides?.imageBlack ?? currentImageBlack,
                 moves: overrides?.moves ?? currentMoves,
             };
 
@@ -219,6 +227,7 @@ export default function PageClient({ children }: { children?: React.ReactNode })
                             name: p.name,
                             color: 'white',
                             pixels: p.pixelsWhite,
+                            image: p.imageWhite,
                             moves: p.moves || [],
                             logic: p.logic || [],
                             originalId: p.id
@@ -227,6 +236,7 @@ export default function PageClient({ children }: { children?: React.ReactNode })
                             name: p.name,
                             color: 'black',
                             pixels: p.pixelsBlack,
+                            image: p.imageBlack,
                             moves: p.moves || [],
                             logic: p.logic || [],
                             originalId: p.id
@@ -298,6 +308,8 @@ export default function PageClient({ children }: { children?: React.ReactNode })
                     setEditingPieceId(null);
                     setCurrentPixelsWhite(Array(64).fill(Array(64).fill('transparent')));
                     setCurrentPixelsBlack(Array(64).fill(Array(64).fill('transparent')));
+                    setCurrentImageWhite(undefined);
+                    setCurrentImageBlack(undefined);
                     setCurrentMoves([]);
                     setCurrentName('New Piece');
                 }
@@ -407,6 +419,79 @@ export default function PageClient({ children }: { children?: React.ReactNode })
         setTimeout(() => handleSavePiece({ moves: newMoves }), 100);
     };
 
+    const pixelateImage = async (dataUrl: string, targetSize: number = 64): Promise<string[][]> => {
+        return new Promise((resolve) => {
+            const img = new globalThis.Image();
+            img.src = dataUrl;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = targetSize;
+                canvas.height = targetSize;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                if (!ctx) return resolve(Array(targetSize).fill(Array(targetSize).fill('transparent')));
+
+                ctx.drawImage(img, 0, 0, targetSize, targetSize);
+                const imageData = ctx.getImageData(0, 0, targetSize, targetSize);
+                const pixels: string[][] = [];
+
+                for (let y = 0; y < targetSize; y++) {
+                    const row: string[] = [];
+                    for (let x = 0; x < targetSize; x++) {
+                        const i = (y * targetSize + x) * 4;
+                        const r = imageData.data[i];
+                        const g = imageData.data[i + 1];
+                        const b = imageData.data[i + 2];
+                        const a = imageData.data[i + 3];
+
+                        if (a < 128) {
+                            row.push('transparent');
+                        } else {
+                            // Convert to hex
+                            const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+                            row.push(hex);
+                        }
+                    }
+                    pixels.push(row);
+                }
+                resolve(pixels);
+            };
+        });
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const dataUrl = event.target?.result as string;
+            if (!dataUrl) return;
+
+            const shouldPixelate = confirm(t('confirmPixelate'));
+            if (shouldPixelate) {
+                const pixelated = await pixelateImage(dataUrl, gridSize);
+                commitPixels(pixelated);
+                // Clear high-res image if we pixelate
+                if (editingColor === 'white') {
+                    setCurrentImageWhite(undefined);
+                    handleSavePiece({ pixelsWhite: pixelated, imageWhite: undefined });
+                } else {
+                    setCurrentImageBlack(undefined);
+                    handleSavePiece({ pixelsBlack: pixelated, imageBlack: undefined });
+                }
+            } else {
+                if (editingColor === 'white') {
+                    setCurrentImageWhite(dataUrl);
+                    handleSavePiece({ imageWhite: dataUrl });
+                } else {
+                    setCurrentImageBlack(dataUrl);
+                    handleSavePiece({ imageBlack: dataUrl });
+                }
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
     return (
         <EditorLayout sidebar={
             <PieceEditorSidebar
@@ -435,6 +520,7 @@ export default function PageClient({ children }: { children?: React.ReactNode })
                 canRedo={historyIndex < history.length - 1}
                 onDeletePiece={handleDeletePiece}
                 onGenerateInvertedPiece={generateInvertedDesign}
+                onImageUpload={handleImageUpload}
             />
         }>
             <div className="flex flex-col items-center w-full relative">
@@ -488,6 +574,7 @@ export default function PageClient({ children }: { children?: React.ReactNode })
                     <PixelCanvas
                         gridSize={gridSize}
                         pixels={editingColor === 'white' ? currentPixelsWhite : currentPixelsBlack}
+                        image={editingColor === 'white' ? currentImageWhite : currentImageBlack}
                         setPixels={updateCurrentPixels}
                         commitPixels={commitPixels}
                         selectedPieceId={selectedPieceId || 'new'}

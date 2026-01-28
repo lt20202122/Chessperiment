@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GripVertical, GripHorizontal, Plus, X, Minus, ZoomIn, ZoomOut, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { getPieceImage } from '@/app/[locale]/game/Data';
 import { EditMode } from '@/app/[locale]/editor/board/PageClient';
 import PieceRenderer from '@/components/game/PieceRenderer';
@@ -34,6 +35,13 @@ interface BoardEditorProps {
     boardStyle: string;
     generateBoardData: (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => void;
     customCollection: Record<string, any>;
+    initialData?: {
+        rows: number;
+        cols: number;
+        gridType?: 'square' | 'hex';
+        activeSquares: string[];
+        placedPieces: Record<string, { type: string; color: string }>;
+    }
 }
 
 // --- Memoized Square Component ---
@@ -135,13 +143,15 @@ const EditorSquare = React.memo(({
     );
 });
 
-export default function BoardEditor({ editMode, selectedPiece, boardStyle, generateBoardData, customCollection }: BoardEditorProps) {
-    const [rows, setRows] = useState<number>(() => Number(localStorage.getItem('rows') || 8));
-    const [cols, setCols] = useState<number>(() => Number(localStorage.getItem('cols') || 8));
-    const [gridType, setGridType] = useState<'square' | 'hex'>(() => (localStorage.getItem('gridType') as 'square' | 'hex') || 'square');
+export default function BoardEditor({ editMode, selectedPiece, boardStyle, generateBoardData, customCollection, initialData }: BoardEditorProps) {
+    const t = useTranslations('Editor.Board');
+    const [rows, setRows] = useState<number>(() => initialData?.rows || Number(localStorage.getItem('rows') || 8));
+    const [cols, setCols] = useState<number>(() => initialData?.cols || Number(localStorage.getItem('cols') || 8));
+    const [gridType, setGridType] = useState<'square' | 'hex'>(() => initialData?.gridType || (localStorage.getItem('gridType') as 'square' | 'hex') || 'square');
     const grid = gridMap[gridType];
 
     const [placedPieces, setPlacedPieces] = useState<Record<string, { type: string; color: string, size: number }>>(() => {
+        if (initialData?.placedPieces) return initialData.placedPieces as any;
         try {
             return JSON.parse(localStorage.getItem('placedPieces') || '{}');
         } catch {
@@ -150,6 +160,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     });
 
     const [activeSquares, setActiveSquares] = useState<Set<string>>(() => {
+        if (initialData?.activeSquares) return new Set(initialData.activeSquares);
         try {
             const stored = localStorage.getItem('activeSquares');
             if (stored) return new Set(stored.startsWith('[') ? JSON.parse(stored) : []);
@@ -693,7 +704,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
             className="fixed right-6 top-1/2 -translate-y-1/2 w-80 bg-white/95 dark:bg-stone-900/95 backdrop-blur-xl p-6 rounded-3xl border border-stone-200 dark:border-white/10 shadow-2xl z-100 max-h-[80vh] overflow-y-auto"
         >
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight">Hexagonal Guide</h3>
+                <h3 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight">{t('HexGuide.title')}</h3>
                 <button onClick={() => setShowHexGuide(false)} className="p-2 hover:bg-stone-100 dark:hover:bg-white/10 rounded-full transition-colors">
                     <X size={18} />
                 </button>
@@ -701,20 +712,20 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
 
             <div className="space-y-6">
                 <section>
-                    <h4 className="text-xs font-black text-amber-500 uppercase tracking-widest mb-3">General Movement</h4>
+                    <h4 className="text-xs font-black text-amber-500 uppercase tracking-widest mb-3">{t('HexGuide.generalTitle')}</h4>
                     <p className="text-sm text-stone-600 dark:text-white/60 leading-relaxed">
-                        On a hexagonal grid, pieces move along 3 main axes (6 directions) instead of 2.
+                        {t('HexGuide.generalDesc')}
                     </p>
                 </section>
 
                 <div className="space-y-4">
                     {[
-                        { piece: 'Pawn', desc: 'Moves 1 hex forward. Captures to the 2 hexes diagonally forward (same color hexes).' },
-                        { piece: 'Rook', desc: 'Moves any distance in 6 orthogonal directions (through hex sides).' },
-                        { piece: 'Bishop', desc: 'Moves any distance in 6 diagonal directions (through hex corners).' },
-                        { piece: 'Knight', desc: 'L-shape: 2 steps orthogonally then 1 step 60° (jumps over others).' },
-                        { piece: 'King', desc: '1 step in any of the 12 directions (6 orthogonal + 6 diagonal).' },
-                        { piece: 'Queen', desc: 'Combines Rook and Bishop movement (12 directions total).' }
+                        { piece: t('HexGuide.pawn'), desc: t('HexGuide.pawnDesc') },
+                        { piece: t('HexGuide.rook'), desc: t('HexGuide.rookDesc') },
+                        { piece: t('HexGuide.bishop'), desc: t('HexGuide.bishopDesc') },
+                        { piece: t('HexGuide.knight'), desc: t('HexGuide.knightDesc') },
+                        { piece: t('HexGuide.king'), desc: t('HexGuide.kingDesc') },
+                        { piece: t('HexGuide.queen'), desc: t('HexGuide.queenDesc') }
                     ].map((item: any) => (
                         <div key={item.piece} className="bg-stone-100 dark:bg-white/5 p-3 rounded-xl border border-stone-200 dark:border-white/5">
                             <div className="text-sm font-bold text-stone-900 dark:text-white mb-1">{item.piece}</div>
@@ -725,7 +736,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
 
                 <div className="p-4 bg-amber-500/10 rounded-xl border border-amber-500/20">
                     <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium leading-relaxed uppercase tracking-wider">
-                        Note: This editor follows axial coordinate logic. Actual movement depends on your custom logic or chosen variant (e.g. Glinski vs McCooey).
+                        {t('HexGuide.note')}
                     </p>
                 </div>
             </div>
@@ -738,16 +749,16 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
             <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mb-8 px-4 md:px-6 py-3 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-2xl border border-stone-200 dark:border-white/10 shadow-xl max-w-[95vw]">
                 {/* Grid Type Selector */}
                 <div className="flex items-center gap-2">
-                    <span className="hidden sm:inline text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold mr-2">Grid</span>
+                    <span className="hidden sm:inline text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold mr-2">{t('gridType')}</span>
                     <div className="flex bg-stone-100 dark:bg-white/5 rounded-xl p-1 border border-stone-200 dark:border-white/5">
                         {[
-                            { id: 'square', label: 'Square' },
-                            { id: 'hex', label: 'Hex' }
+                            { id: 'square', label: t('gridSquare') },
+                            { id: 'hex', label: t('gridHex') }
                         ].map(g => (
                             <button
                                 key={g.id}
                                 onClick={() => {
-                                    if (confirm('Switching grid type will reset the board. Continue?')) {
+                                    if (confirm(t('confirmGridSwitch'))) {
                                         setGridType(g.id as any);
                                         const newGrid = gridMap[g.id];
                                         const initialTiles = newGrid.generateInitialGrid(rows, cols);
@@ -770,7 +781,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                 {/* Board Stats */}
                 <div className="flex items-center gap-3">
                     <div className="flex flex-col">
-                        <span className="text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold">{gridType === 'hex' ? 'Radius' : 'Grid Size'}</span>
+                        <span className="text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold">{gridType === 'hex' ? t('radius') : t('gridSize')}</span>
                         <span className="text-xl font-black text-stone-900 dark:text-white tabular-nums tracking-tighter">
                             {gridType === 'hex' ? Math.floor(Math.max(rows, cols) / 2) : `${cols} × ${rows}`}
                         </span>
@@ -781,13 +792,13 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
 
                 {/* Symmetry Controls */}
                 <div className="flex items-center gap-2">
-                    <span className="hidden sm:inline text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold mr-2">Symmetry</span>
+                    <span className="hidden sm:inline text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold mr-2">{t('symmetry')}</span>
                     <div className="flex bg-stone-100 dark:bg-white/5 rounded-xl p-1 border border-stone-200 dark:border-white/5">
                         {[
-                            { id: 'none', label: 'None' },
-                            { id: 'horizontal', label: 'H' },
-                            { id: 'vertical', label: 'V' },
-                            { id: 'rotational', label: 'R' }
+                            { id: 'none', label: t('symNone') },
+                            { id: 'horizontal', label: t('symH') },
+                            { id: 'vertical', label: t('symV') },
+                            { id: 'rotational', label: t('symR') }
                         ].map(s => (
                             <button
                                 key={s.id}
@@ -809,13 +820,13 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                         onClick={clearBoard}
                         className="px-3 sm:px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] sm:text-xs font-bold hover:bg-red-500 hover:text-white transition-all active:scale-95"
                     >
-                        Clear
+                        {t('clear')}
                     </button>
                     <button
                         onClick={resetToStandard}
                         className="px-3 sm:px-4 py-2 rounded-xl bg-accent/10 border border-accent/20 text-accent text-[10px] sm:text-xs font-bold hover:bg-accent hover:text-white transition-all active:scale-95"
                     >
-                        Standard
+                        {t('standard')}
                     </button>
                     {gridType === 'hex' && (
                         <button
@@ -826,7 +837,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                                 }`}
                         >
                             <Info size={16} />
-                            Guide
+                            {t('guide')}
                         </button>
                     )}
                 </div>
@@ -843,7 +854,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                         <Minus size={16} />
                     </button>
                     <div className="flex flex-col items-center min-w-10 sm:min-w-12">
-                        <span className="text-[8px] sm:text-[9px] text-stone-500 dark:text-white/40 uppercase font-bold">Zoom</span>
+                        <span className="text-[8px] sm:text-[9px] text-stone-500 dark:text-white/40 uppercase font-bold">{t('zoom')}</span>
                         <span className="text-xs sm:text-sm font-bold text-stone-900 dark:text-white tabular-nums">{Math.round(zoom * 100)}%</span>
                     </div>
                     <button

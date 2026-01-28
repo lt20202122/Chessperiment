@@ -1,20 +1,10 @@
 "use client"
-import { Zilla_Slab, Lexend } from 'next/font/google';
+import { zillaSlab, lexend } from '@/lib/fonts';
 import { useRouter, Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Play, Plus, ScanEye } from 'lucide-react';
 
-const zillaSlab = Zilla_Slab({
-    weight: ['400', '700'],
-    subsets: ['latin'],
-    display: "swap"
-});
-
-const lexend = Lexend({
-    weight: ['400'],
-    subsets: ['latin'],
-    display: "swap"
-});
+// Local fonts are now in @/lib/fonts
 
 export default function Btn() {
     const t = useTranslations('Homepage');

@@ -10,14 +10,14 @@ function getOrCreatePlayerId(): string {
     
     if (!playerId) {
       // Generate a new unique player ID
-      playerId = `player_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      playerId = crypto.randomUUID();
       localStorage.setItem("chess_player_id", playerId);
     }
     
     return playerId;
   } catch (e) {
     // Fallback if localStorage is blocked
-    return `player_guest_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
+    return crypto.randomUUID();
   }
 }
 

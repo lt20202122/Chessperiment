@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { SavedBoard } from '@/lib/firestore';
+import { SavedBoard } from '@/types/firestore';
 import Image from 'next/image';
 import { getPieceImage } from '@/app/[locale]/game/Data';
 

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Plus, Trash2, Undo2, Redo2, Type, Box, Loader2, Palette, ChevronDown, Check, Move, RefreshCw, HelpCircle } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-import { PieceSet, CustomPiece } from '@/lib/firestore';
+import { PieceSet, CustomPiece } from '@/types/firestore';
 import PieceRenderer from '@/components/game/PieceRenderer';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -30,6 +30,7 @@ interface PieceEditorSidebarProps {
     canRedo: boolean;
     onDeletePiece: (id: string) => void;
     onGenerateInvertedPiece: () => void;
+    onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export default function PieceEditorSidebar({
@@ -54,7 +55,8 @@ export default function PieceEditorSidebar({
     canUndo,
     canRedo,
     onDeletePiece,
-    onGenerateInvertedPiece
+    onGenerateInvertedPiece,
+    onImageUpload
 }: PieceEditorSidebarProps) {
     const t = useTranslations('Editor.Piece');
     const locale = useLocale();
@@ -208,6 +210,27 @@ export default function PieceEditorSidebar({
                         <RefreshCw size={18} /> {t('invert')}
                     </motion.button>
                 )}
+
+                {selectedPieceId && (
+                    <div className="space-y-3">
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-stone-900 dark:text-white/30 ml-1">
+                            {t('imageUploadLabel')}
+                        </label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={onImageUpload}
+                            className="hidden"
+                            id="piece-image-upload"
+                        />
+                        <label
+                            htmlFor="piece-image-upload"
+                            className="w-full py-4 bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-900 dark:text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer hover:bg-stone-50 dark:hover:bg-white/10 transition-all shadow-sm active:scale-95"
+                        >
+                            <Palette size={14} /> {t('uploadPicture')}
+                        </label>
+                    </div>
+                )}
             </div>
 
             {/* Mode Toggle (Design vs Moves) */}
@@ -294,6 +317,7 @@ export default function PieceEditorSidebar({
                                             color={currentColor}
                                             size={32}
                                             pixels={currentColor === 'white' ? piece.pixelsWhite : piece.pixelsBlack}
+                                            image={currentColor === 'white' ? piece.imageWhite : piece.imageBlack}
                                         />
                                     </motion.div>
                                     <div className={`absolute bottom-0 inset-x-0 h-1 transition-colors ${selectedPieceId === piece.id ? 'bg-amber-500' : 'bg-transparent group-hover:bg-amber-500/30'}`} />
