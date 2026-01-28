@@ -72,12 +72,16 @@ async function initRedis() {
     let client = null;
     let timeoutReached = false;
     let connectionSucceeded = false;
-    
+
     const timeout = setTimeout(() => {
       timeoutReached = true;
       if (!connectionSucceeded) {
-        console.warn("⚠️  Redis connection timeout - running without persistence. Multiplayer matchmaking will be disabled.");
-        console.warn("   For full functionality, start Redis: docker run -d -p 6379:6379 redis");
+        console.warn(
+          "⚠️  Redis connection timeout - running without persistence. Multiplayer matchmaking will be disabled.",
+        );
+        console.warn(
+          "   For full functionality, start Redis: docker run -d -p 6379:6379 redis",
+        );
         // Disconnect the client if still trying
         if (client) {
           try {
@@ -104,7 +108,7 @@ async function initRedis() {
 
         await client.connect();
         connectionSucceeded = true;
-        
+
         if (!timeoutReached) {
           clearTimeout(timeout);
           redisClient = client;
@@ -121,8 +125,12 @@ async function initRedis() {
       } catch (err) {
         if (!timeoutReached) {
           clearTimeout(timeout);
-          console.warn("⚠️  Redis not available - running without persistence. Multiplayer matchmaking will be disabled.");
-          console.warn("   For full functionality, start Redis: docker run -d -p 6379:6379 redis");
+          console.warn(
+            "⚠️  Redis not available - running without persistence. Multiplayer matchmaking will be disabled.",
+          );
+          console.warn(
+            "   For full functionality, start Redis: docker run -d -p 6379:6379 redis",
+          );
           resolve(false);
         }
       }
@@ -602,11 +610,11 @@ io.on("connection", (socket) => {
 
       let game = await getGame(compRoomId);
 
-      // If no game exists OR if it was already ended, we start a fresh session
+      // If no game exists OR if it was already ended OR if forced new
       // This ensures "Play Again" or fresh starts work correctly for Stockfish.
-      if (!game || game.status === "ended") {
+      if (!game || game.status === "ended" || data.forceNew) {
         console.log(
-          `[Computer Game] Initializing fresh state for Room: ${compRoomId}`,
+          `[Computer Game] Initializing fresh state for Room: ${compRoomId} (forceNew: ${data.forceNew})`,
         );
         game = new Game(playerId);
         game.roomId = compRoomId;

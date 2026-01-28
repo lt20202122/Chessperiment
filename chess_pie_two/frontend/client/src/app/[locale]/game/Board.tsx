@@ -305,9 +305,9 @@ export default function Board({
     } catch (e) { }
   }, [chess]);
 
-  const startComputerGame = useCallback((elo = 1200) => {
-    // Prevent multiple initializations if already in a running computer game
-    if (gameMode === 'computer' && gameStatus === 'playing' && myColor === 'white') return;
+  const startComputerGame = useCallback((elo = 1200, forceNew = false) => {
+    // Prevent only if we are already playing AND NOT forcing new
+    if (!forceNew && gameMode === 'computer' && gameStatus === 'playing' && myColor === 'white') return;
 
     let pId = localStorage.getItem("chess_player_id");
     if (!pId) {
@@ -333,11 +333,11 @@ export default function Board({
     setCurrentTurn('w');
     setDifficulty(elo);
     setCurrentRoom(compRoomId);
-    setPlayerCount(1);
+    setPlayerCount(2);
 
     // Join the computer game room on the server
     if (socket) {
-      socket.emit("join_room", { roomId: compRoomId, isComputer: true });
+      socket.emit("join_room", { roomId: compRoomId, isComputer: true, pId, forceNew });
     }
   }, [chess, updateBoardState, gameMode, gameStatus, myColor, socket]);
 
@@ -652,7 +652,8 @@ export default function Board({
           socket.emit("create_room", { roomId: initialRoomId });
         } else {
           socket.emit("join_room", {
-            roomId: initialRoomId
+            roomId: initialRoomId,
+            pId
           });
         }
       } else if (isComputerMode) {
@@ -677,11 +678,13 @@ export default function Board({
   }, [socket]);
 
   const handleNextGame = useCallback(() => {
-    if (socket) {
+    if (gameMode === 'computer') {
+      startComputerGame(difficulty, true);
+    } else if (socket) {
       socket.emit("find_next_game");
       // Status is handled by quick_search_started event
     }
-  }, [socket]);
+  }, [socket, gameMode, startComputerGame, difficulty]);
 
   const boardContainerRef = useRef<HTMLDivElement>(null);
 
