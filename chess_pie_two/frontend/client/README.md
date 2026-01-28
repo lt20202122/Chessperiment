@@ -32,4 +32,4 @@ npm run dev
 When users first visit the site, a survey appears at the bottom asking "How did you find your way to Chessperiment?". User responses are automatically emailed to `contact.chesspie@gmail.com` via Resend.
 
 Comments:
-- Note1 means that this need to change in the future when color should be random
+- Note1 means that this needs to change in the future when color should be random
