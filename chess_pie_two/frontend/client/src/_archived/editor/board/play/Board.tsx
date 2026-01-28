@@ -18,9 +18,9 @@ import {
     PointerSensor,
     TouchSensor,
 } from "@dnd-kit/core";
-import { getPieceImage, PieceType } from "../../../game/Data";
+import { getPieceImage, PieceType } from "@/lib/gameData";
 import PieceRenderer from "@/components/game/PieceRenderer";
-import "../../../game/Board.css";
+// import "../../../game/Board.css";
 import { type Square } from '@/engine/types'
 import { Game } from '@/engine/game'
 import { BoardClass } from "@/engine/board";

@@ -33,3 +33,11 @@ export const getPieceImage = (style: string, color: string, type: string) => {
     if (style === "v2") return pieceImagesv2[key];
     return pieceImagesv3[key];
 };
+
+export interface PieceType {
+    type: string;
+    color: string;
+    position: string;
+    size?: number;
+    id?: number;
+}
