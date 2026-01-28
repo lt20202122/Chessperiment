@@ -68,53 +68,65 @@ let redisClient = null;
 let redisEnabled = false;
 
 async function initRedis() {
-  return new Promise(async (resolve) => {
+  return new Promise((resolve) => {
     let client = null;
     let timeoutReached = false;
+    let connectionSucceeded = false;
     
     const timeout = setTimeout(() => {
       timeoutReached = true;
-      console.warn("⚠️  Redis connection timeout - running without persistence. Multiplayer matchmaking will be disabled.");
-      console.warn("   For full functionality, start Redis: docker run -d -p 6379:6379 redis");
-      // Disconnect the client if still trying
-      if (client) {
-        try {
-          client.disconnect().catch(() => {});
-        } catch (e) {}
-      }
-      resolve(false);
-    }, 3000); // 3 second timeout
-
-    try {
-      client = createClient({
-        url: process.env.REDIS_URL || "redis://localhost:6379",
-      });
-
-      client.on("error", (err) => {
-        // Suppress error logs - we'll handle connection failure gracefully
-        if (!timeoutReached && !redisEnabled) {
-          // Only log the first error
-          console.debug("Redis connection attempt failed");
-        }
-      });
-
-      await client.connect();
-      
-      if (!timeoutReached) {
-        clearTimeout(timeout);
-        redisClient = client;
-        redisEnabled = true;
-        console.log("✅ Connected to Redis");
-        resolve(true);
-      }
-    } catch (err) {
-      if (!timeoutReached) {
-        clearTimeout(timeout);
-        console.warn("⚠️  Redis not available - running without persistence. Multiplayer matchmaking will be disabled.");
+      if (!connectionSucceeded) {
+        console.warn("⚠️  Redis connection timeout - running without persistence. Multiplayer matchmaking will be disabled.");
         console.warn("   For full functionality, start Redis: docker run -d -p 6379:6379 redis");
+        // Disconnect the client if still trying
+        if (client) {
+          try {
+            client.disconnect().catch(() => {});
+          } catch (e) {}
+        }
         resolve(false);
       }
-    }
+    }, 3000); // 3 second timeout
+
+    (async () => {
+      try {
+        client = createClient({
+          url: process.env.REDIS_URL || "redis://localhost:6379",
+        });
+
+        client.on("error", (err) => {
+          // Suppress error logs - we'll handle connection failure gracefully
+          if (!timeoutReached && !redisEnabled) {
+            // Only log the first error
+            console.debug("Redis connection attempt failed");
+          }
+        });
+
+        await client.connect();
+        connectionSucceeded = true;
+        
+        if (!timeoutReached) {
+          clearTimeout(timeout);
+          redisClient = client;
+          redisEnabled = true;
+          console.log("✅ Connected to Redis");
+          resolve(true);
+        } else {
+          // Connection succeeded after timeout - disconnect it
+          try {
+            await client.disconnect();
+          } catch (e) {}
+          resolve(false);
+        }
+      } catch (err) {
+        if (!timeoutReached) {
+          clearTimeout(timeout);
+          console.warn("⚠️  Redis not available - running without persistence. Multiplayer matchmaking will be disabled.");
+          console.warn("   For full functionality, start Redis: docker run -d -p 6379:6379 redis");
+          resolve(false);
+        }
+      }
+    })();
   });
 }
 
@@ -216,7 +228,7 @@ async function addToSearchQueue(playerId) {
 async function removeFromQueue(playerId) {
   if (!redisEnabled || !redisClient) return;
   try {
-    // Note: LREM removes occurances. 0 means all.
+    // Note: LREM removes occurrences. 0 means all.
     await redisClient.lRem("searchQueue", 0, playerId);
     console.log("Removed player from search queue:", playerId);
     const sid = playerToSocket.get(playerId);
@@ -247,11 +259,11 @@ async function matchmake() {
     const socket2 = s2Id ? io.sockets.sockets.get(s2Id) : null;
 
     if (!socket1) {
-      if (redisClient) await redisClient.rPush("searchQueue", p2);
+      await redisClient.rPush("searchQueue", p2);
       return;
     }
     if (!socket2) {
-      if (redisClient) await redisClient.rPush("searchQueue", p1);
+      await redisClient.rPush("searchQueue", p1);
       return;
     }
 
@@ -484,8 +496,7 @@ io.on("connection", (socket) => {
           }
         }
       }
-      const qIdx = searchQueue.indexOf(oldPlayerId);
-      if (qIdx > -1) searchQueue[qIdx] = playerId;
+      // Note: searchQueue is now managed in Redis, not in-memory
     }
     const currentActiveSocket = playerToSocket.get(playerId);
     if (currentActiveSocket && currentActiveSocket !== socket.id) {
