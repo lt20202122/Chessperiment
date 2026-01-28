@@ -347,6 +347,7 @@ export default function Board({
     const to = move.substring(2, 4);
     const promotion = move.length > 4 ? move.substring(4, 5) : undefined;
     try {
+      // Ensure we are in sync with the move
       const result = chess.move({ from, to, promotion: promotion || 'q' });
       if (result) {
         const newFen = chess.fen();
@@ -374,8 +375,12 @@ export default function Board({
           }
           setTimeout(() => setGameStatus("ended"), 2000);
         }
+      } else {
+        console.error("Stockfish returned illegal move:", move);
       }
-    } catch (e) { }
+    } catch (e) {
+      console.error("Error applying Stockfish move:", e);
+    }
   }, [chess, updateBoardState, myColor, t]);
 
   const { requestMove, isReady, error: stockfishError } = useStockfish(currentRoom, difficulty, onBestMove);
@@ -732,10 +737,15 @@ export default function Board({
 
     console.log(`[Board] Executing promotion: ${type} (${code}) for move: ${promotionMove.from}->${promotionMove.to}`);
 
-    if (gameMode === "online") {
+    if (gameMode === "online" || gameMode === "computer") {
       // Optimistic Visual Update for Promotion
       const mover = boardPieces.find(p => p.position === promotionMove.from);
       if (mover) {
+        // Update local chess instance optimistically
+        try {
+          chess.move({ from: promotionMove.from, to: promotionMove.to, promotion: code });
+        } catch (e) { console.error("Optimistic chess update failed", e); }
+
         const newPieces = boardPieces
           .filter(p => p.position !== promotionMove.to && p.position !== promotionMove.from)
           .map(p => ({ ...p }));
@@ -760,6 +770,8 @@ export default function Board({
         setLastMoveTo(promotionMove.to);
         setCurrentTurn(prev => prev === 'w' ? 'b' : 'w');
         new Audio("/sounds/move-self.mp3").play().catch(() => { });
+
+        // Update fen override for optimistic state? No, requestMove uses chess.fen() which we just updated.
       }
 
       if (socket) {
@@ -777,6 +789,11 @@ export default function Board({
       // Optimistic Visual Update
       const mover = boardPieces.find(p => p.position === from);
       if (mover) {
+        // Update local chess instance optimistically
+        try {
+          chess.move({ from, to, promotion: promotion || 'q' });
+        } catch (e) { console.error("Optimistic chess update failed", e); }
+
         const newPieces = boardPieces
           .filter(p => p.position !== to && p.position !== from)
           .map(p => ({ ...p }));
