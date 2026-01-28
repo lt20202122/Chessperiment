@@ -69,32 +69,51 @@ let redisEnabled = false;
 
 async function initRedis() {
   return new Promise(async (resolve) => {
+    let client = null;
+    let timeoutReached = false;
+    
     const timeout = setTimeout(() => {
+      timeoutReached = true;
       console.warn("⚠️  Redis connection timeout - running without persistence. Multiplayer matchmaking will be disabled.");
       console.warn("   For full functionality, start Redis: docker run -d -p 6379:6379 redis");
+      // Disconnect the client if still trying
+      if (client) {
+        try {
+          client.disconnect().catch(() => {});
+        } catch (e) {}
+      }
       resolve(false);
     }, 3000); // 3 second timeout
 
     try {
-      const client = createClient({
+      client = createClient({
         url: process.env.REDIS_URL || "redis://localhost:6379",
       });
 
       client.on("error", (err) => {
-        // Suppress repeated connection errors after first attempt
+        // Suppress error logs - we'll handle connection failure gracefully
+        if (!timeoutReached && !redisEnabled) {
+          // Only log the first error
+          console.debug("Redis connection attempt failed");
+        }
       });
 
       await client.connect();
-      clearTimeout(timeout);
-      redisClient = client;
-      redisEnabled = true;
-      console.log("✅ Connected to Redis");
-      resolve(true);
+      
+      if (!timeoutReached) {
+        clearTimeout(timeout);
+        redisClient = client;
+        redisEnabled = true;
+        console.log("✅ Connected to Redis");
+        resolve(true);
+      }
     } catch (err) {
-      clearTimeout(timeout);
-      console.warn("⚠️  Redis not available - running without persistence. Multiplayer matchmaking will be disabled.");
-      console.warn("   For full functionality, start Redis: docker run -d -p 6379:6379 redis");
-      resolve(false);
+      if (!timeoutReached) {
+        clearTimeout(timeout);
+        console.warn("⚠️  Redis not available - running without persistence. Multiplayer matchmaking will be disabled.");
+        console.warn("   For full functionality, start Redis: docker run -d -p 6379:6379 redis");
+        resolve(false);
+      }
     }
   });
 }
