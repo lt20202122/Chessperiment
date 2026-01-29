@@ -159,6 +159,7 @@ class Game {
     this.chatMessages = [];
     this.pendingMove = null;
     this.rematchRequests = [];
+    this.lastActivity = Date.now(); // Track last activity for cleanup
   }
   addPlayer(playerId) {
     if (!this.players.black) {
@@ -169,6 +170,9 @@ class Game {
     if (this.players.white === playerId) return "w";
     if (this.players.black === playerId) return "b";
     return null;
+  }
+  updateActivity() {
+    this.lastActivity = Date.now();
   }
 }
 const games = new Map();
@@ -394,6 +398,8 @@ io.on("connection", (socket) => {
       console.error(`[Stockfish] Unauthorized or invalid room: ${roomId}`);
       return;
     }
+
+    game.updateActivity();
 
     if (game.status !== "playing") {
       console.warn(`[Stockfish] Game not in progress: ${game.status}`);
@@ -717,8 +723,32 @@ io.on("connection", (socket) => {
     if (!game || game.status !== "playing") return;
     const color = game.getColorForPlayer(playerId);
     if (!color) return;
+
     try {
-      const chess = new Chess(game.board_fen);
+      // Handle history rewind if historyIndex is provided
+      let targetFen = game.board_fen;
+      if (
+        typeof data.historyIndex === "number" &&
+        data.historyIndex >= -1 &&
+        data.historyIndex < game.history.length
+      ) {
+        console.log(
+          `[Move] Rewinding history to index ${data.historyIndex} in room ${roomId}`,
+        );
+
+        // Rebuild game state up to historyIndex
+        const chess = new Chess();
+        for (let i = 0; i <= data.historyIndex; i++) {
+          chess.move(game.history[i]);
+        }
+        targetFen = chess.fen();
+
+        // Truncate history
+        game.history = game.history.slice(0, data.historyIndex + 1);
+        game.board_fen = targetFen;
+      }
+
+      const chess = new Chess(targetFen);
       if (chess.turn() !== color) {
         console.warn(
           `[Move Rejected] Wrong turn in room ${roomId}. Expected: ${chess.turn()}, Got: ${color}`,
@@ -744,6 +774,7 @@ io.on("connection", (socket) => {
         );
         socket.emit("promotion_needed", { from: data.from, to: data.to });
         game.pendingMove = { from: data.from, to: data.to };
+        game.updateActivity();
         await saveGame(game);
         return;
       }
@@ -757,6 +788,7 @@ io.on("connection", (socket) => {
         game.board_fen = chess.fen();
         game.history.push(moveResult.san);
         game.pendingMove = null; // Clear any pending promotion
+        game.updateActivity();
         const status = checkGameStatus(game);
         await saveGame(game);
         io.to(roomId).emit("move", {
@@ -857,6 +889,20 @@ io.on("connection", (socket) => {
     const playerId = socketToPlayer.get(socket.id);
     if (!playerId) return;
 
+    // Clean up old room if exists
+    const oldRoomId = await getPlayerRoom(playerId);
+    if (oldRoomId) {
+      const oldGame = await getGame(oldRoomId);
+      if (oldGame && oldGame.status === "ended") {
+        // Delete the old game
+        games.delete(oldRoomId);
+        if (redisEnabled && redisClient) {
+          await redisClient.del(`game:${oldRoomId}`);
+        }
+        console.log(`[Cleanup] Deleted ended game: ${oldRoomId}`);
+      }
+    }
+
     console.log("Find next game requested:", playerId);
     await addToSearchQueue(playerId);
     socket.emit("quick_search_started");
@@ -865,12 +911,62 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     const playerId = socketToPlayer.get(socket.id);
-    if (playerId && playerToSocket.get(playerId) === socket.id) {
-      console.log("Active socket disconnected:", playerId);
+    console.log("disconnected:", socket.id, playerId);
+    if (playerId) {
+      socketToPlayer.delete(socket.id);
+      playerToSocket.delete(playerId);
     }
-    socketToPlayer.delete(socket.id);
   });
 });
+
+// Periodic cleanup of inactive rooms (every 10 minutes)
+setInterval(
+  async () => {
+    const now = Date.now();
+    const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
+    let cleanedCount = 0;
+
+    for (const [roomId, game] of games.entries()) {
+      if (now - game.lastActivity > oneHour) {
+        console.log(
+          `[Cleanup] Deleting inactive room ${roomId} (last activity: ${new Date(game.lastActivity).toISOString()})`,
+        );
+        games.delete(roomId);
+
+        // Clean up Redis if enabled
+        if (redisEnabled && redisClient) {
+          try {
+            await redisClient.del(`game:${roomId}`);
+            // Clean up player mappings
+            if (game.players.white)
+              await redisClient.del(`playerRoom:${game.players.white}`);
+            if (game.players.black)
+              await redisClient.del(`playerRoom:${game.players.black}`);
+          } catch (err) {
+            console.error(
+              `[Cleanup] Error cleaning up Redis for room ${roomId}:`,
+              err,
+            );
+          }
+        }
+
+        // Clean up in-memory player mappings
+        if (game.players.white) playerToRoom.delete(game.players.white);
+        if (game.players.black) playerToRoom.delete(game.players.black);
+
+        cleanedCount++;
+      }
+    }
+
+    if (cleanedCount > 0) {
+      console.log(
+        `[Cleanup] Removed ${cleanedCount} inactive room(s). Active rooms: ${games.size}`,
+      );
+    }
+  },
+  10 * 60 * 1000,
+); // Run every 10 minutes
+
 const PORT = process.env.PORT || 3002;
 server.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port", PORT);

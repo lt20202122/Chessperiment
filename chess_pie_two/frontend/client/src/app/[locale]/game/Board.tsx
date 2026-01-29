@@ -341,47 +341,13 @@ export default function Board({
     }
   }, [chess, updateBoardState, gameMode, gameStatus, myColor, socket]);
 
-  // We need a stable callback for stockfish
+  // Stockfish move callback - The server's 'move' event already applies the move,
+  // so we just use this for error handling and notifications
   const onBestMove = useCallback((move: string) => {
-    const from = move.substring(0, 2);
-    const to = move.substring(2, 4);
-    const promotion = move.length > 4 ? move.substring(4, 5) : undefined;
-    try {
-      // Ensure we are in sync with the move
-      const result = chess.move({ from, to, promotion: promotion || 'q' });
-      if (result) {
-        const newFen = chess.fen();
-        updateBoardState(newFen);
-        new Audio("/sounds/move-self.mp3").play().catch(() => { });
-
-        setLastMoveFrom(from);
-        setLastMoveTo(to);
-        const san = result.san;
-        setMoveHistory(prev => {
-          const next = [...prev, san];
-          setHistoryIndex(next.length - 1);
-          return next;
-        });
-        setHistoryFens(prev => [...prev, newFen]);
-        setHistoryMoves(prev => [...prev, { from, to, san }]);
-
-        if (chess.isGameOver()) {
-          if (chess.isCheckmate()) {
-            setGameResult(chess.turn() === myColor?.charAt(0) ? 'loss' : 'win');
-            setGameInfo(t("checkmate"));
-          } else {
-            setGameResult('draw');
-            setGameInfo(t("draw"));
-          }
-          setTimeout(() => setGameStatus("ended"), 2000);
-        }
-      } else {
-        console.error("Stockfish returned illegal move:", move);
-      }
-    } catch (e) {
-      console.error("Error applying Stockfish move:", e);
-    }
-  }, [chess, updateBoardState, myColor, t]);
+    // The move is already being applied via the server's 'move' event
+    // This callback is just for acknowledgment
+    console.log("[Stockfish] Move acknowledged:", move);
+  }, []);
 
   const { requestMove, isReady, error: stockfishError } = useStockfish(currentRoom, difficulty, onBestMove);
 
@@ -789,6 +755,20 @@ export default function Board({
       // Optimistic Visual Update
       const mover = boardPieces.find(p => p.position === from);
       if (mover) {
+        // If viewing history, we need to rewind first
+        if (isViewingHistory && historyIndex >= -1) {
+          // Load the historical position
+          let fenToLoad = initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+          if (historyIndex >= 0) {
+            fenToLoad = historyFens[historyIndex];
+          }
+          try {
+            chess.load(fenToLoad);
+          } catch (e) {
+            console.error("Failed to load historical position", e);
+          }
+        }
+
         // Update local chess instance optimistically
         try {
           chess.move({ from, to, promotion: promotion || 'q' });
@@ -815,7 +795,19 @@ export default function Board({
         new Audio("/sounds/move-self.mp3").play().catch(() => { });
       }
 
-      if (socket) socket.emit("move", { from, to, promotion });
+      // Send move to server with historyIndex if viewing history
+      if (socket) {
+        const moveData: any = { from, to, promotion };
+        if (isViewingHistory && historyIndex >= -1) {
+          moveData.historyIndex = historyIndex;
+        }
+        socket.emit("move", moveData);
+      }
+
+      // Exit history view mode
+      if (isViewingHistory) {
+        setIsViewingHistory(false);
+      }
 
       // If online or computer mode, we stop here and wait for server "move" event
       if (gameMode === "online" || gameMode === "computer") return true;
