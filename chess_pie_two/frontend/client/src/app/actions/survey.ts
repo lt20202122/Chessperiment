@@ -5,12 +5,17 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function submitReferralAction(answer: string) {
+    console.log("=== submitReferralAction called ===");
+    console.log("Answer:", answer);
+    console.log("RESEND_API_KEY present:", !!process.env.RESEND_API_KEY);
+    
     if (!answer) return { success: false, error: "No answer provided" };
 
     try {
+        console.log("Attempting to send email via Resend...");
         const { data, error } = await resend.emails.send({
-            from: 'Referral Survey <onboarding@resend.dev>',
-            to: ['contact.chesspie@gmail.com'],
+            from: 'Chessperiment Survey <delivered@resend.dev>',
+            to: ['lassethoroe10@gmail.com'],
             subject: 'New Referral Survey Response',
             html: `
                 <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">
@@ -28,12 +33,16 @@ export async function submitReferralAction(answer: string) {
 
         if (error) {
             console.error("Resend Error:", error);
+            console.error("Full error object:", JSON.stringify(error, null, 2));
             return { success: false, error: error.message };
         }
 
+        console.log("Email sent successfully!");
+        console.log("Resend response data:", data);
         return { success: true, data };
     } catch (err) {
         console.error("Survey Action Error:", err);
+        console.error("Full error:", JSON.stringify(err, null, 2));
         return { success: false, error: "Internal server error" };
     }
 }
