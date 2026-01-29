@@ -33,13 +33,32 @@ export async function saveProject(project: Project): Promise<string> {
         });
         return project.id;
     } else {
-        const newProjectDoc = doc(projectsRef);
-        await setDoc(newProjectDoc, {
-            ...project,
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now(),
-        });
-        return newProjectDoc.id;
+        console.log('[saveProject] Creating new project...', project.name);
+        try {
+            const newProjectDoc = doc(projectsRef);
+            console.log('[saveProject] Generated ID:', newProjectDoc.id);
+
+            // Create a timeout promise
+            const timeout = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Firestore operation timed out after 10000ms')), 10000);
+            });
+
+            // Race the write against the timeout
+            await Promise.race([
+                setDoc(newProjectDoc, {
+                    ...project,
+                    createdAt: Timestamp.now(),
+                    updatedAt: Timestamp.now(),
+                }),
+                timeout
+            ]);
+
+            console.log('[saveProject] Document written successfully.');
+            return newProjectDoc.id;
+        } catch (e) {
+            console.error('[saveProject] Error writing document:', e);
+            throw e;
+        }
     }
 }
 
@@ -50,7 +69,11 @@ export async function getUserProjects(userId: string): Promise<Project[]> {
         where('userId', '==', userId)
     );
     
+    console.time('firestore-get-projects');
     const snapshot = await getDocs(q);
+    console.timeEnd('firestore-get-projects');
+    console.log(`Fetched ${snapshot.docs.length} projects`);
+    
     const projects = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {

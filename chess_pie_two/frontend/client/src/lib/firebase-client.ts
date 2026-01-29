@@ -10,6 +10,16 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Validate config presence
+const requiredKeys = ['apiKey', 'authDomain', 'projectId'];
+const missingKeys = requiredKeys.filter(key => !firebaseConfig[key as keyof typeof firebaseConfig]);
+
+if (missingKeys.length > 0) {
+    console.error(`[Firebase] Missing configuration keys: ${missingKeys.join(', ')}`);
+} else {
+    console.log('[Firebase] Configuration present for:', firebaseConfig.projectId);
+}
+
 // Initialize Firebase only once
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 

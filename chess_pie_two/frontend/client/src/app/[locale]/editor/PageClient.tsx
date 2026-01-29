@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
@@ -16,42 +16,54 @@ export default function PageClient() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [migrating, setMigrating] = useState(false);
+    const isLoadingRef = useRef(false);
 
     useEffect(() => {
+        console.log('[PageClient] Mounted. Auth Loading:', authLoading, 'User:', user?.uid);
         if (authLoading) return;
+
         if (!user) {
+            console.log('[PageClient] No user, redirecting to login');
             router.push('/login');
             return;
         }
 
+        // Prevent double loading if already in progress or if user hasn't changed.
+        // Actually, since user is in dependency array, we do want to reload if user changes.
+        // But we want to avoid double-firing on initial mount if react strict mode is on.
         loadProjects();
     }, [user, authLoading, router]);
 
     async function loadProjects() {
-        if (!user) return;
+        if (!user || isLoadingRef.current) return;
+        isLoadingRef.current = true;
 
         console.time('editor-load');
         setLoading(true);
         try {
             console.log('Loading user data for:', user.uid);
 
-            // Parallelize checks: Check migration status and fetch projects simultaneously
-            const [migrated, userProjects] = await Promise.all([
-                hasUserMigrated(user.uid),
-                getUserProjects(user.uid)
-            ]);
+            // Start both requests independently
+            const projectsPromise = getUserProjects(user.uid);
+            const migrationPromise = hasUserMigrated(user.uid);
 
-            console.log('Migration status:', migrated);
+            // 1. Wait for projects first. If we have them, we don't strictly need to wait for the migration check.
+            const userProjects = await projectsPromise;
             console.log('Found projects:', userProjects.length);
 
-            // Logic:
-            // 1. If migrated: use fetched projects.
-            // 2. If NOT migrated but has projects: maybe partial state? Assume migrated.
-            // 3. If NOT migrated AND no projects: check if we need to migrate (could be a new user or legacy user).
-
-            if (migrated || userProjects.length > 0) {
+            if (userProjects.length > 0) {
                 setProjects(userProjects);
-            } else {
+                setLoading(false); // Stop loading immediately
+                console.timeEnd('editor-load');
+                return;
+            }
+
+            // 2. Only if no projects found, check migration status
+            console.log('No projects found, checking migration status...');
+            const migrated = await migrationPromise;
+            console.log('Migration status:', migrated);
+
+            if (!migrated) {
                 // Not migrated and no new projects found. This could be a legacy user.
                 console.log('Starting migration check...');
                 setMigrating(true);
@@ -68,8 +80,8 @@ export default function PageClient() {
         } catch (error) {
             console.error('Error loading projects:', error);
         } finally {
+            // Ensure loading is off (if not already handled)
             setLoading(false);
-            console.timeEnd('editor-load');
         }
     }
 

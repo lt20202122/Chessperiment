@@ -620,7 +620,8 @@ export default function Board({
           socket.emit("create_room", { roomId: initialRoomId });
         } else {
           socket.emit("join_room", {
-            roomId: initialRoomId
+            roomId: initialRoomId,
+            pId
           });
         }
       } else if (isComputerMode) {
