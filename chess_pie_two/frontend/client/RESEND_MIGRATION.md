@@ -19,7 +19,7 @@ The feedback feature uses the existing `RESEND_API_KEY` that's already configure
 
 ### Email Destination
 
-Feedback emails are sent to: **contact.chesspie@gmail.com**
+Feedback emails are sent to: **lassethoroe10@gmail.com**
 
 ### How to Test Locally
 
@@ -27,7 +27,7 @@ Feedback emails are sent to: **contact.chesspie@gmail.com**
 2. Run `npm run dev`
 3. Go to http://localhost:3000/en/feedback
 4. Submit feedback
-5. Check contact.chesspie@gmail.com for the email
+5. Check lassethoroe10@gmail.com for the email
 
 ### Resend Dashboard
 
@@ -36,19 +36,23 @@ View sent emails and their status at: https://resend.com/logs
 ## Technical Details
 
 **Old Implementation:**
+
 - Used Nodemailer with Gmail SMTP
 - Required `EMAIL_USER` and `EMAIL_PASSWORD` env vars
 - Needed Gmail App Password setup
 
 **New Implementation:**
+
 - Uses Resend API
 - Requires only `RESEND_API_KEY` env var
 - No email account configuration needed
 
 **File Changed:**
+
 - `src/app/api/feedback/route.ts` - Updated to use Resend
 
 **Dependencies:**
+
 - Removed: `nodemailer`, `@types/nodemailer`
 - Using: `resend` (already installed)
 
@@ -60,16 +64,17 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const { data, error } = await resend.emails.send({
-    from: "Chessperiment Feedback <onboarding@resend.dev>",
-    to: ["contact.chesspie@gmail.com"],
-    subject: "Chessperiment Feedback: Bug Report",
-    html: "...",
+  from: "Chessperiment Feedback <onboarding@resend.dev>",
+  to: ["lassethoroe10@gmail.com"],
+  subject: "Chessperiment Feedback: Bug Report",
+  html: "...",
 });
 ```
 
 ## Troubleshooting
 
 **Email not sending?**
+
 1. Check that `RESEND_API_KEY` exists in `.env.local`
 2. Verify the API key is valid in your Resend account
 3. Check Resend logs at https://resend.com/logs
