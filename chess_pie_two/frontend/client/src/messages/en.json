@@ -11,7 +11,8 @@
         "pieceEditor": "Piece Editor",
         "marketplace": "Marketplace",
         "library": "Library",
-        "about": "About"
+        "about": "About",
+        "feedback": "Feedback"
     },
     "Marketplace": {
         "title": "Marketplace",
@@ -693,6 +694,54 @@
                 "title": "Launch",
                 "description": "Publish to the marketplace or invite friends for a private match."
             }
+        }
+    },
+    "Feedback": {
+        "title": "Share Your Feedback",
+        "subtitle": "Help us improve chessperiment by sharing your thoughts",
+        "selectPrompt": "What would you like to share?",
+        "reportBug": {
+            "title": "Report a Bug",
+            "description": "Found something that's not working? Let us know so we can fix it.",
+            "placeholder": "Describe the bug you encountered..."
+        },
+        "featureSuggestion": {
+            "title": "Feature Suggestion",
+            "description": "Have an idea for a new feature? We'd love to hear it.",
+            "placeholder": "Share your feature idea..."
+        },
+        "generalFeedback": {
+            "title": "General Feedback",
+            "description": "Any other thoughts, comments, or suggestions?",
+            "placeholder": "Share your feedback..."
+        },
+        "submit": "Submit Feedback",
+        "submitting": "Submitting...",
+        "cancel": "Cancel",
+        "thankYou": "Thank you for your feedback!",
+        "thankYouMessage": "We appreciate your input and will review it soon.",
+        "error": "Something went wrong. Please try again.",
+        "emailPlaceholder": "Your email (optional)",
+        "messageLabel": "Message",
+        "backToHome": "Back to home"
+    },
+    "SEO": {
+        "Feedback": {
+            "title": "Feedback",
+            "description": "Share your feedback, report bugs, or suggest new features for chessperiment"
+        },
+        "Footer": {
+            "title": "Frequently Asked Questions",
+            "whatIschessperiment": "What is chessperiment?",
+            "whatIschessperimentAnswer": "chessperiment is a platform for creating and playing custom chess variants. Design unique boards, create custom pieces with special abilities, and play against friends or AI with your own rules.",
+            "isItFree": "Is chessperiment free to use?",
+            "isItFreeAnswer": "Yes! chessperiment is completely free to use. You can create unlimited custom boards and pieces, play games, and share your creations with the community at no cost.",
+            "canIPlayFriends": "Can I play with my friends?",
+            "canIPlayFriendsAnswer": "Absolutely! You can create private game rooms and invite your friends to play your custom chess variants together. Simply share the game link with them.",
+            "legal": "Legal",
+            "about": "About",
+            "privacyPolicy": "Privacy Policy",
+            "legalNotice": "Legal Notice"
         }
     }
 }

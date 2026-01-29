@@ -20,7 +20,8 @@
         "marketplace": "Marktplatz",
         "library": "Bibliothek",
         "notifications": "Benachrichtigungen",
-        "about": "Über uns"
+        "about": "Über uns",
+        "feedback": "Feedback"
     },
     "Marketplace": {
         "title": "Marktplatz",
@@ -691,6 +692,54 @@
                 "title": "Launch",
                 "description": "Im Marketplace veröffentlichen oder Freunde zu einem privaten Match einladen."
             }
+        }
+    },
+    "Feedback": {
+        "title": "Teilen Sie Ihr Feedback",
+        "subtitle": "Helfen Sie uns, chessperiment zu verbessern, indem Sie Ihre Gedanken teilen",
+        "selectPrompt": "Was möchten Sie teilen?",
+        "reportBug": {
+            "title": "Fehler melden",
+            "description": "Haben Sie etwas gefunden, das nicht funktioniert? Lassen Sie es uns wissen, damit wir es beheben können.",
+            "placeholder": "Beschreiben Sie den Fehler, den Sie festgestellt haben..."
+        },
+        "featureSuggestion": {
+            "title": "Feature-Vorschlag",
+            "description": "Haben Sie eine Idee für eine neue Funktion? Wir würden sie gerne hören.",
+            "placeholder": "Teilen Sie Ihre Feature-Idee..."
+        },
+        "generalFeedback": {
+            "title": "Allgemeines Feedback",
+            "description": "Irgendwelche anderen Gedanken, Kommentare oder Vorschläge?",
+            "placeholder": "Teilen Sie Ihr Feedback..."
+        },
+        "submit": "Feedback senden",
+        "submitting": "Wird gesendet...",
+        "cancel": "Abbrechen",
+        "thankYou": "Vielen Dank für Ihr Feedback!",
+        "thankYouMessage": "Wir schätzen Ihren Beitrag und werden ihn bald prüfen.",
+        "error": "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.",
+        "emailPlaceholder": "Ihre E-Mail (optional)",
+        "messageLabel": "Nachricht",
+        "backToHome": "Zurück zur Startseite"
+    },
+    "SEO": {
+        "Feedback": {
+            "title": "Feedback",
+            "description": "Teilen Sie Ihr Feedback, melden Sie Fehler oder schlagen Sie neue Funktionen für chessperiment vor"
+        },
+        "Footer": {
+            "title": "Häufig gestellte Fragen",
+            "whatIschessperiment": "Was ist chessperiment?",
+            "whatIschessperimentAnswer": "chessperiment ist eine Plattform zum Erstellen und Spielen von benutzerdefinierten Schachvarianten. Gestalten Sie einzigartige Bretter, erstellen Sie benutzerdefinierte Figuren mit besonderen Fähigkeiten und spielen Sie mit Ihren eigenen Regeln gegen Freunde oder KI.",
+            "isItFree": "Ist chessperiment kostenlos?",
+            "isItFreeAnswer": "Ja! chessperiment ist vollständig kostenlos nutzbar. Sie können unbegrenzt benutzerdefinierte Bretter und Figuren erstellen, Spiele spielen und Ihre Kreationen kostenlos mit der Community teilen.",
+            "canIPlayFriends": "Kann ich mit meinen Freunden spielen?",
+            "canIPlayFriendsAnswer": "Auf jeden Fall! Sie können private Spielräume erstellen und Ihre Freunde einladen, Ihre benutzerdefinierten Schachvarianten zusammen zu spielen. Teilen Sie einfach den Spiel-Link mit ihnen.",
+            "legal": "Rechtliches",
+            "about": "Über uns",
+            "privacyPolicy": "Datenschutzerklärung",
+            "legalNotice": "Impressum"
         }
     }
 }
