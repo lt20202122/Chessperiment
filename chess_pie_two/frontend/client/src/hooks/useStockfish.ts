@@ -12,6 +12,8 @@ export function useStockfish(roomId: string, difficulty: number = 1300, onBestMo
     onBestMoveRef.current = onBestMove;
   }, [onBestMove]);
 
+  const [error, setError] = useState<string | null>(null);
+
   // Server-side Logic Only
   useEffect(() => {
     if (!socket) return;
@@ -21,8 +23,10 @@ export function useStockfish(roomId: string, difficulty: number = 1300, onBestMo
       // Only call onBestMove if we have a valid move
       if (data && data.bestMove && data.bestMove !== '(none)' && data.bestMove !== null) {
         onBestMoveRef.current(data.bestMove);
+        setError(null);
       } else {
         console.warn('[Stockfish] No valid move received:', data);
+        setError("Stockfish failed to return a move.");
       }
     };
 
@@ -36,6 +40,7 @@ export function useStockfish(roomId: string, difficulty: number = 1300, onBestMo
 
   const requestMove = useCallback((_fenOverride?: string) => {
     setIsThinking(true);
+    setError(null);
 
     if (socket && roomId) {
       // SECURITY: Only send roomId and difficulty, server provides the FEN from its own state
@@ -46,5 +51,5 @@ export function useStockfish(roomId: string, difficulty: number = 1300, onBestMo
     }
   }, [roomId, difficulty, socket]);
 
-  return { isReady, isThinking, requestMove };
+  return { isReady, isThinking, requestMove, error };
 }

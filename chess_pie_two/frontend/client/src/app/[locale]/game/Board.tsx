@@ -305,9 +305,9 @@ export default function Board({
     } catch (e) { }
   }, [chess]);
 
-  const startComputerGame = useCallback((elo = 1200) => {
-    // Prevent multiple initializations if already in a running computer game
-    if (gameMode === 'computer' && gameStatus === 'playing' && myColor === 'white') return;
+  const startComputerGame = useCallback((elo = 1200, forceNew = false) => {
+    // Prevent only if we are already playing AND NOT forcing new
+    if (!forceNew && gameMode === 'computer' && gameStatus === 'playing' && myColor === 'white') return;
 
     let pId = localStorage.getItem("chess_player_id");
     if (!pId) {
@@ -333,11 +333,11 @@ export default function Board({
     setCurrentTurn('w');
     setDifficulty(elo);
     setCurrentRoom(compRoomId);
-    setPlayerCount(1);
+    setPlayerCount(2);
 
     // Join the computer game room on the server
     if (socket) {
-      socket.emit("join_room", { roomId: compRoomId, isComputer: true });
+      socket.emit("join_room", { roomId: compRoomId, isComputer: true, pId, forceNew });
     }
   }, [chess, updateBoardState, gameMode, gameStatus, myColor, socket]);
 
@@ -347,6 +347,7 @@ export default function Board({
     const to = move.substring(2, 4);
     const promotion = move.length > 4 ? move.substring(4, 5) : undefined;
     try {
+      // Ensure we are in sync with the move
       const result = chess.move({ from, to, promotion: promotion || 'q' });
       if (result) {
         const newFen = chess.fen();
@@ -374,11 +375,22 @@ export default function Board({
           }
           setTimeout(() => setGameStatus("ended"), 2000);
         }
+      } else {
+        console.error("Stockfish returned illegal move:", move);
       }
-    } catch (e) { }
+    } catch (e) {
+      console.error("Error applying Stockfish move:", e);
+    }
   }, [chess, updateBoardState, myColor, t]);
 
-  const { requestMove, isReady } = useStockfish(currentRoom, difficulty, onBestMove);
+  const { requestMove, isReady, error: stockfishError } = useStockfish(currentRoom, difficulty, onBestMove);
+
+  useEffect(() => {
+    if (stockfishError) {
+      setToastMessage(stockfishError);
+      setShowToast(true);
+    }
+  }, [stockfishError]);
 
   useEffect(() => {
     if (gameMode === 'computer' && isReady && gameStatus === 'playing') {
@@ -645,7 +657,8 @@ export default function Board({
           socket.emit("create_room", { roomId: initialRoomId });
         } else {
           socket.emit("join_room", {
-            roomId: initialRoomId
+            roomId: initialRoomId,
+            pId
           });
         }
       } else if (isComputerMode) {
@@ -670,11 +683,13 @@ export default function Board({
   }, [socket]);
 
   const handleNextGame = useCallback(() => {
-    if (socket) {
+    if (gameMode === 'computer') {
+      startComputerGame(difficulty, true);
+    } else if (socket) {
       socket.emit("find_next_game");
       // Status is handled by quick_search_started event
     }
-  }, [socket]);
+  }, [socket, gameMode, startComputerGame, difficulty]);
 
   const boardContainerRef = useRef<HTMLDivElement>(null);
 
@@ -722,10 +737,15 @@ export default function Board({
 
     console.log(`[Board] Executing promotion: ${type} (${code}) for move: ${promotionMove.from}->${promotionMove.to}`);
 
-    if (gameMode === "online") {
+    if (gameMode === "online" || gameMode === "computer") {
       // Optimistic Visual Update for Promotion
       const mover = boardPieces.find(p => p.position === promotionMove.from);
       if (mover) {
+        // Update local chess instance optimistically
+        try {
+          chess.move({ from: promotionMove.from, to: promotionMove.to, promotion: code });
+        } catch (e) { console.error("Optimistic chess update failed", e); }
+
         const newPieces = boardPieces
           .filter(p => p.position !== promotionMove.to && p.position !== promotionMove.from)
           .map(p => ({ ...p }));
@@ -750,6 +770,8 @@ export default function Board({
         setLastMoveTo(promotionMove.to);
         setCurrentTurn(prev => prev === 'w' ? 'b' : 'w');
         new Audio("/sounds/move-self.mp3").play().catch(() => { });
+
+        // Update fen override for optimistic state? No, requestMove uses chess.fen() which we just updated.
       }
 
       if (socket) {
@@ -767,6 +789,11 @@ export default function Board({
       // Optimistic Visual Update
       const mover = boardPieces.find(p => p.position === from);
       if (mover) {
+        // Update local chess instance optimistically
+        try {
+          chess.move({ from, to, promotion: promotion || 'q' });
+        } catch (e) { console.error("Optimistic chess update failed", e); }
+
         const newPieces = boardPieces
           .filter(p => p.position !== to && p.position !== from)
           .map(p => ({ ...p }));

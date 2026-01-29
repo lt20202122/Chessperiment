@@ -63,15 +63,82 @@ if (typeof loadEngine !== "function") {
 // Import Stockfish pool for efficient engine management
 import { stockfishPool } from "./stockfish-pool.js";
 
-// Redis client initialization
-const redisClient = createClient({
-  url: process.env.REDIS_URL || "redis://localhost:6379",
-});
+// Redis client initialization (optional for development)
+let redisClient = null;
+let redisEnabled = false;
 
-redisClient.on("error", (err) => console.error("Redis Client Error", err));
+async function initRedis() {
+  return new Promise((resolve) => {
+    let client = null;
+    let timeoutReached = false;
+    let connectionSucceeded = false;
 
-await redisClient.connect();
-console.log("Connected to Redis");
+    const timeout = setTimeout(() => {
+      timeoutReached = true;
+      if (!connectionSucceeded) {
+        console.warn(
+          "⚠️  Redis connection timeout - running without persistence. Multiplayer matchmaking will be disabled.",
+        );
+        console.warn(
+          "   For full functionality, start Redis: docker run -d -p 6379:6379 redis",
+        );
+        // Disconnect the client if still trying
+        if (client) {
+          try {
+            client.disconnect().catch(() => {});
+          } catch (e) {}
+        }
+        resolve(false);
+      }
+    }, 3000); // 3 second timeout
+
+    (async () => {
+      try {
+        client = createClient({
+          url: process.env.REDIS_URL || "redis://localhost:6379",
+        });
+
+        client.on("error", (err) => {
+          // Suppress error logs - we'll handle connection failure gracefully
+          if (!timeoutReached && !redisEnabled) {
+            // Only log the first error
+            console.debug("Redis connection attempt failed");
+          }
+        });
+
+        await client.connect();
+        connectionSucceeded = true;
+
+        if (!timeoutReached) {
+          clearTimeout(timeout);
+          redisClient = client;
+          redisEnabled = true;
+          console.log("✅ Connected to Redis");
+          resolve(true);
+        } else {
+          // Connection succeeded after timeout - disconnect it
+          try {
+            await client.disconnect();
+          } catch (e) {}
+          resolve(false);
+        }
+      } catch (err) {
+        if (!timeoutReached) {
+          clearTimeout(timeout);
+          console.warn(
+            "⚠️  Redis not available - running without persistence. Multiplayer matchmaking will be disabled.",
+          );
+          console.warn(
+            "   For full functionality, start Redis: docker run -d -p 6379:6379 redis",
+          );
+          resolve(false);
+        }
+      }
+    })();
+  });
+}
+
+await initRedis();
 
 const app = express();
 app.use(cors());
@@ -109,7 +176,7 @@ const playerToRoom = new Map();
 
 // Redis helpers
 async function saveGame(game) {
-  if (!game || !game.roomId) return;
+  if (!game || !game.roomId || !redisEnabled || !redisClient) return;
   try {
     const gameData = JSON.stringify({
       roomId: game.roomId,
@@ -131,6 +198,7 @@ async function saveGame(game) {
 
 async function getGame(roomId) {
   if (games.has(roomId)) return games.get(roomId);
+  if (!redisEnabled || !redisClient) return null;
   try {
     const data = await redisClient.get(`game:${roomId}`);
     if (data) {
@@ -154,6 +222,10 @@ const playerToSocket = new Map();
 
 // Redis search queue helper
 async function addToSearchQueue(playerId) {
+  if (!redisEnabled || !redisClient) {
+    console.warn("Matchmaking disabled - Redis not available");
+    return;
+  }
   try {
     await redisClient.rPush("searchQueue", playerId);
   } catch (err) {
@@ -162,8 +234,9 @@ async function addToSearchQueue(playerId) {
 }
 
 async function removeFromQueue(playerId) {
+  if (!redisEnabled || !redisClient) return;
   try {
-    // Note: LREM removes occurances. 0 means all.
+    // Note: LREM removes occurrences. 0 means all.
     await redisClient.lRem("searchQueue", 0, playerId);
     console.log("Removed player from search queue:", playerId);
     const sid = playerToSocket.get(playerId);
@@ -174,6 +247,7 @@ async function removeFromQueue(playerId) {
 }
 
 async function matchmake() {
+  if (!redisEnabled || !redisClient) return;
   try {
     const queueLen = await redisClient.lLen("searchQueue");
     if (queueLen < 2) return;
@@ -279,11 +353,12 @@ const checkGameStatus = (game) => {
 
 // Redis mapping helper
 async function savePlayerRoom(playerId, roomId) {
+  playerToRoom.set(playerId, roomId);
+  if (!redisEnabled || !redisClient) return;
   try {
     await redisClient.set(`playerRoom:${playerId}`, roomId, {
       EX: 3600 * 24,
     });
-    playerToRoom.set(playerId, roomId);
   } catch (err) {
     console.error("Error saving playerRoom to Redis:", err);
   }
@@ -291,6 +366,7 @@ async function savePlayerRoom(playerId, roomId) {
 
 async function getPlayerRoom(playerId) {
   if (playerToRoom.has(playerId)) return playerToRoom.get(playerId);
+  if (!redisEnabled || !redisClient) return null;
   try {
     const roomId = await redisClient.get(`playerRoom:${playerId}`);
     if (roomId) {
@@ -423,11 +499,12 @@ io.on("connection", (socket) => {
           await savePlayerRoom(playerId, roomId);
           // Cleanup old mapping potentially, but Redis handles expiry
           playerToRoom.delete(oldPlayerId);
-          await redisClient.del(`playerRoom:${oldPlayerId}`);
+          if (redisEnabled && redisClient) {
+            await redisClient.del(`playerRoom:${oldPlayerId}`);
+          }
         }
       }
-      const qIdx = searchQueue.indexOf(oldPlayerId);
-      if (qIdx > -1) searchQueue[qIdx] = playerId;
+      // Note: searchQueue is now managed in Redis, not in-memory
     }
     const currentActiveSocket = playerToSocket.get(playerId);
     if (currentActiveSocket && currentActiveSocket !== socket.id) {
@@ -533,11 +610,11 @@ io.on("connection", (socket) => {
 
       let game = await getGame(compRoomId);
 
-      // If no game exists OR if it was already ended, we start a fresh session
+      // If no game exists OR if it was already ended OR if forced new
       // This ensures "Play Again" or fresh starts work correctly for Stockfish.
-      if (!game || game.status === "ended") {
+      if (!game || game.status === "ended" || data.forceNew) {
         console.log(
-          `[Computer Game] Initializing fresh state for Room: ${compRoomId}`,
+          `[Computer Game] Initializing fresh state for Room: ${compRoomId} (forceNew: ${data.forceNew})`,
         );
         game = new Game(playerId);
         game.roomId = compRoomId;
