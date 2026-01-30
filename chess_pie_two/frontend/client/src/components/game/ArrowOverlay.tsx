@@ -296,14 +296,14 @@ export default function ArrowOverlay({
         {/* Arrowhead marker - main */}
         <marker
           id="arrowhead"
-          markerWidth={squareSize * 0.3}
-          markerHeight={squareSize * 0.3}
-          refX={squareSize * 0.15}
-          refY={squareSize * 0.15}
+          markerWidth={squareSize * 0.15}
+          markerHeight={squareSize * 0.15}
+          refX={squareSize * 0.075}
+          refY={squareSize * 0.075}
           orient="auto"
         >
           <polygon
-            points={`0,0 ${squareSize * 0.3},${squareSize * 0.15} 0,${squareSize * 0.3}`}
+            points={`0,0 ${squareSize * 0.15},${squareSize * 0.075} 0,${squareSize * 0.15}`}
             fill="rgba(255, 170, 0, 0.85)"
           />
         </marker>
@@ -311,14 +311,14 @@ export default function ArrowOverlay({
         {/* Arrowhead marker - shadow */}
         <marker
           id="arrowhead-shadow"
-          markerWidth={squareSize * 0.32}
-          markerHeight={squareSize * 0.32}
-          refX={squareSize * 0.16}
-          refY={squareSize * 0.16}
+          markerWidth={squareSize * 0.16}
+          markerHeight={squareSize * 0.16}
+          refX={squareSize * 0.08}
+          refY={squareSize * 0.08}
           orient="auto"
         >
           <polygon
-            points={`0,0 ${squareSize * 0.32},${squareSize * 0.16} 0,${squareSize * 0.32}`}
+            points={`0,0 ${squareSize * 0.16},${squareSize * 0.08} 0,${squareSize * 0.16}`}
             fill="rgba(0, 0, 0, 0.3)"
           />
         </marker>
@@ -326,14 +326,14 @@ export default function ArrowOverlay({
         {/* Arrowhead marker - temporary (while drawing) */}
         <marker
           id="arrowhead-temp"
-          markerWidth={squareSize * 0.3}
-          markerHeight={squareSize * 0.3}
-          refX={squareSize * 0.15}
-          refY={squareSize * 0.15}
+          markerWidth={squareSize * 0.15}
+          markerHeight={squareSize * 0.15}
+          refX={squareSize * 0.075}
+          refY={squareSize * 0.075}
           orient="auto"
         >
           <polygon
-            points={`0,0 ${squareSize * 0.3},${squareSize * 0.15} 0,${squareSize * 0.3}`}
+            points={`0,0 ${squareSize * 0.15},${squareSize * 0.075} 0,${squareSize * 0.15}`}
             fill="rgba(255, 170, 0, 0.6)"
           />
         </marker>
