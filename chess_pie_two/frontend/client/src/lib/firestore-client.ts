@@ -24,9 +24,20 @@ export type { GameResult, UserStats, SavedBoard, PieceSet, CustomPiece };
 export async function saveProject(project: Project): Promise<string> {
     const projectsRef = collection(db, 'projects');
     
+    // Serialize custom pieces like on the server side
+    const serializedProject = {
+        ...project,
+        customPieces: (project.customPieces || []).map(piece => ({
+            ...piece,
+            pixelsWhite: typeof piece.pixelsWhite !== 'string' ? JSON.stringify(piece.pixelsWhite) : piece.pixelsWhite,
+            pixelsBlack: typeof piece.pixelsBlack !== 'string' ? JSON.stringify(piece.pixelsBlack) : piece.pixelsBlack,
+            logic: (piece.logic !== undefined && typeof piece.logic !== 'string') ? JSON.stringify(piece.logic) : piece.logic
+        }))
+    };
+
     if (project.id) {
         const projectDoc = doc(projectsRef, project.id);
-        const { id, ...projectData } = project;
+        const { id, ...projectData } = serializedProject as any;
         await updateDoc(projectDoc, {
             ...projectData,
             updatedAt: Timestamp.now(),
@@ -46,7 +57,7 @@ export async function saveProject(project: Project): Promise<string> {
             // Race the write against the timeout
             await Promise.race([
                 setDoc(newProjectDoc, {
-                    ...project,
+                    ...serializedProject,
                     createdAt: Timestamp.now(),
                     updatedAt: Timestamp.now(),
                 }),
@@ -79,6 +90,12 @@ export async function getUserProjects(userId: string): Promise<Project[]> {
         return {
             id: doc.id,
             ...data,
+            customPieces: (data.customPieces || []).map((piece: any) => ({
+                ...piece,
+                pixelsWhite: typeof piece.pixelsWhite === 'string' ? JSON.parse(piece.pixelsWhite) : piece.pixelsWhite,
+                pixelsBlack: typeof piece.pixelsBlack === 'string' ? JSON.parse(piece.pixelsBlack) : piece.pixelsBlack,
+                logic: typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic,
+            })),
             createdAt: data.createdAt?.toDate() || new Date(),
             updatedAt: data.updatedAt?.toDate() || new Date(),
         } as Project;
@@ -100,6 +117,12 @@ export async function getProject(projectId: string, userId?: string): Promise<Pr
     return {
         id: snapshot.id,
         ...data,
+        customPieces: (data.customPieces || []).map((piece: any) => ({
+            ...piece,
+            pixelsWhite: typeof piece.pixelsWhite === 'string' ? JSON.parse(piece.pixelsWhite) : piece.pixelsWhite,
+            pixelsBlack: typeof piece.pixelsBlack === 'string' ? JSON.parse(piece.pixelsBlack) : piece.pixelsBlack,
+            logic: typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic,
+        })),
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
     } as Project;

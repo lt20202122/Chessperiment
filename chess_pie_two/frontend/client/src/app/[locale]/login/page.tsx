@@ -3,6 +3,8 @@ import { bungee } from "@/lib/fonts";
 import type { Metadata } from "next";
 import { generateHreflangs } from '@/lib/hreflang';
 import { getTranslations } from 'next-intl/server';
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = await params;
@@ -42,6 +44,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function LoginPageServerSide({ params }: { params: Promise<{ locale: string }> }) {
     const { locale } = await params;
+
+    const session = await auth();
+    if (session) {
+        redirect(`/${locale}`);
+    }
+
     const t = await getTranslations({ locale, namespace: 'SEO.Login' });
 
     return (

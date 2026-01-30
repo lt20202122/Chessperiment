@@ -4,15 +4,10 @@ import { useSession } from "next-auth/react"
 import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
 import { bungee } from "@/lib/fonts";
-import { Trophy, Target, TrendingUp, Calendar } from "lucide-react"
+import { Trophy, Target, TrendingUp, Calendar, Edit2, Trash2, Check, X, AlertTriangle } from "lucide-react"
 import type { Metadata } from "next"
 import { generateHreflangs } from '@/lib/hreflang';
 import Image from "next/image";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import LibraryGrid from "@/components/editor/LibraryGrid";
-import { getUserBoardsAction } from "@/app/actions/library";
-import { SavedBoard } from "@/lib/firestore";
-import { Library, Edit2, Trash2, Check, X, AlertTriangle } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { updateUserNameAction, deleteUserAccountAction } from "@/app/actions/user";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -59,7 +54,6 @@ export default function ProfilePage() {
     const t = useTranslations("Profile")
     const [stats, setStats] = useState<UserStats | null>(null)
     const [history, setHistory] = useState<GameHistoryItem[]>([])
-    const [boards, setBoards] = useState<SavedBoard[]>([])
     const [loading, setLoading] = useState(true)
     const [isEditingName, setIsEditingName] = useState(false)
     const [newName, setNewName] = useState("")
@@ -74,10 +68,9 @@ export default function ProfilePage() {
 
     const fetchUserData = async () => {
         try {
-            const [statsRes, historyRes, boardsData] = await Promise.all([
+            const [statsRes, historyRes] = await Promise.all([
                 fetch("/api/stats"),
-                fetch("/api/history?limit=10"),
-                getUserBoardsAction()
+                fetch("/api/history?limit=10")
             ])
 
             if (statsRes.ok) {
@@ -89,8 +82,6 @@ export default function ProfilePage() {
                 const historyData = await historyRes.json()
                 setHistory(historyData)
             }
-
-            setBoards(boardsData)
             if (session?.user?.name) {
                 setNewName(session.user.name)
             }
@@ -277,82 +268,54 @@ export default function ProfilePage() {
                     </DialogContent>
                 </Dialog>
 
-                <Tabs defaultValue="activity" className="w-full">
-                    <TabsList className="bg-white/5 border border-white/10 p-1 rounded-2xl mb-8">
-                        <TabsTrigger
-                            value="activity"
-                            className="flex-1 py-3 rounded-xl data-[state=active]:bg-amber-500 data-[state=active]:text-bg font-bold flex items-center gap-2"
-                        >
-                            <TrendingUp size={18} />
-                            Activity
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="library"
-                            className="flex-1 py-3 rounded-xl data-[state=active]:bg-amber-500 data-[state=active]:text-bg font-bold flex items-center gap-2"
-                        >
-                            <Library size={18} />
-                            Board Library
-                            {boards.length > 0 && (
-                                <span className="bg-white/20 px-2 py-0.5 rounded-full text-[10px]">
-                                    {boards.length}
-                                </span>
-                            )}
-                        </TabsTrigger>
-                    </TabsList>
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <StatCard
+                            icon={<Trophy size={32} />}
+                            label={t("wins")}
+                            value={stats?.wins || 0}
+                            color="text-green-400"
+                        />
+                        <StatCard
+                            icon={<Target size={32} />}
+                            label={t("gamesPlayed")}
+                            value={stats?.gamesPlayed || 0}
+                            color="text-blue-400"
+                        />
+                        <StatCard
+                            icon={<TrendingUp size={32} />}
+                            label={t("winRate")}
+                            value={`${winRate}%`}
+                            color="text-amber-400"
+                        />
+                        <StatCard
+                            icon={<Calendar size={32} />}
+                            label={t("rating")}
+                            value={stats?.rating || 1500}
+                            color="text-purple-400"
+                        />
+                    </div>
 
-                    <TabsContent value="activity" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <StatCard
-                                icon={<Trophy size={32} />}
-                                label={t("wins")}
-                                value={stats?.wins || 0}
-                                color="text-green-400"
-                            />
-                            <StatCard
-                                icon={<Target size={32} />}
-                                label={t("gamesPlayed")}
-                                value={stats?.gamesPlayed || 0}
-                                color="text-blue-400"
-                            />
-                            <StatCard
-                                icon={<TrendingUp size={32} />}
-                                label={t("winRate")}
-                                value={`${winRate}%`}
-                                color="text-amber-400"
-                            />
-                            <StatCard
-                                icon={<Calendar size={32} />}
-                                label={t("rating")}
-                                value={stats?.rating || 1500}
-                                color="text-purple-400"
-                            />
-                        </div>
+                    {/* Recent Games */}
+                    <div className="bg-islands/70 backdrop-blur-xl border border-amber-400/20 shadow-xl rounded-3xl p-8">
+                        <h2 className="text-2xl font-bold text-amber-700 dark:text-amber-400 mb-6 font-primary">
+                            {t("recentGames")}
+                        </h2>
 
-                        {/* Recent Games */}
-                        <div className="bg-islands/70 backdrop-blur-xl border border-amber-400/20 shadow-xl rounded-3xl p-8">
-                            <h2 className="text-2xl font-bold text-amber-700 dark:text-amber-400 mb-6 font-primary">
-                                {t("recentGames")}
-                            </h2>
-
-                            {history.length === 0 ? (
-                                <p className="text-amber-400/60 text-center py-8">
-                                    {t("noGamesYet")}
-                                </p>
-                            ) : (
-                                <div className="space-y-4">
-                                    {history.map((game) => (
-                                        <GameHistoryCard key={game.id} game={game} />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="library" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <LibraryGrid initialBoards={boards} initialSets={[]} />
-                    </TabsContent>
-                </Tabs>
+                        {history.length === 0 ? (
+                            <p className="text-amber-400/60 text-center py-8">
+                                {t("noGamesYet")}
+                            </p>
+                        ) : (
+                            <div className="space-y-4">
+                                {history.map((game) => (
+                                    <GameHistoryCard key={game.id} game={game} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </>
     );

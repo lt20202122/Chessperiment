@@ -52,7 +52,7 @@ export default function Btn() {
                         caretColor: "transparent",
                     }}
                     onClick={() => {
-                        router.push("/editor/board")
+                        router.push("/editor")
                     }}>
                     <div className="relative z-10 flex items-center justify-center gap-4 w-full h-full bg-black/20 rounded-[10px]">
                         <span>{t('create')}</span>

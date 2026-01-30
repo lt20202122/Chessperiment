@@ -112,7 +112,7 @@ export default async function MarketplaceItemPage({ params }: Props) {
 
                                 <button className="w-full bg-amber-400 hover:bg-amber-300 text-bg text-lg font-bold py-4 rounded-xl transition-all transform active:scale-[0.98] shadow-lg shadow-amber-400/20 flex items-center justify-center gap-2">
                                     <ShoppingCart size={24} />
-                                    {item.price === 0 ? t('addToLibrary') : t('buyNow')}
+                                    {item.price === 0 ? t('importToProject') : t('buyNow')}
                                 </button>
                             </div>
                         </div>

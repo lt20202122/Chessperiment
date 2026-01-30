@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Project } from '@/types/Project';
-import { getUserProjects } from '@/lib/firestore-client';
+import { getUserProjectsAction } from '@/app/actions/editor';
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Plus, Star } from 'lucide-react';
@@ -31,8 +31,10 @@ export default function ProjectSelectModal({ isOpen, onClose, onSelect, title }:
         if (!user) return;
         setLoading(true);
         try {
-            const userProjects = await getUserProjects(user.uid);
-            setProjects(userProjects);
+            const result = await getUserProjectsAction();
+            if (result.success && result.data) {
+                setProjects(result.data);
+            }
         } catch (error) {
             console.error('Error loading projects:', error);
         } finally {

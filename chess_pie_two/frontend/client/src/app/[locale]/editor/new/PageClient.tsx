@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Project } from '@/types/Project';
-import { saveProject } from '@/lib/firestore-client';
+import { saveProjectAction } from '@/app/actions/editor';
 import { Loader2, ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -46,8 +46,13 @@ export default function PageClient() {
                 customPieces: []
             };
 
-            const projectId = await saveProject(newProject as Project);
-            router.push(`/editor/${projectId}`);
+            const result = await saveProjectAction(newProject as Project);
+            if (result.success && result.projectId) {
+                router.push(`/editor/${result.projectId}/board-editor`);
+            } else {
+                console.error('Failed to create project:', result.error);
+                setIsSaving(false);
+            }
         } catch (error) {
             console.error('Error creating project:', error);
             setIsSaving(false);

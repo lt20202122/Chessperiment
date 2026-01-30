@@ -41,7 +41,8 @@ interface BoardEditorProps {
         gridType?: 'square' | 'hex';
         activeSquares: string[];
         placedPieces: Record<string, { type: string; color: string }>;
-    }
+    };
+    onDeselect?: () => void;
 }
 
 // --- Memoized Square Component ---
@@ -57,6 +58,7 @@ const EditorSquare = React.memo(({
     onMouseDown,
     onMouseEnter,
     onContextMenu,
+    onDrop,
     customCollection,
     coord
 }: {
@@ -71,6 +73,7 @@ const EditorSquare = React.memo(({
     onMouseDown: (coord: Coordinate, e: React.MouseEvent | React.TouchEvent) => void,
     onMouseEnter: (coord: Coordinate) => void,
     onContextMenu: (coord: Coordinate, e: React.MouseEvent) => void,
+    onDrop: (coord: Coordinate, e: React.DragEvent) => void,
     customCollection?: Record<string, any>,
     coord: Coordinate
 }) => {
@@ -100,6 +103,11 @@ const EditorSquare = React.memo(({
             onMouseDown={(e) => onMouseDown(coord, e)}
             onTouchStart={(e) => onMouseDown(coord, e)}
             onMouseEnter={() => onMouseEnter(coord)}
+            onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            }}
+            onDrop={(e) => onDrop(coord, e)}
         >
             {/* Piece rendering */}
             {isActive && piece && (
@@ -143,7 +151,7 @@ const EditorSquare = React.memo(({
     );
 });
 
-export default function BoardEditor({ editMode, selectedPiece, boardStyle, generateBoardData, customCollection, initialData }: BoardEditorProps) {
+export default function BoardEditor({ editMode, selectedPiece, boardStyle, generateBoardData, customCollection, initialData, onDeselect }: BoardEditorProps) {
     const t = useTranslations('Editor.Board');
     const [rows, setRows] = useState<number>(() => initialData?.rows || Number(localStorage.getItem('rows') || 8));
     const [cols, setCols] = useState<number>(() => initialData?.cols || Number(localStorage.getItem('cols') || 8));
@@ -248,6 +256,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     useEffect(() => { isRightClickPaintingRef.current = isRightClickPainting; }, [isRightClickPainting]);
 
     const containerRef = useRef<HTMLDivElement>(null);
+    const hasInitializedRef = useRef(false);
 
 
     // Refs for stable state access in event listeners
@@ -272,6 +281,11 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     }, [rows, cols, activeSquares.size, grid]);
 
     useEffect(() => {
+        if (!hasInitializedRef.current) {
+            hasInitializedRef.current = true;
+            return;
+        }
+
         const timer = setTimeout(() => {
             localStorage.setItem('rows', rows.toString());
             localStorage.setItem('cols', cols.toString());
@@ -505,17 +519,18 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         document.removeEventListener('touchend', handlePointerUp);
     };
 
-    const getSymmetricSquares = (coord: Coordinate): Coordinate[] => {
-        if (symmetry === 'none') return [];
-        return grid.getSymmetryPoints(coord, symmetry, { rows: rowsRef.current, cols: colsRef.current });
-    };
+    const getSymmetricSquares = useCallback((coord: Coordinate) => {
+        return symmetry !== 'none'
+            ? grid.getSymmetryPoints(coord, symmetry, { rows, cols })
+            : [];
+    }, [grid, symmetry, rows, cols]);
 
-    const handleSquareAction = useCallback((coord: Coordinate, isInitialClick: boolean = false) => {
+    const handleSquareAction = useCallback((coord: Coordinate, isInitial: boolean) => {
         const key = grid.coordToString(coord);
         const symSquares = getSymmetricSquares(coord);
 
         if (editMode === 'shape') {
-            if (isInitialClick) {
+            if (isInitial) {
                 const newValue = !activeSquaresRef.current.has(key);
                 setPaintValue(newValue);
                 setActiveSquares(prev => {
@@ -579,7 +594,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                 });
             }
         }
-    }, [editMode, selectedPiece.type, selectedPiece.color, symmetry, grid]);
+    }, [editMode, selectedPiece.type, selectedPiece.color, symmetry, grid, getSymmetricSquares]);
 
     const handleMouseDown = useCallback((coord: Coordinate, e: React.MouseEvent | React.TouchEvent) => {
         // Allow left click (button 0) or undefined button (touch)
@@ -627,6 +642,38 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         // For now, simple tapping works with proper touchstart integration.
     }, []);
 
+    const handleDrop = useCallback((coord: Coordinate, e: React.DragEvent) => {
+        e.preventDefault();
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('piece'));
+            if (data && data.type && data.color) {
+                const key = grid.coordToString(coord);
+                if (activeSquaresRef.current.has(key)) {
+                    const pieceToPlace = {
+                        type: data.type,
+                        color: data.color,
+                        size: squareSizeRef.current * 0.8
+                    };
+
+                    setPlacedPieces(prev => {
+                        const next = { ...prev, [key]: pieceToPlace };
+                        const symSquares = getSymmetricSquares(coord);
+
+                        symSquares.forEach((s: Coordinate) => {
+                            const symKey = grid.coordToString(s);
+                            if (activeSquaresRef.current.has(symKey)) {
+                                next[symKey] = { ...pieceToPlace };
+                            }
+                        });
+                        return next;
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('Drop error:', err);
+        }
+    }, [grid, symmetry, getSymmetricSquares]);
+
     useEffect(() => {
         const handleGlobalMouseUp = () => {
             if (isPainting || isRightClickPainting) {
@@ -642,7 +689,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
             window.removeEventListener('mouseup', handleGlobalMouseUp);
             window.removeEventListener('touchend', handleGlobalMouseUp);
         };
-    }, [isPainting, isRightClickPainting, gridType]);
+    }, [isPainting, isRightClickPainting]);
 
     const handleSquareClick = (coord: Coordinate, e: React.MouseEvent) => {
         // We now handle this via mousedown/mouseenter for drag support
@@ -679,19 +726,8 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     }, [editMode, symmetry, grid, getSymmetricSquares]);
 
     const clearBoard = () => {
-        setActiveSquares(new Set());
         setPlacedPieces({});
-        saveToHistory({}, new Set(), rows, cols, gridType);
-    };
-
-    const resetToStandard = () => {
-        const initialTiles = grid.generateInitialGrid(8, 8);
-        const newSet = new Set<string>(initialTiles.map(t => grid.coordToString(t)));
-        setRows(8);
-        setCols(8);
-        setActiveSquares(newSet);
-        setPlacedPieces({});
-        saveToHistory({}, newSet, 8, 8, gridType);
+        saveToHistory({}, activeSquares, rows, cols, gridType);
     };
 
     const [showHexGuide, setShowHexGuide] = useState(false);
@@ -746,7 +782,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     return (
         <div ref={containerRef} className="flex flex-col items-center animate-in fade-in zoom-in duration-500 w-full">
             {/* Controls Overlay */}
-            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mb-8 px-4 md:px-6 py-3 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-2xl border border-stone-200 dark:border-white/10 shadow-xl max-w-[95vw]">
+            <div className="relative z-50 flex flex-wrap items-center justify-center gap-4 md:gap-6 mb-8 px-4 md:px-6 py-3 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md rounded-2xl border border-stone-200 dark:border-white/10 shadow-xl max-w-[95vw]">
                 {/* Grid Type Selector */}
                 <div className="flex items-center gap-2">
                     <span className="hidden sm:inline text-[10px] text-stone-500 dark:text-white/40 uppercase tracking-widest font-bold mr-2">{t('gridType')}</span>
@@ -822,12 +858,6 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     >
                         {t('clear')}
                     </button>
-                    <button
-                        onClick={resetToStandard}
-                        className="px-3 sm:px-4 py-2 rounded-xl bg-accent/10 border border-accent/20 text-accent text-[10px] sm:text-xs font-bold hover:bg-accent hover:text-white transition-all active:scale-95"
-                    >
-                        {t('standard')}
-                    </button>
                     {gridType === 'hex' && (
                         <button
                             onClick={() => setShowHexGuide(!showHexGuide)}
@@ -879,7 +909,17 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                 }}
                 onContextMenu={(e) => e.preventDefault()}
             >
-                <div className="relative w-full h-full">
+                {/* deselect area */}
+                <div
+                    className="absolute inset-[-2000px] z-0"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                            onDeselect?.();
+                        }
+                    }}
+                />
+
+                <div className="relative w-full h-full z-10">
                     {grid.generateInitialGrid(rows, cols).map((coord) => {
                         const key = grid.coordToString(coord);
                         const pos = grid.getPixelPosition(coord, SQUARE_SIZE);
@@ -909,6 +949,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                                     onMouseDown={handleMouseDown}
                                     onMouseEnter={handleMouseEnter}
                                     onContextMenu={removePiece}
+                                    onDrop={handleDrop}
                                     customCollection={customCollection}
                                 />
                             </div>

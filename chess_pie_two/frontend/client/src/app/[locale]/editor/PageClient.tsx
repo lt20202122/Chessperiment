@@ -4,9 +4,14 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Project } from '@/types/Project';
-import { getUserProjects, hasUserMigrated, deleteProject, toggleProjectStar } from '@/lib/firestore-client';
-import { migrateUserAction } from '@/app/actions/editor';
-import { Plus, Loader2, Sparkles } from 'lucide-react';
+import {
+    migrateUserAction,
+    getUserProjectsAction,
+    deleteProjectAction,
+    toggleProjectStarAction,
+    saveProjectAction
+} from '@/app/actions/editor';
+import { Plus, Sparkles, Loader2 } from 'lucide-react';
 import ProjectList from '@/components/editor/ProjectList';
 
 export default function PageClient() {
@@ -19,18 +24,12 @@ export default function PageClient() {
     const isLoadingRef = useRef(false);
 
     useEffect(() => {
-        console.log('[PageClient] Mounted. Auth Loading:', authLoading, 'User:', user?.uid);
         if (authLoading) return;
-
         if (!user) {
-            console.log('[PageClient] No user, redirecting to login');
             router.push('/login');
             return;
         }
 
-        // Prevent double loading if already in progress or if user hasn't changed.
-        // Actually, since user is in dependency array, we do want to reload if user changes.
-        // But we want to avoid double-firing on initial mount if react strict mode is on.
         loadProjects();
     }, [user, authLoading, router]);
 
@@ -43,50 +42,73 @@ export default function PageClient() {
         try {
             console.log('Loading user data for:', user.uid);
 
-            // Start both requests independently
-            const projectsPromise = getUserProjects(user.uid);
-            const migrationPromise = hasUserMigrated(user.uid);
+            // Call server action to get projects
+            // This is much faster than client-side Firestore because it uses the Admin SDK
+            const result = await getUserProjectsAction();
 
-            // 1. Wait for projects first. If we have them, we don't strictly need to wait for the migration check.
-            const userProjects = await projectsPromise;
-            console.log('Found projects:', userProjects.length);
-
-            if (userProjects.length > 0) {
-                setProjects(userProjects);
-                setLoading(false); // Stop loading immediately
+            if (result.success && result.data && result.data.length > 0) {
+                console.log('Found projects via server action:', result.data.length);
+                setProjects(result.data);
+                setLoading(false);
                 console.timeEnd('editor-load');
                 return;
             }
 
-            // 2. Only if no projects found, check migration status
-            console.log('No projects found, checking migration status...');
-            const migrated = await migrationPromise;
-            console.log('Migration status:', migrated);
+            // If no projects found, trigger migration check via server action
+            console.log('No projects found, checking migration...');
+            setMigrating(true);
+            const migrationResult = await migrateUserAction();
+            console.log('Migration result:', migrationResult);
 
-            if (!migrated) {
-                // Not migrated and no new projects found. This could be a legacy user.
-                console.log('Starting migration check...');
-                setMigrating(true);
-                const result = await migrateUserAction();
-                console.log('Migration result:', result);
-
-                if (result.success) {
-                    // Refetch projects after migration
-                    const migratedProjects = await getUserProjects(user.uid);
-                    setProjects(migratedProjects);
+            if (migrationResult.success) {
+                // Refetch projects after migration
+                const refetchResult = await getUserProjectsAction();
+                if (refetchResult.success && refetchResult.data) {
+                    setProjects(refetchResult.data);
                 }
-                setMigrating(false);
             }
+            setMigrating(false);
         } catch (error) {
             console.error('Error loading projects:', error);
         } finally {
-            // Ensure loading is off (if not already handled)
             setLoading(false);
+            isLoadingRef.current = false;
         }
     }
 
+    const [isCreating, setIsCreating] = useState(false);
+
     const handleCreateNew = () => {
         router.push('/editor/new');
+    };
+
+    const handleQuickCreate = async () => {
+        if (!user || isCreating) return;
+        setIsCreating(true);
+        try {
+            const newProject: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> = {
+                userId: user.uid,
+                name: t('unnamedProject'),
+                description: '',
+                rows: 8,
+                cols: 8,
+                gridType: 'square',
+                activeSquares: Array.from({ length: 64 }, (_, i) => `${i % 8},${Math.floor(i / 8)}`),
+                placedPieces: {},
+                isStarred: false,
+                customPieces: []
+            };
+
+            const result = await saveProjectAction(newProject as Project);
+            if (result.success && result.projectId) {
+                router.push(`/editor/${result.projectId}/board-editor`);
+            } else {
+                throw new Error(result.error || 'Failed to create project');
+            }
+        } catch (error) {
+            console.error('Error in quick create:', error);
+            setIsCreating(false);
+        }
     };
 
     const handleToggleStar = async (projectId: string) => {
@@ -95,15 +117,17 @@ export default function PageClient() {
         if (!project) return;
 
         try {
-            await toggleProjectStar(projectId, !project.isStarred);
-            // Optimistic update
-            setProjects(prev => prev.map(p =>
-                p.id === projectId ? { ...p, isStarred: !p.isStarred } : p
-            ).sort((a, b) => {
-                if (a.isStarred && !b.isStarred) return -1;
-                if (!a.isStarred && b.isStarred) return 1;
-                return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-            }));
+            const result = await toggleProjectStarAction(projectId);
+            if (result.success) {
+                // Optimistic update
+                setProjects(prev => prev.map(p =>
+                    p.id === projectId ? { ...p, isStarred: result.isStarred ?? !p.isStarred } : p
+                ).sort((a, b) => {
+                    if (a.isStarred && !b.isStarred) return -1;
+                    if (!a.isStarred && b.isStarred) return 1;
+                    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+                }));
+            }
         } catch (error) {
             console.error('Error starring project:', error);
         }
@@ -112,8 +136,10 @@ export default function PageClient() {
     const handleDeleteProject = async (projectId: string) => {
         if (!user || !confirm(t('deleteConfirm'))) return;
         try {
-            await deleteProject(projectId);
-            setProjects(prev => prev.filter(p => p.id !== projectId));
+            const result = await deleteProjectAction(projectId);
+            if (result.success) {
+                setProjects(prev => prev.filter(p => p.id !== projectId));
+            }
         } catch (error) {
             console.error('Error deleting project:', error);
         }
@@ -156,13 +182,24 @@ export default function PageClient() {
                     </p>
                 </div>
 
-                <button
-                    onClick={handleCreateNew}
-                    className="flex items-center justify-center gap-2 px-6 py-3 bg-accent hover:bg-accent-hover text-white rounded-2xl font-bold transition-all shadow-lg shadow-accent/25 hover:shadow-accent/40 active:scale-95 whitespace-nowrap"
-                >
-                    <Plus className="w-5 h-5" />
-                    {t('newProject')}
-                </button>
+                <div className="flex gap-4">
+                    <button
+                        onClick={handleQuickCreate}
+                        disabled={isCreating}
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-2xl font-bold transition-all border border-gray-200 dark:border-gray-700 shadow-sm active:scale-95 whitespace-nowrap disabled:opacity-50"
+                    >
+                        {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 text-amber-500" />}
+                        {t('quickCreate')}
+                    </button>
+
+                    <button
+                        onClick={handleCreateNew}
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-accent hover:bg-accent-hover text-white rounded-2xl font-bold transition-all shadow-lg shadow-accent/25 hover:shadow-accent/40 active:scale-95 whitespace-nowrap"
+                    >
+                        <Plus className="w-5 h-5" />
+                        {t('newProject')}
+                    </button>
+                </div>
             </div>
 
             <ProjectList

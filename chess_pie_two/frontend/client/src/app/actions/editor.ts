@@ -1,8 +1,18 @@
 "use server";
 
 import { auth } from "@/auth";
-import { migrateUserData, hasUserMigrated } from "@/lib/firestore";
+import { 
+    migrateUserData, 
+    hasUserMigrated, 
+    getUserProjects, 
+    deleteProject, 
+    toggleProjectStar,
+    getProject,
+    saveProject,
+    saveProjectBoard 
+} from "@/lib/firestore";
 import { revalidatePath } from "next/cache";
+import { Project } from "@/types/Project";
 
 /**
  * Server action to trigger lazy data migration for the authenticated user.
@@ -31,5 +41,123 @@ export async function migrateUserAction() {
     } catch (error) {
         console.error("Migration error:", error);
         return { success: false, error: "Failed to migrate user data" };
+    }
+}
+
+/**
+ * Server action to fetch all projects for the authenticated user.
+ */
+export async function getUserProjectsAction() {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    try {
+        const projects = await getUserProjects(userId);
+        return { success: true, data: projects };
+    } catch (error) {
+        console.error("Error fetching projects:", error);
+        return { success: false, error: "Failed to fetch projects" };
+    }
+}
+
+/**
+ * Server action to delete a project.
+ */
+export async function deleteProjectAction(projectId: string) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    try {
+        await deleteProject(projectId, userId);
+        revalidatePath("/editor");
+        return { success: true };
+    } catch (error) {
+        console.error("Error deleting project:", error);
+        return { success: false, error: "Failed to delete project" };
+    }
+}
+
+/**
+ * Server action to toggle project star status.
+ */
+export async function toggleProjectStarAction(projectId: string) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    try {
+        const newState = await toggleProjectStar(projectId, userId);
+        revalidatePath("/editor");
+        return { success: true, isStarred: newState };
+    } catch (error) {
+        console.error("Error toggling project star:", error);
+        return { success: false, error: "Failed to update project" };
+    }
+}
+
+/**
+ * Server action to fetch a single project.
+ */
+export async function getProjectAction(projectId: string) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    try {
+        const project = await getProject(projectId, userId);
+        if (!project) return { success: false, error: "Project not found" };
+        return { success: true, data: project };
+    } catch (error) {
+        console.error("Error fetching project:", error);
+        return { success: false, error: "Failed to fetch project" };
+    }
+}
+
+/**
+ * Server action to save or update a project.
+ */
+export async function saveProjectAction(project: Project) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    try {
+        // Ensure userId matches session
+        const projectToSave = { ...project, userId, customPieces: project.customPieces || [] };
+        const projectId = await saveProject(projectToSave);
+        revalidatePath(`/editor/${projectId}`);
+        revalidatePath("/editor");
+        return { success: true, projectId };
+    } catch (error) {
+        console.error("Error saving project:", error);
+        return { success: false, error: "Failed to save project" };
+    }
+}
+
+/**
+ * Server action to save only the board-related data of a project.
+ * This is optimized for the auto-save in the board editor.
+ */
+export async function saveProjectBoardAction(projectId: string, boardData: { 
+    rows: number, 
+    cols: number, 
+    activeSquares: string[], 
+    placedPieces: Record<string, { type: string; color: string }> 
+}) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    try {
+        await saveProjectBoard(projectId, userId, boardData);
+        revalidatePath(`/editor/${projectId}`);
+        // We don't necessarily need to revalidate /editor for board-only changes 
+        // unless they affect the preview, but let's keep it for now.
+        return { success: true };
+    } catch (error) {
+        console.error("Error saving board data:", error);
+        return { success: false, error: "Failed to save board" };
     }
 }

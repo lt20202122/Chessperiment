@@ -56,4 +56,6 @@ const nextConfig = {
 };
 
 const withNextIntl = createNextIntlPlugin();
-module.exports = withNextIntl(nextConfig);
+const { withBotId } = require("botid/next/config");
+
+module.exports = withBotId(withNextIntl(nextConfig));

@@ -4,6 +4,7 @@ import { Project } from '@/types/Project';
 import ProjectCard from './ProjectCard';
 import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface ProjectListProps {
     projects: Project[];
@@ -36,6 +37,24 @@ export default function ProjectList({ projects, onToggleStar, onDelete, onCreate
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Create New Project Card */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={onCreateNew}
+                className="group relative bg-gray-50/50 dark:bg-gray-800/30 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-accent hover:bg-accent/5 transition-all duration-300 cursor-pointer flex flex-col items-center justify-center p-8 min-h-[200px]"
+            >
+                <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-accent group-hover:text-white transition-all duration-300">
+                    <Plus className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                    {t('newProject')}
+                </h3>
+                <p className="text-sm text-gray-500 text-center">
+                    {t('noProjectsDescription').split('.')[0]}.
+                </p>
+            </motion.div>
+
             {projects.map((project) => (
                 <ProjectCard
                     key={project.id}

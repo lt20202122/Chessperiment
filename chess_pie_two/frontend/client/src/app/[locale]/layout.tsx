@@ -20,6 +20,7 @@ import { ReferralSurvey } from "@/components/ReferralSurvey";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { CreationGuide } from "@/components/CreationGuide";
 import { AuthProvider } from "@/context/AuthContext";
+import { BotIdClient } from "botid/client";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -104,6 +105,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
+
+
 export default async function RootLayout({
   children,
   params,
@@ -130,6 +133,9 @@ export default async function RootLayout({
         />
       </head>
       <body className="bg-bg transition-colors duration-300 dark:bg-stone-950 min-h-screen flex flex-col">
+        {/* BotID Protection for API routes */}
+        <BotIdClient protect={[{ path: '/api/auth/*', method: 'POST' }]} />
+
         <SessionWrapper>
           <NextIntlClientProvider messages={messages}>
             <AuthProvider>

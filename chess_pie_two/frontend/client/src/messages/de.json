@@ -10,7 +10,6 @@
         "boardEditor": "Board-Editor",
         "pieceEditor": "Figuren-Editor",
         "marketplace": "Marktplatz",
-        "library": "Bibliothek",
         "about": "Über uns",
         "editor": "Editor"
     },
@@ -44,7 +43,7 @@
         "noImage": "Keine Vorschau",
         "price": "Preis",
         "free": "Kostenlos",
-        "addToLibrary": "Zur Bibliothek hinzufügen",
+        "importToProject": "In Projekt importieren",
         "buyNow": "Jetzt kaufen",
         "noDescription": "Keine Beschreibung vorhanden.",
         "accessDenied": "Zugriff verweigert",
@@ -235,6 +234,7 @@
     "Editor": {
         "myProjects": "Meine Projekte",
         "newProject": "Neues Projekt",
+        "quickCreate": "Schnellerstellen",
         "projectsActive": "Projekte aktiv",
         "unnamedProject": "Unbenanntes Projekt",
         "backToProjects": "Zurück zu den Projekten",
@@ -376,13 +376,9 @@
             "noRules": "Noch keine Bewegungsmuster definiert.",
             "createFirstRule": "Erstelle deine erste Regel",
             "invert": "Invertieren",
-            "switchSet": "Set wechseln",
-            "selectCollection": "Sammlung wählen",
-            "newSet": "Neues Set",
-            "activeSet": "Aktives Set",
-            "noSetSelected": "Kein Set ausgewählt",
+            "confirmInvert": "Dies wird die Version der anderen Farbe überschreiben. Fortfahren?",
             "pieceName": "Figurenname",
-            "piecesInSet": "Figuren im Set ({count})",
+            "totalPieces": "Figuren im Projekt ({count})",
             "addNew": "Neu hinzufügen",
             "noPieces": "Noch keine Figuren",
             "clickAgain": "Nochmal klicken zum Bestätigen",
@@ -450,8 +446,14 @@
         "description": "Wähle eine Figur aus, um sie auf dem Brett zu platzieren."
     },
     "ProjectView": {
-        "boardViewComingSoon": "Board-Ansicht kommt bald",
-        "boardDim": "{rows}×{cols} Brett"
+        "boardViewComingSoon": "Erstelle ein Schachbrett, um es hier zu sehen",
+        "boardDim": "{rows}×{cols} Brett",
+        "editName": "Name bearbeiten",
+        "editDescription": "Beschreibung bearbeiten",
+        "placeholderName": "Projektname",
+        "placeholderDescription": "Beschreibung hinzufügen...",
+        "save": "Speichern",
+        "cancel": "Abbrechen"
     },
     "Auth": {
         "signInToContinue": "Melde dich an, um deine Reise fortzusetzen",
@@ -459,7 +461,8 @@
         "readyToPlay": "Bereit zu spielen?",
         "login": "Anmelden",
         "logout": "Abmelden",
-        "profile": "Profil"
+        "profile": "Profil",
+        "loginError": "Login-Fehler"
     },
     "Profile": {
         "gamesPlayed": "Gespielte Spiele",
@@ -485,9 +488,10 @@
         "trending": "Angesagt",
         "designs": "Designs",
         "design": "Design",
-        "yourLibrary": "Deine Bibliothek",
+        "yourProjects": "Deine Projekte",
         "pieces": "Figuren",
         "game": "Spiel",
+        "pieceDesigns": "Figuren-Designs",
         "boards": "Bretter"
     },
     "GameEnd": {
@@ -605,16 +609,16 @@
                 "text": "Tritt der chessperiment-Community bei und spiele einzigartige Schachvarianten online mit Freunden oder gegen unsere integrierte Stockfish-KI. Unsere Plattform ermöglicht es dir, individuelle Bretter und Figuren-Sets zu verwenden, die von Erstellern auf der ganzen Welt entworfen wurden. Egal, ob du eine neue Figuren-Logik testen möchtest, die du gerade erst erstellt hast, oder an einem Match mit Standardregeln auf einem unregelmäßigen Brett teilnehmen möchtest – unsere reibungslose Multiplayer-Erfahrung bietet dir alles. Starte ein privates Match, indem du einen Raumcode teilst, oder triff andere Spieler in der Lobby. Mit Echtzeit-Zugvalidierung und fortschrittlicher Engine-Analyse bietet chessperiment eine robuste Umgebung sowohl für Gelegenheitsspiele als auch für das kompetitive Testen neuer Spielmechaniken."
             }
         },
-        "EditorBoard": {
+        "BoardEditor": {
             "title": "Schachbrett-Editor - Designe eigene Bretter",
             "description": "Erstelle eigene Schachbrett-Layouts. Passe Größe, Farben und Startpositionen an. Exportieren oder direkt spielen.",
             "h1": "Benutzerdefinierter Schachbrett-Editor",
             "seoContent": {
                 "heading": "Eigene Schachbretter erstellen und teilen",
-                "text": "Mit dem chessperiment Schachbrett-Editor kannst du ganz einfach individuelle 8x8, 10x10 oder völlig unregelmäßige Brettgrößen entwerfen. Gestalte Farben, erstelle komplexe Startpositionen und teile deine Kreationen mit der Community weltweit. Egal, ob du eine klassische Schachvariante baust, Feenschach-Konzepte erkundest oder kreative Schachrätsel entwickelst – unser gitterbasierter Editor bietet dir die nötige Flexibilität. Definiere spielbare Bereiche, sperre einzelne Felder für Hindernisse und teste deine neuen Spielmechaniken sofort direkt im Browser. Unsere Plattform unterstützt fortschrittliche Brettkonfigurationen, die über das Standard-Schachfeld hinausgehen und so wirklich einzigartige strategische Schlachtfelder ermöglichen."
+                "text": "Mit dem chessperiment Schachbrett-Editor kannst du ganz einfach individuelle 8x8, 10x10 or völlig unregelmäßige Brettgrößen entwerfen. Gestalte Farben, erstelle komplexe Startpositionen und teile deine Kreationen mit der Community weltweit. Egal, ob du eine klassische Schachvariante baust, Feenschach-Konzepte erkundest oder kreative Schachrätsel entwickelst – unser gitterbasierter Editor bietet dir die nötige Flexibilität. Definiere spielbare Bereiche, sperre einzelne Felder für Hindernisse und teste deine neuen Spielmechaniken sofort direkt im Browser. Unsere Plattform unterstützt fortschrittliche Brettkonfigurationen, die über das Standard-Schachfeld hinausgehen und so wirklich einzigartige strategische Schlachtfelder ermöglichen."
             }
         },
-        "EditorPiece": {
+        "PieceEditor": {
             "title": "Pixel Schachfiguren Editor | Eigene Figuren Erstellen | chessperiment",
             "description": "Designe deine eigenen Schachfiguren mit unserem Pixel-Editor. Erstelle Könige, Damen und Märchenschach-Figuren.",
             "h1": "Schachfiguren-Designer",
@@ -622,6 +626,10 @@
                 "heading": "Design und Logik für individuelle Schachfiguren",
                 "text": "Der chessperiment Figuren-Editor ist das ultimative Werkzeug, um einzigartige Schachfiguren von Grund auf zu erstellen. Nutze unsere 64x64 Pixel-Art-Leinwand, um das Erscheinungsbild deiner Figur zu gestalten, und verwende unseren intuitiven Zug-Editor, um ihre strategischen Fähigkeiten festzulegen. Du kannst Gleiter, Springer oder sogar komplexe Figuren mit abhängiger Logik erstellen. Unsere Plattform ermöglicht es dir, genau zu definieren, wie eine Figur zieht, schlägt und mit anderen Elementen auf dem Brett interagiert. Egal, ob du historische Schachvarianten nachbaust oder etwas völlig Neues erfindest – der Figuren-Editor bietet die technische Präzision für anspruchsvolles Spieldesign. Speichere deine Kreationen in Sets und importiere sie in jede beliebige Brettkonfiguration für ein sofortiges Spielerlebnis."
             }
+        },
+        "ProjectView": {
+            "title": "Projektübersicht | individuelles chessperiment",
+            "description": "Sieh dir dein Schachprojekt an und verwalte es. Bearbeite dein Brett und deine Figuren an einem Ort."
         },
         "Marketplace": {
             "title": "chessperiment Marktplatz | Schach-Sets Herunterladen",
@@ -671,39 +679,7 @@
             "h1": "Technische FAQ zum Figuren-Editor"
         }
     },
-    "Library": {
-        "title": "Deine Bibliothek",
-        "noBoards": "Du hast noch keine Elemente gespeichert.",
-        "starOnly": "Nur Favoriten",
-        "search": "Bibliothek durchsuchen...",
-        "deleteConfirm": "Bist du sicher, dass du dieses Element löschen möchtest?",
-        "saveSuccess": "Brett in deiner Bibliothek gespeichert!",
-        "saveBoard": "Brett speichern",
-        "namePrompt": "Gib deinem Brett einen Namen",
-        "boardName": "Name des Bretts",
-        "importToProject": "In Projekt importieren",
-        "importSuccess": "Element erfolgreich in dein Projekt importiert!",
-        "selectProject": "Projekt auswählen",
-        "selectProjectDesc": "Wähle aus, in welches Projekt du dieses Element importieren möchtest.",
-        "loadingProjects": "Projekte werden geladen...",
-        "noProjectsFound": "Keine Projekte gefunden. Erstelle eines, um mit dem Importieren zu beginnen!",
-        "createNewProject": "Neues Projekt erstellen",
-        "importWarning": "Importierte Elemente sind in der Auswahl deines Projekts verfügbar.",
-        "importBoardTitle": "Brett in Projekt importieren",
-        "importSetTitle": "Figurenset in Projekt importieren",
-        "preview": "Vorschau",
-        "publish": "Veröffentlichen",
-        "play": "Spielen",
-        "edit": "Bearbeiten",
-        "backToLibrary": "Zurück zur Bibliothek",
-        "details": "Details",
-        "lastUpdated": "Zuletzt aktualisiert",
-        "size": "Brettgröße",
-        "itemTypeBoard": "Brett",
-        "itemTypePiece": "Figur",
-        "white": "Weiß",
-        "black": "Schwarz"
-    },
+
     "NotFound": {
         "title": "404 - Figur nicht gefunden",
         "description": "Es scheint, als wäre dieser Zug ungültig. Die Seite, die du suchst, existiert nicht oder wurde verschoben.",
@@ -745,5 +721,31 @@
         "editorMessage": "Erstelle dein eigenes, dein erstes Brett.",
         "playTitle": "Spielen",
         "playMessage": "Spiele gegen andere mit deinen eigenen Kreationen."
+    },
+    "CreationGuide": {
+        "title": "Erstellungs-Guide",
+        "subtitle": "Dein Weg zum eigenen Schach",
+        "steps": {
+            "1": {
+                "title": "Wähle das Raster",
+                "description": "Beginne mit dem Layout des Brettes. Klassisch 8x8 Quadrate oder hexagonale Felder? Du entscheidest das Schlachtfeld."
+            },
+            "2": {
+                "title": "Forme das Brett",
+                "description": "Passe die Dimensionen an. Entferne Felder, um Löcher, Inseln oder einzigartige Formen zu schaffen."
+            },
+            "3": {
+                "title": "Definiere Bewegung",
+                "description": "Erstelle eigene Figuren im Pixel-Editor. Zeichne ihr Aussehen und lege exakt fest, wie sie ziehen."
+            },
+            "4": {
+                "title": "Designe die Figuren",
+                "description": "Gib deinen Figuren einen einzigartigen Look mit den Pixel-Art-Tools. Retro-Stil oder modernes Design?"
+            },
+            "5": {
+                "title": "Spielen & Teilen",
+                "description": "Teste deine Kreation gegen die KI oder fordere Freunde online heraus. Teile deine Variante mit der Welt!"
+            }
+        }
     }
 }

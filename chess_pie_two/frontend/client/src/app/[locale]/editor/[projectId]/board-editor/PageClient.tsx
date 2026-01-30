@@ -1,13 +1,12 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Project } from '@/types/Project';
-import { CustomPiece } from '@/types/firestore';
-import { getProject, saveProject } from '@/lib/firestore-client';
-import { Loader2, Grid3x3 } from 'lucide-react';
+import { getProjectAction, saveProjectAction, saveProjectBoardAction } from '@/app/actions/editor';
+import { Loader2 } from 'lucide-react';
 import BoardEditor from '@/components/editor/BoardEditor';
 import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BottomPiecePanel from '@/components/editor/BottomPiecePanel';
@@ -24,6 +23,12 @@ export default function PageClient({ projectId }: PageClientProps) {
     const router = useRouter();
     const [project, setProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Use a ref to always have the latest project state for callbacks without re-creating them
+    const projectRef = useRef<Project | null>(null);
+    useEffect(() => {
+        projectRef.current = project;
+    }, [project]);
     const [editMode, setEditMode] = useState<EditMode>('shape');
     const [selectedPiece, setSelectedPiece] = useState({ type: 'Pawn', color: 'white' });
     const [boardStyle, setBoardStyle] = useState('v3');
@@ -32,7 +37,7 @@ export default function PageClient({ projectId }: PageClientProps) {
     const customCollection = useMemo(() => {
         if (!project?.customPieces) return {};
         const collection: Record<string, any> = {};
-        project.customPieces.forEach((p: CustomPiece) => {
+        project.customPieces.forEach((p) => {
             collection[`${p.id}_white`] = {
                 name: p.name,
                 color: 'white',
@@ -54,26 +59,33 @@ export default function PageClient({ projectId }: PageClientProps) {
     }, [project?.customPieces]);
 
     useEffect(() => {
-        if (authLoading) return;
-        if (!user) {
+        if (!authLoading && !user) {
             router.push('/login');
-            return;
         }
+    }, [user, authLoading, router]);
+
+    useEffect(() => {
+        if (authLoading || !user) return;
+        if (project?.id === projectId) return; // Already loaded
 
         loadProject();
-    }, [user, authLoading, projectId, router]);
+    }, [user?.uid, authLoading, projectId]);
 
     async function loadProject() {
         if (!user) return;
 
-        setLoading(true);
+        // Only show full loader if we don't have a project at all or it's a different one
+        if (!project || project.id !== projectId) {
+            setLoading(true);
+        }
         try {
-            const loadedProject = await getProject(projectId, user.uid);
-            if (!loadedProject) {
+            const result = await getProjectAction(projectId);
+            if (result.success && result.data) {
+                setProject(result.data);
+            } else {
+                console.error('Failed to load project:', result.error);
                 router.push('/editor');
-                return;
             }
-            setProject(loadedProject);
         } catch (error) {
             console.error('Error loading project:', error);
             router.push('/editor');
@@ -82,25 +94,32 @@ export default function PageClient({ projectId }: PageClientProps) {
         }
     }
 
-    const handleSaveBoard = useCallback(async (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => {
-        if (!project || !user) return;
+    const handleGenerateBoardData = useCallback(async (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => {
+        if (!user || !projectRef.current) return;
 
         const updatedProject: Project = {
-            ...project,
+            ...projectRef.current,
             rows,
             cols,
             activeSquares: Array.from(activeSquares),
-            placedPieces,
+            placedPieces: placedPieces as any,
             updatedAt: new Date()
         };
 
-        try {
-            await saveProject(updatedProject);
-            setProject(updatedProject);
-        } catch (error) {
-            console.error('Error saving board:', error);
-        }
-    }, [project, user]);
+        // Update local state
+        setProject(updatedProject);
+
+        // Call side effect outside of any state update logic
+        // Optimized board-only save to prevent large payload issues
+        saveProjectBoardAction(projectId, {
+            rows,
+            cols,
+            activeSquares: Array.from(activeSquares),
+            placedPieces: placedPieces as any
+        }).catch(err => {
+            console.error('Failed to save board:', err);
+        });
+    }, [user, projectId]);
 
     if (authLoading || loading) {
         return (
@@ -110,45 +129,46 @@ export default function PageClient({ projectId }: PageClientProps) {
         );
     }
 
-    if (!project) {
-        return null;
-    }
+    if (!project) return null;
 
     return (
-        <div className="relative min-h-screen">
-            <div className="pt-24 pb-32 px-4 flex flex-col items-center w-full">
-                <div className="mb-12 text-center max-w-2xl animate-in slide-in-from-top-4 fade-in duration-700">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 text-accent-hover text-xs font-semibold uppercase tracking-widest mb-4 border border-accent/20">
-                        <Grid3x3 size={14} /> {t('badge')}
-                    </div>
-                    <h1 className="text-4xl md:text-5xl font-black text-stone-900 dark:text-white mb-4 tracking-tight">
-                        {t.rich('title', {
-                            accent: (chunks) => <span className="text-accent underline decoration-wavy decoration-2 underline-offset-4">{chunks}</span>
-                        })}
-                    </h1>
-                    <p className="text-stone-500 dark:text-white/60 text-lg leading-relaxed max-w-lg mx-auto">
-                        {project.name} - {t('description')}
-                    </p>
-                </div>
+        <div className="flex min-h-screen bg-bg">
+            <ProjectEditorSidebar projectId={projectId} />
 
+            <main className="flex-1 overflow-hidden flex flex-col pt-20">
                 <BoardEditor
                     editMode={editMode}
                     selectedPiece={selectedPiece}
                     boardStyle={boardStyle}
-                    generateBoardData={handleSaveBoard}
+                    generateBoardData={handleGenerateBoardData}
                     customCollection={customCollection}
+                    onDeselect={() => {
+                        setEditMode('shape');
+                        setSelectedPiece({ type: 'Pawn', color: 'white' });
+                    }}
                     initialData={{
                         rows: project.rows,
                         cols: project.cols,
-                        gridType: project.gridType,
+                        gridType: project.gridType || 'square',
                         activeSquares: project.activeSquares,
                         placedPieces: project.placedPieces
                     }}
                 />
-            </div>
+            </main>
 
-            <ProjectEditorSidebar projectId={projectId} />
-            <BottomPiecePanel project={project} />
+            <BottomPiecePanel
+                project={project}
+                onSelectPiece={(piece) => {
+                    if (piece.type === '') {
+                        setEditMode('shape');
+                        setSelectedPiece({ type: 'Pawn', color: 'white' });
+                    } else {
+                        setEditMode('pieces');
+                        setSelectedPiece(piece);
+                    }
+                }}
+                selectedPiece={editMode === 'pieces' ? selectedPiece : null}
+            />
         </div>
     );
 }

@@ -24,4 +24,9 @@ if (missingKeys.length > 0) {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Get Firestore instance (client-side SDK)
+// Get Firestore instance (client-side SDK)
 export const db = getFirestore(app);
+
+// Get Auth instance
+import { getAuth } from "firebase/auth";
+export const auth = getAuth(app);
