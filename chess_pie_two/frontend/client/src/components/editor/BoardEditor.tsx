@@ -10,6 +10,7 @@ import PieceRenderer from '@/components/game/PieceRenderer';
 import { SquareGrid } from '@/lib/grid/SquareGrid';
 import { HexGrid } from '@/lib/grid/HexGrid';
 import { GridType, Coordinate } from '@/lib/grid/GridType';
+import ArrowOverlay, { Arrow } from '@/components/game/ArrowOverlay';
 
 const gridMap: Record<string, GridType> = {
     square: new SquareGrid(),
@@ -228,6 +229,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     const [isPainting, setIsPainting] = useState(false);
     const [isRightClickPainting, setIsRightClickPainting] = useState(false);
     const [paintValue, setPaintValue] = useState<boolean | null>(null); // For shape mode: true=activate, false=deactivate
+    const [arrows, setArrows] = useState<Arrow[]>([]);
     const paintValueRef = useRef<boolean | null>(null);
     const isPaintingRef = useRef(false);
     const isRightClickPaintingRef = useRef(false);
@@ -577,6 +579,9 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
         // Prevent scrolling on touch
         if (e.cancelable && e.type === 'touchstart') e.preventDefault();
 
+        // Clear arrows when user interacts with board
+        setArrows([]);
+        
         setIsPainting(true);
         handleSquareAction(coord, true);
     }, [handleSquareAction]);
@@ -903,6 +908,17 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                             </div>
                         );
                     })}
+                    
+                    {/* ArrowOverlay - Only for square grids */}
+                    {gridType === 'square' && (
+                        <ArrowOverlay
+                            boardSize={cols * SQUARE_SIZE}
+                            squareSize={SQUARE_SIZE}
+                            isPlayerWhite={true}
+                            onArrowsChange={setArrows}
+                            disabled={false}
+                        />
+                    )}
                 </div>
 
                 {/* --- Resize Handles --- */}

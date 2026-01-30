@@ -27,6 +27,7 @@ import { useSocket } from "@/context/SocketContext";
 import filter from "leo-profanity";
 import { Chess } from "chess.js";
 import { useStockfish } from "@/hooks/useStockfish";
+import ArrowOverlay, { Arrow } from "@/components/game/ArrowOverlay";
 
 type Square = string;
 
@@ -287,6 +288,7 @@ export default function Board({
   const [drawOffer, setDrawOffer] = useState<"pending" | "offered" | null>(null);
   const [rematchRequested, setRematchRequested] = useState(false);
   const [opponentRematchRequested, setOpponentRematchRequested] = useState(false);
+  const [arrows, setArrows] = useState<Arrow[]>([]);
 
   // --- Stockfish & Local Logic ---
   const [chess] = useState(() => new Chess());
@@ -750,6 +752,9 @@ export default function Board({
   };
 
   const executeMove = (from: string, to: string, promotion?: string) => {
+    // Clear arrows when a move is made
+    setArrows([]);
+    
     // 1. Send move to server if in online or computer mode
     if (gameMode === "online" || gameMode === "computer") {
       // Optimistic Visual Update
@@ -927,6 +932,9 @@ export default function Board({
       const p = getEffectivePieceAt(pos);
       if (p && (p.color === 'white' ? 'w' : 'b') === effectiveTurn) {
         if (!myColor || p.color === myColor) setSelectedPos(pos);
+      } else {
+        // Clicked on empty square - clear arrows
+        setArrows([]);
       }
     } else {
       if (selectedPos === pos) setSelectedPos(null);
@@ -1101,7 +1109,7 @@ export default function Board({
                   className="flex-1 w-full h-full flex items-center justify-center min-h-0 overflow-hidden touch-none"
                 >
                   <div className="relative shadow-2xl rounded-xl bg-stone-300 dark:bg-stone-800 p-1 lg:p-2 animate-in zoom-in duration-700">
-                    <div className="grid grid-cols-8 overflow-hidden rounded-lg shadow-inner" style={{ width: blockSize * 8, height: blockSize * 8 }}>
+                    <div className="relative grid grid-cols-8 overflow-hidden rounded-lg shadow-inner" style={{ width: blockSize * 8, height: blockSize * 8 }}>
                       <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
                         {boardContent}
                         <DragOverlay dropAnimation={null}>
@@ -1112,6 +1120,13 @@ export default function Board({
                           ) : null}
                         </DragOverlay>
                       </DndContext>
+                      <ArrowOverlay
+                        boardSize={blockSize * 8}
+                        squareSize={blockSize}
+                        isPlayerWhite={myColor === 'white' || myColor === null}
+                        onArrowsChange={setArrows}
+                        disabled={gameStatus !== "playing"}
+                      />
                     </div>
                   </div>
                 </div>
