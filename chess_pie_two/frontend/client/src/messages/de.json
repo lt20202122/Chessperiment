@@ -427,8 +427,8 @@
     "LegalNotice": {
         "title": "Impressum - Rechtliche Hinweise",
         "providerHeading": "Anbieter",
-        "providerName": "Lars Thoroe - chessperiment",
-        "providerAddress": "Ahlerfeld 29, 38527 Meine",
+        "providerName": "Lasse Thoroe - chessperiment",
+        "providerAddress": "Ahlerfeld 29, 38527 Meine, Deutschland",
         "contactHeading": "Kontakt",
         "emailLabel": "E-Mail:",
         "emailValue": "contact.chessperiment@gmail.com",
@@ -450,7 +450,7 @@
         "title": "Datenschutzerklärung (DSGVO)",
         "lastUpdated": "(Stand: Juli 2024)",
         "controllerHeading": "1. Verantwortlicher",
-        "controllerText": "Verantwortlich für die Datenverarbeitung auf dieser Website ist:\n\nLasse Mauritz - chessperiment\nAdresse: Ahlerfeld 29, 38527 Meine\nE-Mail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
+        "controllerText": "Verantwortlich für die Datenverarbeitung auf dieser Website ist:\n\nLasse Thoroe - chessperiment\nAdresse: Ahlerfeld 29, 38527 Meine, Deutschland\nE-Mail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
         "generalHeading": "2. Allgemeine Hinweise",
         "generalText": "Der Schutz Ihrer Daten ist uns wichtig. Wir verarbeiten personenbezogene Daten nur, wenn es für die Bereitstellung unserer Dienste erforderlich ist und halten uns an die Datenschutz-Grundverordnung (DSGVO).",
         "collectionHeading": "3. Daten, die wir erheben",
@@ -698,7 +698,7 @@
     "copyrightText": "Die auf unserer Internetseite vorhandenen Texte, Bilder, Fotos, Videos oder Grafiken unterliegen in der Regel dem Schutz des Urheberrechts. Jede unberechtigte Verwendung (insbesondere die Vervielfältigung, Bearbeitung oder Verbreitung) dieser urheberrechtsgeschützten Inhalte ist daher untersagt. Wenn Sie beabsichtigen, diese Inhalte oder Teile davon zu verwenden, kontaktieren Sie uns bitte im Voraus unter den oben stehenden Angaben. Soweit wir nicht selbst Inhaber der benötigten urheberrechtlichen Nutzungsrechte sein sollten, bemühen wir uns, einen Kontakt zum Berechtigten zu vermitteln.",
     "description": "Die ultimative Plattform für individuelles Schach. Erstelle eigene Schachfiguren, designe Bretter und spiele einzigartige Schachvarianten online mit Freunden.",
     "developer": {
-        "description": "Chessperiment wird entwickelt von Lars Thoroe, einem leidenschaftlichen Schach-Enthusiasten und Softwareentwickler, der sich der kreativen Freiheit in der Schachwelt verschrieben hat. Verbinde dich mit mir auf GitHub oder tritt unserer Community auf Reddit bei, um Feedback und Ideen auszutauschen.",
+        "description": "Chessperiment wird von Lasse Thoroe entwickelt, einem leidenschaftlichen Schachliebhaber und Softwareentwickler, der der Schachwelt kreative Freiheit bringen möchte. Verbinde dich mit mir auf GitHub oder tritt unserer Community auf Reddit bei, um Feedback und Ideen zu teilen.",
         "title": "Entwickler"
     },
     "dieterLinkText": "Dieter macht den Datenschutz",

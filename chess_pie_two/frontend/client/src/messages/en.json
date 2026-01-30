@@ -427,7 +427,7 @@
     "LegalNotice": {
         "title": "Legal Notice - Contact & Info",
         "providerHeading": "Provider",
-        "providerName": "Lasse Mauritz - chessperiment",
+        "providerName": "Lasse Thoroe - chessperiment",
         "providerAddress": "Ahlerfeld 29, 38527 Meine, Germany",
         "contactHeading": "Contact",
         "emailLabel": "Email:",
@@ -450,7 +450,7 @@
         "title": "Privacy Policy (GDPR)",
         "lastUpdated": "(As of: July 2024)",
         "controllerHeading": "1. Data Controller",
-        "controllerText": "The person responsible for data processing on this website is:\n\n Lars Thoroe - chessperiment\nAddress: Ahlerfeld 29, 38527 Meine, Germany\nEmail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
+        "controllerText": "The person responsible for data processing on this website is:\n\n Lasse Thoroe - chessperiment\nAddress: Ahlerfeld 29, 38527 Meine, Germany\nEmail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
         "generalHeading": "2. General Information",
         "generalText": "The protection of your data is important to us. We process personal data only when necessary for providing our services and adhere to the General Data Protection Regulation (GDPR).",
         "collectionHeading": "3. Data We Collect",
@@ -698,7 +698,7 @@
     "copyrightText": "The texts, images, photos, videos, or graphics available on our website are generally subject to copyright protection. Any unauthorized use (in particular reproduction, processing, or distribution) of these copyright-protected contents is therefore prohibited. If you intend to use these contents or parts thereof, please contact us in advance using the details above. If we are not the owner of the required copyright usage rights ourselves, we will endeavor to arrange contact with the entitled party.",
     "description": "The ultimate platform for custom chess. Create your own chess pieces, design boards, and play unique chess variants online with friends.",
     "developer": {
-        "description": "Chessperiment is developed by Lars Thoroe, a passionate chess enthusiast and software developer dedicated to bringing creative freedom to the world of chess. Connect with me on GitHub or join our community on Reddit to share feedback and ideas.",
+        "description": "Chessperiment is developed by Lasse Thoroe, a passionate chess enthusiast and software developer dedicated to bringing creative freedom to the world of chess. Connect with me on GitHub or join our community on Reddit to share feedback and ideas.",
         "title": "Developer"
     },
     "dieterLinkText": "Dieter macht den Datenschutz",
