@@ -7,6 +7,7 @@ import { auth, db } from "@/lib/firebase-client"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
 
 interface SignUpFormProps {
     onSwitchToLogin: () => void
@@ -72,16 +73,15 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
                 photoURL: user.photoURL || null,
             })
 
+            // 4. Sync with NextAuth session
+            const idToken = await userCredential.user.getIdToken();
+            await signIn("credentials", {
+                idToken,
+                redirect: false
+            });
+
             // Redirect to home
             router.push("/")
-
-            // 4. Redirect is handled by the auth state listener or parent component usually,
-            // but for now we can just let the state change propagate.
-            // NextAuth might interfere if it's the only thing checking session.
-            // If strictly using Firebase Auth, the app should listen to onAuthStateChanged.
-            // If using NextAuth, we might need to "signIn" with credentials.
-            // For now, following the plan which implies just creating the user is enough 
-            // and assuming the app handles the auth state.
 
         } catch (err: any) {
             console.error(err)

@@ -7,7 +7,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Project } from '@/types/Project';
 import { getProjectAction, saveProjectAction } from '@/app/actions/editor';
 import { CustomPiece } from '@/types/firestore';
-import { Loader2, Palette, Check, Zap } from 'lucide-react';
+import { Loader2, Palette, Check, Zap, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
@@ -325,6 +325,13 @@ export default function PageClient({ projectId }: PageClientProps) {
     return (
         <div className="relative min-h-screen">
             <div className="pt-24 pb-32 px-4 flex flex-col items-center w-full relative">
+                <Link
+                    href={`/editor/${projectId}`}
+                    className="absolute top-8 left-8 p-2 text-stone-400 hover:text-stone-900 dark:text-stone-500 dark:hover:text-white transition-colors rounded-lg hover:bg-black/5 dark:hover:bg-white/5 z-50 hidden md:flex"
+                    title={t('backToProject')}
+                >
+                    <ArrowLeft className="w-6 h-6" />
+                </Link>
                 <div className="mb-12 text-center max-w-2xl">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 text-amber-500 text-xs font-semibold uppercase tracking-widest mb-4 border border-amber-400/20">
                         <Palette size={14} /> {t('badge')}

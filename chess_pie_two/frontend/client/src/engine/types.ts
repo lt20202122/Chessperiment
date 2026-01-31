@@ -29,6 +29,7 @@ export interface MoveRule {
     id: string;
     conditions: MoveCondition[];
     result: 'allow' | 'disallow';
+    type?: 'slide' | 'jump';
 }
 
 export type pieces = "pawn" | "knight" | "bishop" | "rook" | "queen" | "king"

@@ -133,6 +133,22 @@ export async function saveProject(project: Project) {
     if (!db) throw new Error("Firestore not initialized");
     const projectsRef = db.collection("projects");
 
+    // Helper to recursively remove undefined values which Firestore rejects
+    const removeUndefinedValues = (obj: any): any => {
+        if (obj instanceof Date) return obj;
+        if (Array.isArray(obj)) return obj.map(removeUndefinedValues);
+        if (obj !== null && typeof obj === 'object') {
+            const newObj: any = {};
+            for (const key in obj) {
+                if (obj[key] !== undefined) {
+                    newObj[key] = removeUndefinedValues(obj[key]);
+                }
+            }
+            return newObj;
+        }
+        return obj;
+    };
+
     // Serialize custom pieces
     const customPieces = (project.customPieces || []).map(piece => ({
         ...piece,
@@ -142,7 +158,7 @@ export async function saveProject(project: Project) {
     }));
 
     // Build base update object with explicit fields
-    const data: any = {
+    let data: any = {
         userId: project.userId,
         name: project.name || "Untitled Project",
         description: project.description || "",
@@ -155,6 +171,9 @@ export async function saveProject(project: Project) {
         customPieces: customPieces,
         updatedAt: new Date()
     };
+
+    // Clean undefined values from the entire data object
+    data = removeUndefinedValues(data);
 
     if (project.id) {
         await projectsRef.doc(project.id).update(data);

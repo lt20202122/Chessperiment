@@ -1,6 +1,6 @@
 "use client"
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ArrowRight, GripVertical } from 'lucide-react';
+import { Plus, Trash2, ArrowRight, GripVertical, Footprints, Zap } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
@@ -36,6 +36,7 @@ interface MoveRule {
     id: string;
     conditions: MoveCondition[];
     result: 'allow' | 'disallow';
+    type?: 'slide' | 'jump';
 }
 
 interface VisualMoveEditorProps {
@@ -95,6 +96,7 @@ function SortableRule({
     onUpdateCondition,
     onDeleteCondition,
     onToggleResult,
+    onToggleType,
     t
 }: {
     rule: MoveRule,
@@ -104,6 +106,7 @@ function SortableRule({
     onUpdateCondition: (ruleId: string, condId: string, updates: Partial<MoveCondition>) => void,
     onDeleteCondition: (ruleId: string, condId: string) => void,
     onToggleResult: (id: string) => void,
+    onToggleType: (id: string) => void,
     t: any
 }) {
     const [explaining, setExplaining] = useState<keyof typeof VAR_MATH | null>(null);
@@ -227,6 +230,19 @@ function SortableRule({
 
                 <div className="flex items-center gap-4 pl-6 border-l border-white/10 self-stretch">
                     <ArrowRight className="text-white/20" size={20} />
+
+                    <button
+                        onClick={() => onToggleType(rule.id)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${(rule.type || 'jump') === 'jump'
+                            ? 'bg-indigo-500/20 text-indigo-500 border border-indigo-500/30'
+                            : 'bg-orange-500/20 text-orange-500 border border-orange-500/30'
+                            }`}
+                        title={(rule.type || 'jump') === 'jump' ? "Jumping (Can move over obstacles)" : "Running (Blocked by obstacles)"}
+                    >
+                        {(rule.type || 'jump') === 'jump' ? <Zap size={14} /> : <Footprints size={14} />}
+                        {(rule.type || 'jump') === 'jump' ? 'Jump' : 'Run'}
+                    </button>
+
                     <button
                         onClick={() => onToggleResult(rule.id)}
                         className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${rule.result === 'allow'
@@ -280,7 +296,8 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
                 { id: uuidv4(), variable: 'absDiffX', operator: '===', value: 1 },
                 { id: uuidv4(), variable: 'absDiffY', operator: '===', value: 2 }
             ],
-            result: 'allow'
+            result: 'allow',
+            type: 'jump'
         };
         onUpdate([...moves, newRule]);
     };
@@ -344,6 +361,19 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
         onUpdate(newMoves);
     };
 
+    const toggleType = (ruleId: string) => {
+        const newMoves = moves.map(rule => {
+            if (rule.id === ruleId) {
+                return {
+                    ...rule,
+                    type: (rule.type === 'slide' ? 'jump' : 'slide') as 'slide' | 'jump'
+                };
+            }
+            return rule;
+        });
+        onUpdate(newMoves);
+    };
+
     return (
         <div className="w-full max-w-5xl mx-auto space-y-8 p-4">
             <div className="flex items-center justify-between mb-8">
@@ -380,6 +410,7 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
                                     onUpdateCondition={updateCondition}
                                     onDeleteCondition={deleteCondition}
                                     onToggleResult={toggleResult}
+                                    onToggleType={toggleType}
                                     t={t}
                                 />
                             ))}

@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
+import { auth } from '@/lib/firebase-client';
 import { Project } from '@/types/Project';
 import {
     migrateUserAction,
@@ -57,7 +58,10 @@ export default function PageClient() {
             // If no projects found, trigger migration check via server action
             console.log('No projects found, checking migration...');
             setMigrating(true);
-            const migrationResult = await migrateUserAction();
+
+            // Get ID token to authenticate server action robustly
+            const idToken = await auth.currentUser?.getIdToken();
+            const migrationResult = await migrateUserAction(idToken);
             console.log('Migration result:', migrationResult);
 
             if (migrationResult.success) {

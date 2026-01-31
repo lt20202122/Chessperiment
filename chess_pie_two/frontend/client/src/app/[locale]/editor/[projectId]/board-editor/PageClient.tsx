@@ -6,7 +6,8 @@ import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Project } from '@/types/Project';
 import { getProjectAction, saveProjectAction, saveProjectBoardAction } from '@/app/actions/editor';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import BoardEditor from '@/components/editor/BoardEditor';
 import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BottomPiecePanel from '@/components/editor/BottomPiecePanel';
@@ -42,6 +43,7 @@ export default function PageClient({ projectId }: PageClientProps) {
                 name: p.name,
                 color: 'white',
                 pixels: p.pixelsWhite,
+                image: p.imageWhite, // Add image for white
                 moves: p.moves || [],
                 logic: p.logic || [],
                 originalId: p.id
@@ -50,6 +52,7 @@ export default function PageClient({ projectId }: PageClientProps) {
                 name: p.name,
                 color: 'black',
                 pixels: p.pixelsBlack,
+                image: p.imageBlack, // Add image for black
                 moves: p.moves || [],
                 logic: p.logic || [],
                 originalId: p.id
@@ -135,7 +138,14 @@ export default function PageClient({ projectId }: PageClientProps) {
         <div className="flex min-h-screen bg-bg">
             <ProjectEditorSidebar projectId={projectId} />
 
-            <main className="flex-1 overflow-hidden flex flex-col pt-20">
+            <main className="flex-1 overflow-hidden flex flex-col pt-20 relative">
+                <Link
+                    href={`/editor/${projectId}`}
+                    className="absolute top-6 left-8 p-2 text-stone-400 hover:text-stone-900 dark:text-stone-500 dark:hover:text-white transition-colors rounded-lg hover:bg-black/5 dark:hover:bg-white/5 z-50"
+                    title={t('backToProject')}
+                >
+                    <ArrowLeft className="w-6 h-6" />
+                </Link>
                 <BoardEditor
                     editMode={editMode}
                     selectedPiece={selectedPiece}

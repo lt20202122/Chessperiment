@@ -5,6 +5,7 @@ import { signInWithEmailAndPassword } from "firebase/auth"
 import { auth } from "@/lib/firebase-client"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
+import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
 interface LoginFormProps {
@@ -28,7 +29,22 @@ export default function LoginForm({ onSwitchToSignup, onSwitchToReset }: LoginFo
         setLoading(true)
 
         try {
-            await signInWithEmailAndPassword(auth, email, password)
+            const userCredential = await signInWithEmailAndPassword(auth, email, password)
+            const idToken = await userCredential.user.getIdToken()
+
+            // Sync with NextAuth session
+            const result = await signIn("credentials", {
+                idToken,
+                redirect: false
+            })
+
+            if (result?.error) {
+                console.error("NextAuth signin error:", result.error)
+                // We don't fail the whole login if NextAuth fails, 
+                // but server actions might not work.
+                // Optionally throw error here.
+            }
+
             // Redirect to home
             router.push("/")
         } catch (err: any) {

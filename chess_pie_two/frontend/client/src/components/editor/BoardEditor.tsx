@@ -78,8 +78,14 @@ const EditorSquare = React.memo(({
     coord: Coordinate
 }) => {
     const grid = gridMap[gridType];
-    const customPiece = piece ? (customCollection?.[piece.type] || Object.values(customCollection || {}).find((p: any) => p.name === piece.type)) : undefined;
+    const lookupKey = piece ? `${piece.type}_${piece.color}` : '';
+    const customPiece = piece ? (
+        customCollection?.[lookupKey] ||
+        customCollection?.[piece.type] ||
+        Object.values(customCollection || {}).find((p: any) => p.name === piece.type && p.color === piece.color)
+    ) : undefined;
     const pixels = customPiece?.pixels;
+    const image = customPiece?.image;
 
     const clipPath = gridType === 'hex'
         ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'
@@ -119,6 +125,7 @@ const EditorSquare = React.memo(({
                         boardStyle={boardStyle}
                         className="drop-shadow-lg"
                         pixels={pixels}
+                        image={image}
                     />
                 </div>
             )}

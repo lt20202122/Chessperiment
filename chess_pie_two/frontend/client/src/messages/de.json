@@ -257,6 +257,7 @@
         "deleteProject": "Projekt löschen",
         "Board": {
             "badge": "Board-Editor",
+            "backToProject": "Zurück zum Projekt",
             "title": "Gestalte deine <accent>Schlachtfelder</accent>",
             "description": "Erstelle individuelle Schachkonfigurationen. Ziehe an den Rändern zum Vergrößern, klicke zum Umschalten von Feldern.",
             "actionsTitle": "Brett-Aktionen",
@@ -348,6 +349,7 @@
             "title": "Entwirf deine <accent>Schachfiguren</accent>",
             "description": "Erstelle pixelgenaue Schachfiguren mit unserem intuitiven 64x64 Editor.",
             "badge": "Figuren-Editor",
+            "backToProject": "Zurück zum Projekt",
             "design": "Design",
             "moves": "Züge",
             "undo": "Rückgängig",

@@ -257,6 +257,7 @@
     "deleteProject": "Delete Project",
     "Board": {
       "badge": "Board Editor",
+      "backToProject": "Back to Project",
       "title": "Design your <accent>Battlefields</accent>",
       "description": "Create custom chess configurations. Drag edges to resize, click to toggle squares.",
       "actionsTitle": "Board Actions",
@@ -348,6 +349,7 @@
       "title": "Design Your <accent>Chess Pieces</accent>",
       "description": "Create pixel-perfect custom chess pieces with our intuitive 64x64 editor.",
       "badge": "Piece Editor",
+      "backToProject": "Back to Project",
       "design": "Design",
       "moves": "Moves",
       "undo": "Undo",

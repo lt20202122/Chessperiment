@@ -6,9 +6,10 @@ import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Project } from '@/types/Project';
 import { getProjectAction, saveProjectAction } from '@/app/actions/editor';
-import { Loader2, Pencil, Check, X } from 'lucide-react';
+import { Loader2, Pencil, Check, X, Gamepad2 } from 'lucide-react';
 import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BottomPiecePanel from '@/components/editor/BottomPiecePanel';
+import BoardPreviewWrapper from '@/components/editor/BoardPreviewWrapper';
 
 interface PageClientProps {
     projectId: string;
@@ -196,26 +197,21 @@ export default function PageClient({ projectId }: PageClientProps) {
                         </div>
                     </div>
 
-                    {/* Board Preview Placeholder */}
-                    <div className="group relative bg-white dark:bg-stone-900 border border-stone-200 dark:border-white/10 rounded-[2.5rem] p-12 text-center shadow-xl shadow-stone-200/50 dark:shadow-none transition-all hover:border-accent/30 overflow-hidden">
-                        <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <div className="relative z-10">
-                            <div className="w-20 h-20 bg-accent/10 text-accent rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-500">
-                                <Loader2 className="w-10 h-10 animate-spin opacity-50" />
-                            </div>
-                            <h2 className="text-2xl font-black text-stone-900 dark:text-white mb-2">{t('boardViewComingSoon')}</h2>
-                            <p className="text-stone-500 dark:text-white/40 font-bold uppercase tracking-widest text-sm">
-                                {t('boardDim', { rows: project.rows, cols: project.cols })}
-                            </p>
+                    {/* Board Preview */}
+                    <div className="mt-12 flex flex-col items-center gap-6">
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => router.push(`/editor/${projectId}/play`)}
+                                className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden"
+                            >
+                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                                <Gamepad2 size={24} className="relative z-10" />
+                                <span className="relative z-10 text-lg font-bold">Play Local Game</span>
+                            </button>
                         </div>
 
-                        {/* Decorative background grid elements */}
-                        <div className="absolute top-0 right-0 p-8 opacity-5">
-                            <div className="grid grid-cols-3 gap-2">
-                                {[...Array(9)].map((_, i) => (
-                                    <div key={i} className="w-8 h-8 bg-stone-900 dark:bg-white rounded-md" />
-                                ))}
-                            </div>
+                        <div className="w-full h-[600px] relative z-10">
+                            <BoardPreviewWrapper board={project as any} />
                         </div>
                     </div>
                 </div>
@@ -224,8 +220,7 @@ export default function PageClient({ projectId }: PageClientProps) {
             {/* Editor Sidebar */}
             <ProjectEditorSidebar projectId={projectId} />
 
-            {/* Bottom Piece Panel */}
-            <BottomPiecePanel project={project} />
+
         </div>
     );
 }

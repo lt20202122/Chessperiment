@@ -1,19 +1,31 @@
 "use client"
 
-import { useSession, signIn, signOut } from "next-auth/react"
+import { signOut as nextAuthSignOut } from "next-auth/react"
+import { signOut as firebaseSignOut } from "firebase/auth"
+import { auth } from "@/lib/firebase-client"
+import { useAuth } from "@/context/AuthContext"
 import { useTranslations } from "next-intl"
-import { LogIn, LogOut, User, ChevronUp } from "lucide-react"
+import { LogIn, LogOut, User as UserIcon, ChevronUp } from "lucide-react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Link } from "@/i18n/navigation"
 import Image from "next/image"
 
 export function UserPanel() {
-    const { data: session, status } = useSession()
+    const { user, loading } = useAuth()
     const t = useTranslations("Auth")
     const [isOpen, setIsOpen] = useState(false)
+    const router = useRouter()
 
-    if (status === "loading") {
+    const handleLogout = async () => {
+        await firebaseSignOut(auth)
+        await nextAuthSignOut()
+        setIsOpen(false)
+        router.refresh()
+    }
+
+    if (loading) {
         return (
             <div className="fixed bottom-6 right-6 z-100">
                 <div className="w-12 h-12 rounded-full bg-islands/60 shadow-lg backdrop-blur-md border border-amber-400/30 flex items-center justify-center">
@@ -33,28 +45,28 @@ export function UserPanel() {
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
                         className="mb-4 p-4 bg-islands/90 backdrop-blur-xl border border-amber-400/20 rounded-2xl shadow-2xl min-w-[200px]"
                     >
-                        {session ? (
+                        {user ? (
                             <div className="flex flex-col gap-3">
                                 <div className="flex items-center gap-3 pb-3 border-b border-amber-400/10">
-                                    {session.user?.image ? (
+                                    {user.image ? (
                                         <Image
-                                            src={session.user.image}
-                                            alt={session.user.name || "User"}
+                                            src={user.image}
+                                            alt={user.name || "User"}
                                             className="w-10 h-10 rounded-full border border-amber-400/20"
                                             width={40}
                                             height={40}
                                         />
                                     ) : (
                                         <div className="w-10 h-10 rounded-full bg-amber-400/10 flex items-center justify-center">
-                                            <User size={20} className="text-amber-400" />
+                                            <UserIcon size={20} className="text-amber-400" />
                                         </div>
                                     )}
                                     <div className="flex flex-col overflow-hidden">
                                         <span className="text-sm font-bold text-text dark:text-white truncate">
-                                            {session.user?.name}
+                                            {user.name || user.email?.split('@')[0] || "User"}
                                         </span>
                                         <span className="text-xs text-amber-600/70 dark:text-amber-400/60 truncate">
-                                            {session.user?.email}
+                                            {user.email}
                                         </span>
                                     </div>
                                 </div>
@@ -64,13 +76,13 @@ export function UserPanel() {
                                     className="flex items-center gap-2 w-full p-2 text-amber-400 hover:bg-amber-400/10 rounded-xl transition-colors text-sm"
                                     onClick={() => setIsOpen(false)}
                                 >
-                                    <User size={16} />
+                                    <UserIcon size={16} />
                                     {t("profile")}
                                 </Link>
 
                                 <button
                                     className="flex items-center gap-2 w-full p-2 text-red-400 hover:bg-red-400/10 rounded-xl transition-colors text-sm"
-                                    onClick={() => signOut()}
+                                    onClick={handleLogout}
                                 >
                                     <LogOut size={16} />
                                     {t("logout")}
@@ -83,7 +95,7 @@ export function UserPanel() {
                                 </p>
                                 <button
                                     className="flex items-center justify-center gap-2 w-full py-3 bg-amber-400 text-bg font-bold rounded-xl hover:bg-amber-300 transition-all active:scale-[0.98]"
-                                    onClick={() => signIn("google")}
+                                    onClick={() => router.push('/login')}
                                 >
                                     <LogIn size={18} />
                                     {t("login")}
@@ -101,17 +113,17 @@ export function UserPanel() {
                     : "bg-islands/60 backdrop-blur-md border-amber-400/30 text-amber-600 dark:text-amber-400 hover:border-amber-400 active:scale-95"
                     }`}
             >
-                {session && !isOpen ? (
-                    session.user?.image ? (
+                {user && !isOpen ? (
+                    user.image ? (
                         <Image
-                            src={session.user.image}
+                            src={user.image}
                             alt="User"
                             className="w-full h-full rounded-full"
                             width={48}
                             height={48}
                         />
                     ) : (
-                        <User size={24} />
+                        <UserIcon size={24} />
                     )
                 ) : (
                     <ChevronUp size={24} />

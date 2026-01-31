@@ -14,13 +14,31 @@ import {
 import { revalidatePath } from "next/cache";
 import { Project } from "@/types/Project";
 
+import { adminAuth } from "@/lib/firebase";
+
 /**
  * Server action to trigger lazy data migration for the authenticated user.
  * This runs on the server using the Firebase Admin SDK.
+ * Accepts an optional idToken to bypass NextAuth session check if needed.
  */
-export async function migrateUserAction() {
-    const session = await auth();
-    const userId = session?.user?.id;
+export async function migrateUserAction(idToken?: string) {
+    let userId: string | undefined;
+
+    // Try to verify via ID token first if provided (more reliable for client-side calls)
+    if (idToken && adminAuth) {
+        try {
+            const decodedToken = await adminAuth.verifyIdToken(idToken);
+            userId = decodedToken.uid;
+        } catch (error) {
+            console.error("Invalid ID token provided to migrateUserAction:", error);
+        }
+    }
+
+    // Fallback to NextAuth session
+    if (!userId) {
+        const session = await auth();
+        userId = session?.user?.id;
+    }
     
     if (!userId) {
         throw new Error("Unauthorized: No user session found during migration");
