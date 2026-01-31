@@ -188,14 +188,18 @@
         "copied": "Copied",
         "typeMessage": "Type a message...",
         "practiceVsComputer": "Practice vs Computer",
-"joinMyGameTitle": "Join my chessperiment game!",
+        "joinMyGameTitle": "Join my chessperiment game!",
         "joinMyGameText": "Join my chess game with room code: {room}",
         "connecting": "Connecting...",
         "quicksearch": "Quick Search",
         "rematch": "Rematch",
         "newGame": "New Game",
         "opponentWantsRematch": "Opponent wants a rematch!",
-        "rematchRequested": "Rematch Requested"
+        "rematchRequested": "Rematch Requested",
+        "drawAccepted": "Draw accepted",
+        "drawOfferDeclined": "Draw offer declined",
+        "drawOfferDeclinedByYou": "You declined the draw offer",
+        "drawOfferReceived": "Draw offer received"
     },
     "Analyze": {
         "title": "Analysis Feature Coming Soon",
@@ -210,12 +214,13 @@
         "queen": "Queen",
         "king": "King",
         "white": "White",
-        "black": "Black"
+        "black": "Black",
+        "attribution": "Chess Piece Vectors by Vecteezy"
     },
     "Editor": {
         "Board": {
             "badge": "Board Editor",
-            "title": "Design your \u003caccent\u003eBattlefields\u003c/accent\u003e",
+            "title": "Design your <accent>Battlefields</accent>",
             "description": "Create custom chess configurations. Drag edges to resize, click to toggle squares.",
             "actionsTitle": "Board Actions",
             "presets": "Presets",
@@ -267,10 +272,10 @@
                 "import": "Import from Library",
                 "customPieces": "Custom Creations",
                 "noCustomPieces": "No custom pieces yet"
-            }
-
+            },
+            "boardName": "Board Name",
+            "namePrompt": "Give your board a name"
         },
-
         "Piece": {
             "title": "Design Your <accent>Chess Pieces</accent>",
             "description": "Create pixel-perfect custom chess pieces with our intuitive 64x64 editor.",
@@ -388,7 +393,6 @@
         "game": "game",
         "boards": "Boards"
     },
-
     "GameEnd": {
         "win": "You won!",
         "loss": "You lost!",
@@ -423,7 +427,7 @@
     "LegalNotice": {
         "title": "Legal Notice - Contact & Info",
         "providerHeading": "Provider",
-        "providerName": "Lasse Mauritz - chessperiment",
+        "providerName": "Lasse Thoroe - chessperiment",
         "providerAddress": "Ahlerfeld 29, 38527 Meine, Germany",
         "contactHeading": "Contact",
         "emailLabel": "Email:",
@@ -446,7 +450,7 @@
         "title": "Privacy Policy (GDPR)",
         "lastUpdated": "(As of: July 2024)",
         "controllerHeading": "1. Data Controller",
-        "controllerText": "The person responsible for data processing on this website is:\n\n Lars Thoroe - chessperiment\nAddress: Ahlerfeld 29, 38527 Meine, Germany\nEmail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
+        "controllerText": "The person responsible for data processing on this website is:\n\n Lasse Thoroe - chessperiment\nAddress: Ahlerfeld 29, 38527 Meine, Germany\nEmail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
         "generalHeading": "2. General Information",
         "generalText": "The protection of your data is important to us. We process personal data only when necessary for providing our services and adhere to the General Data Protection Regulation (GDPR).",
         "collectionHeading": "3. Data We Collect",
@@ -476,92 +480,37 @@
         "dieterLinkText": "Dieter macht den Datenschutz"
     },
     "SEO": {
+        "Feedback": {
+            "title": "Feedback",
+            "description": "Share your feedback, report bugs, or suggest new features for chessperiment"
+        },
         "Footer": {
             "title": "Frequently Asked Questions",
             "whatIschessperiment": "What is chessperiment?",
-            "whatIschessperimentAnswer": "chessperiment is the ultimate platform for custom chess. You can design your own board, create custom pieces pixel-by-pixel, and play unique chess variants with friends online.",
-            "isItFree": "Is chessperiment free?",
-            "isItFreeAnswer": "Yes, chessperiment is currently completely free to use. You can play, create, and share without any cost.",
-            "canIPlayFriends": "Can I play with friends?",
-            "canIPlayFriendsAnswer": "Absolutely! Just share your room code or link and play your custom variants instantly in your browser.",
+            "whatIschessperimentAnswer": "chessperiment is a platform for creating and playing custom chess variants. Design unique boards, create custom pieces with special abilities, and play against friends or AI with your own rules.",
+            "isItFree": "Is chessperiment free to use?",
+            "isItFreeAnswer": "Yes! chessperiment is completely free to use. You can create unlimited custom boards and pieces, play games, and share your creations with the community at no cost.",
+            "canIPlayFriends": "Can I play with my friends?",
+            "canIPlayFriendsAnswer": "Absolutely! You can create private game rooms and invite your friends to play your custom chess variants together. Simply share the game link with them.",
             "legal": "Legal",
+            "about": "About",
             "privacyPolicy": "Privacy Policy",
-            "legalNotice": "Legal Notice",
-            "about": "About"
+            "legalNotice": "Legal Notice"
         },
         "Home": {
-            "title": "Create and share Custom Chess!",
-            "description": "The ultimate platform for custom chess. Create your own chess pieces, design boards, and play unique chess variants online with friends.",
+            "title": "chessperiment - Custom Chess Variants Platform | Design Your Own Chess",
+            "description": "Create custom chess pieces, design unique boards, and play innovative chess variants online. Free platform for chess creativity and experimentation.",
             "h1": "chessperiment - The Custom Chess Platform",
             "p": "Design unique chess sets, customize your board, and play multiplayer chess variants online."
         },
         "Game": {
-            "title": "Play Custom Chess | Multiplayer | chessperiment",
-            "description": "Play chess online with friends using custom boards and pieces. Fast, free, and no registration required for quick play.",
-            "h1": "Play Custom Chess Online with Friends",
+            "title": "Play Chess Variants Online - Multiplayer Chess Games | chessperiment",
+            "description": "Play innovative chess variants with friends online. Multiplayer chess with custom boards and pieces. Free to play, no download required.",
+            "h1": "Play Custom Chess Variants Online",
             "seoContent": {
                 "heading": "Experience the Next Generation of Chess Variants",
                 "text": "Join the chessperiment community and play unique chess variants online with friends or against our integrated Stockfish AI. Our platform allows you to use custom boards and piece sets designed by creators around the world. Whether you're interested in testing a new piece logic you just created or want to jump into a match with standard rules on an irregular board, our smooth multiplayer experience has you covered. Start a private match by sharing a room code, or join the lobby to find other players. With real-time move validation and advanced engine analysis, chessperiment offers a robust environment for both casual play and competitive testing of new game mechanics."
             }
-        },
-        "EditorBoard": {
-            "title": "Chess Board Editor - Design Custom Boards",
-            "description": "Create your own chess board layouts. Customize dimensions, colors, and starting positions. Export or play directly.",
-            "h1": "Custom Chess Board Editor",
-            "seoContent": {
-                "heading": "Create and Share Custom Chess Boards",
-                "text": "With the chessperiment Chess Board Editor, you can easily design custom 8x8, 10x10, or any irregular board sizes. Customize colors, create complex starting positions, and share your creations with the world. Whether you are building a classic chess variant, exploring fairy chess concepts, or designing creative chess puzzles, our grid-based editor provides the flexibility you need. Define playable areas, block squares to create obstacles, and test your new game mechanics instantly in your browser. Our platform supports advanced board configurations that go beyond the standard grid, allowing for truly unique strategic battlefields."
-            }
-        },
-        "EditorPiece": {
-            "title": "Pixel Chess Piece Editor | Create Custom Pieces | chessperiment",
-            "description": "Design your own chess pieces with our pixel art editor. Create unique kings, queens, and custom fairy pieces.",
-            "h1": "Chess Piece Designer",
-            "seoContent": {
-                "heading": "Design and Logic for Custom Chess Pieces",
-                "text": "The chessperiment Piece Editor is a comprehensive tool for creating unique chess pieces from scratch. Use our 64x64 pixel art canvas to design the visual representation of your piece, and then use our intuitive move editor to define its strategic capabilities. You can create sliding pieces, leapers, or even complex pieces with move-dependent logic. Our platform allows you to specify exactly how a piece moves, captures, and interacts with other elements on the board. Whether you are recreating historical chess variants or inventing something entirely new, the Piece Editor provides the technical precision required for high-level game design. Save your creations in sets and import them into any board configuration for immediate play."
-            }
-        },
-        "Marketplace": {
-            "title": "chessperiment Marketplace | Download Custom Chess Sets",
-            "description": "Browse and download community-created chess boards and piece sets. Enhance your game with unique designs.",
-            "h1": "Chess Variant Marketplace",
-            "seoContent": {
-                "heading": "Discover and Share Custom Chess Assets",
-                "text": "The chessperiment Marketplace is the central hub for our creative community. Explore a vast collection of custom chess boards, pixel-perfect piece sets, and unique board designs shared by users worldwide. Whether you are looking for a minimalist aesthetic or a complex medieval theme, our marketplace offers a wide variety of assets to customize your chess experience. You can browse through free sets or discover premium content crafted by expert designers. Every item in the marketplace can be easily integrated into your library and used in your games. Share your own creations to build your reputation as a chess variant designer and contribute to the growing ecosystem of custom board games."
-            }
-        },
-            "Analyze": {
-                "title": "Analyze Chess Games with Stockfish",
-                "description": "Analyze your chess games with the powerful Stockfish engine. Improve your strategy and learn from your mistakes.",
-                "h1": "Chess Analysis Tool"
-            },        "LegalNotice": {
-            "title": "Legal Notice - Contact & Info",
-            "description": "Legal information and contact details for chessperiment."
-        },
-        "PrivacyPolicy": {
-            "title": "Privacy Policy",
-            "description": "Learn how we protect your data and privacy at chessperiment."
-        },
-        "Login": {
-            "title": "Login to chessperiment | Save Your Creations",
-            "description": "Log in to chessperiment to save your custom chess boards and pieces, and access your player profile.",
-            "h1": "Login to chessperiment"
-        },
-        "Announcements": {
-            "title": "chessperiment News & Announcements",
-            "description": "Stay updated with the latest features, updates, and community news from chessperiment.",
-            "h1": "Latest News"
-        },
-        "About": {
-            "title": "About Chessperiment | The Custom Chess Platform",
-            "description": "Learn more about chessperiment, our mission to redefine chess creativity, and the features that make it unique.",
-            "h1": "About Chessperiment - Redefining Chess Creativity"
-        },
-        "PieceEditorFAQ": {
-            "title": "Piece Editor FAQ | Visual Scripting Help | chessperiment",
-            "description": "Learn how to use the Piece Editor, visual logic blocks, and movement rules. Detailed technical guide for creating custom chess pieces.",
-            "h1": "Piece Editor Technical FAQ"
         }
     },
     "Library": {
@@ -725,23 +674,90 @@
         "messageLabel": "Message",
         "backToHome": "Back to home"
     },
-    "SEO": {
-        "Feedback": {
-            "title": "Feedback",
-            "description": "Share your feedback, report bugs, or suggest new features for chessperiment"
+    "accountsSubheading": "a) User Accounts",
+    "accountsText": "When you create an account, we store your name, email address, and profile picture. This data is not public and is used for platform functionality. Legal basis: Art. 6(1)(b) GDPR.",
+    "analyticsHeading": "4. Analytics Services",
+    "analyticsText": "We use Vercel Analytics and Speed Insights to measure our website's performance. These services are privacy-friendly, do not use cookies, and do not collect personal data. Anonymous usage statistics, such as pages visited and load times, are collected. Legal basis: Art. 6(1)(f) GDPR.",
+    "backToOverview": "Back to Overview",
+    "by": "By",
+    "changesHeading": "11. Changes",
+    "changesText": "We may update this privacy policy from time to time. The current version will always be available on this page.",
+    "chatSubheading": "c) Chat Function",
+    "chatText": "Chat messages are stored and filtered for prohibited words to ensure security. Legal basis: Art. 6(1)(f) GDPR.",
+    "collectionHeading": "3. Data We Collect",
+    "complaintHeading": "10. Right to Complain",
+    "complaintText": "You have the right to lodge a complaint with a data protection supervisory authority.",
+    "contactHeading": "Contact",
+    "contentSubheading": "b) User-Generated Content",
+    "contentText": "We store content you create, such as chessboards and pieces. This may be publicly visible depending on your settings. Legal basis: Art. 6(1)(b) GDPR.",
+    "controllerHeading": "1. Data Controller",
+    "controllerText": "The person responsible for data processing on this website is:\n\nLars Thoroe - chessperiment\nAddress: Ahlerfeld 29, 38527 Meine, Germany\nEmail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
+    "cookiesHeading": "6. Cookies",
+    "cookiesText": "We do not use cookies for tracking or advertising. A single, technically necessary session cookie (JWT) is set upon login to maintain your session. This cookie is essential for the website's functionality. Legal basis: Art. 6(1)(b) GDPR.",
+    "copyrightHeading": "Copyright Notice",
+    "copyrightText": "The texts, images, photos, videos, or graphics available on our website are generally subject to copyright protection. Any unauthorized use (in particular reproduction, processing, or distribution) of these copyright-protected contents is therefore prohibited. If you intend to use these contents or parts thereof, please contact us in advance using the details above. If we are not the owner of the required copyright usage rights ourselves, we will endeavor to arrange contact with the entitled party.",
+    "description": "The ultimate platform for custom chess. Create your own chess pieces, design boards, and play unique chess variants online with friends.",
+    "developer": {
+        "description": "Chessperiment is developed by Lasse Thoroe, a passionate chess enthusiast and software developer dedicated to bringing creative freedom to the world of chess. Connect with me on GitHub or join our community on Reddit to share feedback and ideas.",
+        "title": "Developer"
+    },
+    "dieterLinkText": "Dieter macht den Datenschutz",
+    "disputeResolutionHeading": "Dispute Resolution",
+    "emailLabel": "Email:",
+    "emailValue": "contact.chessperiment@gmail.com",
+    "features": {
+        "customBoards": {
+            "description": "Create boards in any shape and size to fit your vision.",
+            "title": "Custom Boards"
         },
-        "Footer": {
-            "title": "Frequently Asked Questions",
-            "whatIschessperiment": "What is chessperiment?",
-            "whatIschessperimentAnswer": "chessperiment is a platform for creating and playing custom chess variants. Design unique boards, create custom pieces with special abilities, and play against friends or AI with your own rules.",
-            "isItFree": "Is chessperiment free to use?",
-            "isItFreeAnswer": "Yes! chessperiment is completely free to use. You can create unlimited custom boards and pieces, play games, and share your creations with the community at no cost.",
-            "canIPlayFriends": "Can I play with my friends?",
-            "canIPlayFriendsAnswer": "Absolutely! You can create private game rooms and invite your friends to play your custom chess variants together. Simply share the game link with them.",
-            "legal": "Legal",
-            "about": "About",
-            "privacyPolicy": "Privacy Policy",
-            "legalNotice": "Legal Notice"
+        "pieceEditor": {
+            "description": "Design pieces with unique movements and abilities.",
+            "title": "Advanced Piece Editor"
+        },
+        "title": "Key Features",
+        "variants": {
+            "description": "Experiment and play your own chess variants or try out variants made by others.",
+            "title": "User-Created Variants"
+        },
+        "visualScripting": {
+            "description": "Drag-and-drop triggers, effects, and variables—similar to Scratch—to build complex game mechanics without coding.",
+            "title": "Visual Scripting"
         }
-    }
+    },
+    "generalHeading": "2. General Information",
+    "generalText": "The protection of your data is important to us. We process personal data only when necessary for providing our services and adhere to the General Data Protection Regulation (GDPR).",
+    "h1": "chessperiment - The Custom Chess Platform",
+    "hostingHeading": "5. Database and Hosting",
+    "hostingText": "We use Google Firebase (Firestore) as our database. Your data (user accounts, game history, created content) is stored there. Data may be processed in the USA. Google is certified under the EU-US Data Privacy Framework. Legal basis: Art. 6(1)(b) GDPR.",
+    "intro": "Chessperiment (chessperiment.app) is a web platform dedicated to creating highly customizable chess variants. Unlike traditional chess websites, Chessperiment lets users design their own unique games with complete control over boards, pieces, rules, and interactions.",
+    "lastUpdated": "(As of: July 2024)",
+    "madeWith": "Created with the friendly support of",
+    "minorsHeading": "8. Minors",
+    "minorsText": "Persons under 16 should only use our services with parental consent.",
+    "mission": {
+        "description": "Our mission is to empower chess players and creators worldwide to reimagine the game. We believe chess should be a canvas for creativity, not just a fixed set of rules.",
+        "title": "Our Mission"
+    },
+    "odrText": "The European Commission provides a platform for online dispute resolution (ODR), which you can find at the following link:",
+    "otherProfilesLabel": "Other Profiles:",
+    "p": "Design unique chess sets, customize your board, and play multiplayer chess variants online.",
+    "phoneLabel": "Phone:",
+    "phoneValue": "+49 1517 4288065",
+    "providerAddress": "Ahlerfeld 29, 38527 Meine, Germany",
+    "providerHeading": "Provider",
+    "providerName": "Lasse Mauritz - chessperiment",
+    "readMore": "Read more",
+    "retentionHeading": "7. Data Retention",
+    "retentionText": "We store your data as long as you have an account with us. Game history and created content are stored longer to maintain platform integrity. You can request the deletion of your account and associated personal data at any time.",
+    "rightsHeading": "9. Your Rights",
+    "rightsText": "You have the right to access, rectify, erase, restrict, and port your data. Please contact us at the email address provided above.",
+    "seoContent": {
+        "heading": "Experience the Next Generation of Chess Variants",
+        "text": "Join the chessperiment community and play unique chess variants online with friends or against our integrated Stockfish AI. Our platform allows you to use custom boards and piece sets designed by creators around the world. Whether you're interested in testing a new piece logic you just created or want to jump into a match with standard rules on an irregular board, our smooth multiplayer experience has you covered. Start a private match by sharing a room code, or join the lobby to find other players. With real-time move validation and advanced engine analysis, chessperiment offers a robust environment for both casual play and competitive testing of new game mechanics."
+    },
+    "socialMediaHeading": "Social Media Profiles",
+    "socialMediaText": "This legal notice also applies to the following social media profiles:",
+    "title": "About Chessperiment",
+    "vsbgText": "We are not willing or obliged to participate in dispute resolution proceedings before a consumer arbitration board.",
+    "youtubeLabel": "YouTube:"
 }
