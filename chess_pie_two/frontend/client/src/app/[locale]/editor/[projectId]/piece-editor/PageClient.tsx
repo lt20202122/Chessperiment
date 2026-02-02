@@ -81,6 +81,9 @@ export default function PageClient({ projectId }: PageClientProps) {
         loadProject();
     }, [user, authLoading, projectId, router]);
 
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const initialPieceId = searchParams?.get('pieceId');
+
     async function loadProject() {
         if (!user) return;
 
@@ -91,9 +94,13 @@ export default function PageClient({ projectId }: PageClientProps) {
                 const loadedProject = result.data;
                 setProject(loadedProject);
 
-                // Auto-select first piece if available
-                if (loadedProject.customPieces && loadedProject.customPieces.length > 0) {
-                    selectPiece(loadedProject.customPieces[0].id || loadedProject.customPieces[0].name, loadedProject.customPieces);
+                // Auto-select piece: check URL first, then first piece
+                const pieces = loadedProject.customPieces || [];
+                if (pieces.length > 0) {
+                    const targetPiece = initialPieceId
+                        ? (pieces.find(p => p.id === initialPieceId || p.name === initialPieceId) || pieces[0])
+                        : pieces[0];
+                    selectPiece(targetPiece.id || targetPiece.name, pieces);
                 } else {
                     // Create a starter piece if none exists
                     await createNewPiece(loadedProject);
@@ -368,6 +375,7 @@ export default function PageClient({ projectId }: PageClientProps) {
                             handleSavePiece({ moves }, true);
                         }}
                         pieceId={selectedPieceId || undefined}
+                        projectId={projectId}
                     />
                 )}
             </div>
@@ -407,6 +415,7 @@ export default function PageClient({ projectId }: PageClientProps) {
                     }
                 }}
                 onImageUpload={handleImageUpload}
+                projectId={projectId}
             />
         </div>
     );

@@ -56,6 +56,7 @@ export interface CustomPiece {
     imageBlack?: string // Non-pixelated image for black version
     moves: any[] // Move logic
     logic?: any // Logic blocks (triggers/effects)
+    variables?: { id: string, name: string }[] // Custom variable definitions
     createdAt: Date
     updatedAt: Date
     color?: string // Legacy

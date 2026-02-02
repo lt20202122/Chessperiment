@@ -428,6 +428,41 @@
           "label": "Vertical Distance",
           "desc": "The absolute vertical distance, regardless of forward or backward."
         }
+      },
+      "Logic": {
+        "title": "Logic Editor",
+        "back": "Back to Piece",
+        "dragVariableHint": "Drag a variable here",
+        "variableTooltip": "This field only accepts variables. Drag one from the \"Variables\" category.",
+        "categories": {
+          "trigger": "Triggers",
+          "effects": "Effects",
+          "variables": "Variables"
+        },
+        "blocks": {
+          "onIsCaptured": "onIsCaptured",
+          "onThreat": "onThreat",
+          "onMove": "onMove",
+          "onEnvironment": "onEnvironment",
+          "onVar": "onVar",
+          "cooldown": "Cooldown",
+          "transformation": "Transformation",
+          "modVar": "Mod Var",
+          "kill": "Kill",
+          "prevent": "Prevent Default"
+        },
+        "descriptions": {
+          "onIsCaptured": "Triggers when a piece is captured.",
+          "onThreat": "Triggers when the piece is threatened.",
+          "onMove": "Triggers when the piece moves.",
+          "onEnvironment": "Triggers based on board environment.",
+          "onVar": "Triggers when a variable meets a condition.",
+          "cooldown": "Applies a cooldown to the piece.",
+          "transformation": "Changes the piece into another type.",
+          "modVar": "Modifies a variable value.",
+          "kill": "Immediately removes the piece from play.",
+          "prevent": "Prevents the default engine behavior."
+        }
       }
     }
   },

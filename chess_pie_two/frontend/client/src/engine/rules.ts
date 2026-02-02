@@ -46,7 +46,7 @@ export class ValidatorClass {
         const direction = piece.color === 'white' ? 1 : -1;
 
         if (diffX === 1 && diffY === direction) {
-            const capturedPawnSquare = toSquare([toCoordsCoords[0], toCoordsCoords[1] - direction]);
+            const capturedPawnSquare = toSquare([toCoordsCoords[0], toCoordsCoords[1] - direction], this.board.gridType === 'square');
             const capturedPawn = this.board.getPiece(capturedPawnSquare);
 
             if (capturedPawn instanceof Pawn && capturedPawn.color !== piece.color) {
@@ -81,7 +81,7 @@ export class ValidatorClass {
 
         const rank = fromCoords[1];
         const rookFile = diffX > 0 ? 7 : 0;
-        const rookSquare = toSquare([rookFile, rank]);
+        const rookSquare = toSquare([rookFile, rank], this.board.gridType === 'square');
         const rook = this.board.getPiece(rookSquare);
 
         if (!rook || rook.hasMoved) {
@@ -90,7 +90,7 @@ export class ValidatorClass {
 
         const direction = diffX > 0 ? 1 : -1;
         for (let i = 1; i < Math.abs(diffX); i++) {
-            const square = toSquare([fromCoords[0] + i * direction, rank]);
+            const square = toSquare([fromCoords[0] + i * direction, rank], this.board.gridType === 'square');
             if (this.board.getPiece(square) !== null) {
                 return false;
             }
@@ -101,7 +101,7 @@ export class ValidatorClass {
             return false;
         }
         for (let i = 1; i <= Math.abs(diffX); i++) {
-            const square = toSquare([fromCoords[0] + i * (diffX > 0 ? 1 : -1), fromCoords[1]]);
+            const square = toSquare([fromCoords[0] + i * (diffX > 0 ? 1 : -1), fromCoords[1]], this.board.gridType === 'square');
             if (this.isSquareAttacked(square, attackerColor, this.board)) {
                 return false;
             }
@@ -110,7 +110,7 @@ export class ValidatorClass {
         return true;
     }
 
-    isLegal(from: Square, to: Square): boolean {
+    isLegal(from: Square, to: Square, promotion?: string): boolean {
         const piece = this.board.getPiece(from);
         if (!piece || piece.color !== this.board.getTurn()) {
             return false;
@@ -129,11 +129,17 @@ export class ValidatorClass {
         }
 
         const tempBoard = this.board.clone();
-        tempBoard.movePiece(from, to);
+        const moveSuccess = tempBoard.movePiece(from, to, promotion);
+        
+        // If the move itself failed (e.g. blocked by logic), it's not legal
+        if (!moveSuccess) {
+            return false;
+        }
 
         const kingSquare = this.findKing(piece.color, tempBoard);
         if (!kingSquare) {
-            return false;
+            // If No King exists, we don't enforce King safety (allows pieces to move in testing or King-less variants)
+            return true;
         }
 
         const attackerColor = piece.color === 'white' ? 'black' : 'white';
@@ -144,7 +150,7 @@ export class ValidatorClass {
         const squares = board.getSquares();
         for (const s in squares) {
             const piece = squares[s as Square];
-            if (piece && piece.type === 'king' && piece.color === color) {
+            if (piece && piece.type.toLowerCase() === 'king' && piece.color === color) {
                 return s as Square;
             }
         }

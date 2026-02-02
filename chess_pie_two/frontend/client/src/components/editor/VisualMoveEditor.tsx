@@ -1,10 +1,11 @@
 "use client"
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ArrowRight, GripVertical, Footprints, Zap } from 'lucide-react';
+import { Plus, Trash2, ArrowRight, GripVertical, Footprints, Zap, Code2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import { useRouter } from '@/i18n/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import {
     DndContext,
@@ -43,6 +44,7 @@ interface VisualMoveEditorProps {
     moves: MoveRule[];
     onUpdate: (moves: MoveRule[]) => void;
     pieceId?: string;
+    projectId?: string;
 }
 
 const VAR_MATH = {
@@ -272,9 +274,10 @@ function SortableRule({
     );
 }
 
-export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMoveEditorProps) {
+export default function VisualMoveEditor({ moves, onUpdate, pieceId, projectId }: VisualMoveEditorProps) {
     const t = useTranslations('Editor.Piece');
     const locale = useLocale();
+    const router = useRouter();
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -388,13 +391,26 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
                     <h2 className="text-2xl font-black text-stone-900 dark:text-white tracking-tight">{t('visualLogicTitle')}</h2>
                     <p className="text-stone-500 dark:text-white/40 text-sm">{t('visualLogicDescription')}</p>
                 </div>
-                <button
-                    type="button"
-                    onClick={addRule}
-                    className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white dark:text-bg font-black rounded-2xl hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 active:scale-95"
-                >
-                    <Plus size={20} /> {t('addRule')}
-                </button>
+                <div className="flex items-center gap-3">
+                    {pieceId && projectId && (
+                        <button
+                            type="button"
+                            onClick={() => router.push(`/editor/${projectId}/piece-editor/${pieceId}/logic`)}
+                            className="flex items-center gap-3 px-8 py-4 bg-linear-to-br from-indigo-500 to-violet-600 text-white font-black rounded-2xl shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] hover:scale-105 transition-all active:scale-95 group relative overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Code2 size={22} className="group-hover:rotate-12 transition-transform relative z-10" />
+                            <span className="relative z-10 tracking-tight">{t('advancedLogicTitle') || 'Advanced Logic'}</span>
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={addRule}
+                        className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white dark:text-bg font-black rounded-2xl hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 active:scale-95"
+                    >
+                        <Plus size={20} /> {t('addRule')}
+                    </button>
+                </div>
             </div>
 
             <DndContext

@@ -58,7 +58,24 @@ export class LogicRunner {
     }
 
     private static executeInternal(piece: LogicPiece, triggerType: string, context: any, board: BoardClass) {
-        const triggers = piece.logic.filter((b: any) => b.type === 'trigger' && b.id === triggerType);
+        // Fallback for renamed triggers
+        let targetType = triggerType;
+        if (triggerType === 'on-is-captured') {
+            // Check both new and old IDs
+            const triggers = piece.logic.filter((b: any) => 
+                b.type === 'trigger' && (b.id === 'on-is-captured' || b.id === 'on-capture' || b.id === 'on-captured')
+            );
+            for (const trigger of triggers) {
+                if (this.evaluateTriggerCondition(piece, trigger, context, board)) {
+                    if (trigger.childId) {
+                        this.runBlock(piece, trigger.childId, context, board);
+                    }
+                }
+            }
+            return;
+        }
+
+        const triggers = piece.logic.filter((b: any) => b.type === 'trigger' && b.id === targetType);
         
         for (const trigger of triggers) {
             if (this.evaluateTriggerCondition(piece, trigger, context, board)) {
@@ -83,6 +100,7 @@ export class LogicRunner {
         };
 
         switch (trigger.id) {
+            case 'on-is-captured':
             case 'on-capture':
             case 'on-captured':
                 // Smart trigger: handles both "I captured something" and "I was captured"
@@ -228,12 +246,15 @@ export class LogicRunner {
 
         for (const [key, val] of Object.entries(socketValues)) {
             if (val && typeof val === 'object' && (val as any).type === 'variable') {
-                // It's a linked variable!
-                const varName = (val as any).name; // Or ID? The drop payload had { name: ... }
-                // In PageClient we stored: { type: 'variable', id: ..., name: ... }
-                // But the variable VALUE comes from piece.variables[resolvedName]
-                // Wait, "name" in payload is the Variable Name (e.g. "MyVar").
-                resolved[key] = piece.variables[varName] !== undefined ? piece.variables[varName] : 0;
+                const varObj = val as any;
+                const varName = varObj.name;
+                
+                // If it's explicitly a variable-only field (target name) or the key is 'varName'
+                if (varObj.variableOnly || key === 'varName') {
+                    resolved[key] = varName;
+                } else {
+                    resolved[key] = piece.variables[varName] !== undefined ? piece.variables[varName] : 0;
+                }
             } else {
                 resolved[key] = val;
             }

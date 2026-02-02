@@ -65,6 +65,9 @@ export class CustomPiece extends Piece {
     logic: any[];
     variables: Record<string, any> = {};
     public isCustom = true;
+    public pixelsWhite?: string[][];
+    public pixelsBlack?: string[][];
+    public image?: string;
 
     constructor(id: string, type: string, color: "white" | "black", position: Square, rules: any = [], logic: any = [], name?: string) {
         super(id, type, color, position, name);
@@ -112,6 +115,12 @@ export class CustomPiece extends Piece {
     isValidMove(from: Square, to: Square, board: BoardClass): boolean {
         // Cooldown check: if > 0, the piece cannot move.
         if (this.variables['cooldown'] && this.variables['cooldown'] > 0) {
+            return false;
+        }
+
+        // Standard: Cannot capture your own pieces
+        const targetPiece = board.getPiece(to);
+        if (targetPiece && targetPiece.color === this.color) {
             return false;
         }
 
@@ -164,7 +173,8 @@ export class CustomPiece extends Piece {
                 // Hex specific / generic distance
                 else if (cond.variable === 'dist') {
                     if (board.gridType === 'hex') {
-                        value = (Math.abs(dx) + Math.abs(dy) + Math.abs(-dx - dy)) / 2;
+                        const ds = -dx - dy;
+                        value = (Math.abs(dx) + Math.abs(dy) + Math.abs(ds)) / 2;
                     } else {
                         value = Math.max(adx, ady); // Chebyshev distance for square
                     }
@@ -202,7 +212,7 @@ export class CustomPiece extends Piece {
                 // If a rule is met, it dictates the result
                 if (rule.result === 'allow') {
                     // Check if this is a 'slide' (run) move - path must be clear
-                    if (rule.type === 'slide') {
+                    if (rule.type === 'slide' || rule.type === 'run' || (rule as any).type === 'running') {
                         // Calculate number of steps using GCD
                         const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
                         const steps = gcd(Math.abs(dx), Math.abs(dy));
@@ -215,7 +225,7 @@ export class CustomPiece extends Piece {
                             for (let s = 1; s < steps; s++) {
                                 const iX = fromCoords[0] + s * stepX;
                                 const iY = fromCoords[1] + s * stepY;
-                                const iSq = toSquare([iX, iY]);
+                                const iSq = toSquare([iX, iY], board.gridType === 'square');
                                 
                                 if (board.getPiece(iSq) !== null || !board.isActive(iSq)) {
                                     pathClear = false;
@@ -248,9 +258,12 @@ export class CustomPiece extends Piece {
     }
 
     clone(): CustomPiece {
-        const p = new CustomPiece(this.id, this.type, this.color, this.position, this.rules, this.logic);
+        const p = new CustomPiece(this.id, this.type, this.color, this.position, this.rules, this.logic, this.name);
         p.hasMoved = this.hasMoved;
         p.variables = { ...this.variables };
+        p.pixelsWhite = this.pixelsWhite;
+        p.pixelsBlack = this.pixelsBlack;
+        p.image = this.image;
         return p;
     }
 }
@@ -300,7 +313,7 @@ export class Pawn extends Piece {
         }
 
         if (diffX === 0 && fromCoords[1] === startingRank && diffY === 2 * direction) {
-            const pathClear = board.getPiece(toSquare([fromCoords[0], fromCoords[1] + direction])) === null;
+            const pathClear = board.getPiece(toSquare([fromCoords[0], fromCoords[1] + direction], board.gridType === 'square')) === null;
             return pathClear && board.getPiece(to) === null;
         }
 
@@ -427,7 +440,7 @@ export class Bishop extends Piece {
         const xDirection = toCoordsCoords[0] > fromCoords[0] ? 1 : -1;
         const yDirection = toCoordsCoords[1] > fromCoords[1] ? 1 : -1;
         for (let i = 1; i < diffX; i++) {
-            const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1] + i * yDirection]);
+            const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1] + i * yDirection], board.gridType === 'square');
             if (board.getPiece(square) !== null || !board.isActive(square)) return false;
         }
         return true;
@@ -477,13 +490,13 @@ export class Rook extends Piece {
         if (diffX === 0) {
             const yDirection = toCoordsCoords[1] > fromCoords[1] ? 1 : -1;
             for (let i = 1; i < diffY; i++) {
-                const square = toSquare([fromCoords[0], fromCoords[1] + i * yDirection]);
+                const square = toSquare([fromCoords[0], fromCoords[1] + i * yDirection], board.gridType === 'square');
                 if (board.getPiece(square) !== null || !board.isActive(square)) return false;
             }
         } else {
             const xDirection = toCoordsCoords[0] > fromCoords[0] ? 1 : -1;
             for (let i = 1; i < diffX; i++) {
-                const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1]]);
+                const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1]], board.gridType === 'square');
                 if (board.getPiece(square) !== null || !board.isActive(square)) return false;
             }
         }
@@ -557,13 +570,13 @@ export class Queen extends Piece {
             if (diffX === 0) {
                 const yDirection = toCoordsCoords[1] > fromCoords[1] ? 1 : -1;
                 for (let i = 1; i < diffY; i++) {
-                    const square = toSquare([fromCoords[0], fromCoords[1] + i * yDirection]);
+                    const square = toSquare([fromCoords[0], fromCoords[1] + i * yDirection], board.gridType === 'square');
                     if (board.getPiece(square) !== null || !board.isActive(square)) return false;
                 }
             } else {
                 const xDirection = toCoordsCoords[0] > fromCoords[0] ? 1 : -1;
                 for (let i = 1; i < diffX; i++) {
-                    const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1]]);
+                    const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1]], board.gridType === 'square');
                     if (board.getPiece(square) !== null || !board.isActive(square)) return false;
                 }
             }
@@ -575,7 +588,7 @@ export class Queen extends Piece {
             const xDirection = toCoordsCoords[0] > fromCoords[0] ? 1 : -1;
             const yDirection = toCoordsCoords[1] > fromCoords[1] ? 1 : -1;
             for (let i = 1; i < diffX; i++) {
-                const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1] + i * yDirection]);
+                const square = toSquare([fromCoords[0] + i * xDirection, fromCoords[1] + i * yDirection], board.gridType === 'square');
                 if (board.getPiece(square) !== null || !board.isActive(square)) return false;
             }
             return true;

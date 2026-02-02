@@ -29,7 +29,7 @@ export interface MoveRule {
     id: string;
     conditions: MoveCondition[];
     result: 'allow' | 'disallow';
-    type?: 'jump' | 'slide'; // jump = can move over obstacles, slide = must have clear path
+    type?: 'jump' | 'slide' | 'run' | 'running'; // jump = can move over obstacles, slide/run = must have clear path
 }
 
 export type pieces = "pawn" | "knight" | "bishop" | "rook" | "queen" | "king"

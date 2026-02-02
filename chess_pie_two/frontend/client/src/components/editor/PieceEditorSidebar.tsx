@@ -1,11 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, Undo2, Redo2, Type, Box, Loader2, Palette, ChevronDown, Check, Move, RefreshCw, HelpCircle } from 'lucide-react';
+import { Save, Plus, Trash2, Undo2, Redo2, Type, Box, Loader2, Palette, ChevronDown, Check, Move, RefreshCw, HelpCircle, Code2 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { PieceSet, CustomPiece } from '@/types/firestore';
 import PieceRenderer from '@/components/game/PieceRenderer';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from '@/i18n/navigation';
 
 interface PieceEditorSidebarProps {
     pieces: (CustomPiece & { id: string })[];
@@ -18,6 +19,7 @@ interface PieceEditorSidebarProps {
     setCurrentName: (name: string) => void;
     currentColor: 'white' | 'black';
     setCurrentColor: (color: 'white' | 'black') => void;
+    projectId?: string;
     mode: 'design' | 'moves';
     setMode: (mode: 'design' | 'moves') => void;
     undo: () => void;
@@ -48,8 +50,10 @@ export default function PieceEditorSidebar({
     canRedo,
     onDeletePiece,
     onGenerateInvertedPiece,
-    onImageUpload
+    onImageUpload,
+    projectId
 }: PieceEditorSidebarProps) {
+    const router = useRouter();
     const t = useTranslations('Editor.Piece');
     const locale = useLocale();
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; pieceId: string } | null>(null);
@@ -282,6 +286,16 @@ export default function PieceEditorSidebar({
 
             {/* Actions */}
             <div className="mt-auto pt-8 space-y-3 shrink-0">
+                {selectedPieceId && projectId && (
+                    <button
+                        onClick={() => router.push(`/editor/${projectId}/piece-editor/${selectedPieceId}/logic`)}
+                        className="w-full bg-linear-to-r from-indigo-500/20 to-violet-500/20 hover:from-indigo-500 hover:to-violet-600 text-indigo-400 hover:text-white py-4 rounded-3xl font-black text-xs uppercase tracking-widest border border-indigo-500/30 transition-all flex items-center justify-center gap-2 group shadow-lg hover:shadow-indigo-500/40 relative overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <Code2 size={16} className="group-hover:rotate-12 transition-transform relative z-10" />
+                        <span className="relative z-10">{t('advancedLogicTitle') || 'Advanced Logic'}</span>
+                    </button>
+                )}
                 <button
                     onClick={() => onSavePiece()}
                     disabled={isSaving}

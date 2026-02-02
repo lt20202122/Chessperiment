@@ -19,7 +19,7 @@ The feedback feature uses the existing `RESEND_API_KEY` that's already configure
 
 ### Email Destination
 
-Feedback emails are sent to: **lassethoroe10@gmail.com**
+Feedback emails are sent to: **lasse.secaccbs@gmail.com**
 
 ### How to Test Locally
 
@@ -27,7 +27,7 @@ Feedback emails are sent to: **lassethoroe10@gmail.com**
 2. Run `npm run dev`
 3. Go to http://localhost:3000/en/feedback
 4. Submit feedback
-5. Check lassethoroe10@gmail.com for the email
+5. Check lasse.secaccbs@gmail.com for the email
 
 ### Resend Dashboard
 
@@ -65,7 +65,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const { data, error } = await resend.emails.send({
   from: "Chessperiment Feedback <onboarding@resend.dev>",
-  to: ["lassethoroe10@gmail.com"],
+  to: ["lasse.secaccbs@gmail.com"],
   subject: "Chessperiment Feedback: Bug Report",
   html: "...",
 });

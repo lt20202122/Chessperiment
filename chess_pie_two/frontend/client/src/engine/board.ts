@@ -161,6 +161,12 @@ export class BoardClass {
             this.saveSnapshot(); // Save state before any potential logic execution or move
 
             let destinationPiece = this.getPiece(to);
+            if (destinationPiece && destinationPiece.color === piece.color) {
+                console.warn(`[Engine] Move rejected: Cannot capture own pieces (${piece.color} at ${from} vs ${destinationPiece.color} at ${to})`);
+                this.snapshots.pop();
+                return false;
+            }
+
             const isCapture = destinationPiece !== null && destinationPiece.color !== piece.color;
 
             let pieceToMove = piece;
@@ -201,18 +207,16 @@ export class BoardClass {
                     capturePrevented: false 
                 };
 
-                // 1. Fire on attacker (Active)
+                // Fire consolidated on-is-captured logic on both sides
                 if ((pieceToMove as any).isCustom) {
-                    (pieceToMove as any).executeLogic('on-capture', commonContext, this);
+                    (pieceToMove as any).executeLogic('on-is-captured', commonContext, this);
                     if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
                         movePrevented = true;
                     }
                 }
 
-                // 2. Fire on victim (Passive)
                 if (destinationPiece && (destinationPiece as any).isCustom) {
-                    (destinationPiece as any).executeLogic('on-capture', commonContext, this);
-                    (destinationPiece as any).executeLogic('on-captured', commonContext, this);
+                    (destinationPiece as any).executeLogic('on-is-captured', commonContext, this);
                     
                     if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
                         capturePrevented = true;
@@ -229,6 +233,8 @@ export class BoardClass {
                     this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
                     return true;
                 }
+                console.warn(`[Engine] Move rejected by logic: ${from} -> ${to} (movePrevented: ${movePrevented}, capturePrevented: ${capturePrevented})`);
+                this.snapshots.pop(); // Don't keep snapshots for blocked moves
                 return false; 
             }
 
@@ -321,22 +327,27 @@ export class BoardClass {
     }> = [];
 
     private saveSnapshot() {
-        const squaresCopy: Record<Square, Piece | null> = {} as any;
         const currentSquares = this.getSquares();
-        const pieceVariables: Record<string, Record<string, number>> = {};
+        const squaresCopy: Record<Square, Piece | null> = {} as any;
+        const pieceVariables: Record<string, Record<string, any>> = {};
 
         for (const s in currentSquares) {
             const piece = currentSquares[s as Square];
             if (piece) {
-                 if (piece instanceof CustomPiece) {
-                     pieceVariables[piece.id] = { ...piece.variables };
-                 }
+                // Perform a deep clone for the snapshot
+                const clonedPiece = (piece as any).clone ? (piece as any).clone() : piece;
+                squaresCopy[s as Square] = clonedPiece;
+                
+                if (piece instanceof CustomPiece) {
+                    pieceVariables[piece.id] = JSON.parse(JSON.stringify(piece.variables || {}));
+                }
+            } else {
+                squaresCopy[s as Square] = null;
             }
-            squaresCopy[s as Square] = piece; 
         }
 
         this.snapshots.push({
-            squares: { ...currentSquares },
+            squares: squaresCopy,
             turn: this.getTurn(),
             pieceVariables
         });

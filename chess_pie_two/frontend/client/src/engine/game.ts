@@ -12,7 +12,7 @@ export class Game {
     }
 
     makeMove(from: Square, to: Square, promotion?: string): boolean {
-        if (this.validator.isLegal(from, to)) {
+        if (this.validator.isLegal(from, to, promotion)) {
             return this.board.movePiece(from, to, promotion);
         }
         return false;

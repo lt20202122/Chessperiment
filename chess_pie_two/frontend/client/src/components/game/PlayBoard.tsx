@@ -318,22 +318,24 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
         }
 
         if (success) {
-            const newBoard = game.getBoard().clone();
-            setBoard(newBoard);
-
             const moveDesc = `${from} -> ${to}`;
             addLog(`Move: ${moveDesc}`, 'move');
             const sound = new Audio('/sounds/move-self.mp3');
             sound.play().catch(() => { });
 
             // Update History
-            const snapshot = JSON.parse(JSON.stringify(newBoard.getSquares()));
+            const snapshot = JSON.parse(JSON.stringify(game.getBoard().getSquares()));
             setHistorySnapshots(prev => [...prev, snapshot]);
             setMoveHistory(prev => [...prev, moveDesc]);
             setViewIndex(prev => prev + 1);
-            return true;
+        } else {
+            console.warn(`[Engine] Move rejected or prevented: ${from} -> ${to}`);
         }
-        return false;
+
+        // Always sync the board state, even if move failed, because logic might have changed pieces
+        const newBoard = game.getBoard().clone();
+        setBoard(newBoard);
+        return success;
     };
 
     const handleSquareClick = (pos: Square) => {
