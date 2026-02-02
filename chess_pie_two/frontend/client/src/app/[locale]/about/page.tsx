@@ -130,7 +130,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                             </p>
                             <div className="mt-10 flex items-center justify-center gap-x-8">
                                 <Link
-                                    href="/editor/board"
+                                    href="/editor"
                                     className="rounded-xl bg-linear-to-r from-orange-500 to-amber-500 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
                                 >
                                     Start Creating

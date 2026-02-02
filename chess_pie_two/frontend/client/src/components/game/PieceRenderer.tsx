@@ -78,7 +78,7 @@ export const PixelPiece = ({ pixels, image, size, className }: { pixels?: string
             width={size}
             height={size}
             className={className}
-            style={{ width: size, height: size, imageRendering: image ? 'auto' : 'pixelated' }}
+            style={{ width: '100%', height: '100%', imageRendering: image ? 'auto' : 'pixelated' }}
         />
     );
 };
@@ -97,12 +97,20 @@ export default function PieceRenderer({
     recentTrigger,
     recentEffect
 }: PieceRendererProps) {
+    const [isMounted, setIsMounted] = React.useState(false);
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     // Render piece content
     let pieceContent: React.ReactNode;
     const isWhite = color === 'white';
 
-    // If we have direct pixels (from Library), use them
-    if (pixels || image) {
+    if (!isMounted) {
+        // Render simple fallback for SSR to avoid hydration mismatch
+        pieceContent = <div style={{ width: size, height: size }} />;
+    } else if (pixels || image) {
+        // If we have direct pixels (from Library), use them
         pieceContent = <PixelPiece pixels={pixels} image={image} size={size} className={className} />;
     } else {
         // Check if it's a standard piece
@@ -111,36 +119,25 @@ export default function PieceRenderer({
 
         if (standardPieces.includes(lowerType)) {
             pieceContent = (
-                <Image
-                    src={getPieceImage(boardStyle, color, type)}
-                    alt={`${color} ${type}`}
-                    height={size}
-                    width={size}
-                    unoptimized
-                    className={`bg-transparent ${className} ${color === 'black' ? 'dark:drop-shadow-[0_0_1.5px_rgba(255,255,255,0.6)]' : ''}`}
-                    style={{ height: size, width: "auto", pointerEvents: "none" }}
-                />
+                <div className="w-[85%] h-[85%] relative flex items-center justify-center">
+                    <Image
+                        src={getPieceImage(boardStyle, color, type)}
+                        alt={`${color} ${type}`}
+                        fill
+                        unoptimized
+                        className={`bg-transparent object-contain ${className} ${color === 'black' ? 'dark:drop-shadow-[0_0_1.5px_rgba(255,255,255,0.6)]' : ''}`}
+                        style={{ pointerEvents: "none" }}
+                    />
+                </div>
             );
         } else {
             // It might be a custom piece. Try to find it in localStorage if pixels weren't provided
-            if (typeof window !== 'undefined') {
-                const collection = JSON.parse(localStorage.getItem('piece_collection') || '{}');
-                const customPiece = Object.values(collection).find((p: any) => p.name === type && p.color === color) as any;
-                if (customPiece && (customPiece.pixels || customPiece.image)) {
-                    pieceContent = <PixelPiece pixels={customPiece.pixels} image={customPiece.image} size={size} className={className} />;
-                } else {
-                    // Fallback: Show a generic placeholder or the type name
-                    pieceContent = (
-                        <div
-                            className={`flex items-center justify-center rounded-full ${color === 'white' ? 'bg-white text-bg' : 'bg-gray-800 text-white'} ${className}`}
-                            style={{ width: size, height: size, fontSize: size * 0.4, fontWeight: 'black' }}
-                        >
-                            {type.substring(0, 1).toUpperCase()}
-                        </div>
-                    );
-                }
+            const collection = JSON.parse(localStorage.getItem('piece_collection') || '{}');
+            const customPiece = Object.values(collection).find((p: any) => p.name === type && p.color === color) as any;
+            if (customPiece && (customPiece.pixels || customPiece.image)) {
+                pieceContent = <PixelPiece pixels={customPiece.pixels} image={customPiece.image} size={size} className={className} />;
             } else {
-                // Fallback for SSR
+                // Fallback: Show a generic placeholder or the type name
                 pieceContent = (
                     <div
                         className={`flex items-center justify-center rounded-full ${color === 'white' ? 'bg-white text-bg' : 'bg-gray-800 text-white'} ${className}`}
@@ -155,7 +152,7 @@ export default function PieceRenderer({
 
     // Wrap in container with state indicators
     return (
-        <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+        <div className="relative flex items-center justify-center w-full h-full">
             {pieceContent}
             <PieceStateIndicators
                 variables={variables}

@@ -1,0 +1,26 @@
+# Chessperiment
+
+> **Chessperiment** is a generative framework for highly custom chess variants.
+> High-signal documentation for AI coding agents: [llms-full.txt](/llms-full.txt)
+
+## Tool Calling & Navigation
+
+*   **Full Technical Docs**: [/llms-full.txt](/llms-full.txt) (Token Count: ~2k)
+    *   *Contains*: Logic Manifesto, API Schemas, Block Editor Reference, Move Rule Cookbook.
+*   **Live Editor**: [chessperiment.app/editor](https://chessperiment.app/editor)
+
+## Capabilities Summary
+
+*   **Logic Engine**: Vector-based move constraints (`diffX`, `diffY`) instead of static patterns to support arbitrarily sized boards.
+*   **Event System**: Scratch-like block editor for reactive logic (`onCapture`, `Transformation`).
+*   **Rendering**: Frontend-agnostic piece rendering (PNG/SVG) with visual feedback.
+*   **Infrastructure**: Next.js 14, TypeScript, Firebase (Store), Socket.io (Realtime), Redis (Cache).
+
+## Features
+ 
+* Hexagon Squares
+* Custom board shapes: Holes, disabled squares etc.
+* Pixel Art for Piece Design (within the browser)
+* Engine to play against
+* Piece Editor with trigger (onMove, onIsThreatend etc.) --> effects (transform, ModVar, kill etc.)
+* Variables for pieces (e.g. lives)

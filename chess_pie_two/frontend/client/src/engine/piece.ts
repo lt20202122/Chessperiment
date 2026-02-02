@@ -98,7 +98,7 @@ export class CustomPiece extends Piece {
 
         // Environment checks
         const [col, row] = toCoords(this.position);
-        const isWhiteSquare = (col + row) % 2 !== 0;
+        const isWhiteSquare = (col + row) % 2 === 0;
         this.executeLogic('on-environment', { 
             isWhiteSquare, 
             isBlackSquare: !isWhiteSquare,
@@ -143,11 +143,7 @@ export class CustomPiece extends Piece {
             // So if dy (dr) is negative, it's forward for white.
             forwardDy = this.color === 'white' ? -dy : dy;
         } else {
-            // Square Grid:
-            // Usually Row 0 is Top (Black side), Row 7 is Bottom (White side)
-            // Moving "Up" (Forward for White) means Decreasing Y (Row)
-            // Moving "Down" (Forward for Black) means Increasing Y (Row)
-            forwardDy = this.color === 'white' ? -dy : dy;
+            forwardDy = this.color === 'white' ? dy : -dy;
         }
 
         let isAllowed = false;
@@ -204,10 +200,11 @@ export class CustomPiece extends Piece {
 
             if (ruleResult) {
                 // If a rule is met, it dictates the result
-                // If a rule is met, it dictates the result
                 if (rule.result === 'allow') {
-                    // Check Slide Logic (Run) - Path must be clear
+                    // Check if this is a 'slide' (run) move - path must be clear
                     if (rule.type === 'slide') {
+                        // Calculate number of steps using GCD
+                        const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
                         const steps = gcd(Math.abs(dx), Math.abs(dy));
                         let pathClear = true;
                         
@@ -216,11 +213,8 @@ export class CustomPiece extends Piece {
                             const stepX = dx / steps;
                             const stepY = dy / steps;
                             for (let s = 1; s < steps; s++) {
-                                // Calculate intermediate coordinate (integer steps)
                                 const iX = fromCoords[0] + s * stepX;
                                 const iY = fromCoords[1] + s * stepY;
-                                
-                                // Only check if exact integer coordinate (should be by definition of GCD)
                                 const iSq = toSquare([iX, iY]);
                                 
                                 if (board.getPiece(iSq) !== null || !board.isActive(iSq)) {
@@ -231,12 +225,11 @@ export class CustomPiece extends Piece {
                         }
                         
                         if (!pathClear) {
-                            // Path blocked, this rule cannot grant permission
-                            // We treat it as if the conditions weren't met (continue to next rule)
+                            // Path blocked, continue to next rule
                             continue;
                         }
                     }
-
+                    // If we get here, the move is allowed (either jump or clear slide path)
                     isAllowed = true;
                 } else {
                     // If an illegal rule is met, we return false immediately (illegal rules override legal ones)
@@ -638,8 +631,4 @@ export class King extends Piece {
         p.hasMoved = this.hasMoved;
         return p;
     }
-}
-
-function gcd(a: number, b: number): number {
-    return b === 0 ? a : gcd(b, a % b);
 }

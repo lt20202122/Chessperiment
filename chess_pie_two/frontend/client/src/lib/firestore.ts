@@ -433,3 +433,143 @@ export async function migrateUserData(userId: string): Promise<void> {
     // Mark user as migrated
     await markUserMigrated(userId);
 }
+
+// ==================== LEGACY PIECE & BOARD FUNCTIONS ====================
+// (Restored for Piece Editor & Library compatibility)
+
+export async function saveCustomPiece(piece: CustomPiece) {
+    if (!db) throw new Error("Firestore not initialized");
+    const piecesRef = db.collection("customPieces");
+    
+    const data = { ...piece };
+    if (Array.isArray(data.pixelsWhite)) data.pixelsWhite = JSON.stringify(data.pixelsWhite) as any;
+    if (Array.isArray(data.pixelsBlack)) data.pixelsBlack = JSON.stringify(data.pixelsBlack) as any;
+    if (typeof data.logic !== 'string') data.logic = JSON.stringify(data.logic) as any;
+
+    if (piece.id) {
+        await piecesRef.doc(piece.id).update({ ...data, updatedAt: new Date() });
+        return piece.id;
+    } else {
+        const docRef = await piecesRef.add({ ...data, createdAt: new Date(), updatedAt: new Date() });
+        return docRef.id;
+    }
+}
+
+export async function getCustomPiece(pieceId: string, userId: string): Promise<CustomPiece | null> {
+    if (!db) throw new Error("Firestore not initialized");
+    const doc = await db.collection("customPieces").doc(pieceId).get();
+    if (!doc.exists || doc.data()?.userId !== userId) return null;
+    const data = doc.data();
+    return {
+        id: doc.id,
+        ...data,
+        pixelsWhite: typeof data?.pixelsWhite === 'string' ? JSON.parse(data.pixelsWhite) : data?.pixelsWhite,
+        pixelsBlack: typeof data?.pixelsBlack === 'string' ? JSON.parse(data.pixelsBlack) : data?.pixelsBlack,
+        logic: typeof data?.logic === 'string' ? JSON.parse(data.logic) : data?.logic,
+    } as CustomPiece;
+}
+
+export async function getUserCustomPieces(userId: string): Promise<CustomPiece[]> {
+    if (!db) throw new Error("Firestore not initialized");
+    const snapshot = await db.collection("customPieces").where("userId", "==", userId).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CustomPiece));
+}
+
+export async function deleteCustomPiece(pieceId: string, userId: string) {
+    if (!db) throw new Error("Firestore not initialized");
+    await db.collection("customPieces").doc(pieceId).delete();
+}
+
+export async function savePieceSet(set: PieceSet) {
+    if (!db) throw new Error("Firestore not initialized");
+    const setsRef = db.collection("pieceSets");
+    if (set.id) {
+        await setsRef.doc(set.id).update({ ...set, updatedAt: new Date() });
+        return set.id;
+    } else {
+        const docRef = await setsRef.add({ ...set, createdAt: new Date(), updatedAt: new Date() });
+        return docRef.id;
+    }
+}
+
+export async function getUserPieceSets(userId: string): Promise<PieceSet[]> {
+    if (!db) throw new Error("Firestore not initialized");
+    const snapshot = await db.collection("pieceSets").where("userId", "==", userId).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+}
+
+export async function getPieceSet(setId: string, userId: string): Promise<PieceSet | null> {
+    if (!db) throw new Error("Firestore not initialized");
+    const doc = await db.collection("pieceSets").doc(setId).get();
+    if (!doc.exists) return null;
+    return { id: doc.id, ...doc.data() } as any;
+}
+
+export async function getSetPieces(setId: string, userId: string): Promise<CustomPiece[]> {
+    if (!db) throw new Error("Firestore not initialized");
+    const snapshot = await db.collection("customPieces").where("setId", "==", setId).get();
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            ...data,
+            pixelsWhite: typeof data?.pixelsWhite === 'string' ? JSON.parse(data.pixelsWhite) : data?.pixelsWhite,
+            pixelsBlack: typeof data?.pixelsBlack === 'string' ? JSON.parse(data.pixelsBlack) : data?.pixelsBlack,
+            logic: typeof data?.logic === 'string' ? JSON.parse(data.logic) : data?.logic,
+        } as CustomPiece;
+    });
+}
+
+export async function deletePieceSet(setId: string, userId: string) {
+    if (!db) throw new Error("Firestore not initialized");
+    await db.collection("pieceSets").doc(setId).delete();
+}
+
+export async function togglePieceSetStar(setId: string, userId: string) {
+    if (!db) throw new Error("Firestore not initialized");
+    const ref = db.collection("pieceSets").doc(setId);
+    const doc = await ref.get();
+    if (!doc.exists) return;
+    const current = doc.data()?.isStarred || false;
+    await ref.update({ isStarred: !current });
+    return !current;
+}
+
+export async function saveBoard(board: SavedBoard) {
+    if (!db) throw new Error("Firestore not initialized");
+    if (board.id) {
+        await db.collection("boards").doc(board.id).update({ ...board, updatedAt: new Date() });
+        return board.id;
+    } else {
+        const docRef = await db.collection("boards").add({ ...board, createdAt: new Date(), updatedAt: new Date() });
+        return docRef.id;
+    }
+}
+
+export async function getUserBoards(userId: string): Promise<SavedBoard[]> {
+    if (!db) throw new Error("Firestore not initialized");
+    const snapshot = await db.collection("boards").where("userId", "==", userId).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+}
+
+export async function getBoard(boardId: string, userId: string): Promise<SavedBoard | null> {
+    if (!db) throw new Error("Firestore not initialized");
+    const doc = await db.collection("boards").doc(boardId).get();
+    if (!doc.exists) return null;
+    return { id: doc.id, ...doc.data() } as any;
+}
+
+export async function deleteBoard(boardId: string, userId: string) {
+    if (!db) throw new Error("Firestore not initialized");
+    await db.collection("boards").doc(boardId).delete();
+}
+
+export async function toggleBoardStar(boardId: string, userId: string) {
+    if (!db) throw new Error("Firestore not initialized");
+    const ref = db.collection("boards").doc(boardId);
+    const doc = await ref.get();
+    if (!doc.exists) return;
+    const current = doc.data()?.isStarred || false;
+    await ref.update({ isStarred: !current });
+    return !current;
+}

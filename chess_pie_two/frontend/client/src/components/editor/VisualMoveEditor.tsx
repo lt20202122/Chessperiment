@@ -78,6 +78,7 @@ function ExplanationModal({ variable, onClose }: { variable: keyof typeof VAR_MA
                     {t(`variables.${variable}.desc`)}
                 </p>
                 <button
+                    type="button"
                     onClick={onClose}
                     className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold hover:bg-white/10 transition-all"
                 >
@@ -202,6 +203,7 @@ function SortableRule({
 
                                 {rule.conditions.length > 1 && (
                                     <button
+                                        type="button"
                                         onClick={() => onDeleteCondition(rule.id, cond.id)}
                                         className="p-1 text-white/20 hover:text-red-500 transition-colors"
                                     >
@@ -211,6 +213,7 @@ function SortableRule({
                             </div>
                             {cIdx < rule.conditions.length - 1 && (
                                 <button
+                                    type="button"
                                     onClick={() => onUpdateCondition(rule.id, cond.id, { logic: cond.logic === 'OR' ? 'AND' : 'OR' })}
                                     className="text-[10px] font-black text-amber-500 hover:text-amber-400 px-2 py-1 bg-amber-500/10 rounded-lg transition-all uppercase tracking-widest"
                                 >
@@ -221,6 +224,7 @@ function SortableRule({
                     ))}
 
                     <button
+                        type="button"
                         onClick={() => onAddCondition(rule.id)}
                         className="p-2 bg-white/5 border border-white/10 rounded-xl text-white/40 hover:text-white hover:border-white/20 transition-all active:scale-95"
                     >
@@ -232,6 +236,7 @@ function SortableRule({
                     <ArrowRight className="text-white/20" size={20} />
 
                     <button
+                        type="button"
                         onClick={() => onToggleType(rule.id)}
                         className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${(rule.type || 'jump') === 'jump'
                             ? 'bg-indigo-500/20 text-indigo-500 border border-indigo-500/30'
@@ -244,6 +249,7 @@ function SortableRule({
                     </button>
 
                     <button
+                        type="button"
                         onClick={() => onToggleResult(rule.id)}
                         className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${rule.result === 'allow'
                             ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30'
@@ -254,6 +260,7 @@ function SortableRule({
                     </button>
 
                     <button
+                        type="button"
                         onClick={() => onDelete(rule.id)}
                         className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl border border-red-500/20 transition-all opacity-0 group-hover:opacity-100"
                     >
@@ -382,6 +389,7 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
                     <p className="text-stone-500 dark:text-white/40 text-sm">{t('visualLogicDescription')}</p>
                 </div>
                 <button
+                    type="button"
                     onClick={addRule}
                     className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white dark:text-bg font-black rounded-2xl hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 active:scale-95"
                 >
@@ -427,6 +435,7 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
                 >
                     <p className="text-white/20 font-medium">{t('noRules')}</p>
                     <button
+                        type="button"
                         onClick={addRule}
                         className="mt-4 text-amber-500 font-bold hover:underline"
                     >

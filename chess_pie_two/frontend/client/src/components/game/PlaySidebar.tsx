@@ -25,6 +25,7 @@ interface PlaySidebarProps {
     capturedByWhite: string[];
     capturedByBlack: string[];
     boardPieces: Piece[];
+    selectedPiece: Piece | null;
 }
 
 export default function PlaySidebar({
@@ -35,7 +36,8 @@ export default function PlaySidebar({
     currentTurn,
     onMoveClick,
     capturedByWhite,
-    capturedByBlack
+    capturedByBlack,
+    selectedPiece
 }: PlaySidebarProps) {
     const t = useTranslations('Multiplayer');
     const [activeTab, setActiveTab] = useState("moves");
@@ -185,6 +187,49 @@ export default function PlaySidebar({
                         </div>
                     </div>
 
+                    {/* Selected Piece Inspector */}
+                    {selectedPiece ? (
+                        <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 shadow-xl border border-stone-200 dark:border-stone-800 animate-in fade-in slide-in-from-right-4 duration-300">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500 mb-4">Inspector</h3>
+                            <div className="flex items-center gap-4 p-4 bg-stone-50 dark:bg-stone-800/50 rounded-2xl mb-4">
+                                <div className="relative w-12 h-12">
+                                    <Image
+                                        src={getPieceImage("v3", selectedPiece.color, selectedPiece.type)}
+                                        alt={selectedPiece.type}
+                                        fill
+                                        className="object-contain"
+                                    />
+                                </div>
+                                <div>
+                                    <h3 className="font-black uppercase text-sm tracking-tight text-stone-900 dark:text-white">{selectedPiece.name || selectedPiece.type}</h3>
+                                    <p className="text-xs text-stone-500 font-bold uppercase">{selectedPiece.position} • {selectedPiece.color}</p>
+                                </div>
+                            </div>
+
+                            {(selectedPiece as any).isCustom && (selectedPiece as any).variables && (
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Variables</p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {Object.entries((selectedPiece as any).variables || {}).map(([key, val]) => (
+                                            <div key={key} className="p-2 bg-amber-50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-900/30 rounded-lg">
+                                                <p className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase truncate">{key}</p>
+                                                <p className="text-sm font-black text-amber-900 dark:text-amber-200 truncate">{String(val)}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {Object.keys((selectedPiece as any).variables || {}).length === 0 && (
+                                        <p className="text-xs text-stone-400 italic">No variables defined.</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="p-6 rounded-3xl border border-dashed border-stone-200 dark:border-white/10 flex flex-col items-center justify-center text-stone-400 gap-2 min-h-[150px]">
+                            <Info size={24} className="opacity-20" />
+                            <p className="text-xs font-bold uppercase tracking-widest opacity-50">Select a piece to inspect</p>
+                        </div>
+                    )}
+
                     {/* Match Details */}
                     <div className="space-y-3">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500 px-2">{t('matchDetails')}</h3>
@@ -244,6 +289,6 @@ export default function PlaySidebar({
 
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

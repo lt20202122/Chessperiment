@@ -80,14 +80,14 @@ export default function PieceEditorSidebar({
     };
 
     return (
-        <div className="flex flex-col h-full bg-islands dark:bg-stone-900 overflow-y-auto custom-scrollbar p-8">
+        <div className="flex flex-col h-full overflow-y-auto custom-scrollbar p-8">
             <div className="mb-10 shrink-0">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <h2 className="text-2xl font-black text-stone-900 dark:text-white uppercase tracking-tight">
                             {t('sidebarTitle')}
                         </h2>
-                        <Link href={`/${locale}/editor/piece/faq`} target="_blank" className="p-1.5 rounded-xl bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-400 hover:text-amber-500 hover:border-amber-500/50 transition-all shadow-sm" title="FAQ">
+                        <Link href={`/${locale}/editor`} target="_blank" className="p-1.5 rounded-xl bg-white dark:bg-white/5 border border-stone-200 dark:border-white/10 text-stone-400 hover:text-amber-500 hover:border-amber-500/50 transition-all shadow-sm" title="Help">
                             <HelpCircle size={16} />
                         </Link>
                     </div>
@@ -119,7 +119,7 @@ export default function PieceEditorSidebar({
                     </label>
                     <div className="flex gap-2 p-1 bg-stone-100 dark:bg-white/5 rounded-2xl border border-stone-200 dark:border-white/10 shadow-inner">
                         <button
-                            onClick={() => setCurrentColor('white')}
+                            onClick={() => setCurrentColor('white')} // Reverted to original functionality
                             className={`flex-1 py-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${currentColor === 'white' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-400 dark:text-white/20 hover:text-stone-600'}`}
                         >
                             <div className="w-3 h-3 rounded-full bg-slate-100 border border-slate-300" /> {t('white')}
@@ -301,7 +301,7 @@ export default function PieceEditorSidebar({
                         className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border flex items-center justify-center gap-2 bg-stone-100 dark:bg-white/5 border-stone-200 dark:border-white/10 text-stone-400 dark:text-white/20 hover:text-red-500 hover:border-red-500/50`}
                     >
                         <Trash2 size={14} />
-                        {t('deletePiece')}
+                        {t('deletePiece')} {/* Reverted to original text */}
                     </button>
                 )}
             </div>

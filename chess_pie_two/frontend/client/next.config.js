@@ -36,6 +36,26 @@ const nextConfig = {
         destination: "/announcements",
         permanent: true,
       },
+      {
+        source: "/:locale/editor/board/:path*",
+        destination: "/:locale/editor",
+        permanent: true,
+      },
+      {
+        source: "/:locale/editor/piece/:path*",
+        destination: "/:locale/editor",
+        permanent: true,
+      },
+      {
+        source: "/editor/board/:path*",
+        destination: "/editor",
+        permanent: true,
+      },
+      {
+        source: "/editor/piece/:path*",
+        destination: "/editor",
+        permanent: true,
+      },
     ];
   },
 
