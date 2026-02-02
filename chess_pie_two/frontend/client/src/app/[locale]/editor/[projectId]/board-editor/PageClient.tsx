@@ -31,7 +31,7 @@ export default function PageClient({ projectId }: PageClientProps) {
         projectRef.current = project;
     }, [project]);
     const [editMode, setEditMode] = useState<EditMode>('shape');
-    const [selectedPiece, setSelectedPiece] = useState({ type: 'Pawn', color: 'white' });
+    const [selectedPiece, setSelectedPiece] = useState<{ type: string, color: string, movement?: 'run' | 'jump' }>({ type: 'Pawn', color: 'white' });
     const [boardStyle, setBoardStyle] = useState('v3');
 
     // Transform project.customPieces into the format expected by BoardEditor

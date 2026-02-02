@@ -31,16 +31,16 @@ const getPieceScale = (type: string) => {
 
 interface BoardEditorProps {
     editMode: EditMode;
-    selectedPiece: { type: string, color: string };
+    selectedPiece: { type: string, color: string, movement?: 'run' | 'jump' };
     boardStyle: string;
-    generateBoardData: (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => void;
+    generateBoardData: (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }>) => void;
     customCollection: Record<string, any>;
     initialData?: {
         rows: number;
         cols: number;
         gridType?: 'square' | 'hex';
         activeSquares: string[];
-        placedPieces: Record<string, { type: string; color: string }>;
+        placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }>;
     };
     onDeselect?: () => void;
 }
@@ -165,7 +165,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     const [gridType, setGridType] = useState<'square' | 'hex'>(() => initialData?.gridType || (localStorage.getItem('gridType') as 'square' | 'hex') || 'square');
     const grid = gridMap[gridType];
 
-    const [placedPieces, setPlacedPieces] = useState<Record<string, { type: string; color: string, size: number }>>(() => {
+    const [placedPieces, setPlacedPieces] = useState<Record<string, { type: string; color: string, size: number, movement?: 'run' | 'jump' }>>(() => {
         if (initialData?.placedPieces) return initialData.placedPieces as any;
         try {
             return JSON.parse(localStorage.getItem('placedPieces') || '{}');
@@ -185,7 +185,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
 
     // --- History for Undo/Redo ---
     const [history, setHistory] = useState<{
-        placedPieces: Record<string, { type: string; color: string, size: number }>;
+        placedPieces: Record<string, { type: string; color: string, size: number, movement?: 'run' | 'jump' }>;
         activeSquares: Set<string>;
         rows: number;
         cols: number;
@@ -195,7 +195,7 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
     const [symmetry, setSymmetry] = useState<'none' | 'horizontal' | 'vertical' | 'rotational'>('none');
 
     const saveToHistory = (
-        pPieces: Record<string, { type: string; color: string, size: number }>,
+        pPieces: Record<string, { type: string; color: string, size: number, movement?: 'run' | 'jump' }>,
         aSquares: Set<string>,
         r: number,
         c: number,
@@ -586,7 +586,8 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                 const pieceToPlace = {
                     type: String(selectedPiece.type),
                     color: String(selectedPiece.color),
-                    size: squareSizeRef.current * 0.8 // use ref
+                    size: squareSizeRef.current * 0.8, // use ref
+                    movement: selectedPiece.movement
                 };
 
                 setPlacedPieces((prev: any) => {
@@ -659,7 +660,8 @@ export default function BoardEditor({ editMode, selectedPiece, boardStyle, gener
                     const pieceToPlace = {
                         type: data.type,
                         color: data.color,
-                        size: squareSizeRef.current * 0.8
+                        size: squareSizeRef.current * 0.8,
+                        movement: data.movement
                     };
 
                     setPlacedPieces(prev => {

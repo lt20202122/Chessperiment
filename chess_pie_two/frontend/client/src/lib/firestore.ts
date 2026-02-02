@@ -287,7 +287,7 @@ export async function saveProjectBoard(
         rows: number, 
         cols: number, 
         activeSquares: string[], 
-        placedPieces: Record<string, { type: string; color: string }> 
+        placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }> 
     }
 ) {
     if (!db) throw new Error("Firestore not initialized");

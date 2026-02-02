@@ -162,7 +162,7 @@ export async function saveProjectBoardAction(projectId: string, boardData: {
     rows: number, 
     cols: number, 
     activeSquares: string[], 
-    placedPieces: Record<string, { type: string; color: string }> 
+    placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }> 
 }) {
     const session = await auth();
     const userId = session?.user?.id;

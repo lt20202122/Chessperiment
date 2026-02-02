@@ -14,7 +14,7 @@ export interface Project {
   cols: number;
   gridType?: 'square' | 'hex';
   activeSquares: string[];
-  placedPieces: Record<string, { type: string; color: string }>;
+  placedPieces: Record<string, { type: string; color: string; movement?: 'run' | 'jump' }>;
   
   // Custom pieces for this project
   customPieces: CustomPiece[];
