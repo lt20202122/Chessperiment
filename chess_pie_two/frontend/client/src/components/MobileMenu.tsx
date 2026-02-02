@@ -78,6 +78,14 @@ export function MobileMenu({ locale, isMenuOpen, setIsMenuOpen }: { locale: stri
                             <span>{t('about')}</span>
                             <div className="w-2 h-2 rounded-full bg-amber-400/20 group-hover:bg-accent group-hover:scale-150 transition-all opacity-0 group-hover:opacity-100" />
                         </Link>
+                        <Link
+                            href="/feedback"
+                            className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            <span>{t('feedback')}</span>
+                            <div className="w-2 h-2 rounded-full bg-amber-400/20 group-hover:bg-accent group-hover:scale-150 transition-all opacity-0 group-hover:opacity-100" />
+                        </Link>
                     </div>
 
                     <div className="flex gap-12 justify-center mt-16 scale-125">

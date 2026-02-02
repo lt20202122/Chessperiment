@@ -10,7 +10,7 @@ export async function submitReferralAction(answer: string) {
     try {
         const { data, error } = await resend.emails.send({
             from: 'Referral Survey <onboarding@resend.dev>',
-            to: ['contact.chesspie@gmail.com'],
+            to: ['lassethoroe10@gmail.com'],
             subject: 'New Referral Survey Response',
             html: `
                 <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">

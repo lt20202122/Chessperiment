@@ -39,11 +39,18 @@ export const ReferralSurvey = () => {
 
         setIsSubmitting(true);
         try {
-            await submitReferralAction(finalAnswer);
-            localStorage.setItem("referral_survey_status", "answered");
-            setIsVisible(false);
+            const result = await submitReferralAction(finalAnswer);
+
+            if (result.success) {
+                localStorage.setItem("referral_survey_status", "answered");
+                setIsVisible(false);
+            } else {
+                console.error("Failed to submit survey:", result.error);
+                alert("Sorry, there was an error submitting your response. Please try again.");
+            }
         } catch (error) {
             console.error("Failed to submit survey:", error);
+            alert("Sorry, there was an error submitting your response. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
