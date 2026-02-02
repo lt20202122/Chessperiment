@@ -12,7 +12,8 @@
         "marketplace": "Marketplace",
         "library": "Library",
         "about": "About",
-        "feedback": "Feedback"
+        "feedback": "Feedback",
+        "editor": "Editor"
     },
     "filters": {
       "all": "All Items",
@@ -21,6 +22,40 @@
       "design": "Designs",
       "free": "Free",
       "paid": "Premium"
+    },
+    "Homepage": {
+        "play": "Play Game",
+        "create": "Create Custom Game",
+        "analyze": "Analyze",
+        "notAvailable": "Not Available",
+        "learnMore": "Learn More",
+        "trending": "Trending",
+        "statistics": "Statistics"
+    },
+    "Marketplace": {
+        "accessDenied": "Access Denied",
+        "createItem": "Create Item",
+        "form": {
+            "description": "Description",
+            "descriptionPlaceholder": "e.g. A neon themed chess set with glowing pieces.",
+            "imageUrl": "Image URL",
+            "imageUrlHelp": "Leaving this blank will auto-generate a preview.",
+            "price": "Price (USD)",
+            "title": "Title",
+            "titlePlaceholder": "e.g. Neon Chess Set",
+            "type": "Type"
+        },
+        "subtitle": "Discover unique boards, pieces, and designs from the community.",
+        "searchPlaceholder": "Search for boards, pieces...",
+        "loading": "Loading amazing items...",
+        "noResults": "No matching items found.",
+        "backToMarketplace": "Back to Marketplace",
+        "noImage": "No Preview",
+        "importToProject": "Import to Project",
+        "buyNow": "Buy Now",
+        "noDescription": "No description available.",
+        "publishItem": "Publish Item",
+        "loginRequired": "Please log in to create Marketplace items."
     },
     "Multiplayer": {
         "title": "Chess Multiplayer",
@@ -167,62 +202,7 @@
         "description": "Get ready to elevate your game. Our upcoming analysis tool will use a powerful chess engine to review your past games, providing deep insights into your strategy. Discover your blunders, missed opportunities, and brilliant moves to learn faster and play smarter.",
         "goBackHome": "Go Back Home"
     },
-    "quickPlay": "Quick Play",
-    "createPrivateRoom": "Create Private Room",
-    "vsStockfish": "vs Stockfish AI",
-    "findingMatch": "Finding Match...",
-    "searchingText": "Searching for a worthy opponent",
-    "cancelSearch": "Cancel Search",
-    "stockfish": "Stockfish AI",
-    "stockfishOpponent": "Stockfish AI",
-    "opponent": "Opponent",
-    "waiting": "Waiting...",
-    "playing": "Playing",
-    "gameOver": "Game Over",
-    "youWon": "You won!",
-    "youLost": "You lost!",
-    "playAgain": "Play Again",
-    "backToMenu": "Back to Menu",
-    "spectating": "Spectating",
-    "moves": "Moves",
-    "captured": "Captured",
-    "timer": "Timer",
-    "unlimited": "Unlimited",
-    "selectStyle": "Select Style",
-    "searchStyle": "Search style...",
-    "noStyle": "No style found",
-    "reset": "Reset",
-    "menu": "Menu",
-    "design": "Design",
-    "confirmLeave": "Do you really want to leave the game?",
-    "leave": "Leave",
-    "waitingOpponent": "Waiting...",
-    "you": "You",
-    "spectator": "Spectator",
-    "whiteTurn": "White's Turn",
-    "blackTurn": "Black's Turn",
-    "currentMove": "Current Move",
-    "returnToLobby": "Return to Lobby",
-    "matchDetails": "Match Details",
-    "noActiveRoom": "No Active Room",
-    "copy": "Copy",
-    "copied": "Copied",
-    "typeMessage": "Type a message...",
-    "practiceVsComputer": "Practice vs Computer",
-    "joinMyGameTitle": "Join my chessperiment game!",
-    "joinMyGameText": "Join my chess game with room code: {room}",
-    "connecting": "Connecting...",
-    "quicksearch": "Quick Search",
-    "rematch": "Rematch",
-    "newGame": "New Game",
-    "opponentWantsRematch": "Opponent wants a rematch!",
-    "rematchRequested": "Rematch Requested"
-  },
-  "Analyze": {
-    "title": "Analysis Feature Coming Soon",
-    "description": "Get ready to elevate your game. Our upcoming analysis tool will use a powerful chess engine to review your past games, providing deep insights into your strategy. Discover your blunders, missed opportunities, and brilliant moves to learn faster and play smarter.",
-    "goBackHome": "Go Back Home"
-  },
+
   "Game": {
     "pawn": "Pawn",
     "knight": "Knight",
@@ -231,7 +211,8 @@
     "queen": "Queen",
     "king": "King",
     "white": "White",
-    "black": "Black"
+    "black": "Black",
+    "attribution": "Chess Piece Vectors by Vecteezy"
   },
   "Editor": {
     "myProjects": "My Projects",
@@ -329,54 +310,15 @@
         "knight": "Knight",
         "knightDesc": "L-shape: 2 steps orthogonally then 1 step 60° (jumps over others).",
         "king": "King",
-        "white": "White",
-        "black": "Black",
-        "attribution": "Chess Piece Vectors by Vecteezy"
-    },
-    "Editor": {
-        "Board": {
-            "badge": "Board Editor",
-            "title": "Design your <accent>Battlefields</accent>",
-            "description": "Create custom chess configurations. Drag edges to resize, click to toggle squares.",
-            "actionsTitle": "Board Actions",
-            "presets": "Presets",
-            "standardBoard": "Standard Board",
-            "emptyBoard": "Empty Board",
-            "smallBoard": "Small Board (5x5)",
-            "largeBoard": "Large Board (10x10)",
-            "actionsSub": "Manage and share your creation",
-            "publish": "Publish Board",
-            "publishSub": "Make it public for everyone",
-            "export": "Export JSON",
-            "exportSub": "Download the board configuration",
-            "share": "Share Link",
-            "shareSub": "Send to a friend directly",
-            "addToLibrary": "Add to Library",
-            "addToLibrarySub": "Save to your collection",
-            "playHeader": "Play",
-            "vsYourself": "VS Yourself",
-            "playYourself": "Play vs. Yourself",
-            "playYourselfSub": "Test your creation",
-            "howToUse": "How to use",
-            "clickHelp": "Click empty slots to add squares",
-            "rightClickHelp": "Right-click to remove squares",
-            "dragHelp": "Drag bars to resize grid",
-            "shapeMode": "Shape",
-            "piecesMode": "Pieces",
-            "selectPiece": "Select Piece",
-            "clickToPlace": "Click square to place {piece}",
-            "rightClickToRemove": "Right-click to remove piece",
-            "cleanup": "Start from scratch",
-            "customPieces": "Custom Creations",
-            "import": "Import",
-            "noCustomPieces": "No custom pieces yet",
-            "importPieces": "Import Pieces",
-            "selectSetToImport": "Select a set to import",
-            "loadingCollection": "Loading your collection...",
-            "noSetsFound": "No sets found in your library",
-            "createFirstSet": "Create your first piece set",
-            "saveSuccess": "Board saved successfully",
-            "saveBoard": "Save Board",
+        "kingDesc": "Moves 1 step in any of the 12 directions (6 orthogonal + 6 diagonal).",
+        "queen": "Queen",
+        "queenDesc": "Combines Rook and Bishop movement (12 directions total).",
+        "note": "Note: This editor follows axial coordinate logic. Actual movement depends on your custom logic or selected variant (e.g. Glinski vs McCooey)."
+      },
+      "white": "White",
+      "black": "Black",
+      "attribution": "Chess Piece Vectors by Vecteezy",
+
             "Play": {
                 "noValidation": "No move validation",
                 "validation": "Move validation",
@@ -394,6 +336,13 @@
         },
         "Piece": {
             "title": "Design Your <accent>Chess Pieces</accent>",
+            "backToProject": "Back to Project",
+            "confirmInvert": "Inverting colors will overwrite current design. Continue?",
+            "confirmPixelate": "Pixelating will reduce quality. Continue?",
+            "deleteConfirm": "Delete this piece?",
+            "imageUploadLabel": "Visual Base",
+            "totalPieces": "Pieces in project ({count})",
+            "uploadPicture": "Upload Image",
             "description": "Create pixel-perfect custom chess pieces with our intuitive 64x64 editor.",
             "badge": "Piece Editor",
             "design": "Design",
@@ -475,10 +424,8 @@
                     "label": "Vertical Distance",
                     "desc": "The absolute vertical distance, regardless of forward or backward."
                 }
-            }
-        }
-      },
-      "Logic": {
+            },
+        "Logic": {
         "title": "Logic Editor",
         "back": "Back to Piece",
         "dragVariableHint": "Drag a variable here",
@@ -512,8 +459,19 @@
           "kill": "Immediately removes the piece from play.",
           "prevent": "Prevents the default engine behavior."
         }
-      }
     }
+  }
+  },
+  "Library": {
+    "importWarning": "This will copy the piece into the selected project.",
+    "loadingProjects": "Loading Projects...",
+    "noProjectsFound": "No projects found.",
+    "createNewProject": "Create New Project",
+    "deleteConfirm": "Are you sure you want to delete this?",
+    "itemTypeBoard": "Board: {name}",
+    "noBoards": "No boards found",
+    "search": "Search...",
+    "starOnly": "Favorites only"
   },
   "EditorSidebar": {
     "boardEditor": "Board Editor",
@@ -614,21 +572,24 @@
     "draw": "Draw!",
     "rematch": "Rematch",
     "newGame": "New Game",
-    "rematchRequested": "Requested"
+    "rematchRequested": "Requested",
+    "GameSidebar": {
+      "info": "Info",
+      "moves": "Moves",
+      "chat": "Chat",
+      "live": "LIVE",
+      "placeholder": "Say something...",
+      "gameStatus": "Game Status",
+      "gameStats": "Game Statistics",
+      "gameStat": "Game Statistic",
+      "roomCode": "Room Code",
+      "players": "Players",
+      "youArePlaying": "You are playing",
+      "yourSide": "Your Side",
+      "connecting": "Connecting..."
+    }
   },
-  "GameSidebar": {
-    "info": "Info",
-    "moves": "Moves",
-    "chat": "Chat",
-    "live": "LIVE",
-    "placeholder": "Say something...",
-    "gameStatus": "Game Status",
-    "roomCode": "Room Code",
-    "players": "Players",
-    "youArePlaying": "You are playing",
-    "yourSide": "Your Side",
-    "connecting": "Connecting..."
-  },
+
   "Announcements": {
     "title": "Latest News & Updates",
     "by": "By",
@@ -870,7 +831,41 @@
     "PieceEditorFAQ": {
       "title": "Piece Editor FAQ | Visual Scripting Help | chessperiment",
       "description": "Learn how to use the Piece Editor, visual logic blocks, and movement rules. Detailed technical guide for creating custom chess pieces.",
-      "h1": "Piece Editor Technical FAQ"
+      "h1": "Piece Editor Technical FAQ",
+      "sections": {
+        "general": {
+          "title": "General",
+          "q1": "What is the Piece Editor?",
+          "a1": "The Piece Editor allows you to create custom chess pieces with unique movement patterns and logic.",
+          "q2": "How do I save my piece?",
+          "a2": "Click the 'Save Piece' button in the sidebar. Your piece will be saved to your current project."
+        },
+        "moveEditor": {
+          "title": "Move Editor",
+          "q1": "How do I define movement?",
+          "a1": "Use the visual grid to click squares where the piece can move relative to its position.",
+          "q2": "What are 'Jumping' moves?",
+          "a2": "Jumping moves allow the piece to leap over other pieces, like a Knight."
+        },
+        "logicEditor": {
+          "title": "Logic Editor",
+          "q1": "What is the Logic Editor?",
+          "a1": "It's a visual scripting environment where you can define complex behaviors using blocks.",
+          "q2": "How do triggers work?",
+          "a2": "Triggers start a logic chain when a specific event occurs, like 'onMove' or 'onCapture'.",
+          "q3": "Can I use variables?",
+          "a3": "Yes, you can define and modify variables to create stateful pieces.",
+          "q4": "What effects are available?",
+          "a4": "You can move pieces, capture them, spawn new ones, or modify game state variables."
+        },
+        "troubleshooting": {
+          "title": "Troubleshooting",
+          "q1": "Why isn't my piece moving?",
+          "a1": "Check if you have defined any valid moves in the Move Editor or Logic Editor.",
+          "q2": "My logic isn't working.",
+          "a2": "Ensure your blocks are connected properly and that the trigger condition is being met."
+        }
+      }
     }
   },
 
@@ -941,34 +936,7 @@
         "description": "Test your creation against the AI or challenge friends online. Share your variant with the world!"
       }
     }
-  }
-}
-    "CreationGuide": {
-        "title": "Creation Guide",
-        "subtitle": "Complete all steps to launch.",
-        "steps": {
-            "1": {
-                "title": "Board Setup",
-                "description": "Define grid size, shape, and initial active squares for the playing field."
-            },
-            "2": {
-                "title": "Pieces",
-                "description": "Create custom units, define movement patterns, and attack rules."
-            },
-            "3": {
-                "title": "Rules & Logic",
-                "description": "Set win conditions, special zones, promotion rules, and turn structure."
-            },
-            "4": {
-                "title": "Design",
-                "description": "Customize board themes, colors, piece skins, and visual effects."
-            },
-            "5": {
-                "title": "Launch",
-                "description": "Publish to the marketplace or invite friends for a private match."
-            }
-        }
-    },
+  },
     "Feedback": {
         "title": "Share Your Feedback",
         "subtitle": "Help us improve chessperiment by sharing your thoughts",
@@ -997,91 +965,5 @@
         "emailPlaceholder": "Your email (optional)",
         "messageLabel": "Message",
         "backToHome": "Back to home"
-    },
-    "accountsSubheading": "a) User Accounts",
-    "accountsText": "When you create an account, we store your name, email address, and profile picture. This data is not public and is used for platform functionality. Legal basis: Art. 6(1)(b) GDPR.",
-    "analyticsHeading": "4. Analytics Services",
-    "analyticsText": "We use Vercel Analytics and Speed Insights to measure our website's performance. These services are privacy-friendly, do not use cookies, and do not collect personal data. Anonymous usage statistics, such as pages visited and load times, are collected. Legal basis: Art. 6(1)(f) GDPR.",
-    "backToOverview": "Back to Overview",
-    "by": "By",
-    "changesHeading": "11. Changes",
-    "changesText": "We may update this privacy policy from time to time. The current version will always be available on this page.",
-    "chatSubheading": "c) Chat Function",
-    "chatText": "Chat messages are stored and filtered for prohibited words to ensure security. Legal basis: Art. 6(1)(f) GDPR.",
-    "collectionHeading": "3. Data We Collect",
-    "complaintHeading": "10. Right to Complain",
-    "complaintText": "You have the right to lodge a complaint with a data protection supervisory authority.",
-    "contactHeading": "Contact",
-    "contentSubheading": "b) User-Generated Content",
-    "contentText": "We store content you create, such as chessboards and pieces. This may be publicly visible depending on your settings. Legal basis: Art. 6(1)(b) GDPR.",
-    "controllerHeading": "1. Data Controller",
-    "controllerText": "The person responsible for data processing on this website is:\n\nLars Thoroe - chessperiment\nAddress: Ahlerfeld 29, 38527 Meine, Germany\nEmail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
-    "cookiesHeading": "6. Cookies",
-    "cookiesText": "We do not use cookies for tracking or advertising. A single, technically necessary session cookie (JWT) is set upon login to maintain your session. This cookie is essential for the website's functionality. Legal basis: Art. 6(1)(b) GDPR.",
-    "copyrightHeading": "Copyright Notice",
-    "copyrightText": "The texts, images, photos, videos, or graphics available on our website are generally subject to copyright protection. Any unauthorized use (in particular reproduction, processing, or distribution) of these copyright-protected contents is therefore prohibited. If you intend to use these contents or parts thereof, please contact us in advance using the details above. If we are not the owner of the required copyright usage rights ourselves, we will endeavor to arrange contact with the entitled party.",
-    "description": "The ultimate platform for custom chess. Create your own chess pieces, design boards, and play unique chess variants online with friends.",
-    "developer": {
-        "description": "Chessperiment is developed by Lasse Thoroe, a passionate chess enthusiast and software developer dedicated to bringing creative freedom to the world of chess. Connect with me on GitHub or join our community on Reddit to share feedback and ideas.",
-        "title": "Developer"
-    },
-    "dieterLinkText": "Dieter macht den Datenschutz",
-    "disputeResolutionHeading": "Dispute Resolution",
-    "emailLabel": "Email:",
-    "emailValue": "contact.chessperiment@gmail.com",
-    "features": {
-        "customBoards": {
-            "description": "Create boards in any shape and size to fit your vision.",
-            "title": "Custom Boards"
-        },
-        "pieceEditor": {
-            "description": "Design pieces with unique movements and abilities.",
-            "title": "Advanced Piece Editor"
-        },
-        "title": "Key Features",
-        "variants": {
-            "description": "Experiment and play your own chess variants or try out variants made by others.",
-            "title": "User-Created Variants"
-        },
-        "visualScripting": {
-            "description": "Drag-and-drop triggers, effects, and variables—similar to Scratch—to build complex game mechanics without coding.",
-            "title": "Visual Scripting"
-        }
-    },
-    "generalHeading": "2. General Information",
-    "generalText": "The protection of your data is important to us. We process personal data only when necessary for providing our services and adhere to the General Data Protection Regulation (GDPR).",
-    "h1": "chessperiment - The Custom Chess Platform",
-    "hostingHeading": "5. Database and Hosting",
-    "hostingText": "We use Google Firebase (Firestore) as our database. Your data (user accounts, game history, created content) is stored there. Data may be processed in the USA. Google is certified under the EU-US Data Privacy Framework. Legal basis: Art. 6(1)(b) GDPR.",
-    "intro": "Chessperiment (chessperiment.app) is a web platform dedicated to creating highly customizable chess variants. Unlike traditional chess websites, Chessperiment lets users design their own unique games with complete control over boards, pieces, rules, and interactions.",
-    "lastUpdated": "(As of: July 2024)",
-    "madeWith": "Created with the friendly support of",
-    "minorsHeading": "8. Minors",
-    "minorsText": "Persons under 16 should only use our services with parental consent.",
-    "mission": {
-        "description": "Our mission is to empower chess players and creators worldwide to reimagine the game. We believe chess should be a canvas for creativity, not just a fixed set of rules.",
-        "title": "Our Mission"
-    },
-    "odrText": "The European Commission provides a platform for online dispute resolution (ODR), which you can find at the following link:",
-    "otherProfilesLabel": "Other Profiles:",
-    "p": "Design unique chess sets, customize your board, and play multiplayer chess variants online.",
-    "phoneLabel": "Phone:",
-    "phoneValue": "+49 1517 4288065",
-    "providerAddress": "Ahlerfeld 29, 38527 Meine, Germany",
-    "providerHeading": "Provider",
-    "providerName": "Lasse Mauritz - chessperiment",
-    "readMore": "Read more",
-    "retentionHeading": "7. Data Retention",
-    "retentionText": "We store your data as long as you have an account with us. Game history and created content are stored longer to maintain platform integrity. You can request the deletion of your account and associated personal data at any time.",
-    "rightsHeading": "9. Your Rights",
-    "rightsText": "You have the right to access, rectify, erase, restrict, and port your data. Please contact us at the email address provided above.",
-    "seoContent": {
-        "heading": "Experience the Next Generation of Chess Variants",
-        "text": "Join the chessperiment community and play unique chess variants online with friends or against our integrated Stockfish AI. Our platform allows you to use custom boards and piece sets designed by creators around the world. Whether you're interested in testing a new piece logic you just created or want to jump into a match with standard rules on an irregular board, our smooth multiplayer experience has you covered. Start a private match by sharing a room code, or join the lobby to find other players. With real-time move validation and advanced engine analysis, chessperiment offers a robust environment for both casual play and competitive testing of new game mechanics."
-    },
-    "socialMediaHeading": "Social Media Profiles",
-    "socialMediaText": "This legal notice also applies to the following social media profiles:",
-    "title": "About Chessperiment",
-    "vsbgText": "We are not willing or obliged to participate in dispute resolution proceedings before a consumer arbitration board.",
-    "youtubeLabel": "YouTube:"
+  }
 }
