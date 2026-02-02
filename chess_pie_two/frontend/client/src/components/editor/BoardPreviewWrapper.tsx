@@ -1,5 +1,6 @@
 import React from 'react';
 import { Project } from '@/types/Project';
+import { SavedBoard } from '@/types/firestore';
 import PieceRenderer from '@/components/game/PieceRenderer';
 
 import { SquareGrid } from '@/lib/grid/SquareGrid';
@@ -10,7 +11,7 @@ const gridMap = {
     hex: new HexGrid()
 };
 
-export default function BoardPreviewWrapper({ board }: { board: Project }) {
+export default function BoardPreviewWrapper({ board }: { board: Project | SavedBoard }) {
     const gridType = board.gridType || 'square';
     const grid = gridMap[gridType as keyof typeof gridMap] || gridMap.square;
     const initialTiles = grid.generateInitialGrid(board.rows, board.cols);
@@ -49,9 +50,10 @@ export default function BoardPreviewWrapper({ board }: { board: Project }) {
                     // Find custom piece definition if applicable
                     let pixels;
                     let image;
-                    if (piece && board.customPieces) {
+                    const customPieces = (board as any).customPieces;
+                    if (piece && customPieces) {
                         // First try finding by ID or name
-                        const customPiece = board.customPieces.find(p => p.id === piece.type || p.name === piece.type);
+                        const customPiece = customPieces.find((p: any) => p.id === piece.type || p.name === piece.type);
                         if (customPiece) {
                             if (piece.color === 'white') {
                                 pixels = customPiece.pixelsWhite;
