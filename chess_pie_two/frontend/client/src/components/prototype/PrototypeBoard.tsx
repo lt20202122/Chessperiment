@@ -27,7 +27,7 @@ function DraggablePiece({ piece, size, amIAtTurn }: { piece: Piece; size: number
             ref={setNodeRef}
             style={style}
             {...(amIAtTurn ? { ...attributes, ...listeners } : {})}
-            className={`cursor-${amIAtTurn ? 'grab' : 'default'} ${isDragging ? 'opacity-0' : 'opacity-100'}`}
+            className={`cursor-${amIAtTurn ? 'grab' : 'default'} ${isDragging ? 'opacity-0' : 'opacity-100'} w-full h-full flex items-center justify-center`}
         >
             <PieceRenderer
                 type={piece.type}
@@ -35,6 +35,8 @@ function DraggablePiece({ piece, size, amIAtTurn }: { piece: Piece; size: number
                 size={size}
                 hasLogic={(piece as any).isCustom}
                 variables={(piece as any).variables}
+                pixels={(piece as any).isCustom ? (piece.color === 'white' ? (piece as any).pixelsWhite : (piece as any).pixelsBlack) : undefined}
+                image={(piece as any).image}
             />
         </div>
     );
@@ -95,8 +97,8 @@ export default function PrototypeBoard() {
     const [activeEffects, setActiveEffects] = useState<{ id: number, type: string, position: Square }[]>([]);
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 0 } }),
-        useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 0 } })
+        useSensor(PointerSensor, { activationConstraint: { distance: 3 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
     );
 
     const squares = useMemo(() => board.getSquares(), [board]);
@@ -124,6 +126,40 @@ export default function PrototypeBoard() {
     const handleDragStart = (e: DragStartEvent) => {
         const piece = squares[e.active.id as Square];
         if (piece) setActivePiece(piece);
+    };
+
+    const handleSquareClick = (pos: Square) => {
+        if (selectedSquare === pos) {
+            setSelectedSquare(null);
+        } else if (selectedSquare) {
+            const success = game.makeMove(selectedSquare, pos);
+            if (!success) {
+                console.warn(`[Prototype] Move from ${selectedSquare} to ${pos} was rejected or prevented.`);
+            }
+
+            // Always sync state
+            const newBoard = game.getBoard().clone();
+            setBoard(newBoard);
+
+            if (success) {
+                addLog(`Move: ${selectedSquare} to ${pos}`, 'move');
+                setSelectedSquare(null);
+            } else {
+                addLog(`Move rejected/prevented: ${selectedSquare} to ${pos}`, 'info');
+                // If it's another piece of the same color, select that instead
+                const piece = squares[pos];
+                if (piece && piece.color === currentTurn) {
+                    setSelectedSquare(pos);
+                } else {
+                    setSelectedSquare(null);
+                }
+            }
+        } else {
+            const piece = squares[pos];
+            if (piece && piece.color === currentTurn) {
+                setSelectedSquare(pos);
+            }
+        }
     };
 
     const handleDragEnd = (e: DragEndEvent) => {
@@ -182,7 +218,7 @@ export default function PrototypeBoard() {
                                             isWhite={isWhite}
                                             piece={squares[pos]}
                                             size={70}
-                                            onSelect={setSelectedSquare}
+                                            onSelect={handleSquareClick}
                                             isSelected={selectedSquare === pos}
                                             amIAtTurn={squares[pos]?.color === currentTurn}
                                             effects={activeEffects.filter(e => e.position === pos)}

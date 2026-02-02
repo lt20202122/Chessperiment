@@ -7,15 +7,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // List of known static routes
   const routes = [
     '',
-    '/editor/board',
-    '/editor/board/faq',
-    '/editor/piece',
-    '/editor/piece/faq',
     '/marketplace',
     '/game',
     '/announcements',
-    '/library',
-    '/login',
+    '/editor',
     '/features/analyze',
     '/legal-notice',
     '/privacy-policy',

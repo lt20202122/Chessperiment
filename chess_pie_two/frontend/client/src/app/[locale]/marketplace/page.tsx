@@ -147,14 +147,11 @@ export default async function MarketplacePage({ params }: { params: Promise<{ lo
                 <h2>{t('seoContent.heading')}</h2>
                 <p>{t('seoContent.text')}</p>
                 <div className="flex flex-wrap justify-center gap-4 mt-8 not-prose">
-                    <Link href="/editor/board" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
+                    <Link href="/editor" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
                         → Design Your Own Board
                     </Link>
-                    <Link href="/editor/piece" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
-                        → Design Your Own Pieces
-                    </Link>
-                    <Link href="/library" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
-                        → Manage Your Collection
+                    <Link href="/editor" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
+                        → Manage Your Projects
                     </Link>
                 </div>
             </section>

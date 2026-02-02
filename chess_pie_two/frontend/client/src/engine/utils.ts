@@ -10,7 +10,7 @@ export function toCoords(square: Square): [number, number] {
     return [file, rank];
 }
 
-export function toSquare(coords: [number, number], useAlgebraic: boolean = false): Square {
+export function toSquare(coords: [number, number], useAlgebraic: boolean = true): Square {
     if (!useAlgebraic) {
         return `${coords[0]},${coords[1]}`;
     }

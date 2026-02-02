@@ -14,7 +14,7 @@ async function testEmail() {
   try {
     const { data, error } = await resend.emails.send({
       from: "Chessperiment Survey <delivered@resend.dev>",
-      to: ["lassethoroe10@gmail.com"],
+      to: ["lasse.secaccbs@gmail.com"],
       subject: "Test Email from ChessPIE",
       html: `
                 <div style="font-family: sans-serif; padding: 20px;">

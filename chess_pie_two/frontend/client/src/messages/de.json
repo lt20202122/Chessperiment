@@ -1,16 +1,8 @@
 {
-    "Homepage": {
-        "play": "Spiel starten",
-        "create": "Eigenes Spiel erstellen",
-        "analyze": "Analysiere",
-        "notAvailable": "Nicht verfügbar",
-        "learnMore": "Mehr erfahren",
-        "trending": "Angesagt",
-        "statistics": "Statistik"
-    },
     "Header": {
         "play": "Spielen",
         "news": "Neuigkeiten",
+        "notifications": "Benachrichtigungen",
         "menu": "Menü",
         "login": "Anmelden",
         "english": "Englisch",
@@ -33,7 +25,7 @@
         "noImage": "Keine Vorschau",
         "price": "Preis",
         "free": "Kostenlos",
-        "addToLibrary": "Zur Bibliothek hinzufügen",
+        "importToProject": "In Projekt importieren",
         "buyNow": "Jetzt kaufen",
         "noDescription": "Keine Beschreibung vorhanden.",
         "accessDenied": "Zugriff verweigert",
@@ -61,6 +53,15 @@
         "inProduction": "In Produktion",
         "marketplaceBetaMessage": "Unser Marktplatz wird zurzeit stark weiterentwickelt. Freu dich auf einzigartige Figuren-Designs und benutzerdefinierte Bretter!"
     },
+    "Homepage": {
+        "play": "Spiel starten",
+        "create": "Eigenes Spiel erstellen",
+        "analyze": "Analysiere",
+        "notAvailable": "Nicht verfügbar",
+        "learnMore": "Mehr erfahren",
+        "trending": "Angesagt",
+        "statistics": "Statistik"
+    },
     "Multiplayer": {
         "title": "chessperiment Multiplayer",
         "description": "Tritt gegen Freunde oder die KI an in spannenden Schachpartien",
@@ -74,8 +75,8 @@
         "resetBoard": "Brett zurücksetzen",
         "previousMove": "Vorheriger Zug",
         "nextMove": "Nächster Zug",
-        "black": "Schwarz",
-        "white": "Weiß",
+        "black": "Black",
+        "white": "White",
         "ready": "Bereit",
         "youPlay": "Du spielst: ",
         "room": "Raum: ",
@@ -134,15 +135,15 @@
         "matchingOpponent": "Suche nach einem würdigen Gegner...",
         "cancel": "Abbrechen",
         "start": "Starten",
-        "leaveGame": "Spiel verlassen",
-        "startingComputerGame": "Computerspiel startet...",
+        "leaveGame": "Raum verlassen",
+        "startingComputerGame": "Computerspiel wird gestartet...",
         "reasons": {
             "not_in_room": "Du bist in keinem Raum!",
             "room_not_found": "Raum nicht gefunden!",
             "not_a_player": "Du bist kein Spieler in diesem Raum!",
             "not_your_turn": "Nicht am Zug!",
             "illegal_move": "Ungültiger Zug!",
-            "server_error": "Serverfehler",
+            "server_error": "Serverfehler beim Zug",
             "no_pending_move": "Kein ausstehender Zug",
             "illegal_promotion_move": "Ungültige Bauernumwandlung"
         },
@@ -201,54 +202,80 @@
         "drawOfferDeclinedByYou": "Du hast das Remis-Angebot abgelehnt",
         "drawOfferReceived": "Remis-Angebot erhalten"
     },
-    "GameSidebar": {
-        "info": "Info",
-        "moves": "Züge",
-        "chat": "Chat",
-        "live": "LIVE",
-        "placeholder": "Schreib etwas...",
-        "gameStatus": "Spielstatus",
-        "roomCode": "Raumcode",
-        "players": "Spieler",
-        "youArePlaying": "Du spielst",
-        "yourSide": "Deine Seite",
-        "connecting": "Verbindet..."
+    "Analyze": {
+        "title": "Analyse-Funktion kommt bald",
+        "description": "Mach dich bereit, dein Spiel auf das nächste Level zu heben. Unser kommendes Analyse-Tool wird eine leistungsstarke Schach-Engine verwenden, um deine vergangenen Spiele zu überprüfen und tiefe Einblicke in deine Strategie zu geben. Entdecke deine Fehler, verpasste Chancen und brillanten Züge, um schneller zu lernen und klüger zu spielen.",
+        "goBackHome": "Zurück zum Start"
+    },
+    "Game": {
+        "pawn": "Bauer",
+        "knight": "Springer",
+        "bishop": "Läufer",
+        "rook": "Turm",
+        "queen": "Dame",
+        "king": "König",
+        "white": "Weiß",
+        "black": "Schwarz"
     },
     "Editor": {
+        "myProjects": "Meine Projekte",
+        "newProject": "Neues Projekt",
+        "quickCreate": "Schnellerstellen",
+        "projectsActive": "Projekte aktiv",
+        "unnamedProject": "Unbenanntes Projekt",
+        "backToProjects": "Zurück zu den Projekten",
+        "createFirstProject": "Erstelle dein erstes Projekt",
+        "noProjects": "Noch keine Projekte",
+        "noProjectsDescription": "Deine kreative Reise beginnt hier. Entwirf ein einzigartiges Brett oder erstelle eine eigene Figur, um loszulegen.",
+        "deleteConfirm": "Bist du sicher, dass du dieses Projekt löschen möchtest? Dies kann nicht rückgängig gemacht werden.",
+        "migrating": "Daten werden migriert",
+        "migratingDescription": "Wir aktualisieren deinen Arbeitsbereich auf das neue projektbasierte System. Dies dauert nur einen Moment.",
+        "projectNameLabel": "Projektname",
+        "projectNamePlaceholder": "z.B. Mein epische Schachvariante",
+        "descriptionLabel": "Beschreibung",
+        "descriptionPlaceholder": "Was ist das Besondere an diesem Projekt?",
+        "rowsLabel": "Reihen",
+        "colsLabel": "Spalten",
+        "createProject": "Projekt erstellen",
+        "lastEdited": "Zuletzt bearbeitet",
+        "piecesCount": "Eigene Figuren",
+        "editBoard": "Brett bearbeiten",
+        "deleteProject": "Projekt löschen",
         "Board": {
             "badge": "Board-Editor",
-            "title": "Gestalte dein <accent>Schachbrett</accent>",
-            "description": "Erstelle einzigartige Schachbretter mit unserem intuitiven Editor",
-            "actionsTitle": "Brett Aktionen",
+            "backToProject": "Zurück zum Projekt",
+            "title": "Gestalte deine <accent>Schlachtfelder</accent>",
+            "description": "Erstelle individuelle Schachkonfigurationen. Ziehe an den Rändern zum Vergrößern, klicke zum Umschalten von Feldern.",
+            "actionsTitle": "Brett-Aktionen",
             "presets": "Vorlagen",
-            "standardBoard": "Standard Brett",
+            "standardBoard": "Standard-Brett",
             "emptyBoard": "Leeres Brett",
             "smallBoard": "Kleines Brett (5x5)",
             "largeBoard": "Großes Brett (10x10)",
-            "actionsSub": "Verwende und teile deine Erstellung",
+            "actionsSub": "Verwalte und teile deine Kreation",
             "publish": "Brett veröffentlichen",
             "publishSub": "Mache es für alle öffentlich",
             "export": "JSON exportieren",
-            "exportSub": "Download der Brett-Konfiguration",
-            "share": "Share Link",
-            "shareSub": "Senden an einen Freund",
+            "exportSub": "Downloade die Brett-Konfiguration",
+            "share": "Link teilen",
+            "shareSub": "Sende es direkt an einen Freund",
             "addToLibrary": "Zur Bibliothek hinzufügen",
-            "addToLibrarySub": "In deiner Sammlung speichern",
-            "playHeader": "Play",
-            "vsYourself": "VS dich",
+            "addToLibrarySub": "Speichere es in deiner Sammlung",
+            "playHeader": "Spielen",
+            "vsYourself": "VS dich selbst",
             "playYourself": "Gegen dich selbst spielen",
-            "playYourselfSub": "Teste deine Erstellung",
-            "howToUse": "Tutorial",
-            "clickHelp": "Klicke auf leere Felder, um Felder hinzuzufügen",
+            "playYourselfSub": "Teste deine Kreation",
+            "howToUse": "Anleitung",
+            "clickHelp": "Klicke auf leere Plätze, um Felder hinzuzufügen",
             "rightClickHelp": "Rechtsklick, um Felder zu entfernen",
-            "dragHelp": "Seiten ziehen, um das Brett zu vergrößern",
+            "dragHelp": "Ziehe an den Balken, um das Raster zu vergrößern",
             "shapeMode": "Form",
             "piecesMode": "Figuren",
-            "selectPiece": "Figuren auswählen",
-            "clickToPlace": "Klicke auf ein Feld, um {piece} zu platzieren",
-            "rightClickToRemove": "Rechtsklick, um Figuren zu entfernen",
-            "cleanup": "Neu starten",
-            "customPieces": "Eigene Figuren",
+            "selectPiece": "Figur wählen",
+            "clickToPlace": "Klicke auf Feld, um {piece} zu platzieren",
+            "rightClickToRemove": "Rechtsklick, um Figur zu entfernen",
+            "cleanup": "Vom Anfang starten",
+            "customPieces": "Eigene Kreationen",
             "import": "Importieren",
             "noCustomPieces": "Noch keine eigenen Figuren",
             "importPieces": "Figuren importieren",
@@ -258,10 +285,43 @@
             "createFirstSet": "Erstelle dein erstes Figuren-Set",
             "saveSuccess": "Brett erfolgreich gespeichert",
             "saveBoard": "Brett speichern",
+            "gridType": "Gitter",
+            "gridSquare": "Quadrat",
+            "gridHex": "Hex",
+            "confirmGridSwitch": "Das Wechseln des Gittertyps setzt das Brett zurück. Fortfahren?",
+            "radius": "Radius",
+            "gridSize": "Gittergröße",
+            "symmetry": "Symmetrie",
+            "symNone": "Keine",
+            "symH": "H",
+            "symV": "V",
+            "symR": "R",
+            "clear": "Leeren",
+            "standard": "Standard",
+            "guide": "Anleitung",
+            "zoom": "Zoom",
+            "HexGuide": {
+                "title": "Hexagonal-Anleitung",
+                "generalTitle": "Allgemeine Bewegung",
+                "generalDesc": "Auf einem hexagonalen Gitter bewegen sich Figuren entlang von 3 Hauptachsen (6 Richtungen) statt 2.",
+                "pawn": "Bauer",
+                "pawnDesc": "Zieht 1 Hex vorwärts. Schlägt auf die 2 diagonal vorwärts liegenden Hexfelder (gleiche Farbe).",
+                "rook": "Turm",
+                "rookDesc": "Zieht beliebig weit in 6 orthogonale Richtungen (durch Hex-Seiten).",
+                "bishop": "Läufer",
+                "bishopDesc": "Zieht beliebig weit in 6 diagonale Richtungen (durch Hex-Ecken).",
+                "knight": "Springer",
+                "knightDesc": "L-Form: 2 Schritte orthogonal, dann 1 Schritt 60° (springt über andere).",
+                "king": "König",
+                "kingDesc": "1 Schritt in eine beliebige der 12 Richtungen (6 orthogonal + 6 diagonal).",
+                "queen": "Dame",
+                "queenDesc": "Kombiniert Turm- und Läuferbewegung (12 Richtungen insgesamt).",
+                "note": "Hinweis: Dieser Editor folgt der Logik axialer Koordinaten. Die tatsächliche Bewegung hängt von deiner eigenen Logik oder der gewählten Variante ab (z.B. Glinski vs McCooey)."
+            },
             "Play": {
                 "noValidation": "Keine Zugvalidierung",
                 "validation": "Zugvalidierung",
-                "kingWarning": "Beide Könige auf das Feld stellen, um die Zugvalidierung zu aktivieren",
+                "kingWarning": "Platziere beide Könige auf dem Brett, um die Zugvalidierung zu aktivieren",
                 "choosePromotion": "Umwandlung wählen",
                 "zoom": "Zoom",
                 "title": "Gegen dich selbst spielen",
@@ -274,9 +334,10 @@
             "namePrompt": "Gib deinem Brett einen Namen"
         },
         "Piece": {
-            "title": "Design deine <accent>Schachfiguren</accent>",
+            "title": "Entwirf deine <accent>Schachfiguren</accent>",
             "description": "Erstelle pixelgenaue Schachfiguren mit unserem intuitiven 64x64 Editor.",
             "badge": "Figuren-Editor",
+            "backToProject": "Zurück zum Projekt",
             "design": "Design",
             "moves": "Züge",
             "undo": "Rückgängig",
@@ -285,17 +346,17 @@
             "add": "Hinzufügen",
             "generateOpposite": "Gegenfarbe generieren",
             "publish": "Veröffentlichen",
-            "sidebarTitle": "Studios",
-            "save": "Speichern",
+            "sidebarTitle": "Figuren-Studio",
+            "save": "Figur speichern",
             "saveSet": "Set speichern",
             "saved": "Figur erfolgreich gespeichert!",
             "loaded": "Figur erfolgreich geladen!",
-            "errorSaving": "Fehler beim Speichern",
-            "errorLoading": "Fehler beim Laden",
+            "errorSaving": "Fehler beim Speichern der Figur",
+            "errorLoading": "Fehler beim Laden der Figur",
             "inProduction": "Creator Studio",
-            "pieceEditorBetaMessage": "Der Figuren-Editor befindet sich zurzeit in der Beta-Phase und ist nur für ausgewählte Ersteller verfügbar. Wir arbeiten hart daran, die pixelgenaue Anpassung für alle zugänglich zu machen!",
+            "pieceEditorBetaMessage": "Der Figuren-Editor befindet sich aktuell in der Beta-Phase und ist nur für ausgewählte Ersteller verfügbar. Wir arbeiten hart daran, pixelgenaue Anpassung für alle zu ermöglichen!",
             "visualLogicTitle": "Visuelle Zuglogik",
-            "visualLogicDescription": "Definiere die Bewegungen deiner Figur, indem du Blöcke zusammenziehst.",
+            "visualLogicDescription": "Definiere, wie deine Figur zieht, indem du Blöcke zusammenziehst.",
             "addRule": "Bewegungsmuster hinzufügen",
             "rule": "Regel",
             "if": "Wenn",
@@ -305,26 +366,25 @@
             "noRules": "Noch keine Bewegungsmuster definiert.",
             "createFirstRule": "Erstelle deine erste Regel",
             "invert": "Invertieren",
-            "switchSet": "Set wechseln",
-            "selectCollection": "Kollektion wählen",
-            "newSet": "Neues Set",
-            "activeSet": "Aktives Set",
-            "noSetSelected": "Kein Set ausgewählt",
+            "confirmInvert": "Dies wird die Version der anderen Farbe überschreiben. Fortfahren?",
             "pieceName": "Figurenname",
-            "piecesInSet": "Figuren im Set ({count})",
+            "totalPieces": "Figuren im Projekt ({count})",
             "addNew": "Neu hinzufügen",
             "noPieces": "Noch keine Figuren",
-            "clickAgain": "Nochmal klicken zum Löschen",
+            "clickAgain": "Nochmal klicken zum Bestätigen",
             "deletePiece": "Figur löschen",
             "delete": "Löschen",
             "white": "Weiß",
             "black": "Schwarz",
             "gotIt": "Verstanden!",
-            "advancedLogicTitle": "Fortgeschrittene Logik",
-            "advancedLogicDesc": "Öffne den knotenbasierten Editor (Scratch-ähnlich)",
+            "advancedLogicTitle": "Erweiterte Logik",
+            "advancedLogicDesc": "Öffne den knotenbasierten Logik-Editor (Scratch-ähnlich)",
             "eraser": "Radiergummi",
             "clearCanvas": "Leinwand leeren",
             "comingSoon": "Demnächst",
+            "confirmPixelate": "Möchtest du, dass dieses Bild bearbeitet werden kann?",
+            "imageUploadLabel": "Visuelle Basis",
+            "uploadPicture": "Bild hochladen",
             "comingEndOfJanuary": "Verfügbar Ende Januar 2026",
             "saveToSetModal": {
                 "title": "Figur speichern",
@@ -342,35 +402,67 @@
             "variables": {
                 "diffX": {
                     "label": "Horizontaler Schritt",
-                    "desc": "Anzahl der Felder horizontal. Positiv ist rechts, negativ ist links."
+                    "desc": "Die Anzahl der Felder, die die Figur horizontal zieht. Positiv ist rechts, negativ ist links."
                 },
                 "diffY": {
                     "label": "Vertikaler Schritt",
-                    "desc": "Anzahl der Felder vertikal. Positiv ist vorwärts, negativ ist rückwärts."
+                    "desc": "Die Anzahl der Felder, die die Figur vertikal zieht. Positiv ist vorwärts, negativ ist rückwärts."
                 },
                 "absDiffX": {
                     "label": "Horizontaler Abstand",
-                    "desc": "Der absolute horizontale Abstand, egal ob links oder rechts."
+                    "desc": "Der absolute horizontale Abstand, unabhängig von links oder rechts."
                 },
                 "absDiffY": {
                     "label": "Vertikaler Abstand",
-                    "desc": "Der absolute vertikale Abstand, egal ob vorwärts oder rückwärts."
+                    "desc": "Der absolute vertikale Abstand, unabhängig von vorwärts oder rückwärts."
+                }
+            },
+            "Logic": {
+                "title": "Logik-Editor",
+                "back": "Zurück zur Figur",
+                "dragVariableHint": "Variable hierher ziehen",
+                "variableTooltip": "Dieses Feld akzeptiert nur Variablen. Ziehe eine aus der Kategorie 'Variablen'.",
+                "categories": {
+                    "trigger": "Auslöser",
+                    "effects": "Effekte",
+                    "variables": "Variablen"
+                },
+                "blocks": {
+                    "onIsCaptured": "wennGeschlagen",
+                    "onThreat": "beiBedrohung",
+                    "onMove": "beiZug",
+                    "onEnvironment": "beiUmgebung",
+                    "onVar": "beiVariable",
+                    "cooldown": "Abklingzeit",
+                    "transformation": "Verwandlung",
+                    "modVar": "Var ändern",
+                    "kill": "Eliminieren",
+                    "prevent": "Standard verhindern"
+                },
+                "descriptions": {
+                    "onIsCaptured": "Wird ausgelöst, wenn eine Figur geschlagen wird.",
+                    "onThreat": "Wird ausgelöst, wenn die Figur bedroht wird.",
+                    "onMove": "Wird ausgelöst, wenn die Figur zieht.",
+                    "onEnvironment": "Wird basierend auf der Brettumgebung ausgelöst.",
+                    "onVar": "Wird ausgelöst, wenn eine Variable eine Bedingung erfüllt.",
+                    "cooldown": "Wendet eine Abklingzeit auf die Figur an.",
+                    "transformation": "Verwandelt die Figur in einen anderen Typ.",
+                    "modVar": "Ändert einen Variablenwert.",
+                    "kill": "Entfernt die Figur sofort aus dem Spiel.",
+                    "prevent": "Verhindert das Standardverhalten der Engine."
                 }
             }
         }
     },
-    "Analyze": {
-        "title": "Analyse-Funktion kommt bald",
-        "description": "Mach dich bereit, dein Spiel auf das nächste Level zu heben. Unser kommendes Analyse-Tool wird eine leistungsstarke Schach-Engine verwenden, um deine vergangenen Spiele zu überprüfen und tiefe Einblicke in deine Strategie zu geben. Entdecke deine Fehler, verpasste Chancen und brillanten Züge, um schneller zu lernen und klüger zu spielen.",
-        "goBackHome": "Zurück zum Start"
+    "EditorSidebar": {
+        "boardEditor": "Board-Editor",
+        "pieceEditor": "Figuren-Editor",
+        "back": "Zurück zu den Projekten",
+        "save": "Änderungen speichern",
+        "saved": "Gespeichert",
+        "saving": "Speichere..."
     },
-    "Game": {
-        "pawn": "Bauer",
-        "knight": "Springer",
-        "bishop": "Läufer",
-        "rook": "Turm",
-        "queen": "Dame",
-        "king": "König",
+    "BottomPiecePanel": {
         "white": "Weiß",
         "black": "Schwarz",
         "attribution": "Schachfigur-Vektoren von Vecteezy"
@@ -381,7 +473,8 @@
         "readyToPlay": "Bereit zu spielen?",
         "login": "Anmelden",
         "logout": "Abmelden",
-        "profile": "Profil"
+        "profile": "Profil",
+        "loginError": "Login-Fehler"
     },
     "Profile": {
         "gamesPlayed": "Gespielte Spiele",
@@ -391,20 +484,27 @@
         "recentGames": "Letzte Spiele",
         "notLoggedIn": "Nicht angemeldet",
         "noGamesYet": "Noch keine Spiele gespielt. Fang an zu spielen, um deine Historie zu sehen!",
-        "winRate": "Siegesrate"
+        "winRate": "Siegesrate",
+        "deleteAccount": "Konto löschen",
+        "deleteAccountConfirmTitle": "Konto löschen?",
+        "deleteAccountConfirmDesc": "Diese Aktion ist permanent. Alle deine Statistiken, Spielverläufe, benutzerdefinierten Bretter und Figuren-Sets werden für immer gelöscht. Dies kann nicht rückgängig gemacht werden.",
+        "deletePermanently": "Dauerhaft löschen",
+        "cancel": "Abbrechen",
+        "rename": "Umbenennen"
     },
     "Sidebar": {
-        "trending": "Trending",
-        "yourLibrary": "Deine Bibliothek",
-        "boards": "Boards",
-        "designs": "Designs",
+        "viewAll": "Alle ansehen",
+        "board": "Brett",
         "favorites": "Favoriten",
-        "exploreMarketplace": "Marketplace erkunden",
-        "viewAll": "Alle anzeigen",
-        "board": "Board",
-        "pieces": "Figuren",
+        "exploreMarketplace": "Marktplatz erkunden",
+        "trending": "Angesagt",
+        "designs": "Designs",
         "design": "Design",
-        "game": "Spiel"
+        "yourProjects": "Deine Projekte",
+        "pieces": "Figuren",
+        "game": "Spiel",
+        "pieceDesigns": "Figuren-Designs",
+        "boards": "Bretter"
     },
     "GameEnd": {
         "win": "Du hast gewonnen!",
@@ -414,18 +514,31 @@
         "newGame": "Neues Spiel",
         "rematchRequested": "Angefragt"
     },
+    "GameSidebar": {
+        "info": "Info",
+        "moves": "Züge",
+        "chat": "Chat",
+        "live": "LIVE",
+        "placeholder": "Schreib etwas...",
+        "gameStatus": "Spielstatus",
+        "roomCode": "Raumcode",
+        "players": "Spieler",
+        "youArePlaying": "Du spielst",
+        "yourSide": "Deine Seite",
+        "connecting": "Verbinde..."
+    },
     "Announcements": {
-        "title": "Neues & Updates",
+        "title": "Neueste Nachrichten & Updates",
         "by": "Von",
         "news": "Neuigkeiten",
         "backToOverview": "Zurück zur Übersicht",
         "readMore": "Mehr lesen"
     },
     "FAQ": {
-        "title": "Brett-Editor FAQ – Alle Antworten"
+        "title": "Board-Editor FAQ – Alle Antworten"
     },
     "LegalNotice": {
-        "title": "Impressum - Rechtliche Hinweise",
+        "title": "Impressum - Kontakt & Info",
         "providerHeading": "Anbieter",
         "providerName": "Lasse Thoroe - chessperiment",
         "providerAddress": "Ahlerfeld 29, 38527 Meine, Deutschland",
@@ -439,7 +552,7 @@
         "socialMediaHeading": "Social-Media-Profile",
         "socialMediaText": "Dieses Impressum gilt auch für folgende Social-Media-Profile:",
         "youtubeLabel": "YouTube:",
-        "otherProfilesLabel": "Sonstige Profile:",
+        "otherProfilesLabel": "Andere Profile:",
         "madeWith": "Erstellt mit freundlicher Unterstützung von",
         "dieterLinkText": "Dieter macht den Datenschutz",
         "disputeResolutionHeading": "Streitbeilegung",
@@ -453,11 +566,11 @@
         "controllerText": "Verantwortlich für die Datenverarbeitung auf dieser Website ist:\n\nLasse Thoroe - chessperiment\nAdresse: Ahlerfeld 29, 38527 Meine, Deutschland\nE-Mail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
         "generalHeading": "2. Allgemeine Hinweise",
         "generalText": "Der Schutz Ihrer Daten ist uns wichtig. Wir verarbeiten personenbezogene Daten nur, wenn es für die Bereitstellung unserer Dienste erforderlich ist und halten uns an die Datenschutz-Grundverordnung (DSGVO).",
-        "collectionHeading": "3. Daten, die wir erheben",
+        "collectionHeading": "3. Von uns erhobene Daten",
         "accountsSubheading": "a) Nutzerkonten",
-        "accountsText": "Wenn Sie ein Konto erstellen, speichern wir Ihren Namen, Ihre E-Mail-Adresse und Ihr Profilbild. Diese Daten sind nicht öffentlich und dienen der Nutzung der Plattform. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
-        "contentSubheading": "b) Nutzer-generierte Inhalte",
-        "contentText": "Wir speichern von Ihnen erstellte Inhalte wie Schachbretter und Figuren. Je nach Einstellung können diese öffentlich sichtbar sein. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
+        "accountsText": "Wenn Sie ein Konto erstellen, speichern wir Ihren Namen, Ihre E-Mail-Adresse und Ihr Profilbild. Diese Daten sind nicht öffentlich und dienen der Plattformfunktionalität. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
+        "contentSubheading": "b) Nutzergenerierte Inhalte",
+        "contentText": "Wir speichern von Ihnen erstellte Inhalte wie Schachbretter und Figuren. Je nach Ihren Einstellungen können diese öffentlich sichtbar sein. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
         "chatSubheading": "c) Chat-Funktion",
         "chatText": "Chat-Nachrichten werden gespeichert und auf verbotene Wörter gefiltert, um die Sicherheit zu gewährleisten. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO.",
         "analyticsHeading": "4. Analysedienste",
@@ -465,15 +578,15 @@
         "hostingHeading": "5. Datenbank und Hosting",
         "hostingText": "Wir verwenden Google Firebase (Firestore) als Datenbank. Ihre Daten (Nutzerkonten, Spielverläufe, erstellte Inhalte) werden dort gespeichert. Daten können in den USA verarbeitet werden. Google ist nach dem EU-US Data Privacy Framework zertifiziert. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
         "cookiesHeading": "6. Cookies",
-        "cookiesText": "Wir verwenden keine Cookies für Tracking oder Werbung. Einzig ein technisch notwendiger Session-Cookie (JWT) wird nach dem Login gesetzt, um Ihre Sitzung aufrechtzuerhalten. Dieser Cookie ist für die Funktion der Website unerlässlich. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
+        "cookiesText": "Wir verwenden keine Cookies für Tracking oder Werbung. Einzig ein technisch notwendiger Sitzungs-Cookie (JWT) wird beim Login gesetzt, um Ihre Sitzung aufrechtzuerhalten. Dieser Cookie ist für die Funktion der Website unerlässlich. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
         "retentionHeading": "7. Speicherdauer",
-        "retentionText": "Wir speichern Ihre Daten, solange Sie ein Konto bei uns haben. Spielverläufe und erstellte Inhalte bleiben zur Wahrung der Plattformintegrität länger gespeichert. Sie können Ihr Konto und die damit verbundenen personenbezogenen Daten jederzeit löschen lassen.",
+        "retentionText": "Wir speichern Ihre Daten, solange Sie ein Konto bei uns haben. Spielverläufe und erstellte Inhalte werden länger gespeichert, um die Plattformintegrität zu wahren. Sie können die Löschung Ihres Kontos und der damit verbundenen personenbezogenen Daten jederzeit beantragen.",
         "minorsHeading": "8. Minderjährige",
         "minorsText": "Personen unter 16 Jahren sollten unsere Dienste nur mit Zustimmung der Eltern nutzen.",
         "rightsHeading": "9. Ihre Rechte",
-        "rightsText": "Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung und Datenübertragbarkeit. Kontaktieren Sie uns dazu unter der oben genannten E-Mail-Adresse.",
+        "rightsText": "Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung und Datenübertragbarkeit. Bitte kontaktieren Sie uns unter der oben angegebenen E-Mail-Adresse.",
         "complaintHeading": "10. Beschwerderecht",
-        "complaintText": "Sie können sich bei einer Datenschutzaufsichtsbehörde beschweren.",
+        "complaintText": "Sie haben das Recht, eine Beschwerde bei einer Datenschutzaufsichtsbehörde einzureichen.",
         "changesHeading": "11. Änderungen",
         "changesText": "Wir können diese Datenschutzerklärung anpassen. Es gilt die jeweils aktuelle Fassung.",
         "madeWith": "Erstellt mit freundlicher Unterstützung von",
@@ -513,35 +626,13 @@
             }
         }
     },
-    "Library": {
-        "title": "Deine Bibliothek",
-        "noBoards": "Du hast noch keine Elemente gespeichert.",
-        "starOnly": "Nur Favoriten",
-        "search": "Bibliothek durchsuchen...",
-        "deleteConfirm": "Bist du sicher, dass du dieses Element löschen möchtest?",
-        "saveSuccess": "Brett in deiner Bibliothek gespeichert!",
-        "saveBoard": "Brett speichern",
-        "namePrompt": "Gib deinem Brett einen Namen",
-        "boardName": "Name des Bretts",
-        "preview": "Vorschau",
-        "publish": "Veröffentlichen",
-        "play": "Spielen",
-        "edit": "Bearbeiten",
-        "backToLibrary": "Zurück zur Bibliothek",
-        "details": "Details",
-        "lastUpdated": "Zuletzt aktualisiert",
-        "size": "Brettgröße",
-        "itemTypeBoard": "Brett",
-        "itemTypePiece": "Figur",
-        "white": "Weiß",
-        "black": "Schwarz"
-    },
+
     "NotFound": {
         "title": "404 - Figur nicht gefunden",
         "description": "Es scheint, als wäre dieser Zug ungültig. Die Seite, die du suchst, existiert nicht oder wurde verschoben.",
         "backHome": "Zurück zum Spiel"
     },
-    "About": {
+    "AboutPage": {
         "title": "Über Chessperiment",
         "intro": "Chessperiment (chessperiment.app) ist eine Web-Plattform, die sich der Erstellung hochgradig anpassbarer Schachvarianten widmet. Im Gegensatz zu herkömmlichen Schach-Webseiten ermöglicht Chessperiment den Nutzern, ihre eigenen einzigartigen Spiele zu entwerfen – mit voller Kontrolle über Bretter, Figuren, Regeln und Interaktionen.",
         "features": {
@@ -572,76 +663,35 @@
             "description": "Chessperiment wird von einem einzelnen Entwickler entwickelt, der auf Reddit und GitHub aktiv ist. Erst vor wenigen Wochen gestartet, hat die Plattform bereits über 100 Nutzer angezogen, die die endlosen Möglichkeiten des anpassbaren Schachs erkunden."
         }
     },
-    "PieceEditorFAQ": {
-        "title": "Figuren-Editor FAQ",
-        "description": "Alles was du über die Erstellung von eigenen Figuren mit komplexer Logik wissen musst.",
-        "sections": {
-            "general": {
-                "title": "Allgemeine Konzepte",
-                "q1": "Was ist der Figuren-Editor?",
-                "a1": "Der Figuren-Editor ermöglicht es dir, das Aussehen und die Bewegungslogik deiner eigenen Schachfiguren zu gestalten. Er besteht aus einem Pixel-Editor (64x64) und zwei Logik-Editoren: dem Visuellen Zug-Editor für geometrische Einschränkungen und dem Visuellen Logik-Editor (Block-Editor) für ereignisgesteuertes Verhalten.",
-                "q2": "Was sind Vektorbeschränkungen?",
-                "a2": "Anstatt fester Muster verwendet die Engine geometrische Vektoren. Ein Zug wird durch seinen Versatz in X- (horizontal) und Y- (vertikal) Richtung definiert. Dies ermöglicht flexible Definitionen wie 'beliebige Distanz auf der Diagonale' oder 'genau 2 Felder horizontal'."
-            },
-            "moveEditor": {
-                "title": "Visueller Zug-Editor",
-                "q1": "Wie definiere ich grundlegende Bewegungen?",
-                "a1": "Du definierst Regeln mit Variablen: diffX (horizontaler Schritt), diffY (vertikaler Schritt), absDiffX (absoluter horizontaler Abstand) und absDiffY (absoluter vertikaler Abstand). Wenn ein Zug deinen Bedingungen entspricht, wird er als 'Erlaubt' (legal) oder 'Verboten' (illegal) markiert.",
-                "q2": "Was ist der Unterschied zwischen Gleiten und Springen?",
-                "a2": "Aktuell basieren benutzerdefinierte Züge standardmäßig auf 'Teleportation'. Wenn du eine Regel für ein Zielfeld definierst, springt die Figur dorthin. Zukünftige Updates werden 'Kollisionseigenschaften' einführen, um das Gleitverhalten (wobei Zwischenfelder leer sein müssen) umzuschalten."
-            },
-            "logicEditor": {
-                "title": "Visueller Logik-Editor (Block-Editor)",
-                "q1": "Wie funktionieren Trigger?",
-                "a1": "Trigger sind die Startpunkte deiner Logikketten (z.B. 'beim Schlagen', 'beim Bewegen', 'beim Geschlagenwerden'). Sie lösen aus, wenn ein bestimmtes Ereignis eintritt. Du musst Effekt-Blöcke an diese Trigger andocken, damit sie ausgeführt werden.",
-                "q2": "Was ist 'Aktion verhindern'?",
-                "a2": "Der Block 'Aktion verhindern' (Prevent Default) ist ein mächtiges Terminal, das die Engine daran hindert, ihre Standardaktion auszuführen. Zum Beispiel macht das Platzieren innerhalb von 'beim Geschlagenwerden' die Figur unbesiegbar, da das Schlagereignis abgebrochen wird.",
-                "q3": "Kann ich Figuren transformieren?",
-                "a3": "Ja. Mit dem Block 'Transformation' kannst du eine Figur in einen anderen Typ verwandeln. Dies wird häufig für Bauernumwandlungen oder spezielle 'Phönix'-Figuren verwendet, die sich verwandeln anstatt zu sterben.",
-                "q4": "Wie funktionieren Variablen?",
-                "a4": "Du kannst den Block 'Variable ändern' verwenden, um numerische Werte (wie 'Leben' oder 'Wut-Stacks') zu erhöhen oder zu verringern. Du kannst dann den Trigger 'bei Variable' verwenden, um zu reagieren, wenn eine Variable einen bestimmten Schwellenwert erreicht."
-            },
-            "troubleshooting": {
-                "title": "Fehlerbehebung",
-                "q1": "Warum löst meine Logik nicht aus?",
-                "a1": "Stelle sicher, dass deine Blöcke physisch aneinander angedockt sind. Frei schwebende Blöcke werden nicht ausgeführt. Überprüfe auch den Kontext des Triggers: 'beim Schlagen' löst *während* des Schlagens aus, während 'beim Bewegen' erst auslöst, nachdem das Brett bereits aktualisiert wurde.",
-                "q2": "Funktioniert 'Aktion verhindern' bei 'bei Bedrohung'?",
-                "a2": "Nein. 'bei Bedrohung' ist eine passive Prüfung zur Hervorhebung. Du kannst eine Bedrohung nicht 'verhindern'; du kannst nur den Zug oder das Schlagen verhindern, das sie verursacht."
-            }
-        }
-    },
     "Onboarding": {
-        "editorTitle": "Board Editor",
-        "editorMessage": "Erstellen Sie Ihr eigenes, Ihr erstes Brett.",
+        "editorTitle": "Board-Editor",
+        "editorMessage": "Erstelle dein eigenes, dein erstes Brett.",
         "playTitle": "Spielen",
-        "playMessage": "Spielen Sie gegen andere mit Ihren eigenen Kreationen.",
-        "next": "Weiter",
-        "finish": "Verstanden!",
-        "skip": "Überspringen"
+        "playMessage": "Spiele gegen andere mit deinen eigenen Kreationen."
     },
     "CreationGuide": {
         "title": "Erstellungs-Guide",
-        "subtitle": "Schließe alle Schritte ab, um zu starten.",
+        "subtitle": "Dein Weg zum eigenen Schach",
         "steps": {
             "1": {
-                "title": "Brett-Setup",
-                "description": "Definiere Rastergröße, Form und initiale aktive Felder für das Spielfeld."
+                "title": "Wähle das Raster",
+                "description": "Beginne mit dem Layout des Brettes. Klassisch 8x8 Quadrate oder hexagonale Felder? Du entscheidest das Schlachtfeld."
             },
             "2": {
-                "title": "Figuren",
-                "description": "Erstelle eigene Einheiten, definiere Bewegungsmuster und Angriffsregeln."
+                "title": "Forme das Brett",
+                "description": "Passe die Dimensionen an. Entferne Felder, um Löcher, Inseln oder einzigartige Formen zu schaffen."
             },
             "3": {
-                "title": "Regeln & Logik",
-                "description": "Lege Siegbedingungen, Spezialzonen, Beförderungsregeln und Zugstruktur fest."
+                "title": "Definiere Bewegung",
+                "description": "Erstelle eigene Figuren im Pixel-Editor. Zeichne ihr Aussehen und lege exakt fest, wie sie ziehen."
             },
             "4": {
-                "title": "Design",
-                "description": "Passe Brett-Themes, Farben, Figuren-Skins und visuelle Effekte an."
+                "title": "Designe die Figuren",
+                "description": "Gib deinen Figuren einen einzigartigen Look mit den Pixel-Art-Tools. Retro-Stil oder modernes Design?"
             },
             "5": {
-                "title": "Launch",
-                "description": "Im Marketplace veröffentlichen oder Freunde zu einem privaten Match einladen."
+                "title": "Spielen & Teilen",
+                "description": "Teste deine Kreation gegen die KI oder fordere Freunde online heraus. Teile deine Variante mit der Welt!"
             }
         }
     },

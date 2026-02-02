@@ -1,10 +1,11 @@
 "use client"
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ArrowRight, GripVertical } from 'lucide-react';
+import { Plus, Trash2, ArrowRight, GripVertical, Footprints, Zap, Code2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import { useRouter } from '@/i18n/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import {
     DndContext,
@@ -36,12 +37,14 @@ interface MoveRule {
     id: string;
     conditions: MoveCondition[];
     result: 'allow' | 'disallow';
+    type?: 'slide' | 'jump';
 }
 
 interface VisualMoveEditorProps {
     moves: MoveRule[];
     onUpdate: (moves: MoveRule[]) => void;
     pieceId?: string;
+    projectId?: string;
 }
 
 const VAR_MATH = {
@@ -77,6 +80,7 @@ function ExplanationModal({ variable, onClose }: { variable: keyof typeof VAR_MA
                     {t(`variables.${variable}.desc`)}
                 </p>
                 <button
+                    type="button"
                     onClick={onClose}
                     className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold hover:bg-white/10 transition-all"
                 >
@@ -95,6 +99,7 @@ function SortableRule({
     onUpdateCondition,
     onDeleteCondition,
     onToggleResult,
+    onToggleType,
     t
 }: {
     rule: MoveRule,
@@ -104,6 +109,7 @@ function SortableRule({
     onUpdateCondition: (ruleId: string, condId: string, updates: Partial<MoveCondition>) => void,
     onDeleteCondition: (ruleId: string, condId: string) => void,
     onToggleResult: (id: string) => void,
+    onToggleType: (id: string) => void,
     t: any
 }) {
     const [explaining, setExplaining] = useState<keyof typeof VAR_MATH | null>(null);
@@ -199,6 +205,7 @@ function SortableRule({
 
                                 {rule.conditions.length > 1 && (
                                     <button
+                                        type="button"
                                         onClick={() => onDeleteCondition(rule.id, cond.id)}
                                         className="p-1 text-white/20 hover:text-red-500 transition-colors"
                                     >
@@ -208,6 +215,7 @@ function SortableRule({
                             </div>
                             {cIdx < rule.conditions.length - 1 && (
                                 <button
+                                    type="button"
                                     onClick={() => onUpdateCondition(rule.id, cond.id, { logic: cond.logic === 'OR' ? 'AND' : 'OR' })}
                                     className="text-[10px] font-black text-amber-500 hover:text-amber-400 px-2 py-1 bg-amber-500/10 rounded-lg transition-all uppercase tracking-widest"
                                 >
@@ -218,6 +226,7 @@ function SortableRule({
                     ))}
 
                     <button
+                        type="button"
                         onClick={() => onAddCondition(rule.id)}
                         className="p-2 bg-white/5 border border-white/10 rounded-xl text-white/40 hover:text-white hover:border-white/20 transition-all active:scale-95"
                     >
@@ -227,7 +236,22 @@ function SortableRule({
 
                 <div className="flex items-center gap-4 pl-6 border-l border-white/10 self-stretch">
                     <ArrowRight className="text-white/20" size={20} />
+
                     <button
+                        type="button"
+                        onClick={() => onToggleType(rule.id)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${(rule.type || 'jump') === 'jump'
+                            ? 'bg-indigo-500/20 text-indigo-500 border border-indigo-500/30'
+                            : 'bg-orange-500/20 text-orange-500 border border-orange-500/30'
+                            }`}
+                        title={(rule.type || 'jump') === 'jump' ? "Jumping (Can move over obstacles)" : "Running (Blocked by obstacles)"}
+                    >
+                        {(rule.type || 'jump') === 'jump' ? <Zap size={14} /> : <Footprints size={14} />}
+                        {(rule.type || 'jump') === 'jump' ? 'Jump' : 'Run'}
+                    </button>
+
+                    <button
+                        type="button"
                         onClick={() => onToggleResult(rule.id)}
                         className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${rule.result === 'allow'
                             ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30'
@@ -238,6 +262,7 @@ function SortableRule({
                     </button>
 
                     <button
+                        type="button"
                         onClick={() => onDelete(rule.id)}
                         className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl border border-red-500/20 transition-all opacity-0 group-hover:opacity-100"
                     >
@@ -249,9 +274,10 @@ function SortableRule({
     );
 }
 
-export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMoveEditorProps) {
+export default function VisualMoveEditor({ moves, onUpdate, pieceId, projectId }: VisualMoveEditorProps) {
     const t = useTranslations('Editor.Piece');
     const locale = useLocale();
+    const router = useRouter();
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -280,7 +306,8 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
                 { id: uuidv4(), variable: 'absDiffX', operator: '===', value: 1 },
                 { id: uuidv4(), variable: 'absDiffY', operator: '===', value: 2 }
             ],
-            result: 'allow'
+            result: 'allow',
+            type: 'jump'
         };
         onUpdate([...moves, newRule]);
     };
@@ -344,6 +371,19 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
         onUpdate(newMoves);
     };
 
+    const toggleType = (ruleId: string) => {
+        const newMoves = moves.map(rule => {
+            if (rule.id === ruleId) {
+                return {
+                    ...rule,
+                    type: (rule.type === 'slide' ? 'jump' : 'slide') as 'slide' | 'jump'
+                };
+            }
+            return rule;
+        });
+        onUpdate(newMoves);
+    };
+
     return (
         <div className="w-full max-w-5xl mx-auto space-y-8 p-4">
             <div className="flex items-center justify-between mb-8">
@@ -351,12 +391,26 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
                     <h2 className="text-2xl font-black text-stone-900 dark:text-white tracking-tight">{t('visualLogicTitle')}</h2>
                     <p className="text-stone-500 dark:text-white/40 text-sm">{t('visualLogicDescription')}</p>
                 </div>
-                <button
-                    onClick={addRule}
-                    className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white dark:text-bg font-black rounded-2xl hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 active:scale-95"
-                >
-                    <Plus size={20} /> {t('addRule')}
-                </button>
+                <div className="flex items-center gap-3">
+                    {pieceId && projectId && (
+                        <button
+                            type="button"
+                            onClick={() => router.push(`/editor/${projectId}/piece-editor/${pieceId}/logic`)}
+                            className="flex items-center gap-3 px-8 py-4 bg-linear-to-br from-indigo-500 to-violet-600 text-white font-black rounded-2xl shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] hover:scale-105 transition-all active:scale-95 group relative overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Code2 size={22} className="group-hover:rotate-12 transition-transform relative z-10" />
+                            <span className="relative z-10 tracking-tight">{t('advancedLogicTitle') || 'Advanced Logic'}</span>
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={addRule}
+                        className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white dark:text-bg font-black rounded-2xl hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20 active:scale-95"
+                    >
+                        <Plus size={20} /> {t('addRule')}
+                    </button>
+                </div>
             </div>
 
             <DndContext
@@ -380,6 +434,7 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
                                     onUpdateCondition={updateCondition}
                                     onDeleteCondition={deleteCondition}
                                     onToggleResult={toggleResult}
+                                    onToggleType={toggleType}
                                     t={t}
                                 />
                             ))}
@@ -396,31 +451,13 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId }: VisualMov
                 >
                     <p className="text-white/20 font-medium">{t('noRules')}</p>
                     <button
+                        type="button"
                         onClick={addRule}
                         className="mt-4 text-amber-500 font-bold hover:underline"
                     >
                         {t('createFirstRule')}
                     </button>
                 </motion.div>
-            )}
-
-            {pieceId && (
-                <Link href={`/${locale}/editor/piece/${pieceId}/logic`}>
-                    <div className="flex justify-center pt-8 border-t border-white/5 relative group">
-                        <button
-                            className="group flex items-center gap-3 px-6 py-4 bg-linear-to-r from-purple-500/20 to-purple-600/20 dark:from-purple-500/30 dark:to-purple-600/30 rounded-2xl border border-purple-500/30 hover:border-purple-500/60 hover:from-purple-500/30 hover:to-purple-600/30 transition-all shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 active:scale-95"
-                        >
-                            <div className="w-10 h-10 rounded-xl bg-purple-500/40 flex items-center justify-center text-purple-300 group-hover:text-purple-200 transition-colors">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
-                            </div>
-                            <div className="text-left">
-                                <h3 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider">{t('advancedLogicTitle')}</h3>
-                                <p className="text-[10px] font-medium text-stone-500 dark:text-white/40">{t('advancedLogicDesc')}</p>
-                            </div>
-                            <ArrowRight size={16} className="text-stone-300 dark:text-white/20 ml-2 group-hover:translate-x-1 transition-transform" />
-                        </button>
-                    </div>
-                </Link>
             )}
         </div>
     );

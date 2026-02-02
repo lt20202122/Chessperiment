@@ -1,21 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Zilla_Slab, Lexend } from 'next/font/google';
+import { zillaSlab, lexend } from '@/lib/fonts';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-
-const zillaSlab = Zilla_Slab({
-    weight: ['700'],
-    subsets: ['latin'],
-    display: "swap"
-});
-
-const lexend = Lexend({
-    weight: ['400', '600'],
-    subsets: ['latin'],
-    display: "swap"
-});
 
 const calculateTargetDate = () => {
     const target = new Date();

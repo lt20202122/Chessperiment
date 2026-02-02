@@ -2,20 +2,8 @@
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { Outfit, JetBrains_Mono } from "next/font/google";
+import { outfit, mono } from '@/lib/fonts';
 import { Menu, X } from 'lucide-react';
-
-const outfit = Outfit({
-    display: "swap",
-    subsets: ["latin"],
-    weight: ["300", "400", "500", "600", "700", "800", "900"],
-});
-
-const mono = JetBrains_Mono({
-    display: "swap",
-    subsets: ["latin"],
-    weight: ["400", "700"],
-});
 
 export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen }: { pathname: string, locale: string, isMenuOpen: boolean, setIsMenuOpen: (val: boolean) => void }) {
     const t = useTranslations('Header');
@@ -67,11 +55,9 @@ export function Header({ pathname, locale, isMenuOpen, setIsMenuOpen }: { pathna
             <div className={`hidden lg:flex gap-4 items-center`}>
                 <div className="flex gap-2">
                     <Link id="tour-play" href="/game" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('play')}</Link>
-                    <Link id="tour-editor" href="/editor/board" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('boardEditor')}</Link>
-                    <Link href="/editor/piece" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('pieceEditor')}</Link>
+                    <Link id="tour-editor" href="/editor" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('editor')}</Link>
                     <Link href="/announcements" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('news')}</Link>
                     <Link href="/marketplace" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('marketplace')}</Link>
-                    <Link href="/library" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('library')}</Link>
                     <Link href="/about" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('about')}</Link>
                     <Link href="/feedback" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('feedback')}</Link>
                     <Link href="/login" className={`link-underline-regular cursor-pointer block ${small ? "text-amber-600/50 dark:text-amber-400/50 group-hover:text-accent" : "text-accent dark:before:accent hover:text-accent-hover"}`}>{t('login')}</Link>

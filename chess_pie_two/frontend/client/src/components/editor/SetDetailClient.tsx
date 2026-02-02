@@ -28,8 +28,7 @@ export default function SetDetailClient({ set, pieces, locale, translations }: S
     };
 
     const handleEditPiece = (pieceId: string) => {
-        localStorage.setItem('editPieceId', pieceId);
-        router.push('/editor/piece');
+        router.push('/editor');
     };
 
     return (
@@ -124,7 +123,7 @@ export default function SetDetailClient({ set, pieces, locale, translations }: S
                             No pieces in this set yet.
                         </p>
                         <button
-                            onClick={() => router.push('/editor/piece')}
+                            onClick={() => router.push('/editor')}
                             className="mt-6 text-amber-500 font-bold hover:underline"
                         >
                             Create a piece

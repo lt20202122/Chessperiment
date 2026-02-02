@@ -130,7 +130,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                             </p>
                             <div className="mt-10 flex items-center justify-center gap-x-8">
                                 <Link
-                                    href="/editor/board"
+                                    href="/editor"
                                     className="rounded-xl bg-linear-to-r from-orange-500 to-amber-500 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
                                 >
                                     Start Creating
@@ -181,24 +181,6 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                         <p className="mt-6 text-lg leading-8 text-stone-600 dark:text-stone-400">
                             {t("developer.description")}
                         </p>
-                        <div className="mt-10 flex gap-x-6">
-                            <a
-                                href="https://github.com/lt20202122/chessPIE"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-sm font-semibold leading-6 text-stone-900 dark:text-stone-50 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
-                            >
-                                GitHub <ExternalLink className="w-4 h-4" />
-                            </a>
-                            <a
-                                href="https://www.reddit.com/r/chessperiment/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-sm font-semibold leading-6 text-stone-900 dark:text-stone-50 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
-                            >
-                                Reddit <ExternalLink className="w-4 h-4" />
-                            </a>
-                        </div>
                     </div>
                 </div>
             </section>

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "../globals.css";
-import { Lexend } from "next/font/google";
+import { lexend } from "@/lib/fonts";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { routing } from "@/i18n/routing";
@@ -19,17 +19,14 @@ import { NameChangeAnnouncement } from "@/components/NameChangeAnnouncement";
 import { ReferralSurvey } from "@/components/ReferralSurvey";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { CreationGuide } from "@/components/CreationGuide";
-
+import { AuthProvider } from "@/context/AuthContext";
+import { BotIdClient } from "botid/client";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-const lex = Lexend({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  display: "swap"
-});
+// Local font is now defined in @/lib/fonts
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -108,6 +105,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
+
+
 export default async function RootLayout({
   children,
   params,
@@ -124,7 +123,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${lex.className}`}
+      className={`${lexend.className}`}
       suppressHydrationWarning={true}
     >
       <head>
@@ -132,31 +131,35 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(generateBreadcrumbs(pathname)) }}
         />
-
       </head>
       <body className="bg-bg transition-colors duration-300 dark:bg-stone-950 min-h-screen flex flex-col">
+        {/* BotID Protection for API routes */}
+        <BotIdClient protect={[{ path: '/api/auth/*', method: 'POST' }]} />
+
         <SessionWrapper>
           <NextIntlClientProvider messages={messages}>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <Providers>
-                <NameChangeAnnouncement />
-                <Analytics />
-                <SpeedInsights />
-                <UserPanel />
-                <ThemeToggle />
-                <ReferralSurvey />
-                <CreationGuide />
-                <OnboardingTour />
-                <HeaderWrapper />
-                {children}
-                <SEOFooter />
-              </Providers>
-            </ThemeProvider>
+            <AuthProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                <Providers>
+                  <NameChangeAnnouncement />
+                  <Analytics />
+                  <SpeedInsights />
+                  <UserPanel />
+                  <ThemeToggle />
+                  <ReferralSurvey />
+                  <CreationGuide />
+                  <OnboardingTour />
+                  <HeaderWrapper />
+                  {children}
+                  <SEOFooter />
+                </Providers>
+              </ThemeProvider>
+            </AuthProvider>
           </NextIntlClientProvider>
         </SessionWrapper>
       </body>

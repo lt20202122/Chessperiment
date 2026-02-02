@@ -19,7 +19,7 @@ export default function HomeLayout({
                     </section>
                 </div>
 
-                {/* Left Sidebar (Library) - Appears second on mobile */}
+                {/* Left Sidebar (Projects) - Appears second on mobile */}
                 <div className="order-2 lg:order-1 h-fit">
                     {statistics}
                 </div>

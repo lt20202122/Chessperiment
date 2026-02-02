@@ -30,7 +30,7 @@ export function MobileMenu({ locale, isMenuOpen, setIsMenuOpen }: { locale: stri
                             <div className="w-2 h-2 rounded-full bg-amber-400/20 group-hover:bg-accent group-hover:scale-150 transition-all opacity-0 group-hover:opacity-100" />
                         </Link>
                         <Link
-                            href="/editor/board"
+                            href="/editor"
                             className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
                             onClick={() => setIsMenuOpen(false)}
                         >
@@ -38,7 +38,7 @@ export function MobileMenu({ locale, isMenuOpen, setIsMenuOpen }: { locale: stri
                             <div className="w-2 h-2 rounded-full bg-amber-400/20 group-hover:bg-accent group-hover:scale-150 transition-all opacity-0 group-hover:opacity-100" />
                         </Link>
                         <Link
-                            href="/editor/piece"
+                            href="/editor"
                             className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
                             onClick={() => setIsMenuOpen(false)}
                         >
@@ -61,14 +61,7 @@ export function MobileMenu({ locale, isMenuOpen, setIsMenuOpen }: { locale: stri
                             <span>{t('marketplace')}</span>
                             <div className="w-2 h-2 rounded-full bg-amber-400/20 group-hover:bg-accent group-hover:scale-150 transition-all opacity-0 group-hover:opacity-100" />
                         </Link>
-                        <Link
-                            href="/library"
-                            className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"
-                            onClick={() => setIsMenuOpen(false)}
-                        >
-                            <span>{t('library')}</span>
-                            <div className="w-2 h-2 rounded-full bg-amber-400/20 group-hover:bg-accent group-hover:scale-150 transition-all opacity-0 group-hover:opacity-100" />
-                        </Link>
+
                         <Link
                             href="/login"
                             className="group flex items-center justify-between text-3xl font-black text-stone-900 dark:text-white hover:text-accent transition-all border-l-4 border-amber-400/0 hover:border-accent pl-2"

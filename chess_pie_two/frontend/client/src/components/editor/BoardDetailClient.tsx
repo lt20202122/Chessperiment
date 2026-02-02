@@ -38,21 +38,11 @@ export default function BoardDetailClient({ board, locale, translations, userNam
     };
 
     const handlePlay = () => {
-        localStorage.setItem('rows', board.rows.toString());
-        localStorage.setItem('cols', board.cols.toString());
-        localStorage.setItem('gridType', board.gridType || 'square');
-        localStorage.setItem('activeSquares', JSON.stringify(board.activeSquares));
-        localStorage.setItem('placedPieces', JSON.stringify(board.placedPieces));
-        router.push('/editor/board/play');
+        router.push('/editor');
     };
 
     const handleEdit = () => {
-        localStorage.setItem('rows', board.rows.toString());
-        localStorage.setItem('cols', board.cols.toString());
-        localStorage.setItem('gridType', board.gridType || 'square');
-        localStorage.setItem('activeSquares', JSON.stringify(board.activeSquares));
-        localStorage.setItem('placedPieces', JSON.stringify(board.placedPieces));
-        router.push('/editor/board');
+        router.push('/editor');
     };
 
     return (

@@ -417,7 +417,7 @@ io.on("connection", (socket) => {
     }
 
     console.log(
-      `[Stockfish] Thinking for Room: ${roomId}, FEN: ${game.board_fen}, Diff: ${difficulty}`,
+      `[Stockfish] Starting engine thinking for Room: ${roomId} (Diff: ${difficulty})`,
     );
 
     try {
@@ -427,7 +427,9 @@ io.on("connection", (socket) => {
       );
 
       if (bestMove) {
-        console.log("[Stockfish] Best move found:", bestMove);
+        console.log(
+          `[Stockfish] Engine suggested move: ${bestMove} for Room: ${roomId}`,
+        );
 
         // Apply the move to the server-side game state
         const chess = new Chess(game.board_fen);
@@ -503,7 +505,6 @@ io.on("connection", (socket) => {
           if (game.players.black === oldPlayerId) game.players.black = playerId;
           await saveGame(game);
           await savePlayerRoom(playerId, roomId);
-          // Cleanup old mapping potentially, but Redis handles expiry
           playerToRoom.delete(oldPlayerId);
           if (redisEnabled && redisClient) {
             await redisClient.del(`playerRoom:${oldPlayerId}`);
@@ -589,7 +590,7 @@ io.on("connection", (socket) => {
   socket.on("create_room", async () => {
     const playerId = socketToPlayer.get(socket.id);
     if (!playerId) return;
-    removeFromQueue(playerId);
+    await removeFromQueue(playerId);
     const game = new Game(playerId);
     games.set(game.roomId.toUpperCase(), game);
     await saveGame(game);
@@ -599,7 +600,16 @@ io.on("connection", (socket) => {
   });
 
   socket.on("join_room", async (data) => {
-    const playerId = socketToPlayer.get(socket.id);
+    let playerId = socketToPlayer.get(socket.id);
+    if (!playerId && data.pId) {
+      playerId = data.pId;
+      console.log(
+        `[Join Room] Lazy-registering player ${playerId} on socket ${socket.id}`,
+      );
+      socketToPlayer.set(socket.id, playerId);
+      playerToSocket.set(playerId, socket.id);
+    }
+
     if (!playerId || !data.roomId) {
       socket.emit("error", {
         message: "Player not registered or no room ID provided",
@@ -703,7 +713,7 @@ io.on("connection", (socket) => {
     await saveGame(game);
     await savePlayerRoom(playerId, roomId);
     socket.join(roomId);
-    removeFromQueue(playerId);
+    await removeFromQueue(playerId);
     socket.emit("joined_room", { roomId, color: "black" });
     if (game.players.white && game.players.black) {
       game.status = "playing";
@@ -717,7 +727,12 @@ io.on("connection", (socket) => {
   });
 
   socket.on("move", async (data) => {
-    const playerId = socketToPlayer.get(socket.id);
+    let playerId = socketToPlayer.get(socket.id);
+    if (!playerId && data.pId) {
+      playerId = data.pId;
+      socketToPlayer.set(socket.id, playerId);
+      playerToSocket.set(playerId, socket.id);
+    }
     const roomId = playerId ? await getPlayerRoom(playerId) : null;
     const game = roomId ? await getGame(roomId) : null;
     if (!game || game.status !== "playing") return;

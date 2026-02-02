@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import { Globe, Download, Share2, MousePointer, Move, LayoutGrid, UserCircle2, Swords, Library, Plus, Star, Trash2, X as CloseIcon } from 'lucide-react';
-import { EditMode } from '@/app/[locale]/editor/board/PageClient';
+import { EditMode } from '@/types/editor';
 import Image from 'next/image';
 import { getPieceImage } from '@/app/[locale]/game/Data';
 import BoardStyle from '@/app/[locale]/game/BoardStyle';
@@ -214,32 +214,32 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                             {Object.entries(customCollection).map(([id, piece]) => {
                                 // Skip pieces with missing color property
                                 if (!piece.color) return null;
-                                
+
                                 return (
-                                <button
-                                    key={id}
-                                    onClick={() => handlePieceSelect(id, piece.color)}
-                                    className={`flex flex-col items-center justify-center aspect-square p-2 rounded-2xl border transition-all relative overflow-hidden ${selectedPiece.type === id && selectedPiece.color === piece.color
-                                        ? 'bg-amber-500/20 border-amber-500 shadow-sm scale-105 z-10'
-                                        : 'bg-white dark:bg-bg/20 border-stone-200 dark:border-gray-200/10 hover:border-amber-500/40 hover:bg-amber-500/5'
-                                        }`}
-                                >
-                                    <div className="w-12 h-12 relative flex items-center justify-center">
-                                        <PieceRenderer
-                                            type={piece.name}
-                                            color={piece.color}
-                                            size={48}
-                                            pixels={piece.pixels}
-                                        />
-                                    </div>
-                                    <span className="text-[7px] font-black uppercase tracking-tighter opacity-60 mt-1 truncate w-full text-center px-1">
-                                        {piece.name}
-                                    </span>
-                                    {/* Color Indicator Badge */}
-                                    <div className={`absolute top-0 right-0 px-1 py-0.5 text-[6px] font-black uppercase ${piece.color === 'white' ? 'bg-white text-stone-900 border-b border-l border-stone-100' : 'bg-stone-900 text-white border-b border-l border-stone-800'}`}>
-                                        {tg(piece.color)}
-                                    </div>
-                                </button>
+                                    <button
+                                        key={id}
+                                        onClick={() => handlePieceSelect(id, piece.color)}
+                                        className={`flex flex-col items-center justify-center aspect-square p-2 rounded-2xl border transition-all relative overflow-hidden ${selectedPiece.type === id && selectedPiece.color === piece.color
+                                            ? 'bg-amber-500/20 border-amber-500 shadow-sm scale-105 z-10'
+                                            : 'bg-white dark:bg-bg/20 border-stone-200 dark:border-gray-200/10 hover:border-amber-500/40 hover:bg-amber-500/5'
+                                            }`}
+                                    >
+                                        <div className="w-12 h-12 relative flex items-center justify-center">
+                                            <PieceRenderer
+                                                type={piece.name}
+                                                color={piece.color}
+                                                size={48}
+                                                pixels={piece.pixels}
+                                            />
+                                        </div>
+                                        <span className="text-[7px] font-black uppercase tracking-tighter opacity-60 mt-1 truncate w-full text-center px-1">
+                                            {piece.name}
+                                        </span>
+                                        {/* Color Indicator Badge */}
+                                        <div className={`absolute top-0 right-0 px-1 py-0.5 text-[6px] font-black uppercase ${piece.color === 'white' ? 'bg-white text-stone-900 border-b border-l border-stone-100' : 'bg-stone-900 text-white border-b border-l border-stone-800'}`}>
+                                            {tg(piece.color)}
+                                        </div>
+                                    </button>
                                 );
                             })}
                         </div>
@@ -327,7 +327,7 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                                     <div className="text-center py-10 bg-stone-50 dark:bg-white/5 rounded-2xl border border-dashed border-stone-200 dark:border-white/10">
                                         <p className="text-stone-400 text-xs font-black uppercase">{t('noSetsFound')}</p>
                                         <button
-                                            onClick={() => router.push('/editor/piece')}
+                                            onClick={() => router.push('/editor')}
                                             className="mt-4 text-amber-500 text-xs font-bold hover:underline"
                                         >
                                             {t('createFirstSet')}
@@ -375,7 +375,7 @@ export default function EditorSidebar({ editMode, setEditMode, selectedPiece, se
                     className="bg-linear-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-md border border-purple-400/20"
                     onClick={() => {
                         sessionStorage.setItem('board', generateBoardData());
-                        router.push('/editor/board/play');
+                        router.push('/editor');
                     }}
                 />
                 <ActionButton

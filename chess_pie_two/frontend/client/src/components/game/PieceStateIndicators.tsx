@@ -217,7 +217,7 @@ export default function PieceStateIndicators({
 function TriggerParticles({ triggerType, size }: { triggerType: string; size: number }) {
     const colors = {
         'on-move': 'bg-blue-400',
-        'on-capture': 'bg-red-400',
+        'on-is-captured': 'bg-red-400',
         'on-threat': 'bg-orange-400',
         'on-environment': 'bg-green-400',
         'on-var': 'bg-purple-400'

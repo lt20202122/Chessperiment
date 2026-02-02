@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         // Send email using Resend
         const { data, error } = await resend.emails.send({
             from: "Chessperiment Feedback <onboarding@resend.dev>",
-            to: ["lassethoroe10@gmail.com"],
+            to: ["lasse.secaccbs@gmail.com"],
             subject: `Chessperiment Feedback: ${typeLabel}`,
             html: `
                 <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">

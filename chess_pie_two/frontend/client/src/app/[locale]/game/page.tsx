@@ -66,7 +66,7 @@ export default async function Game({ params }: { params: Promise<{ locale: strin
             <h2>{t('seoContent.heading')}</h2>
             <p>{t('seoContent.text')}</p>
             <div className="flex flex-wrap justify-center gap-4 mt-8 not-prose">
-                <Link href="/editor/board" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
+                <Link href="/editor" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">
                     → Create a New Board
                 </Link>
                 <Link href="/marketplace" className="text-orange-600 dark:text-orange-400 hover:underline font-medium">

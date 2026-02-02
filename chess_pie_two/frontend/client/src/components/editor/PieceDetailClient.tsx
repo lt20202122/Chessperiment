@@ -34,8 +34,7 @@ export default function PieceDetailClient({ piece, locale, translations }: Piece
     };
 
     const handleEdit = () => {
-        localStorage.setItem('editPieceId', piece.id!);
-        router.push('/editor/piece');
+        router.push('/editor');
     };
 
     return (

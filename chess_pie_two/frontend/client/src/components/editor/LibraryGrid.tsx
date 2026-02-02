@@ -13,27 +13,41 @@ type LibraryItem = (SavedBoard & { _type: 'board' }) | (PieceSet & { _type: 'set
 export default function LibraryGrid({ initialBoards, initialSets }: { initialBoards: SavedBoard[], initialSets: any }) {
 
     const t = useTranslations('Library');
-    const [items, setItems] = useState<LibraryItem[]>([
-        ...initialBoards.map(b => ({ ...b, _type: 'board' as const })),
-        ...initialSets.map((s: any) => ({ ...s, _type: 'set' as const }))
-    ].sort((a, b) => {
-        const dateA = new Date(a.updatedAt).getTime();
-        const dateB = new Date(b.updatedAt).getTime();
-        return dateB - dateA;
-    }));
+    const [items, setItems] = useState<LibraryItem[]>(() => {
+        const boards = (initialBoards || []).map(b => ({
+            ...b,
+            createdAt: b.createdAt ? new Date(b.createdAt) : new Date(),
+            updatedAt: b.updatedAt ? new Date(b.updatedAt) : new Date(),
+            _type: 'board' as const
+        }));
+        const sets = (initialSets || []).map((s: any) => ({
+            ...s,
+            createdAt: s.createdAt ? new Date(s.createdAt) : new Date(),
+            updatedAt: s.updatedAt ? new Date(s.updatedAt) : new Date(),
+            _type: 'set' as const
+        }));
+        return [...boards, ...sets].sort((a, b) => {
+            return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        });
+    });
     const [searchTerm, setSearchTerm] = useState('');
     const [showOnlyStarred, setShowOnlyStarred] = useState(false);
     const router = useRouter();
 
     const handleToggleStar = async (id: string, type: 'board' | 'set') => {
         try {
-            const isNowStarred = type === 'board'
+            const result = type === 'board'
                 ? await toggleBoardStarAction(id)
                 : await togglePieceSetStarAction(id);
 
-            setItems(prev => prev.map(item =>
-                item.id === id && item._type === type ? { ...item, isStarred: isNowStarred } : item
-            ).sort((a, b) => {
+            const isNowStarred = result ?? false;
+
+            setItems(prev => prev.map(item => {
+                if (item.id === id && item._type === type) {
+                    return { ...item, isStarred: isNowStarred } as LibraryItem;
+                }
+                return item;
+            }).sort((a, b) => {
                 if (a.isStarred !== b.isStarred) return b.isStarred ? 1 : -1;
                 return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
             }));
@@ -134,33 +148,12 @@ function LibraryCard({ item, onToggleStar, onDelete, t }: { item: LibraryItem, o
 
     const handlePlay = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (isBoard) {
-            localStorage.setItem('rows', item.rows.toString());
-            localStorage.setItem('cols', item.cols.toString());
-            localStorage.setItem('gridType', (item as any).gridType || 'square');
-            localStorage.setItem('activeSquares', JSON.stringify(item.activeSquares));
-            localStorage.setItem('placedPieces', JSON.stringify(item.placedPieces));
-            router.push('/editor/board/play');
-        } else {
-            // For pieces, maybe go to piece editor?
-            localStorage.setItem('editPieceId', item.id!);
-            router.push('/editor/piece');
-        }
+        router.push('/editor');
     };
 
     const handleEdit = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (isBoard) {
-            localStorage.setItem('rows', item.rows.toString());
-            localStorage.setItem('cols', item.cols.toString());
-            localStorage.setItem('gridType', (item as any).gridType || 'square');
-            localStorage.setItem('activeSquares', JSON.stringify(item.activeSquares));
-            localStorage.setItem('placedPieces', JSON.stringify(item.placedPieces));
-            router.push('/editor/board');
-        } else {
-            localStorage.setItem('editPieceId', item.id!);
-            router.push('/editor/piece');
-        }
+        router.push('/editor');
     };
 
     const handleStarClick = (e: React.MouseEvent) => {

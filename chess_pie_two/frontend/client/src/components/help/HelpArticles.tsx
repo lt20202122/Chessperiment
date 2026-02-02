@@ -11,7 +11,7 @@ export async function BoardEditorHelp() {
     if (isEn) {
         return (
             <article className="w-full max-w-4xl mx-auto px-6 py-16 mt-12 border-t border-stone-200 dark:border-white/10">
-                <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight"><Link href="/editor/board" className="underline decoration-wavy decoration-2 decoration-stone-600 dark:decoration-stone-400">Board Editor</Link> Guide</h2>
+                <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight"><Link href="/editor" className="underline decoration-wavy decoration-2 decoration-stone-600 dark:decoration-stone-400">Board Editor</Link> Guide</h2>
                 <div className="space-y-8 text-stone-600 dark:text-stone-400 leading-relaxed">
                     <div>
                         <h3 className="text-xl font-bold mb-4 text-stone-800 dark:text-stone-200">What is the Board Editor?</h3>
@@ -74,7 +74,7 @@ export async function BoardEditorHelp() {
         <article className="w-full max-w-4xl mx-auto px-6 py-16 mt-12 border-t border-stone-200 dark:border-white/10">
             <h2 className="text-3xl font-black mb-8 text-stone-900 dark:text-white uppercase tracking-tight">
                 <Link
-                    href="/editor/board"
+                    href="/editor"
                     className="underline decoration-wavy decoration-2 decoration-stone-600 dark:decoration-stone-400"
                 >
                     Board Editor

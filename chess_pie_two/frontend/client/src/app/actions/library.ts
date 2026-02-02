@@ -20,8 +20,8 @@ export async function saveBoardAction(boardData: Omit<SavedBoard, "userId" | "cr
     };
 
     const id = await saveBoard(board);
-    revalidatePath("/profile");
-    revalidatePath("/library");
+    // revalidatePath("/profile");
+    // revalidatePath("/library");
     return id;
 }
 
@@ -36,8 +36,8 @@ export async function toggleBoardStarAction(boardId: string) {
     if (!session?.user?.id) throw new Error("Unauthorized");
 
     const result = await toggleBoardStar(boardId, session.user.id);
-    revalidatePath("/profile");
-    revalidatePath("/library");
+    // revalidatePath("/profile");
+    // revalidatePath("/library");
     return result;
 }
 
@@ -46,8 +46,8 @@ export async function deleteBoardAction(boardId: string) {
     if (!session?.user?.id) throw new Error("Unauthorized");
 
     await deleteBoard(boardId, session.user.id);
-    revalidatePath("/profile");
-    revalidatePath("/library");
+    // revalidatePath("/profile");
+    // revalidatePath("/library");
 }
 
 export async function getBoardAction(boardId: string) {
@@ -69,8 +69,8 @@ export async function saveCustomPieceAction(piece: Omit<CustomPiece, "userId" | 
     };
 
     const id = await saveCustomPiece(fullPiece);
-    revalidatePath("/profile");
-    revalidatePath("/library");
+    // revalidatePath("/profile");
+    // revalidatePath("/library");
     return id;
 }
 
@@ -93,8 +93,8 @@ export async function deleteCustomPieceAction(pieceId: string) {
     if (!session?.user?.id) throw new Error("Unauthorized");
 
     await deleteCustomPiece(pieceId, session.user.id);
-    revalidatePath("/profile");
-    revalidatePath("/library");
+    // revalidatePath("/profile");
+    // revalidatePath("/library");
 }
 
 // ==================== PIECE SET ACTIONS ====================
@@ -111,8 +111,8 @@ export async function savePieceSetAction(set: Omit<PieceSet, "userId" | "created
     };
 
     const id = await savePieceSet(fullSet);
-    revalidatePath("/profile");
-    revalidatePath("/library");
+    // revalidatePath("/profile");
+    // revalidatePath("/library");
     return id;
 }
 
@@ -138,15 +138,15 @@ export async function deletePieceSetAction(setId: string) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
     await deletePieceSet(setId, session.user.id);
-    revalidatePath("/profile");
-    revalidatePath("/library");
+    // revalidatePath("/profile");
+    // revalidatePath("/library");
 }
 
 export async function togglePieceSetStarAction(setId: string) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
     const result = await togglePieceSetStar(setId, session.user.id);
-    revalidatePath("/profile");
-    revalidatePath("/library");
+    // revalidatePath("/profile");
+    // revalidatePath("/library");
     return result;
 }

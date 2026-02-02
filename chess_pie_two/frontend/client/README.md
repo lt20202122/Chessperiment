@@ -1,35 +1,34 @@
-# chessPie
+# ♟️ chessperiment.app
+### The Ultimate Sandbox for Custom Chess Variants
 
-A modern chess web app, created to enable players from around the world to play chess and its thousands of variants. We not only give you normal chess, but lots of different variations, that allow you to boost your brain in terms of creativity, logical thinking and so much more.
+**[chessperiment.app](https://chessperiment.app)** is a web-based chess engine designed for total customization. Unlike standard chess platforms, Chessperiment features a **Scratch-inspired logic editor** that allows you to define unique behaviors for every piece and board.
 
-## Setup
+---
 
-### Environment Variables
+## 🚀 Key Features
+* **Custom Piece Creator:** Design pieces with advanced logic. Create "Invincible" pieces that insta-kill attackers or "Cursed" pieces that die the moment they are threatened.
+* **Visual Logic Editor:** Built with a custom drag-and-drop system powered by `dnd-kit`. No coding required—just drag triggers and effects.
+* **Dynamic Board Shapes:** Go beyond the 8x8 grid with highly customizable board topologies.
+* **Play Anywhere:** Challenge a specialized **Stockfish** integration or play against real users in real-time.
 
-1. Copy `.env.example` to `.env.local`:
-   ```bash
-   cp .env.example .env.local
-   ```
+## 🛠️ Tech Stack
+* **Frontend:** [Next.js](https://nextjs.org/) (React)
+* **Backend:** [Express.js](https://expressjs.com/) (Node.js) for real-time multiplayer and engine integration.
+* **UI/Interaction:** `dnd-kit` for the visual logic builder.
+* **Engine:** Stockfish integration for AI gameplay.
 
-2. Configure the required environment variables:
-   - `RESEND_API_KEY`: Get your API key from [Resend](https://resend.com/api-keys) for the referral survey email functionality
+## 🧠 How the Logic Engine Works
+Chessperiment uses a trigger-effect architecture. Every piece can have unique event listeners:
+- **Triggers:** `onThreatened`, `onCapture`, `onMove`, `onGameStart`.
+- **Effects:** `killAttacker`, `spawnPiece`, `changeVariable`, `instantlyDie`.
 
-### Install Dependencies
+This specific structure allows for variants that are impossible on other platforms.
 
-```bash
-npm install
-```
+## 🤝 Contributing & Community
+I am currently the sole developer of this project! 
+* **Goal:** Building a community of variant creators and enthusiasts.
+* **Feedback:** If you find a bug or have a logic trigger suggestion, please open an Issue.
+* **Community:** Join the discussion on our [Subreddit](YOUR_REDDIT_LINK) or follow development on [Twitter/GitHub](YOUR_LINK).
 
-### Run Development Server
-
-```bash
-npm run dev
-```
-
-## Features
-
-### Referral Survey
-When users first visit the site, a survey appears at the bottom asking "How did you find your way to Chessperiment?". User responses are automatically emailed to `contact.chesspie@gmail.com` via Resend.
-
-Comments:
-- Note1 means that this needs to change in the future when color should be random
+## 📜 License
+See LICENSE.md
