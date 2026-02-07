@@ -131,10 +131,12 @@ export class GameSerializer {
         
         // Create board
         const gridType = migratedRuleset.topology.type === 'hex' ? 'hex' : 'square';
-        const board = new BoardClass(gridType);
+        const width = topology.params?.width ?? 8;
+        const height = topology.params?.height ?? 8;
+        const board = new BoardClass(undefined, undefined, width, height, gridType);
         
         // Set topology
-        (board as any).topology = topology;
+        board.topology = topology;
         
         // Restore pieces
         for (const serializedPiece of migratedRuleset.pieces) {
@@ -165,7 +167,7 @@ export class GameSerializer {
     private static serializeTopology(topology: BoardTopology): SerializedTopology {
         return {
             type: topology.type,
-            params: topology.params
+            params: topology.params || {}
         };
     }
     
@@ -175,7 +177,10 @@ export class GameSerializer {
     private static deserializeTopology(serialized: SerializedTopology): BoardTopology {
         return {
             type: serialized.type,
-            params: serialized.params
+            params: serialized.params as { width: number; height: number; radius?: number } | undefined,
+            bounds: serialized.params ? 
+                { width: serialized.params.width || 8, height: serialized.params.height || 8 } : 
+                { width: 8, height: 8 }
         };
     }
     

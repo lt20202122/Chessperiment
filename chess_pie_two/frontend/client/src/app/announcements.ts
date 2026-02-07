@@ -22,68 +22,70 @@ export interface Announcement {
 
 const announcements: Announcement[] = [
     {
-        id: 'board-editor-movement-toggle',
+        id: 'projects-launch',
         date: '2026-02-03',
         author: 'Lasse T.',
-        image: '/announcements/board-editor-update.png',
+        image: '/announcement_2.png',
         title: {
-            en: 'Board Editor Update: Jump/Run Movement Toggle',
-            de: 'Brett-Editor Update: Sprung/Lauf-Bewegungs-Umschalter'
+            en: 'Beyond the Board: Introducing Projects on Chessperiment',
+            de: 'Über das Brett hinaus: Einführung von Projekten auf Chessperiment'
         },
         shortDescription: {
-            en: 'Quickly configure piece movement behavior with our new right-click context menu for standard pieces.',
-            de: 'Konfiguriere das Bewegungsverhalten von Figuren schnell mit unserem neuen Rechtsklick-Kontextmenü für Standardfiguren.'
+            en: 'Create, play, and share your own abstract strategy games. Explore a new dimension of logic and design.',
+            de: 'Erstelle, spiele und teile deine eigenen abstrakten Strategiespiele. Entdecke eine neue Dimension von Logik und Design.'
         },
         content: {
             en: `
-                <p>We're excited to announce a powerful new feature in the Board Editor that makes setting up custom games faster and more intuitive!</p>
-                <h3>What's New?</h3>
-                <p>You can now <strong>right-click on any standard piece</strong> in the piece selection panel to toggle between two movement modes:</p>
-                <ul>
-                    <li><strong>Jump:</strong> The piece can jump over other pieces and disabled squares (like the Knight in traditional chess)</li>
-                    <li><strong>Run:</strong> The piece must have a clear path and cannot jump over obstacles (like the Rook, Bishop, or Queen)</li>
-                </ul>
-                <h3>Visual Feedback</h3>
-                <p>Each standard piece now displays a small colored badge showing its current movement mode:</p>
-                <ul>
-                    <li><strong>Orange "JUMP" badge:</strong> Piece can jump over others</li>
-                    <li><strong>Blue "RUN" badge:</strong> Piece requires a clear path</li>
-                </ul>
-                <h3>Why This Matters</h3>
-                <p>Previously, if you wanted to create a board where, for example, a Queen could jump over pieces, you'd need to leave the board editor, create a custom piece in the piece editor, and return. Now you can configure standard pieces on the fly, making board creation much more efficient!</p>
-                <h3>Default Behavior</h3>
-                <ul>
-                    <li><strong>Knight:</strong> Defaults to "jump" mode</li>
-                    <li><strong>All other standard pieces:</strong> Default to "run" mode</li>
-                </ul>
-                <p>This feature is available now in the Board Editor. Try it out and let us know what you think!</p>
-                <p>Happy experimenting,</p>
-                <p><strong>Lasse T.</strong></p>
+                <p>Welcome to Chessperiment! We're incredibly excited to announce a major evolution of our platform. Chessperiment isn't just about playing variants; it's a sandbox for inventing entirely new turn-based games.</p>
+                
+                <p>To give you more power and organization, we are moving away from individual tools and introducing <strong>Projects</strong>. A Project is your dedicated workspace—a container for a single game vision where your pieces, rules, and boards live together in harmony.</p>
+                
+                <h3>What's inside a Chessperiment Project?</h3>
+                
+                <p><strong>Integrated Project Workspace:</strong> No more jumping between random editors. Start a project, name your game, and keep all your custom assets in one place.</p>
+                
+                <p><strong>Custom Piece & Logic Editor:</strong> Use our pixel-art editor to draw your pieces and our Scratch-like visual logic builder to define how they move and interact. From "Teleporting Wizards" to "Chain-Reaction Tanks," if you can imagine the logic, you can build it.</p>
+                
+                <p><strong>Dynamic Board Editor:</strong> Design the battlefield. Activate or deactivate squares to create unique topologies (like holes in the board or split-level play) and set your custom starting positions.</p>
+                
+                <p><strong>Instant Playtesting:</strong> Launch a Live Lobby directly from your project. Challenge friends with a private link or test your mechanics against a generalized Stockfish engine that adapts to your custom rules on the fly.</p>
+                
+                <p><strong>Analysis & Versioning:</strong> Every game is recorded. Replay moves, branch off into new variations, and refine your game's balance based on real data.</p>
+                
+                <h3>The Future of Creation</h3>
+                
+                <p>By focusing on Projects, we're laying the groundwork for a "Marketplace" where you can eventually publish your finished games for the community to discover. Currently, users can create a limited number of projects, allowing you to focus on your best ideas and see them through from concept to checkmate.</p>
+                
+                <p>This is just the beginning of our journey to create the ultimate sandbox for abstract strategy. We can't wait to see what you build!</p>
+                
+                <p>Enjoy inventing,</p>
+                <p><strong>Lasse T.</strong><br>Project Lead, Chessperiment.app</p>
             `,
             de: `
-                <p>Wir freuen uns, ein mächtiges neues Feature im Brett-Editor anzukündigen, das die Einrichtung von benutzerdefinierten Spielen schneller und intuitiver macht!</p>
-                <h3>Was ist neu?</h3>
-                <p>Du kannst jetzt <strong>mit der rechten Maustaste auf jede Standardfigur</strong> im Figurenauswahl-Panel klicken, um zwischen zwei Bewegungsmodi umzuschalten:</p>
-                <ul>
-                    <li><strong>Sprung:</strong> Die Figur kann über andere Figuren und deaktivierte Felder springen (wie der Springer im traditionellen Schach)</li>
-                    <li><strong>Lauf:</strong> Die Figur benötigt einen freien Weg und kann nicht über Hindernisse springen (wie Turm, Läufer oder Dame)</li>
-                </ul>
-                <h3>Visuelle Rückmeldung</h3>
-                <p>Jede Standardfigur zeigt jetzt ein kleines farbiges Abzeichen, das ihren aktuellen Bewegungsmodus anzeigt:</p>
-                <ul>
-                    <li><strong>Oranges "JUMP"-Abzeichen:</strong> Figur kann über andere springen</li>
-                    <li><strong>Blaues "RUN"-Abzeichen:</strong> Figur benötigt einen freien Weg</li>
-                </ul>
-                <h3>Warum das wichtig ist</h3>
-                <p>Früher musstest du, wenn du zum Beispiel ein Brett erstellen wolltest, auf dem eine Dame über Figuren springen kann, den Brett-Editor verlassen, eine benutzerdefinierte Figur im Figuren-Editor erstellen und zurückkehren. Jetzt kannst du Standardfiguren spontan konfigurieren, was die Brett-Erstellung viel effizienter macht!</p>
-                <h3>Standardverhalten</h3>
-                <ul>
-                    <li><strong>Springer:</strong> Standardmäßig im "Sprung"-Modus</li>
-                    <li><strong>Alle anderen Standardfiguren:</strong> Standardmäßig im "Lauf"-Modus</li>
-                </ul>
-                <p>Dieses Feature ist jetzt im Brett-Editor verfügbar. Probiere es aus und lass uns wissen, was du denkst!</p>
-                <p>Viel Spaß beim Experimentieren,</p>
-                <p><strong>Lasse T.</strong></p>
+                <p>Willkommen bei Chessperiment! Wir freuen uns riesig, eine große Weiterentwicklung unserer Plattform anzukündigen. Bei Chessperiment geht es nicht nur um das Spielen von Varianten; es ist ein Sandkasten für die Erfindung völlig neuer rundenbasierter Spiele.</p>
+                
+                <p>Um dir mehr Kontrolle und Organisation zu geben, bewegen wir uns weg von einzelnen Tools und führen <strong>Projekte</strong> ein. Ein Projekt ist dein dedizierter Arbeitsbereich – ein Container für eine einzige Spielvision, in dem deine Figuren, Regeln und Bretter harmonisch zusammenleben.</p>
+                
+                <h3>Was ist in einem Chessperiment-Projekt enthalten?</h3>
+                
+                <p><strong>Integrierter Projekt-Arbeitsbereich:</strong> Kein Springen mehr zwischen zufälligen Editoren. Starte ein Projekt, benenne dein Spiel und behalte alle deine benutzerdefinierten Assets an einem Ort.</p>
+                
+                <p><strong>Eigener Figuren- & Logik-Editor:</strong> Nutze unseren Pixel-Art-Editor, um deine Figuren zu zeichnen, und unseren Scratch-ähnlichen visuellen Logik-Builder, um zu definieren, wie sie sich bewegen und interagieren. Von "Teleportierenden Zauberern" bis zu "Kettenreaktions-Panzern" – wenn du dir die Logik vorstellen kannst, kannst du sie bauen.</p>
+                
+                <p><strong>Dynamischer Brett-Editor:</strong> Gestalte das Schlachtfeld. Aktiviere oder deaktiviere Felder, um einzigartige Topologien zu erstellen (wie Löcher im Brett oder mehrstufiges Spiel) und lege deine benutzerdefinierten Startpositionen fest.</p>
+                
+                <p><strong>Sofortiges Playtesting:</strong> Starte eine Live-Lobby direkt aus deinem Projekt. Fordere Freunde mit einem privaten Link heraus oder teste deine Mechaniken gegen eine generalisierte Stockfish-Engine, die sich spontan an deine benutzerdefinierten Regeln anpasst.</p>
+                
+                <p><strong>Analyse & Versionierung:</strong> Jedes Spiel wird aufgezeichnet. Spiele Züge noch einmal ab, erstelle neue Varianten und verfeinere die Balance deines Spiels basierend auf echten Daten.</p>
+                
+                <h3>Die Zukunft der Kreation</h3>
+                
+                <p>Durch den Fokus auf Projekte legen wir den Grundstein für einen "Marktplatz", auf dem du deine fertigen Spiele für die Community veröffentlichen kannst. Derzeit können Nutzer eine begrenzte Anzahl von Projekten erstellen, sodass du dich auf deine besten Ideen konzentrieren und sie vom Konzept bis zum Schachmatt durchziehen kannst.</p>
+                
+                <p>Dies ist erst der Anfang unserer Reise, um den ultimativen Sandkasten für abstrakte Strategie zu schaffen. Wir können es kaum erwarten zu sehen, was du erschaffst!</p>
+                
+                <p>Viel Spaß beim Erfinden,</p>
+                <p><strong>Lasse T.</strong><br>Projektleiter, Chessperiment.app</p>
             `
         }
     },
