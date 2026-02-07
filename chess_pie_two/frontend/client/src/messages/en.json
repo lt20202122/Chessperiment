@@ -55,7 +55,9 @@
         "buyNow": "Buy Now",
         "noDescription": "No description available.",
         "publishItem": "Publish Item",
-        "loginRequired": "Please log in to create Marketplace items."
+        "loginRequired": "Please log in to create Marketplace items.",
+        "inProduction": "Creator Studio",
+        "marketplaceBetaMessage": "The Marketplace is currently in beta and only available to selected creators. We are working hard to bring amazing content to everyone!"
     },
     "Multiplayer": {
         "title": "Chess Multiplayer",
@@ -749,6 +751,7 @@
     },
     "LegalNotice": {
         "title": "Legal Notice - Contact & Info",
+        "description": "Contact information, provider details, and legal notices for chessperiment. Find email, phone, and copyright information.",
         "providerHeading": "Provider",
         "providerName": "Lasse Thoroe - chessperiment",
         "providerAddress": "Ahlerfeld 29, 38527 Meine, Germany",
@@ -771,6 +774,7 @@
     },
     "PrivacyPolicy": {
         "title": "Privacy Policy (GDPR)",
+        "description": "Learn how chessperiment handles your data. Our GDPR-compliant privacy policy covers user data, cookies, Firebase hosting, and your rights.",
         "lastUpdated": "(As of: July 2024)",
         "controllerHeading": "1. Data Controller",
         "controllerText": "The person responsible for data processing on this website is:\n\n Lasse Thoroe - chessperiment\nAddress: Ahlerfeld 29, 38527 Meine, Germany\nEmail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
@@ -812,37 +816,6 @@
       "title": "chessperiment News & Announcements",
       "description": "Stay updated with the latest features, updates, and community news from chessperiment.",
       "h1": "Latest News"
-    },
-    "About": {
-      "title": "About Chessperiment",
-      "intro": "Chessperiment (chessperiment.app) is a web platform dedicated to creating highly customizable chess variants. Unlike traditional chess websites, Chessperiment lets users design their own unique games with complete control over boards, pieces, rules, and interactions.",
-      "features": {
-        "title": "Key Features",
-        "customBoards": {
-          "title": "Custom Boards",
-          "description": "Create boards in any shape and size to fit your vision."
-        },
-        "pieceEditor": {
-          "title": "Advanced Piece Editor",
-          "description": "Design pieces with unique movements and abilities."
-        },
-        "visualScripting": {
-          "title": "Visual Scripting",
-          "description": "Drag-and-drop triggers, effects, and variables—similar to Scratch—to build complex game mechanics without coding."
-        },
-        "variants": {
-          "title": "User-Created Variants",
-          "description": "Experiment and play your own chess variants or try out variants made by others."
-        }
-      },
-      "mission": {
-        "title": "Our Mission",
-        "description": "Chessperiment exists to push the boundaries of chess creativity. We want everyone, from beginners to advanced users, to be able to invent, share, and play completely new chess experiences."
-      },
-      "developer": {
-        "title": "About the Developer",
-        "description": "Chessperiment is developed by a single creator, active on Reddit and GitHub. Started just a few weeks ago, the platform has already attracted over 100 users who are exploring the endless possibilities of customizable chess."
-      }
     },
     "PieceEditorFAQ": {
       "title": "Piece Editor FAQ | Visual Scripting Help | chessperiment",
@@ -951,5 +924,36 @@
         "emailPlaceholder": "Your email (optional)",
         "messageLabel": "Message",
         "backToHome": "Back to home"
+  },
+  "About": {
+    "title": "About Chessperiment",
+    "intro": "Chessperiment (chessperiment.app) is a web platform dedicated to creating highly customizable chess variants. Unlike traditional chess websites, Chessperiment lets users design their own unique games with complete control over boards, pieces, rules, and interactions.",
+    "features": {
+      "title": "Key Features",
+      "customBoards": {
+        "title": "Custom Boards",
+        "description": "Create boards in any shape and size to fit your vision."
+      },
+      "pieceEditor": {
+        "title": "Advanced Piece Editor",
+        "description": "Design pieces with unique movements and abilities."
+      },
+      "visualScripting": {
+        "title": "Visual Scripting",
+        "description": "Drag-and-drop triggers, effects, and variables—similar to Scratch—to build complex game mechanics without coding."
+      },
+      "variants": {
+        "title": "User-Created Variants",
+        "description": "Experiment and play your own chess variants or try out variants made by others."
+      }
+    },
+    "mission": {
+      "title": "Our Mission",
+      "description": "Chessperiment exists to push the boundaries of chess creativity. We want everyone, from beginners to advanced users, to be able to invent, share, and play completely new chess experiences."
+    },
+    "developer": {
+      "title": "About the Developer",
+      "description": "Chessperiment is developed by a single creator, active on Reddit and GitHub. Started just a few weeks ago, the platform has already attracted over 100 users who are exploring the endless possibilities of customizable chess."
+    }
   }
 }

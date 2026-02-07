@@ -54,7 +54,8 @@
     "uuid": "^13.0.0"
   },
   "overrides": {
-    "fast-xml-parser": "^5.3.4"
+    "fast-xml-parser": "^5.3.4",
+    "nodemailer": "^7.0.13"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

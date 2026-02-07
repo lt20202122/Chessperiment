@@ -697,6 +697,59 @@
         "SquareEditor": {
             "title": "Felder-Editor | individuelles chessperiment",
             "description": "Definiere benutzerdefinierte Logik und Verhaltensweisen für einzelne Felder auf deinem Brett."
+        },
+        "BoardEditor": {
+            "title": "Schachbrett-Editor - Designe individuelle Bretter",
+            "description": "Erstelle deine eigenen Schachbrett-Layouts. Passe Abmessungen, Farben und Startpositionen an. Exportiere oder spiele direkt.",
+            "h1": "Individueller Schachbrett-Editor",
+            "seoContent": {
+                "heading": "Erstelle und teile individuelle Schachbretter",
+                "text": "Mit dem chessperiment Schachbrett-Editor kannst du ganz einfach individuelle 8x8-, 10x10- oder andere Brettgrößen entwerfen. Passe Farben an, erstelle komplexe Startpositionen und teile deine Kreationen mit der Welt. Ob du eine klassische Schachvariante baust, Fairy-Schach-Konzepte erkundest oder kreative Schachpuzzles entwirfst – unser gitterbasierter Editor bietet dir die Flexibilität, die du brauchst."
+            }
+        },
+        "Announcements": {
+            "title": "chessperiment Neuigkeiten & Ankündigungen",
+            "description": "Bleibe auf dem Laufenden über die neuesten Funktionen, Updates und Community-Neuigkeiten von chessperiment.",
+            "h1": "Neueste Nachrichten"
+        },
+        "Analyze": {
+            "title": "Schachpartien analysieren mit Stockfish",
+            "description": "Analysiere deine Schachpartien mit der leistungsstarken Stockfish-Engine. Verbessere deine Strategie und lerne aus deinen Fehlern.",
+            "h1": "Schach-Analyse-Tool"
+        },
+        "LegalNotice": {
+            "title": "Impressum - Kontakt & Info",
+            "description": "Kontaktinformationen, Anbieterdetails und rechtliche Hinweise für chessperiment. Finden Sie E-Mail, Telefon und Urheberrechtsinformationen."
+        },
+        "Login": {
+            "title": "Bei chessperiment anmelden | Speichere deine Kreationen",
+            "description": "Melde dich bei chessperiment an, um deine individuellen Schachbretter und Figuren zu speichern und auf dein Spielerprofil zuzugreifen.",
+            "h1": "Bei chessperiment anmelden"
+        },
+        "PrivacyPolicy": {
+            "title": "Datenschutzerklärung (DSGVO)",
+            "description": "Erfahre, wie chessperiment deine Daten verarbeitet. Unsere DSGVO-konforme Datenschutzerklärung behandelt Nutzerdaten, Cookies, Firebase-Hosting und deine Rechte."
+        },
+        "Marketplace": {
+            "title": "chessperiment Marktplatz | Lade individuelle Schachsets herunter",
+            "description": "Durchsuche und lade von der Community erstellte Schachbretter und Figurensätze herunter. Verbessere dein Spiel mit einzigartigen Designs.",
+            "h1": "Schachvarianten-Marktplatz",
+            "seoContent": {
+                "heading": "Entdecke und teile individuelle Schach-Assets",
+                "text": "Der chessperiment-Marktplatz ist die zentrale Anlaufstelle für unsere kreative Community. Erkunde eine umfangreiche Sammlung von individuellen Schachbrettern, pixelgenauen Figurensätzen und einzigartigen Brett-Designs, die von Nutzern weltweit geteilt werden."
+            }
+        },
+        "ProjectView": {
+            "title": "Projektübersicht | individuelles chessperiment",
+            "description": "Betrachte und verwalte dein Schachprojekt. Bearbeite dein Brett und deine Figuren an einem Ort."
+        },
+        "GameEnd": {
+            "win": "Du hast gewonnen!",
+            "loss": "Du hast verloren!",
+            "draw": "Unentschieden!",
+            "rematch": "Revanche",
+            "newGame": "Neues Spiel",
+            "rematchRequested": "Angefragt"
         }
     },
 
