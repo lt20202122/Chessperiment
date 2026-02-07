@@ -378,19 +378,24 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         y: block.position.y + CONNECTOR_Y
     });
 
-    // Snap search helper
-    const findBestSnap = (canvasX: number, canvasY: number, template: BlockTemplate): GhostState | null => {
+    // Snap search helper - takes canvas-relative coordinates
+    const findBestSnap = (canvasX: number, canvasY: number, template: BlockTemplate, excludeIds: Set<string> = new Set()): GhostState | null => {
+        // Child's connector position in canvas space
         const childConnectorX = canvasX + dragConnectorOffsetXRef.current;
 
         for (const block of canvasBlocks) {
+            // Skip invalid snap targets
+            if (excludeIds.has(block.instanceId)) continue;
             if (block.type === 'variable' || block.childId || block.type === 'terminal') continue;
             if (template.type === 'trigger' || template.type === 'variable') continue;
 
+            // Parent's bottom connector position
             const parentBottom = getBottomConnector(block);
             const dx = Math.abs(childConnectorX - parentBottom.x);
             const dy = Math.abs(canvasY - parentBottom.y);
 
             if (dx < SNAP_X_TOLERANCE && dy < SNAP_Y_TOLERANCE) {
+                // Calculate block position that aligns child connector with parent connector
                 return {
                     x: block.position.x + CONNECTOR_X - dragConnectorOffsetXRef.current,
                     y: block.position.y + BLOCK_HEIGHT,
@@ -424,17 +429,21 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         const rect = active.rect.current.translated ?? active.rect.current.initial;
         if (!rect) return;
 
-        const dragX = rect.left - canvasRect.left + canvasElement.scrollLeft;
-        const dragY = rect.top - canvasRect.top + canvasElement.scrollTop;
+        // Normalize to canvas-relative coordinates
+        const canvasX = rect.left - canvasRect.left + canvasElement.scrollLeft;
+        const canvasY = rect.top - canvasRect.top + canvasElement.scrollTop;
 
-        // Try to snap during drag for consistent preview
-        const snap = findBestSnap(dragX, dragY, currentTemplate);
+        // Build exclusion set for existing block drags
+        const excludeIds = new Set<string>([active.id as string, ...Array.from(draggedDescendantsRef.current)]);
+
+        // Use same snapping logic as final drop
+        const snap = findBestSnap(canvasX, canvasY, currentTemplate, excludeIds);
         if (snap) {
             setGhost(snap);
         } else {
             setGhost({
-                x: dragX,
-                y: dragY,
+                x: canvasX,
+                y: canvasY,
                 parentId: '',
                 template: currentTemplate
             });
@@ -476,51 +485,40 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         const currentLeft = initialRect.left + delta.x;
         const currentTop = initialRect.top + delta.y;
 
+        // Normalize to canvas-relative coordinates
         const canvasX = currentLeft - canvasRect.left + canvasElement.scrollLeft;
         const canvasY = currentTop - canvasRect.top + canvasElement.scrollTop;
 
-        // Use deterministic snap logic
-        let bestSnap: GhostState | null = null;
-        const childConnectorX = canvasX + dragConnectorOffsetXRef.current;
-
-        for (const block of canvasBlocks) {
-            if (block.instanceId === active.id) continue;
-            if (draggedDescendantsRef.current.has(block.instanceId)) continue;
-            if (block.childId) continue;
-            if (block.type === 'terminal') continue;
-            if (currentTemplate.type === 'trigger' || currentTemplate.type === 'variable') continue;
-
-            const parentBottom = getBottomConnector(block);
-            const dx = Math.abs(childConnectorX - parentBottom.x);
-            const dy = Math.abs(canvasY - parentBottom.y);
-
-            if (dx < SNAP_X_TOLERANCE && dy < SNAP_Y_TOLERANCE) {
-                const targetX = block.position.x + CONNECTOR_X - dragConnectorOffsetXRef.current;
-
-                bestSnap = {
-                    x: targetX,
-                    y: block.position.y + BLOCK_HEIGHT,
-                    parentId: block.instanceId,
-                    template: currentTemplate
-                };
-                break; // First valid snap wins
-            }
-        }
-
         const isExisting = canvasBlocks.some(b => b.instanceId === active.id);
 
+        // Build exclusion set for finding snap targets
+        const excludeIds = new Set<string>([active.id as string, ...Array.from(draggedDescendantsRef.current)]);
+
+        // Use the same findBestSnap logic as ghost preview
+        const bestSnap = findBestSnap(canvasX, canvasY, currentTemplate, excludeIds);
+
         if (bestSnap) {
+            // SNAP: Align child connector to parent connector
             if (isExisting) {
+                // Moving existing block with its descendants
                 setCanvasBlocks(prev => {
                     const oldBlock = prev.find(b => b.instanceId === active.id);
                     if (!oldBlock) return prev;
-                    const dx = bestSnap!.x - oldBlock.position.x;
-                    const dy = bestSnap!.y - oldBlock.position.y;
+
+                    // Calculate delta for moving entire stack
+                    const dx = bestSnap.x - oldBlock.position.x;
+                    const dy = bestSnap.y - oldBlock.position.y;
+
+                    // Remove old parent-child link
                     let updated = prev.map(b => b.childId === active.id ? { ...b, childId: undefined } : b);
-                    updated = updated.map(b => b.instanceId === bestSnap!.parentId ? { ...b, childId: active.id as string } : b);
+
+                    // Add new parent-child link
+                    updated = updated.map(b => b.instanceId === bestSnap.parentId ? { ...b, childId: active.id as string } : b);
+
+                    // Move the dragged block and all its descendants
                     return updated.map(b => {
                         if (b.instanceId === active.id) {
-                            return { ...b, position: { x: bestSnap!.x, y: bestSnap!.y }, parentId: bestSnap!.parentId };
+                            return { ...b, position: { x: bestSnap.x, y: bestSnap.y }, parentId: bestSnap.parentId };
                         }
                         if (draggedDescendantsRef.current.has(b.instanceId)) {
                             return { ...b, position: { x: b.position.x + dx, y: b.position.y + dy } };
@@ -529,6 +527,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                     });
                 });
             } else {
+                // Creating new block from template
                 const newInstanceId = `instance-${Date.now()}`;
                 const newBlock: BlockInstance = {
                     ...bestSnap.template,
@@ -538,19 +537,26 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                     parentId: bestSnap.parentId
                 };
                 setCanvasBlocks(prev => {
-                    const updated = prev.map(b => b.instanceId === bestSnap!.parentId ? { ...b, childId: newInstanceId } : b);
+                    const updated = prev.map(b => b.instanceId === bestSnap.parentId ? { ...b, childId: newInstanceId } : b);
                     return [...updated, newBlock];
                 });
             }
         } else {
-            // Free drop (no snap)
+            // FREE DROP: No snap target found
             if (isExisting) {
+                // Moving existing block freely
                 setCanvasBlocks(prev => {
                     const oldBlock = prev.find(b => b.instanceId === active.id);
                     if (!oldBlock) return prev;
+
+                    // Calculate delta for moving entire stack
                     const dx = canvasX - oldBlock.position.x;
                     const dy = canvasY - oldBlock.position.y;
+
+                    // Remove parent-child link
                     let updated = prev.map(b => b.childId === active.id ? { ...b, childId: undefined } : b);
+
+                    // Move the dragged block and all its descendants
                     return updated.map(b => {
                         if (b.instanceId === active.id) {
                             return { ...b, position: { x: canvasX, y: canvasY }, parentId: undefined };
@@ -562,6 +568,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                     });
                 });
             } else {
+                // Creating new block from template at free position
                 const newBlock: BlockInstance = {
                     ...currentTemplate,
                     instanceId: `instance-${Date.now()}`,

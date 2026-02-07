@@ -22,8 +22,6 @@ import { CreationGuide } from "@/components/CreationGuide";
 import { AuthProvider } from "@/context/AuthContext";
 import { BotIdClient } from "botid/client";
 
-export const runtime = 'edge';
-
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }

@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { saveGameResult } from "@/lib/firestore"
 
-export const runtime = 'edge';
-
 export async function POST(request: NextRequest) {
     try {
         const session = await auth()
