@@ -6,6 +6,7 @@ import { GridType } from '../lib/grid/GridType';
 import { SquareGrid } from '../lib/grid/SquareGrid';
 import { HexGrid } from '../lib/grid/HexGrid';
 import { SquareLogicRunner, SquareLogic } from './logic/SquareLogicRunner';
+import { BoardTopology } from './topology';
 
 export class BoardClass {
     private stateManager: BoardStateManager;
@@ -16,6 +17,7 @@ export class BoardClass {
     private effectListeners: ((effect: { type: string, position: Square }) => void)[] = [];
     public squareLogic: Record<Square, SquareLogic> = {};
     private squareStates: Record<Square, SquareState> = {}; // Runtime square state
+    public topology?: BoardTopology; // For serialization support
 
     constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[], width: number = 8, height: number = 8, gridType: 'square' | 'hex' = 'square', squareLogic?: Record<Square, SquareLogic>) {
         this.width = width;

@@ -84,7 +84,14 @@ export class GameSerializer {
         board: BoardClass,
         metadata: { name: string; description?: string; author?: string }
     ): SerializedRuleset {
-        const topology = this.serializeTopology(board.topology);
+        // Use board topology or create default based on dimensions
+        const topology = board.topology || {
+            type: 'rectangular' as TopologyType,
+            params: { width: board.width, height: board.height },
+            bounds: { width: board.width, height: board.height }
+        };
+        
+        const serializedTopology = this.serializeTopology(topology);
         const pieces = this.serializePieces(board);
         const squareStates = this.serializeSquareStates(board);
         
@@ -94,7 +101,7 @@ export class GameSerializer {
                 ...metadata,
                 createdAt: new Date().toISOString()
             },
-            topology,
+            topology: serializedTopology,
             pieces,
             squareStates,
             gameState: {
