@@ -149,7 +149,7 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         color: '#4169E1',
         description: 'transformation',
         sockets: [
-            { id: 'target', type: 'select', options: ['Queen', 'Knight', 'Rook', 'Bishop'] }
+            { id: 'target', type: 'select', options: ['Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] }
         ],
         width: 320
     },
@@ -186,6 +186,15 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'effects',
         color: '#FF4500',
         description: 'prevent',
+        width: 160
+    },
+    {
+        id: 'win',
+        type: 'effect',
+        label: 'win',
+        category: 'effects',
+        color: '#FFD700',
+        description: 'win',
         width: 160
     },
     {

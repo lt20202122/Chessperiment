@@ -1,4 +1,4 @@
-import { CustomPiece } from "./firestore";
+import { CustomPiece, SquareLogicDefinition } from "./firestore";
 
 export interface Project {
   id?: string;
@@ -18,4 +18,5 @@ export interface Project {
   
   // Custom pieces for this project
   customPieces: CustomPiece[];
+  squareLogic?: Record<string, SquareLogicDefinition>;
 }

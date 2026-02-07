@@ -157,6 +157,17 @@ export async function saveProject(project: Project) {
         logic: (piece.logic !== undefined && typeof piece.logic !== 'string') ? JSON.stringify(piece.logic) : piece.logic
     }));
 
+    // Serialize square logic
+    const squareLogic: Record<string, any> = {};
+    if (project.squareLogic) {
+        for (const [key, val] of Object.entries(project.squareLogic)) {
+            squareLogic[key] = {
+                ...val,
+                logic: (val.logic !== undefined && typeof val.logic !== 'string') ? JSON.stringify(val.logic) : val.logic
+            };
+        }
+    }
+
     // Build base update object with explicit fields
     let data: any = {
         userId: project.userId,
@@ -169,6 +180,7 @@ export async function saveProject(project: Project) {
         activeSquares: project.activeSquares || [],
         placedPieces: project.placedPieces || {},
         customPieces: customPieces,
+        squareLogic: squareLogic,
         updatedAt: new Date()
     };
 
@@ -202,6 +214,17 @@ export async function getUserProjects(userId: string): Promise<Project[]> {
                 pixelsBlack: typeof piece.pixelsBlack === 'string' ? JSON.parse(piece.pixelsBlack) : piece.pixelsBlack,
                 logic: typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic,
             })),
+            squareLogic: data.squareLogic ? Object.fromEntries(
+                Object.entries(data.squareLogic).map(([k, v]: [string, any]) => [
+                    k,
+                    {
+                        ...v,
+                        logic: typeof v.logic === 'string' ? JSON.parse(v.logic) : v.logic,
+                        createdAt: v.createdAt?.toDate ? v.createdAt.toDate() : v.createdAt,
+                        updatedAt: v.updatedAt?.toDate ? v.updatedAt.toDate() : v.updatedAt
+                    }
+                ])
+            ) : {},
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
             updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
         } as Project;
@@ -247,6 +270,17 @@ export async function getProject(projectId: string, userId: string): Promise<Pro
                 logic: typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic,
             };
         }),
+        squareLogic: data?.squareLogic ? Object.fromEntries(
+            Object.entries(data.squareLogic).map(([k, v]: [string, any]) => [
+                k,
+                {
+                    ...v,
+                    logic: typeof v.logic === 'string' ? JSON.parse(v.logic) : v.logic,
+                    createdAt: v.createdAt?.toDate ? v.createdAt.toDate() : v.createdAt,
+                    updatedAt: v.updatedAt?.toDate ? v.updatedAt.toDate() : v.updatedAt
+                }
+            ])
+        ) : {},
         createdAt: data?.createdAt?.toDate ? data.createdAt.toDate() : data?.createdAt,
         updatedAt: data?.updatedAt?.toDate ? data.updatedAt.toDate() : data?.updatedAt,
     } as Project;

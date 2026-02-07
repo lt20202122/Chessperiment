@@ -54,16 +54,16 @@ export default async function AnnouncementsPage({ params }: { params: any }) {
                             key={announcement.id}
                             className="group relative block h-full focus:outline-none"
                         >
-                            <div className="relative h-full bg-white/80 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-2 dark:hover:border-amber-500/50 hover:border-amber-500/50">
+                            <div className="relative h-full bg-white/80 dark:bg-white/5 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/10 dark:hover:border-amber-500/30 hover:border-amber-500/30">
 
                                 {/* Image Container */}
                                 <div className="relative h-64 overflow-hidden">
-                                    <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent z-10 opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
+                                    <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent z-10 opacity-60" />
                                     <Image
                                         src={announcement.image}
                                         alt={announcement.title[locale as keyof typeof announcement.title]}
                                         fill
-                                        className="object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
+                                        className="object-cover"
                                         loading={index < 3 ? "eager" : "lazy"}
                                         priority={index < 3}
                                     />
@@ -91,7 +91,7 @@ export default async function AnnouncementsPage({ params }: { params: any }) {
                                         {announcement.shortDescription[locale as keyof typeof announcement.shortDescription]}
                                     </p>
 
-                                    <div className="pt-4 flex items-center text-amber-600 dark:text-amber-400 font-semibold group-hover:translate-x-1 transition-transform">
+                                    <div className="pt-4 flex items-center text-amber-600 dark:text-amber-400 font-semibold">
                                         {t('readMore')}
                                         <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />

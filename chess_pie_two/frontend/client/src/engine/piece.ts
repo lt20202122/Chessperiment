@@ -68,11 +68,59 @@ export class CustomPiece extends Piece {
     public pixelsWhite?: string[][];
     public pixelsBlack?: string[][];
     public image?: string;
+    
+    // Multi-cell piece support (anchor model)
+    public shape?: {
+        anchor: [number, number]; // Relative coords [0,0] for single-cell
+        extensions: [number, number][]; // Additional cells relative to anchor
+    };
 
-    constructor(id: string, type: string, color: "white" | "black", position: Square, rules: any = [], logic: any = [], name?: string) {
+    constructor(id: string, type: string, color: "white" | "black", position: Square, rules: any = [], logic: any = [], name?: string, shape?: { anchor: [number, number], extensions: [number, number][] }) {
         super(id, type, color, position, name);
         this.rules = typeof rules === 'string' ? JSON.parse(rules) : (Array.isArray(rules) ? rules : []);
         this.logic = typeof logic === 'string' ? JSON.parse(logic) : (Array.isArray(logic) ? logic : []);
+        this.shape = shape || { anchor: [0, 0], extensions: [] };
+    }
+    
+    /**
+     * Get all squares occupied by this multi-cell piece.
+     */
+    getOccupiedSquares(board: BoardClass): Square[] {
+        if (!this.shape || this.shape.extensions.length === 0) {
+            return [this.position]; // Single-cell piece
+        }
+        
+        const [baseX, baseY] = toCoords(this.position);
+        const squares: Square[] = [this.position];
+        
+        for (const [dx, dy] of this.shape.extensions) {
+            const sq = toSquare([baseX + dx, baseY + dy], board.gridType === 'square');
+            squares.push(sq);
+        }
+        
+        return squares;
+    }
+    
+    /**
+     * Check if all cells of a multi-cell piece can fit at target position.
+     */
+    canFitAt(targetSquare: Square, board: BoardClass): boolean {
+        if (!this.shape || this.shape.extensions.length === 0) {
+            return true; // Single-cell always fits
+        }
+        
+        const [baseX, baseY] = toCoords(targetSquare);
+        
+        // Check anchor
+        if (!board.isActive(targetSquare)) return false;
+        
+        // Check extensions
+        for (const [dx, dy] of this.shape.extensions) {
+            const sq = toSquare([baseX + dx, baseY + dy], board.gridType === 'square');
+            if (!board.isActive(sq)) return false;
+        }
+        
+        return true;
     }
 
     executeLogic(triggerType: string, context: any, board: BoardClass) {
@@ -99,13 +147,17 @@ export class CustomPiece extends Piece {
         // Fire on-turn-start trigger for general logic
         this.executeLogic('on-turn-start', {}, board);
 
-        // Environment checks
+        // Environment checks - now includes square tags
         const [col, row] = toCoords(this.position);
         const isWhiteSquare = (col + row) % 2 === 0;
+        const squareState = board.getSquareState(this.position);
+        
         this.executeLogic('on-environment', { 
             isWhiteSquare, 
             isBlackSquare: !isWhiteSquare,
-            isAttacked: false // Will be updated by checkThreats later
+            isAttacked: false, // Will be updated by checkThreats later
+            squareTags: Array.from(squareState.tags), // Available tags
+            squareProps: squareState.customProps
         }, board); 
         
         // General variable check trigger
@@ -258,7 +310,7 @@ export class CustomPiece extends Piece {
     }
 
     clone(): CustomPiece {
-        const p = new CustomPiece(this.id, this.type, this.color, this.position, this.rules, this.logic, this.name);
+        const p = new CustomPiece(this.id, this.type, this.color, this.position, this.rules, this.logic, this.name, this.shape);
         p.hasMoved = this.hasMoved;
         p.variables = { ...this.variables };
         p.pixelsWhite = this.pixelsWhite;

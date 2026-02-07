@@ -160,6 +160,12 @@ class Game {
     this.pendingMove = null;
     this.rematchRequests = [];
     this.lastActivity = Date.now(); // Track last activity for cleanup
+    this.customData = null;
+    this.isCustom = false;
+    this.turn = "w"; // Track turn for custom games
+    this.engine = null; // BoardClass instance for custom games
+    this.gameEngine = null; // Game engine wrapper for custom games
+    this.boardState = null; // Serialized board state for custom games
   }
   addPlayer(playerId) {
     if (!this.players.black) {
@@ -191,6 +197,9 @@ async function saveGame(game) {
       chatMessages: game.chatMessages,
       pendingMove: game.pendingMove,
       rematchRequests: game.rematchRequests || [],
+      customData: game.customData,
+      isCustom: game.isCustom,
+      turn: game.turn,
     });
     await redisClient.set(`game:${game.roomId}`, gameData, {
       EX: 3600 * 24, // Expire after 24 hours
@@ -491,6 +500,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("register_player", async (data) => {
+    console.log("📥 register_player event received:", data);
     const playerId = data.playerId;
     const oldPlayerId = socketToPlayer.get(socket.id);
     if (oldPlayerId && oldPlayerId !== playerId) {
@@ -538,6 +548,9 @@ io.on("connection", (socket) => {
           status: game.status,
           history: game.history,
           chatMessages: game.chatMessages,
+          customData: game.customData,
+          isCustom: game.isCustom,
+          turn: game.turn,
         });
       }
     }
@@ -587,16 +600,40 @@ io.on("connection", (socket) => {
     if (game) callback(game.status);
   });
 
-  socket.on("create_room", async () => {
+  socket.on("create_room", async (data) => {
+    console.log("📥 create_room event received");
     const playerId = socketToPlayer.get(socket.id);
-    if (!playerId) return;
+    console.log("Player ID:", playerId, "Socket ID:", socket.id);
+
+    if (!playerId) {
+      console.error("❌ No player ID found for socket");
+      return;
+    }
+
     await removeFromQueue(playerId);
     const game = new Game(playerId);
+
+    // Handle Custom Game Data
+    if (data && data.customData) {
+      console.log("🎮 Creating custom game with data");
+      game.customData = data.customData;
+      game.isCustom = true;
+      // Optionally set initial FEN/turn if provided, otherwise default
+      if (data.initialFen) game.board_fen = data.initialFen;
+    }
+
     games.set(game.roomId.toUpperCase(), game);
     await saveGame(game);
     await savePlayerRoom(playerId, game.roomId);
     socket.join(game.roomId);
-    socket.emit("room_created", { roomId: game.roomId, color: "white" });
+
+    console.log("✅ Room created:", game.roomId, "isCustom:", game.isCustom);
+    socket.emit("room_created", {
+      roomId: game.roomId,
+      color: "white",
+      isCustom: game.isCustom,
+    });
+    console.log("📤 room_created event emitted");
   });
 
   socket.on("join_room", async (data) => {
@@ -661,6 +698,8 @@ io.on("connection", (socket) => {
           status: game.status,
           history: game.history,
           chatMessages: game.chatMessages,
+          customData: game.customData,
+          isCustom: game.isCustom,
         });
       }
       return;
@@ -691,6 +730,9 @@ io.on("connection", (socket) => {
         status: game.status,
         history: game.history,
         chatMessages: game.chatMessages,
+        customData: game.customData,
+        isCustom: game.isCustom,
+        turn: game.turn,
       });
       return;
     }
@@ -706,6 +748,9 @@ io.on("connection", (socket) => {
         status: game.status,
         history: game.history,
         chatMessages: game.chatMessages,
+        customData: game.customData,
+        isCustom: game.isCustom,
+        turn: game.turn,
       });
       return;
     }
@@ -714,7 +759,12 @@ io.on("connection", (socket) => {
     await savePlayerRoom(playerId, roomId);
     socket.join(roomId);
     await removeFromQueue(playerId);
-    socket.emit("joined_room", { roomId, color: "black" });
+    socket.emit("joined_room", {
+      roomId,
+      color: "black",
+      customData: game.customData,
+      isCustom: game.isCustom,
+    });
     if (game.players.white && game.players.black) {
       game.status = "playing";
       await saveGame(game);
@@ -722,6 +772,8 @@ io.on("connection", (socket) => {
         roomId,
         fen: game.board_fen,
         status: "playing",
+        customData: game.customData,
+        isCustom: game.isCustom,
       });
     }
   });
@@ -740,6 +792,48 @@ io.on("connection", (socket) => {
     if (!color) return;
 
     try {
+      // --- CUSTOM GAME LOGIC ---
+      if (game.isCustom) {
+        const expectedTurn = game.turn || "w";
+        if (color !== expectedTurn) {
+          console.warn(
+            `[Custom Move Rejected] Wrong turn. Expected ${expectedTurn}, Got ${color}`,
+          );
+          socket.emit("error", { message: "Not your turn" });
+          return;
+        }
+
+        // In custom games, we trust the client's FEN and Move SAN
+        // We expect data.fen and data.san to be provided
+        if (!data.fen) {
+          console.warn(`[Custom Move Rejected] No FEN provided`);
+          return;
+        }
+
+        console.log(
+          `[Custom Move] Room: ${roomId}, Move: ${data.from}->${data.to}`,
+        );
+
+        game.board_fen = data.fen;
+        if (data.san) game.history.push(data.san);
+
+        // Swap turn
+        game.turn = game.turn === "w" ? "b" : "w";
+        game.updateActivity();
+        await saveGame(game);
+
+        io.to(roomId).emit("move", {
+          from: data.from,
+          to: data.to,
+          promotion: data.promotion,
+          san: data.san,
+          fen: game.board_fen,
+          gameStatus: game.status,
+        });
+        return;
+      }
+      // -------------------------
+
       // Handle history rewind if historyIndex is provided
       let targetFen = game.board_fen;
       if (

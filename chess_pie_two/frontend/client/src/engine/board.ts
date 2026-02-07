@@ -1,10 +1,11 @@
-import { Square } from './types';
+import { Square, SquareState } from './types';
 import { Piece, Pawn, Rook, Knight, Bishop, Queen, King, CustomPiece } from './piece';
 import { BoardStateManager } from './state';
 import { toCoords, toSquare } from './utils';
 import { GridType } from '../lib/grid/GridType';
 import { SquareGrid } from '../lib/grid/SquareGrid';
 import { HexGrid } from '../lib/grid/HexGrid';
+import { SquareLogicRunner, SquareLogic } from './logic/SquareLogicRunner';
 
 export class BoardClass {
     private stateManager: BoardStateManager;
@@ -13,14 +14,17 @@ export class BoardClass {
     public gridType: 'square' | 'hex';
     private grid: GridType;
     private effectListeners: ((effect: { type: string, position: Square }) => void)[] = [];
+    public squareLogic: Record<Square, SquareLogic> = {};
+    private squareStates: Record<Square, SquareState> = {}; // Runtime square state
 
-    constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[], width: number = 8, height: number = 8, gridType: 'square' | 'hex' = 'square') {
+    constructor(initialPieces?: Record<Square, Piece | null>, activeSquares?: Square[], width: number = 8, height: number = 8, gridType: 'square' | 'hex' = 'square', squareLogic?: Record<Square, SquareLogic>) {
         this.width = width;
         this.height = height;
         this.gridType = gridType;
         this.grid = gridType === 'hex' ? new HexGrid() : new SquareGrid();
         const squares = initialPieces || this.setupInitialBoard();
         this.stateManager = new BoardStateManager(squares, activeSquares);
+        if (squareLogic) this.squareLogic = squareLogic;
     }
 
     addEffectListener(fn: (effect: { type: string, position: Square }) => void) {
@@ -41,6 +45,31 @@ export class BoardClass {
 
     isActive(square: Square): boolean {
         return this.stateManager.isActive(square);
+    }
+
+    setActive(square: Square, active: boolean) {
+        this.stateManager.setActive(square, active);
+    }
+
+    /**
+     * Get the runtime state of a square.
+     */
+    getSquareState(square: Square): SquareState {
+        if (!this.squareStates[square]) {
+            this.squareStates[square] = {
+                tags: new Set<string>(),
+                disabled: false,
+                customProps: {}
+            };
+        }
+        return this.squareStates[square];
+    }
+
+    /**
+     * Set the runtime state of a square.
+     */
+    setSquareState(square: Square, state: SquareState) {
+        this.squareStates[square] = state;
     }
 
     private setupInitialBoard(): Record<Square, Piece | null> {
@@ -184,7 +213,15 @@ export class BoardClass {
             // Execute logic hooks BEFORE actually moving
             if (pieceToMove && (pieceToMove as any).isCustom) {
                 // on-move trigger (check if move itself is prevented)
-                const moveContext = { from, to, capturedPiece: isCapture ? destinationPiece : null, prevented: false, movePrevented: false, capturePrevented: false };
+                const moveContext = { 
+                    from, to, 
+                    capturedPiece: isCapture ? destinationPiece : null, 
+                    prevented: false, 
+                    movePrevented: false, 
+                    capturePrevented: false,
+                    gameWon: false,
+                    winner: null as string | null
+                };
                 (pieceToMove as any).executeLogic('on-move', moveContext, this);
                 
                 // Refresh reference in case of transformation
@@ -192,6 +229,10 @@ export class BoardClass {
 
                 if (moveContext.prevented || moveContext.movePrevented) {
                     movePrevented = true;
+                }
+
+                if (moveContext.gameWon) {
+                    this.triggerEffect('win', moveContext.winner === 'white' ? 'white_win' as any : 'black_win' as any);
                 }
             }
 
@@ -204,7 +245,9 @@ export class BoardClass {
                     from, to, 
                     prevented: false, 
                     movePrevented: false, 
-                    capturePrevented: false 
+                    capturePrevented: false,
+                    gameWon: false,
+                    winner: null as string | null
                 };
 
                 // Fire consolidated on-is-captured logic on both sides
@@ -221,6 +264,10 @@ export class BoardClass {
                     if (commonContext.prevented || commonContext.movePrevented || commonContext.capturePrevented) {
                         capturePrevented = true;
                     }
+                }
+
+                if (commonContext.gameWon) {
+                    this.triggerEffect('win', commonContext.winner === 'white' ? 'white_win' as any : 'black_win' as any);
                 }
             }
 
@@ -248,12 +295,32 @@ export class BoardClass {
             pieceToMove.position = to;
             pieceToMove.hasMoved = true;
             this.stateManager.addMoveToHistory(from, to, pieceToMove.id);
+
+            // Execute Square Logic: on-step
+            const squareCtx = {
+                piece: pieceToMove,
+                from, to,
+                movePrevented: false,
+                gameWon: false,
+                winner: null as string | null
+            };
+            SquareLogicRunner.execute(to, 'on-step', squareCtx, this);
             
-            // Turn Lifecycle: Update all custom pieces and fire environment triggers
+            // Execute proximity logic for all squares that have it
+            for (const s in this.squareLogic) {
+                SquareLogicRunner.execute(s as Square, 'on-proximity', squareCtx, this);
+            }
+
+            if (squareCtx.gameWon) {
+                this.triggerEffect('win', squareCtx.winner === 'white' ? 'white_win' as any : 'black_win' as any);
+            }
+            
+            // Turn Lifecycle: Update all custom pieces for the player whose turn it is now
+            const currentTurn = this.stateManager.turn;
             const allSquares = this.getSquares();
             for (const s in allSquares) {
                 const p = allSquares[s as Square];
-                if (p && (p as any).isCustom) {
+                if (p && (p as any).isCustom && p.color === currentTurn) {
                     (p as any).updateTurnState(this);
                 }
             }

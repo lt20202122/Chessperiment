@@ -6,6 +6,7 @@ import { getProjectAction } from '@/app/actions/editor';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { Loader2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 interface PageClientProps {
     projectId: string;
@@ -14,6 +15,10 @@ interface PageClientProps {
 export default function PageClient({ projectId }: PageClientProps) {
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const roomId = searchParams.get('roomId');
+    const mode = searchParams.get('mode');
+    
     const [project, setProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -33,18 +38,26 @@ export default function PageClient({ projectId }: PageClientProps) {
                 if (result.success && result.data) {
                     setProject(result.data);
                 } else {
-                    setError(result.error || "Project not found");
+                    if (mode === 'online' && roomId) {
+                        console.log("Project not found locally, will attempt to load from socket");
+                    } else {
+                        setError(result.error || "Project not found");
+                    }
                 }
             } catch (err) {
                 console.error("Failed to load project", err);
-                setError("Failed to load project");
+                if (mode === 'online' && roomId) {
+                    console.log("Project load error, will attempt to load from socket");
+                } else {
+                    setError("Failed to load project");
+                }
             } finally {
                 setLoading(false);
             }
         };
 
         loadProject();
-    }, [user, authLoading, projectId, router]);
+    }, [user, authLoading, projectId, router, mode, roomId]);
 
     if (authLoading || loading) {
         return (
@@ -54,12 +67,12 @@ export default function PageClient({ projectId }: PageClientProps) {
         );
     }
 
-    if (error || !project) {
+    if (error) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-stone-950 text-white">
                 <div className="text-center">
                     <h2 className="text-xl font-bold mb-2 text-red-400">Error</h2>
-                    <p className="text-stone-400">{error || "Project not found"}</p>
+                    <p className="text-stone-400">{error}</p>
                     <button
                         onClick={() => router.push('/editor')}
                         className="mt-4 px-4 py-2 bg-stone-800 rounded hover:bg-stone-700 transition"
@@ -71,5 +84,5 @@ export default function PageClient({ projectId }: PageClientProps) {
         );
     }
 
-    return <PlayBoard project={project} projectId={projectId} />;
+    return <PlayBoard project={project as any} projectId={projectId} roomId={roomId || undefined} mode={mode as 'online' | undefined} />;
 }

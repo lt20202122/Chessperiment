@@ -32,7 +32,13 @@ export async function saveProject(project: Project): Promise<string> {
             pixelsWhite: typeof piece.pixelsWhite !== 'string' ? JSON.stringify(piece.pixelsWhite) : piece.pixelsWhite,
             pixelsBlack: typeof piece.pixelsBlack !== 'string' ? JSON.stringify(piece.pixelsBlack) : piece.pixelsBlack,
             logic: (piece.logic !== undefined && typeof piece.logic !== 'string') ? JSON.stringify(piece.logic) : piece.logic
-        }))
+        })),
+        squareLogic: project.squareLogic ? Object.fromEntries(
+            Object.entries(project.squareLogic).map(([k, v]: [string, any]) => [
+                k,
+                { ...v, logic: (v.logic !== undefined && typeof v.logic !== 'string') ? JSON.stringify(v.logic) : v.logic }
+            ])
+        ) : {}
     };
 
     if (project.id) {
@@ -96,6 +102,17 @@ export async function getUserProjects(userId: string): Promise<Project[]> {
                 pixelsBlack: typeof piece.pixelsBlack === 'string' ? JSON.parse(piece.pixelsBlack) : piece.pixelsBlack,
                 logic: typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic,
             })),
+            squareLogic: data.squareLogic ? Object.fromEntries(
+                Object.entries(data.squareLogic).map(([k, v]: [string, any]) => [
+                    k,
+                    { 
+                        ...v, 
+                        logic: typeof v.logic === 'string' ? JSON.parse(v.logic) : v.logic,
+                        createdAt: v.createdAt?.toDate ? v.createdAt.toDate() : v.createdAt,
+                        updatedAt: v.updatedAt?.toDate ? v.updatedAt.toDate() : v.updatedAt
+                    }
+                ])
+            ) : {},
             createdAt: data.createdAt?.toDate() || new Date(),
             updatedAt: data.updatedAt?.toDate() || new Date(),
         } as Project;
@@ -123,6 +140,17 @@ export async function getProject(projectId: string, userId?: string): Promise<Pr
             pixelsBlack: typeof piece.pixelsBlack === 'string' ? JSON.parse(piece.pixelsBlack) : piece.pixelsBlack,
             logic: typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic,
         })),
+        squareLogic: data.squareLogic ? Object.fromEntries(
+            Object.entries(data.squareLogic).map(([k, v]: [string, any]) => [
+                k,
+                { 
+                    ...v, 
+                    logic: typeof v.logic === 'string' ? JSON.parse(v.logic) : v.logic,
+                    createdAt: v.createdAt?.toDate ? v.createdAt.toDate() : v.createdAt,
+                    updatedAt: v.updatedAt?.toDate ? v.updatedAt.toDate() : v.updatedAt
+                }
+            ])
+        ) : {},
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
     } as Project;

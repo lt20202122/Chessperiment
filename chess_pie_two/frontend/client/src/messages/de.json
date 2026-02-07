@@ -474,6 +474,9 @@
             }
         }
     },
+    "Projects": {
+        "title": "Projekte"
+    },
     "Library": {
         "importWarning": "Dadurch wird die Figur in das ausgewählte Projekt kopiert.",
         "loadingProjects": "Lade Projekte...",
@@ -488,6 +491,7 @@
     "EditorSidebar": {
         "boardEditor": "Board-Editor",
         "pieceEditor": "Figuren-Editor",
+        "squareEditor": "Felder-Editor",
         "back": "Zurück zu den Projekten",
         "save": "Änderungen speichern",
         "saved": "Gespeichert",
@@ -644,7 +648,12 @@
         "dieterLinkText": "Dieter macht den Datenschutz"
     },
     "SEO": {
+        "About": {
+            "title": "Über Chessperiment | Die Plattform für individuelles Schach",
+            "description": "Erfahre mehr über chessperiment, unsere Mission, Schachkreativität neu zu definieren, und die einzigartigen Funktionen."
+        },
         "Feedback": {
+
             "title": "Feedback",
             "description": "Teilen Sie Ihr Feedback, melden Sie Fehler oder schlagen Sie neue Funktionen für chessperiment vor"
         },
@@ -675,6 +684,19 @@
                 "heading": "Erlebe die nächste Generation der Schachvarianten",
                 "text": "Tritt der chessperiment-Community bei und spiele einzigartige Schachvarianten online mit Freunden oder gegen unsere integrierte Stockfish-KI. Unsere Plattform ermöglicht dir die Verwendung von benutzerdefinierten Brettern und Figurensätzen, die von Kreativen aus der ganzen Welt entworfen wurden. Egal, ob du eine neue Figurenlogik testen möchtest, die du gerade erstellt hast, oder ein Match mit Standardregeln auf einem unregelmäßigen Brett spielen willst – unser reibungsloses Multiplayer-Erlebnis bietet dir alles, was du brauchst. Starte ein privates Match, indem du einen Raumcode teilst, oder tritt der Lobby bei, um andere Spieler zu finden. Mit Echtzeit-Zugvalidierung und fortschrittlicher Engine-Analyse bietet chessperiment eine robuste Umgebung für sowohl Gelegenheitsspiele als auch für das kompetitive Testen neuer Spielmechaniken."
             }
+        },
+        "Editor": {
+            "title": "Projekt-Editor | individuelles chessperiment",
+            "description": "Verwalte deine individuellen Schachprojekte. Erstelle einzigartige Schlachtfelder, designe Figurensätze und organisiere deine Kreationen.",
+            "h1": "Dein Projekt-Arbeitsplatz"
+        },
+        "PieceEditor": {
+            "title": "Figuren-Editor | individuelles chessperiment",
+            "description": "Erstelle und passe deine eigenen Schachfiguren mit einzigartigen Bewegungsmustern und Logik an."
+        },
+        "SquareEditor": {
+            "title": "Felder-Editor | individuelles chessperiment",
+            "description": "Definiere benutzerdefinierte Logik und Verhaltensweisen für einzelne Felder auf deinem Brett."
         }
     },
 
@@ -722,7 +744,7 @@
         "description": "Es scheint, als wäre dieser Zug ungültig. Die Seite, die du suchst, existiert nicht oder wurde verschoben.",
         "backHome": "Zurück zum Spiel"
     },
-    "AboutPage": {
+    "About": {
         "title": "Über Chessperiment",
         "intro": "Chessperiment (chessperiment.app) ist eine Web-Plattform, die sich der Erstellung hochgradig anpassbarer Schachvarianten widmet. Im Gegensatz zu herkömmlichen Schach-Webseiten ermöglicht Chessperiment den Nutzern, ihre eigenen einzigartigen Spiele zu entwerfen – mit voller Kontrolle über Bretter, Figuren, Regeln und Interaktionen.",
         "features": {

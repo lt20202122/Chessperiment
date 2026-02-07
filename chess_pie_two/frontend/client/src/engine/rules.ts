@@ -1,7 +1,8 @@
 import { Square } from './types';
 import { BoardClass as Board } from './board';
-import { King, Pawn } from './piece';
+import { King, Pawn, CustomPiece } from './piece';
 import { toCoords, toSquare } from './utils';
+import { EffectExecutor } from './effects';
 
 export class ValidatorClass {
     private board: Board;
@@ -110,7 +111,38 @@ export class ValidatorClass {
         return true;
     }
 
-    isLegal(from: Square, to: Square, promotion?: string): boolean {
+    /**
+     * Layered legality check:
+     * 1. Structural (topology, multi-cell collision)
+     * 2. Rule-based (disabled squares, cooldowns)
+     * 3. Trigger vetoes (cancelMove effects)
+     */
+    isLegal(from: Square, to: Square, promotion?: string, effectExecutor?: EffectExecutor): boolean {
+        // Layer 1: Structural checks
+        if (!this.isStructurallyLegal(from, to)) {
+            return false;
+        }
+        
+        // Layer 2: Rule-based checks
+        if (!this.isRuleLegal(from, to, promotion)) {
+            return false;
+        }
+        
+        // Layer 3: Trigger vetoes (check if triggers cancel the move)
+        if (effectExecutor && this.isTriggerVetoed(from, to, effectExecutor)) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Layer 1: Structural legality
+     * - Topology valid
+     * - Multi-cell collision check
+     * - Target square active
+     */
+    private isStructurallyLegal(from: Square, to: Square): boolean {
         const piece = this.board.getPiece(from);
         if (!piece || piece.color !== this.board.getTurn()) {
             return false;
@@ -118,6 +150,40 @@ export class ValidatorClass {
 
         if (!this.board.isActive(to)) {
             return false;
+        }
+        
+        // Multi-cell collision: check if all cells fit
+        if (piece instanceof CustomPiece && piece.shape && piece.shape.extensions.length > 0) {
+            if (!piece.canFitAt(to, this.board)) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Layer 2: Rule-based legality
+     * - Disabled squares
+     * - Cooldowns
+     * - Standard chess rules (castling, en passant)
+     * - King safety
+     */
+    private isRuleLegal(from: Square, to: Square, promotion?: string): boolean {
+        const piece = this.board.getPiece(from);
+        if (!piece) return false;
+        
+        // Check if target square is disabled
+        const toState = this.board.getSquareState(to);
+        if (toState.disabled) {
+            return false;
+        }
+        
+        // Check cooldown for custom pieces
+        if (piece instanceof CustomPiece) {
+            if (piece.variables['cooldown'] && piece.variables['cooldown'] > 0) {
+                return false;
+            }
         }
 
         if (this._isCastling(from, to)) {
@@ -144,6 +210,37 @@ export class ValidatorClass {
 
         const attackerColor = piece.color === 'white' ? 'black' : 'white';
         return !this.isSquareAttacked(kingSquare, attackerColor, tempBoard);
+    }
+    
+    /**
+     * Layer 3: Trigger vetoes
+     * - Execute pre-move triggers
+     * - Check for cancelMove effects
+     */
+    private isTriggerVetoed(from: Square, to: Square, effectExecutor: EffectExecutor): boolean {
+        const piece = this.board.getPiece(from);
+        if (!piece || !(piece instanceof CustomPiece)) {
+            return false; // No triggers to check
+        }
+        
+        // Reset cancellation flag
+        effectExecutor.resetCancellation();
+        
+        // Execute pre-move logic to check for vetoes
+        const context = {
+            from,
+            to,
+            prevented: false,
+            movePrevented: false
+        };
+        
+        piece.executeLogic('on-move', context, this.board);
+        
+        // Process pre-move phase effects
+        effectExecutor.processPhase('pre-move', this.board);
+        
+        // Check if move was cancelled
+        return effectExecutor.wasMoveCancelled() || context.movePrevented;
     }
 
     private findKing(color: 'white' | 'black', board: Board): Square | null {

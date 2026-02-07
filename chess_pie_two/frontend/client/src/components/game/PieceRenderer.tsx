@@ -20,7 +20,7 @@ interface PieceRendererProps {
     recentEffect?: string | null;
 }
 
-export const PixelPiece = ({ pixels, image, size, className }: { pixels?: string[][], image?: string, size: number, className?: string }) => {
+export const PixelPiece = React.memo(({ pixels, image, size, className }: { pixels?: string[][], image?: string, size: number, className?: string }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -81,9 +81,9 @@ export const PixelPiece = ({ pixels, image, size, className }: { pixels?: string
             style={{ width: '100%', height: '100%', imageRendering: image ? 'auto' : 'pixelated' }}
         />
     );
-};
+}, (prev, next) => prev.size === next.size && prev.image === next.image && JSON.stringify(prev.pixels) === JSON.stringify(next.pixels));
 
-export default function PieceRenderer({
+const PieceRenderer = React.memo(function PieceRenderer({
     type,
     color,
     size,
@@ -164,4 +164,14 @@ export default function PieceRenderer({
             />
         </div>
     );
-}
+}, (prev, next) =>
+    prev.type === next.type &&
+    prev.color === next.color &&
+    prev.size === next.size &&
+    prev.image === next.image &&
+    prev.boardStyle === next.boardStyle &&
+    JSON.stringify(prev.pixels) === JSON.stringify(next.pixels) &&
+    JSON.stringify(prev.variables) === JSON.stringify(next.variables)
+);
+
+export default PieceRenderer;

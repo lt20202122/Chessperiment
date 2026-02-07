@@ -37,7 +37,7 @@ interface MoveRule {
     id: string;
     conditions: MoveCondition[];
     result: 'allow' | 'disallow';
-    type?: 'slide' | 'jump';
+    type?: 'run' | 'jump';
 }
 
 interface VisualMoveEditorProps {
@@ -376,7 +376,7 @@ export default function VisualMoveEditor({ moves, onUpdate, pieceId, projectId }
             if (rule.id === ruleId) {
                 return {
                     ...rule,
-                    type: (rule.type === 'slide' ? 'jump' : 'slide') as 'slide' | 'jump'
+                    type: (rule.type === 'run' ? 'jump' : 'run') as 'run' | 'jump'
                 };
             }
             return rule;

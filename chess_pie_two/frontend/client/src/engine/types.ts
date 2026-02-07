@@ -9,13 +9,41 @@ export interface PieceState {
     customProps?: Record<string, any>; // für chessperiment-spezifische Regeln
 }
 
+/**
+ * SquareState - Mutable runtime state for a square.
+ * Separated from immutable topology.
+ */
+export interface SquareState {
+    tags: Set<string>; // Generic tags: 'lava', 'water', 'white-square', etc.
+    disabled: boolean;
+    customProps: Record<string, any>;
+}
+
 export interface BoardState {
     squares: Record<Square, PieceState | null>; // null = leer
     turn: "white" | "black";
     history: Array<{ from: Square; to: Square; pieceId: string }>;
     gridType?: 'square' | 'hex';
+    version?: string; // For migration
     meta?: Record<string, any>; // z.B. Regeln, Sonderbedingungen
 }
+
+/**
+ * Effect phase - determines execution order
+ */
+export type EffectPhase = 'pre-move' | 'on-move' | 'post-move' | 'end-of-turn';
+
+/**
+ * Trigger types for piece and square logic
+ */
+export type TriggerType = 
+    | 'on-move'
+    | 'on-is-captured'
+    | 'on-threat'
+    | 'on-environment'
+    | 'on-turn-start'
+    | 'on-turn-end'
+    | 'on-cooldown-ready';
 
 export interface MoveCondition {
     id: string;

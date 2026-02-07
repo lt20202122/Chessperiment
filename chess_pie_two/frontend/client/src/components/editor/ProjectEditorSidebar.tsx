@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { Grid3x3, Crown } from 'lucide-react';
+import { Grid3x3, Crown, Square } from 'lucide-react';
 import { useState } from 'react';
 
 export interface ProjectEditorSidebarProps {
@@ -28,6 +28,12 @@ export default function ProjectEditorSidebar({ projectId }: ProjectEditorSidebar
             icon: Crown,
             label: t('pieceEditor'),
             href: `/editor/${projectId}/piece-editor`,
+        },
+        {
+            id: 'square',
+            icon: Square,
+            label: t('squareEditor'),
+            href: `/editor/${projectId}/square-editor`,
         },
     ];
 
@@ -59,8 +65,8 @@ export default function ProjectEditorSidebar({ projectId }: ProjectEditorSidebar
                                 onMouseEnter={() => handleMouseEnter(item.id)}
                                 onMouseLeave={handleMouseLeave}
                                 className={`w-full flex flex-col items-center gap-1 px-3 py-3 transition-colors ${isActive
-                                        ? 'text-accent'
-                                        : 'text-gray-600 dark:text-gray-400 hover:text-accent dark:hover:text-accent'
+                                    ? 'text-accent'
+                                    : 'text-gray-600 dark:text-gray-400 hover:text-accent dark:hover:text-accent'
                                     }`}
                             >
                                 <Icon className="w-6 h-6" />

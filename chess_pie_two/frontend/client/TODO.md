@@ -33,8 +33,8 @@ Create a favicon and open graph images.
 
 1. [x] finish /Editor/Board, the play functionality in the Board Editor and saving things to your account.
 2. Create a piece of time with saving things to your account.
-3. Implement the piece editor into the PlayVersusYourself functionality
-4. Implement playing against others on custom pieces and custom boards.
-5. Finish SEO and testing.
+3. [x] Implement the piece editor into the PlayVersusYourself functionality
+4. [x] Implement playing against others on custom pieces and custom boards.
+5. [x] Finish SEO and testing.
 6. Launch the site.
-   Ctrl+Z and Ctrl+Y don't work in the canvas.
+- [x] Ctrl+Z and Ctrl+Y don't work in the canvas.

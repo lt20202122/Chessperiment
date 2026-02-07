@@ -29,14 +29,18 @@ export function getSocket() {
     });
     // Register player immediately on connection
     socket.on("connect", () => {
+      console.log('✅ Socket connected to', SOCKET_URL);
       const playerId = getOrCreatePlayerId();
+      console.log('📤 Registering player:', playerId);
       socket!.emit("register_player", { playerId });
     });
 
     socket.on("connect_error", (error) => {
+      console.error('❌ Socket connection error:', error.message);
     });
 
     socket.on("disconnect", (reason) => {
+      console.warn('⚠️ Socket disconnected:', reason);
     });
   }
   return socket;

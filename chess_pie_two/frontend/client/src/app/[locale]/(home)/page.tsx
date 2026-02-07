@@ -52,14 +52,14 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         "@type": "WebSite",
         "@id": `${siteUrl}/${locale}/#website`,
         "url": `${siteUrl}/${locale}`,
-        "name": "ChessPie",
+        "name": "Chessperiment",
         "description": t('description'),
         "inLanguage": locale
       },
       {
         "@type": "Organization",
         "@id": `${siteUrl}/${locale}/#organization`,
-        "name": "ChessPie",
+        "name": "Chessperiment",
         "url": `${siteUrl}/${locale}`,
         "logo": {
           "@type": "ImageObject",

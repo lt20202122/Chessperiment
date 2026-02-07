@@ -6,10 +6,11 @@ import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Project } from '@/types/Project';
 import { getProjectAction, saveProjectAction } from '@/app/actions/editor';
-import { Loader2, Pencil, Check, X, Gamepad2 } from 'lucide-react';
+import { Loader2, Pencil, Check, X, Gamepad2, Globe, Copy, Share2, ExternalLink } from 'lucide-react';
 import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
 import BottomPiecePanel from '@/components/editor/BottomPiecePanel';
 import BoardPreviewWrapper from '@/components/editor/BoardPreviewWrapper';
+import { useSocket } from '@/context/SocketContext';
 
 interface PageClientProps {
     projectId: string;
@@ -21,6 +22,7 @@ export default function PageClient({ projectId }: PageClientProps) {
     const router = useRouter();
     const [project, setProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(true);
+    const socket = useSocket();
 
     // Edit states
     const [isEditingName, setIsEditingName] = useState(false);
@@ -28,6 +30,11 @@ export default function PageClient({ projectId }: PageClientProps) {
     const [editedName, setEditedName] = useState('');
     const [editedDescription, setEditedDescription] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    // Room code modal state
+    const [showRoomModal, setShowRoomModal] = useState(false);
+    const [roomCode, setRoomCode] = useState('');
+    const [copySuccess, setCopySuccess] = useState(false);
 
     useEffect(() => {
         if (authLoading) return;
@@ -38,6 +45,33 @@ export default function PageClient({ projectId }: PageClientProps) {
 
         loadProject();
     }, [user, authLoading, projectId, router]);
+
+    // Socket listener for room creation - auto-join the game
+    useEffect(() => {
+        if (!socket) {
+            console.log('⚠️ Socket not available for listeners');
+            return;
+        }
+
+        console.log('✅ Setting up room_created listener');
+
+        const onRoomCreated = (data: { roomId: string, isCustom: boolean }) => {
+            console.log('📥 room_created event received:', data);
+            if (data.isCustom && project) {
+                console.log('✅ Navigating to game with room:', data.roomId);
+                // Auto-join the created game with correct URL pattern
+                router.push(`/game/${data.roomId}`);
+            } else {
+                console.warn('⚠️ Not navigating - isCustom:', data.isCustom, 'project:', !!project);
+            }
+        };
+
+        socket.on("room_created", onRoomCreated);
+        return () => {
+            console.log('🧹 Cleaning up room_created listener');
+            socket.off("room_created", onRoomCreated);
+        };
+    }, [socket, router, projectId, project]);
 
     async function loadProject() {
         if (!user) return;
@@ -85,6 +119,85 @@ export default function PageClient({ projectId }: PageClientProps) {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handlePlayOnline = () => {
+        console.log('🎮 Play Online clicked');
+        console.log('Socket object exists:', !!socket);
+        console.log('Socket connected:', socket?.connected);
+        console.log('Socket ID:', socket?.id);
+
+        if (!socket || !socket.connected) {
+            console.error('❌ Socket not connected');
+            alert('Connection error. Please refresh the page and try again.');
+            return;
+        }
+
+        if (!project) {
+            console.error('❌ No project loaded');
+            alert('Project not loaded. Please try again.');
+            return;
+        }
+
+        // Serialize project
+        const serializedProject = {
+            ...project,
+            createdAt: project.createdAt instanceof Date ? project.createdAt.toISOString() : project.createdAt,
+            updatedAt: project.updatedAt instanceof Date ? project.updatedAt.toISOString() : project.updatedAt,
+            customPieces: project.customPieces.map(pc => ({
+                ...pc,
+                createdAt: pc.createdAt instanceof Date ? pc.createdAt.toISOString() : pc.createdAt,
+                updatedAt: pc.updatedAt instanceof Date ? pc.updatedAt.toISOString() : pc.updatedAt,
+            }))
+        };
+
+        console.log('📤 Emitting create_room event');
+        socket.emit("create_room", { customData: serializedProject });
+    };
+
+    const handleCopyRoomCode = async () => {
+        try {
+            await navigator.clipboard.writeText(roomCode);
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
+    };
+
+    const handleCopyLink = async () => {
+        const link = `${window.location.origin}/editor/${projectId}/play?roomId=${roomCode}&mode=online`;
+        try {
+            await navigator.clipboard.writeText(link);
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
+    };
+
+    const handleShare = async () => {
+        const link = `${window.location.origin}/editor/${projectId}/play?roomId=${roomCode}&mode=online`;
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `Join my ${project?.name} game!`,
+                    text: `Join my custom chess variant: ${project?.name}`,
+                    url: link,
+                });
+            } catch (err) {
+                if ((err as Error).name !== 'AbortError') {
+                    console.error('Share failed:', err);
+                }
+            }
+        } else {
+            handleCopyLink();
+        }
+    };
+
+    const handleJoinGame = () => {
+        setShowRoomModal(false);
+        router.push(`/editor/${projectId}/play?roomId=${roomCode}&mode=online`);
     };
 
     if (authLoading || loading) {
@@ -199,14 +312,25 @@ export default function PageClient({ projectId }: PageClientProps) {
 
                     {/* Board Preview */}
                     <div className="mt-12 flex flex-col items-center gap-6">
-                        <div className="flex gap-4">
+                        {/* Action Buttons */}
+                        <div className="flex gap-4 w-full max-w-2xl">
+                            {/* Play Online - Primary */}
+                            <button
+                                onClick={handlePlayOnline}
+                                disabled={!socket || !project}
+                                className="flex-1 group relative inline-flex items-center justify-center gap-3 px-8 py-5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-lg hover:from-amber-600 hover:to-orange-600 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            >
+                                <Globe size={24} />
+                                <span>Play with Friends</span>
+                            </button>
+
+                            {/* Play Local - Secondary */}
                             <button
                                 onClick={() => router.push(`/editor/${projectId}/play`)}
-                                className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden"
+                                className="flex-1 inline-flex items-center justify-center gap-3 px-8 py-5 bg-stone-200 dark:bg-stone-800 text-stone-900 dark:text-white rounded-xl font-bold text-lg hover:bg-stone-300 dark:hover:bg-stone-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
-                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                                <Gamepad2 size={24} className="relative z-10" />
-                                <span className="relative z-10 text-lg font-bold">Play Local Game</span>
+                                <Gamepad2 size={24} />
+                                <span>Play Local</span>
                             </button>
                         </div>
 
@@ -217,9 +341,86 @@ export default function PageClient({ projectId }: PageClientProps) {
                 </div>
             </div>
 
+
             {/* Editor Sidebar */}
             <ProjectEditorSidebar projectId={projectId} />
 
+            {/* Room Code Modal */}
+            {showRoomModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-stone-900 rounded-3xl shadow-2xl border border-stone-200 dark:border-stone-800 p-8 max-w-md w-full">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-3 bg-amber-500 rounded-xl text-white">
+                                <Globe size={24} />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-black text-stone-900 dark:text-white">Room Created!</h2>
+                                <p className="text-sm text-stone-500 dark:text-stone-400">Share this code with your friend</p>
+                            </div>
+                        </div>
+
+                        {/* Room Code Display */}
+                        <div className="mb-6">
+                            <label className="block text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">
+                                Room Code
+                            </label>
+                            <div
+                                onClick={handleCopyRoomCode}
+                                className="relative bg-stone-100 dark:bg-stone-800 rounded-2xl p-4 cursor-pointer hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+                            >
+                                <div className="text-center font-mono text-3xl font-black text-amber-500 select-all">
+                                    {roomCode}
+                                </div>
+                                <div className="absolute top-2 right-2">
+                                    <Copy size={16} className="text-stone-400" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="space-y-3">
+                            <button
+                                onClick={handleCopyRoomCode}
+                                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 rounded-xl font-bold text-stone-900 dark:text-white transition-colors"
+                            >
+                                <Copy size={18} />
+                                {copySuccess ? 'Copied!' : 'Copy Room Code'}
+                            </button>
+
+                            <button
+                                onClick={handleShare}
+                                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-xl font-bold text-white shadow-lg shadow-orange-500/20 transition-all"
+                            >
+                                <Share2 size={18} />
+                                Share Link
+                            </button>
+
+                            <button
+                                onClick={handleJoinGame}
+                                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/20 transition-all"
+                            >
+                                <ExternalLink size={18} />
+                                Join Game
+                            </button>
+                        </div>
+
+                        {/* Full Link (for reference) */}
+                        <div className="mt-6 pt-6 border-t border-stone-200 dark:border-stone-800">
+                            <button
+                                onClick={handleCopyLink}
+                                className="w-full text-left p-3 bg-stone-50 dark:bg-stone-800/50 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                            >
+                                <p className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">
+                                    Full Link
+                                </p>
+                                <p className="text-xs font-mono text-stone-600 dark:text-stone-400 break-all">
+                                    {`${typeof window !== 'undefined' ? window.location.origin : ''}/editor/${projectId}/play?roomId=${roomCode}&mode=online`}
+                                </p>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );

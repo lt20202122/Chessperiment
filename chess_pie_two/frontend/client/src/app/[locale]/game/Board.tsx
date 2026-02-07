@@ -1,7 +1,11 @@
 "use client";
 import Image from "next/image";
 import { pieces, getPieceImage, PieceType } from "./Data";
-import { Hand, MessageSquare, Info, History, Shield, Trophy, User, Gamepad2, Settings, ChevronLeft, ChevronRight, X, User2, MonitorOff, UserPlus } from "lucide-react";
+import { Hand, MessageSquare, Info, History, Shield, Trophy, User, Gamepad2, Settings, ChevronLeft, ChevronRight, X, User2, MonitorOff, UserPlus, Crown, AlertCircle, Check } from "lucide-react";
+import { BoardClass } from '@/engine/board';
+import { Piece as EngPiece } from '@/engine/piece';
+import { Square as EngSquare } from '@/engine/types';
+import type { Project } from '@/types/Project';
 import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
@@ -288,9 +292,61 @@ export default function Board({
   const [rematchRequested, setRematchRequested] = useState(false);
   const [opponentRematchRequested, setOpponentRematchRequested] = useState(false);
 
+  // Custom game data
+  const [customData, setCustomData] = useState<any>(null);
+  const [isCustomGame, setIsCustomGame] = useState(false);
+  const [customBoard, setCustomBoard] = useState<BoardClass | null>(null);
+
   // --- Stockfish & Local Logic ---
   const [chess] = useState(() => new Chess());
   const [difficulty, setDifficulty] = useState(1200);
+
+  // Initialize custom board from project data
+  const initializeCustomBoard = useCallback((projectData: Project): BoardClass | null => {
+    try {
+      console.log('[Custom Board] Initializing from project data:', projectData);
+
+      const gridType = projectData.gridType || 'square';
+      const board = new BoardClass(
+        undefined, // initialPieces - will set later
+        projectData.activeSquares as EngSquare[], // activeSquares
+        projectData.cols, // width
+        projectData.rows, // height
+        gridType // gridType
+        // TODO: Handle squareLogic type conversion
+      );
+
+      // Place pieces on the board
+      for (const [square, pieceData] of Object.entries(projectData.placedPieces)) {
+        const piece = EngPiece.create(
+          `${square}_${pieceData.color}_${pieceData.type}`,
+          pieceData.type as any,
+          pieceData.color as 'white' | 'black',
+          square as EngSquare
+        );
+        if (piece) {
+          board.setPiece(square as EngSquare, piece);
+        }
+      }
+
+      console.log('[Custom Board] Board initialized successfully');
+      return board;
+    } catch (error) {
+      console.error('[Custom Board] Failed to initialize:', error);
+      return null;
+    }
+  }, []);
+
+  // Effect to initialize custom board when customData changes
+  useEffect(() => {
+    if (customData && isCustomGame) {
+      console.log('[Custom Board] customData received, initializing board');
+      const board = initializeCustomBoard(customData);
+      if (board) {
+        setCustomBoard(board);
+      }
+    }
+  }, [customData, isCustomGame, initializeCustomBoard]);
 
   const updateBoardState = useCallback((fen: string) => {
     const newPieces = parseFen(fen);
@@ -418,6 +474,18 @@ export default function Board({
     };
 
     const onGameStateInit = (data: any) => {
+      console.log('[Game State Init]', data);
+
+      // Handle custom game data
+      if (data.customData) {
+        console.log('[Custom Game] Loading custom data:', data.customData);
+        setCustomData(data.customData);
+        setIsCustomGame(true);
+      }
+      if (data.isCustom) {
+        setIsCustomGame(true);
+      }
+
       if (data.fen) {
         updateBoardState(data.fen);
       }
@@ -485,12 +553,23 @@ export default function Board({
       onGameStateInit(data);
     });
     socket.on("room_created", (data: any) => {
+      console.log('[Room Created]', data);
       setCurrentRoom(data.roomId);
       setMyColor(data.color || "white");
       setGameStatus("waiting");
       setPlayerCount(1);
+
+      if (data.customData) {
+        console.log('[Custom Game] Room created with custom data');
+        setCustomData(data.customData);
+        setIsCustomGame(true);
+      }
+      if (data.isCustom) {
+        setIsCustomGame(true);
+      }
     });
     socket.on("joined_room", (data: any) => {
+      console.log('[Joined Room]', data);
       setCurrentRoom(data.roomId);
 
       const isComputer = data.roomId.startsWith("COMPUTER-");
@@ -503,6 +582,15 @@ export default function Board({
         setGameStatus("waiting");
       }
       setPlayerCount(2);
+
+      if (data.customData) {
+        console.log('[Custom Game] Joined room with custom data');
+        setCustomData(data.customData);
+        setIsCustomGame(true);
+      }
+      if (data.isCustom) {
+        setIsCustomGame(true);
+      }
     });
     socket.on("game_ended", (data: any) => {
       if (data.result === "0") setGameResult("draw");
@@ -1028,16 +1116,26 @@ export default function Board({
     };
   }, [socket]);
 
+  // Calculate board dimensions based on custom board or default 8x8
+  const boardCols = customBoard ? customBoard.width : 8;
+  const boardRows = customBoard ? customBoard.height : 8;
+  const gridColsClass = customBoard ? `` : 'grid-cols-8'; // Use inline style for custom
+
   const boardContent = [];
-  const rRange = myColor === "black" ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
-  const cRange = myColor === "black" ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
-  const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+  // Calculate ranges based on board dimensions
+  const rRange = myColor === "black"
+    ? Array.from({ length: boardRows }, (_, i) => boardRows - 1 - i)
+    : Array.from({ length: boardRows }, (_, i) => i);
+  const cRange = myColor === "black"
+    ? Array.from({ length: boardCols }, (_, i) => boardCols - 1 - i)
+    : Array.from({ length: boardCols }, (_, i) => i);
+  const files = Array.from({ length: boardCols }, (_, i) => String.fromCharCode('a'.charCodeAt(0) + i));
 
   const historyMove = isViewingHistory && historyIndex >= 0 ? historyMoves[historyIndex] : null;
 
   for (const i of rRange) {
     for (const a of cRange) {
-      const pos = `${files[a]}${8 - i}`;
+      const pos = `${files[a]}${boardRows - i}`;
       const isWhiteSq = (i + a) % 2 === 0;
       const piece = displayPieces.find(p => p.position === pos);
       const pieceSize = piece ? blockSize * getGamePieceScale(piece.type) : 0;
@@ -1101,7 +1199,14 @@ export default function Board({
                   className="flex-1 w-full h-full flex items-center justify-center min-h-0 overflow-hidden touch-none"
                 >
                   <div className="relative shadow-2xl rounded-xl bg-stone-300 dark:bg-stone-800 p-1 lg:p-2 animate-in zoom-in duration-700">
-                    <div className="grid grid-cols-8 overflow-hidden rounded-lg shadow-inner" style={{ width: blockSize * 8, height: blockSize * 8 }}>
+                    <div
+                      className={customBoard ? `grid overflow-hidden rounded-lg shadow-inner` : `grid grid-cols-8 overflow-hidden rounded-lg shadow-inner`}
+                      style={{
+                        width: blockSize * boardCols,
+                        height: blockSize * boardRows,
+                        ...(customBoard ? { gridTemplateColumns: `repeat(${boardCols}, 1fr)` } : {})
+                      }}
+                    >
                       <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
                         {boardContent}
                         <DragOverlay dropAnimation={null}>

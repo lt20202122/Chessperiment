@@ -8,14 +8,17 @@ import PieceRenderer from '@/components/game/PieceRenderer';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useSensor, useSensors, PointerSensor, TouchSensor, MeasuringStrategy } from '@dnd-kit/core';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Undo2, AlertCircle, Info, Settings2, ArrowLeft, ZoomIn, ZoomOut, Play, Minus, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { RefreshCw, Undo2, AlertCircle, Info, Settings2, ArrowLeft, ZoomIn, ZoomOut, Play, Minus, Plus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Globe, Copy, Share2 } from 'lucide-react';
 import KillEffect from '@/components/game/KillEffect';
 import { Project } from '@/types/Project';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useSocket } from '@/context/SocketContext';
+import { useSession } from 'next-auth/react';
+import EngineToggleCard from '@/components/editor/EngineToggleCard';
 
 // Draggable Piece Component
-function DraggablePiece({ piece, size, amIAtTurn }: { piece: Piece; size: number; amIAtTurn: boolean }) {
+const DraggablePiece = React.memo(({ piece, size, amIAtTurn }: { piece: Piece; size: number; amIAtTurn: boolean }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: piece.position,
         data: piece,
@@ -49,16 +52,20 @@ function DraggablePiece({ piece, size, amIAtTurn }: { piece: Piece; size: number
         console.error("Piece render error:", e);
         return null;
     }
-}
+}, (prev, next) => prev.piece.id === next.piece.id && prev.piece.position === next.piece.position && prev.amIAtTurn === next.amIAtTurn);
 
 // Low-dependency Square Component
-function BoardSquare({ pos, isWhite, piece, size, onSelect, isSelected, amIAtTurn, effects, onEffectComplete, hideCoordinates }: any) {
+function BoardSquare({ pos, isWhite, piece, size, onSelect, onContextMenu, isSelected, amIAtTurn, effects, onEffectComplete, hideCoordinates }: any) {
     const { setNodeRef, isOver } = useDroppable({ id: pos });
 
     return (
         <div
             ref={setNodeRef}
             onClick={() => onSelect(pos)}
+            onContextMenu={(e) => {
+                e.preventDefault();
+                onContextMenu(pos);
+            }}
             className={`aspect-square relative flex items-center justify-center box-border ${isOver ? 'ring-4 ring-inset ring-amber-400' : ''} ${isSelected ? 'after:content-[""] after:absolute after:inset-0 after:bg-amber-400/30 after:ring-4 after:ring-inset after:ring-amber-400' : ''}`}
             style={{
                 backgroundColor: isWhite ? '#ebecd0' : '#779556',
@@ -97,8 +104,10 @@ function BoardSquare({ pos, isWhite, piece, size, onSelect, isSelected, amIAtTur
 
 // Wrapper interface to adapt to project structure
 interface PlayBoardProps {
-    project: Project;
+    project: Project | null;
     projectId: string;
+    roomId?: string;
+    mode?: 'online';
 }
 
 // Helper to create piece instance
@@ -127,8 +136,13 @@ function createPieceFromData(id: string, type: string, color: string, position: 
     return newPiece;
 }
 
-export default function PlayBoard({ project, projectId }: PlayBoardProps) {
+export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoardProps) {
     const router = useRouter();
+    const socket = useSocket();
+    const { data: session } = useSession();
+
+    // Use local state for project to allow hydration from socket
+    const [activeProject, setActiveProject] = useState<Project | null>(project);
 
     // -- Initialize Game from Project Data first, then use local state --
     const [game, setGame] = useState<Game | null>(null);
@@ -143,23 +157,35 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
     const [zoom, setZoom] = useState(1);
     const [validationEnabled, setValidationEnabled] = useState(true);
 
+    // Online State
+    const [myColor, setMyColor] = useState<"white" | "black" | null>(null);
+    const [isOnline, setIsOnline] = useState(mode === 'online');
+    const [waitingForOpponent, setWaitingForOpponent] = useState(isOnline);
+    const [pendingHistory, setPendingHistory] = useState<string[] | null>(null);
+
     // History State
     const [moveHistory, setMoveHistory] = useState<string[]>([]);
-    // Stores snapshots of the board state (squares). Index 0 is initial state.
-    // Index i corresponds to state AFTER move i (where move 1 is at index 1 of moveHistory? No. Move 1 is moveHistory[0]).
-    // So snapshots[0] = Initial. snapshots[1] = After move 1.
     const [historySnapshots, setHistorySnapshots] = useState<Record<string, Piece | null>[]>([]);
-    const [viewIndex, setViewIndex] = useState(0); // 0 = Initial. max = snapshots.length - 1
+    const [viewIndex, setViewIndex] = useState(0);
+    const [copySuccess, setCopySuccess] = useState(false);
+
+    // Engine toggle state (local play only)
+    const [engineEnabled, setEngineEnabled] = useState(false);
+    const [engineColor, setEngineColor] = useState<'white' | 'black'>('black');
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
         useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
     );
 
+    useEffect(() => {
+        if (project) setActiveProject(project);
+    }, [project]);
+
     // Initial Setup Effect
     useEffect(() => {
         setIsMounted(true);
-        if (!project) return;
+        if (!activeProject) return;
         try {
             // Reconstruct the board from project data
             const {
@@ -168,12 +194,11 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
                 placedPieces = {},
                 activeSquares = [],
                 customPieces = []
-            } = project;
+            } = activeProject;
 
             // Create squares map for board constructor
             const initialSquares: Record<string, Piece | null> = {};
 
-            // Helper to convert coordinate "x,y" to algebraic square
             const toAlgebraic = (coord: string, bH: number): string => {
                 if (!coord.includes(',')) return coord;
                 const [x, y] = coord.split(',').map(Number);
@@ -182,21 +207,16 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
                 return `${file}${rank}`;
             };
 
-            const actualHeight = project.rows || 8;
+            const actualHeight = activeProject.rows || 8;
 
-            // Populate board
             Object.entries(placedPieces).forEach(([sq, pData]: [string, any]) => {
                 const normalizedSq = toAlgebraic(sq, actualHeight);
 
                 if (activeSquares.length > 0) {
                     const normalizedActive = activeSquares.map((a: string) => toAlgebraic(a, actualHeight));
-                    if (!normalizedActive.includes(normalizedSq)) {
-                        console.log(`[INIT] Skipping inactive square: ${sq} (normalized: ${normalizedSq})`);
-                        return;
-                    }
+                    if (!normalizedActive.includes(normalizedSq)) return;
                 }
 
-                console.log(`[INIT] Placing ${pData.color} ${pData.type} on ${sq} (normalized: ${normalizedSq})`);
                 const pieceId = `${normalizedSq}_${pData.color}_${pData.type}_${Date.now()}`;
                 const newPiece = createPieceFromData(pieceId, pData.type, pData.color, normalizedSq, customPieces);
 
@@ -205,20 +225,41 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
                 }
             });
 
+            // Normalize Square Logic
+            const normalizedSquareLogic: Record<string, any> = {};
+            if (activeProject.squareLogic) {
+                Object.entries(activeProject.squareLogic).forEach(([sqId, def]) => {
+                    const algSq = toAlgebraic(sqId, actualHeight);
+
+                    // Convert variables array to Record<string, any>
+                    const varRecord: Record<string, any> = {};
+                    if (def.variables && Array.isArray(def.variables)) {
+                        def.variables.forEach((v: any) => {
+                            varRecord[v.name || v.id] = v.value;
+                        });
+                    }
+
+                    normalizedSquareLogic[algSq] = {
+                        logic: def.logic || [],
+                        variables: varRecord,
+                        squareId: algSq
+                    };
+                });
+            }
+
             const newBoard = new BoardClass(
                 initialSquares,
                 activeSquares.length > 0 ? activeSquares.map((a: string) => toAlgebraic(a, actualHeight)) : undefined,
                 cols,
                 rows,
-                project.gridType || 'square'
+                activeProject.gridType || 'square',
+                normalizedSquareLogic
             );
 
             const newGame = new Game(newBoard);
             setGame(newGame);
             setBoard(newGame.getBoard());
 
-            // Initialize History
-            // Deep clone initial squares to avoid mutation issues
             const initialSnapshot = JSON.parse(JSON.stringify(newGame.getBoard().getSquares()));
             setHistorySnapshots([initialSnapshot]);
             setMoveHistory([]);
@@ -230,7 +271,141 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
             console.error(err);
             toast.error("Failed to load game");
         }
-    }, [project]);
+    }, [activeProject]);
+
+    // Socket Connection
+    useEffect(() => {
+        if (!socket || !isOnline || !roomId) return;
+
+        const register = () => {
+            let pId = localStorage.getItem("chess_player_id");
+            if (!pId && session?.user?.id) {
+                pId = session.user.id;
+                localStorage.setItem("chess_player_id", pId);
+            }
+            if (!pId) {
+                pId = Math.random().toString(36).substring(2, 15);
+                localStorage.setItem("chess_player_id", pId);
+            }
+            socket.emit("register_player", { playerId: pId });
+            socket.emit("join_room", { roomId, pId });
+        };
+
+        register();
+        socket.on("connect", register);
+
+        return () => {
+            socket.off("connect", register);
+        };
+    }, [socket, isOnline, roomId, session]);
+
+    // Pending History Processing
+    useEffect(() => {
+        if (!pendingHistory || !game) return;
+
+        console.log("Replaying history:", pendingHistory);
+
+        // Replay history
+        const newMoves: string[] = [];
+        const newSnapshots = [historySnapshots[0] || JSON.parse(JSON.stringify(game.getBoard().getSquares()))];
+
+        for (const moveStr of pendingHistory) {
+            const parts = moveStr.split(' -> ');
+            if (parts.length === 2) {
+                const from = parts[0] as Square;
+                const to = parts[1] as Square;
+                if (game.makeMove(from, to)) {
+                    newMoves.push(moveStr);
+                    newSnapshots.push(JSON.parse(JSON.stringify(game.getBoard().getSquares())));
+                }
+            }
+        }
+
+        setHistorySnapshots(newSnapshots);
+        setMoveHistory(newMoves);
+        setViewIndex(newSnapshots.length - 1);
+
+        const newBoard = game.getBoard().clone();
+        setBoard(newBoard);
+        setPendingHistory(null);
+
+    }, [pendingHistory, game]); // historySnapshots[0] assumed stable or handled
+
+    // Socket Event Handlers
+    useEffect(() => {
+        if (!socket || !isOnline) return;
+
+        const onRoomCreated = (data: any) => {
+            setMyColor(data.color);
+            setWaitingForOpponent(true);
+        };
+
+        const onJoinedRoom = (data: any) => {
+            setMyColor(data.color);
+            setWaitingForOpponent(true);
+            if (data.customData) {
+                setActiveProject(data.customData);
+            }
+        };
+
+        const onStartGame = (data: any) => {
+            setWaitingForOpponent(false);
+            toast.success("Game Started!");
+            if (data.customData) {
+                setActiveProject(data.customData);
+            }
+        };
+
+        const onRejoinGame = (data: any) => {
+            // Correctly handle spectator (color "")
+            const colorMap: any = { 'white': 'white', 'black': 'black' };
+            setMyColor(colorMap[data.color] || null);
+
+            if (data.status === 'playing') setWaitingForOpponent(false);
+            if (data.customData) {
+                setActiveProject(data.customData);
+            }
+            if (data.history && data.history.length > 0) {
+                setPendingHistory(data.history);
+            }
+        };
+
+        const onMove = (data: any) => {
+            if (!game || !board) return;
+            // Remote move
+            if (data.from && data.to) {
+                const success = game.makeMove(data.from, data.to);
+                if (success) {
+                    const moveDesc = data.san || `${data.from} -> ${data.to}`;
+                    addLog(`Opponent: ${moveDesc}`, 'move');
+                    const sound = new Audio('/sounds/move-self.mp3');
+                    sound.play().catch(() => { });
+
+                    const snapshot = JSON.parse(JSON.stringify(game.getBoard().getSquares()));
+                    setHistorySnapshots(prev => [...prev, snapshot]);
+                    setMoveHistory(prev => [...prev, moveDesc]);
+                    setViewIndex(prev => prev + 1);
+
+                    const newBoard = game.getBoard().clone();
+                    setBoard(newBoard);
+                }
+            }
+        };
+
+        socket.on("room_created", onRoomCreated);
+        socket.on("joined_room", onJoinedRoom);
+        socket.on("start_game", onStartGame);
+        socket.on("rejoin_game", onRejoinGame);
+        socket.on("move", onMove);
+
+        return () => {
+            socket.off("room_created", onRoomCreated);
+            socket.off("joined_room", onJoinedRoom);
+            socket.off("start_game", onStartGame);
+            socket.off("rejoin_game", onRejoinGame);
+            socket.off("move", onMove);
+        };
+    }, [socket, isOnline, game, board]);
 
 
     // -- Prototype Logic --
@@ -259,22 +434,18 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
     };
 
     // -- History Navigation --
-    // -- History Navigation --
     const jumpToSnapshot = (index: number) => {
-        if (!historySnapshots[index] || !project) return;
+        if (!historySnapshots[index] || !activeProject) return;
 
         const snapshotSquares = historySnapshots[index];
         const hydratedSquares: Record<string, Piece | null> = {};
 
-        // Hydrate pieces from plain JSON objects
         Object.entries(snapshotSquares).forEach(([sq, pData]: [string, any]) => {
             if (!pData) {
                 hydratedSquares[sq] = null;
                 return;
             }
-            // We need custom pieces config to re-hydrate properly
-            const piece = createPieceFromData(pData.id, pData.type, pData.color, pData.position, project.customPieces || []);
-            // Restore variables if they changed during game
+            const piece = createPieceFromData(pData.id, pData.type, pData.color, pData.position, activeProject.customPieces || []);
             if (pData.variables) {
                 (piece as any).variables = pData.variables;
             }
@@ -283,10 +454,10 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
 
         const restoredBoard = new BoardClass(
             hydratedSquares,
-            project.activeSquares?.length ? project.activeSquares : undefined,
-            project.cols || 8,
-            project.rows || 8,
-            project.gridType || 'square'
+            activeProject.activeSquares?.length ? activeProject.activeSquares : undefined,
+            activeProject.cols || 8,
+            activeProject.rows || 8,
+            activeProject.gridType || 'square'
         );
 
         const restoredGame = new Game(restoredBoard);
@@ -297,11 +468,14 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
 
     const handleDragStart = (e: DragStartEvent) => {
         if (!squares) return;
-        // Only allow dragging if we are at the LATEST state (Head of history)
         if (viewIndex !== historySnapshots.length - 1) return;
 
         const piece = squares[e.active.id as Square];
+        // Check turn and ownership
         if (piece && piece.color === currentTurn) {
+            // Online check
+            if (isOnline && myColor && piece.color !== myColor) return;
+
             setActivePiece(piece);
             setSelectedSquare(e.active.id as Square);
         }
@@ -328,11 +502,20 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
             setHistorySnapshots(prev => [...prev, snapshot]);
             setMoveHistory(prev => [...prev, moveDesc]);
             setViewIndex(prev => prev + 1);
+
+            // Emit to server if online
+            if (isOnline && socket) {
+                socket.emit("move", {
+                    from,
+                    to,
+                    san: moveDesc,
+                    fen: "CUSTOM_FEN_PLACEHOLDER" // Server uses this to update state, we don't have true FEN for custom yet, but sending dummy or custom serialization helps
+                });
+            }
         } else {
             console.warn(`[Engine] Move rejected or prevented: ${from} -> ${to}`);
         }
 
-        // Always sync the board state, even if move failed, because logic might have changed pieces
         const newBoard = game.getBoard().clone();
         setBoard(newBoard);
         return success;
@@ -352,6 +535,7 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
                     // Check if clicked another of own pieces
                     const pieceOnTarget = squares[pos];
                     if (pieceOnTarget && pieceOnTarget.color === currentTurn) {
+                        if (isOnline && myColor && pieceOnTarget.color !== myColor) return;
                         setSelectedSquare(pos);
                     } else {
                         setSelectedSquare(null);
@@ -361,8 +545,27 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
         } else {
             const piece = squares[pos];
             if (piece && piece.color === currentTurn) {
+                if (isOnline && myColor && piece.color !== myColor) return;
                 setSelectedSquare(pos);
             }
+        }
+    };
+
+    const handleRightClick = (pos: Square) => {
+        const piece = squares[pos];
+        if (!piece || !activeProject) return;
+
+        // Find if it's a custom piece
+        const customProto = activeProject.customPieces.find(cp => cp.name === piece.type || cp.id === piece.type);
+
+        if (customProto) {
+            toast(`Edit ${customProto.name}?`, {
+                action: {
+                    label: 'Edit',
+                    onClick: () => router.push(`/editor/${projectId}/piece-editor?pieceId=${customProto.id}`)
+                },
+                description: "Jump to Piece Editor to modify logic/pixels."
+            });
         }
     };
 
@@ -379,11 +582,9 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
 
     const handleUndo = () => {
         if (viewIndex <= 0) return;
+        if (isOnline) return; // Undo disabled in online mode for now
 
-        // Go back one step AND truncate history
         const newIndex = viewIndex - 1;
-
-        // Truncate
         const newSnapshots = historySnapshots.slice(0, newIndex + 1);
         const newMoves = moveHistory.slice(0, newIndex);
 
@@ -394,13 +595,55 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
     };
 
     const handleReset = () => {
+        if (isOnline) return;
         window.location.reload();
+    };
+
+    const handleCopyRoomCode = async () => {
+        if (!roomId) return;
+        try {
+            await navigator.clipboard.writeText(roomId);
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 2000);
+            toast.success('Room code copied!');
+        } catch (err) {
+            console.error('Failed to copy:', err);
+            toast.error('Failed to copy code');
+        }
+    };
+
+    const handleShareGame = async () => {
+        if (!roomId) return;
+        const link = `${window.location.origin}/editor/${projectId}/play?roomId=${roomId}&mode=online`;
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `Join my ${activeProject?.name} game!`,
+                    text: `Join my custom chess variant: ${activeProject?.name}`,
+                    url: link,
+                });
+            } catch (err) {
+                if ((err as Error).name !== 'AbortError') {
+                    console.error('Share failed:', err);
+                }
+            }
+        } else {
+            try {
+                await navigator.clipboard.writeText(link);
+                setCopySuccess(true);
+                setTimeout(() => setCopySuccess(false), 2000);
+                toast.success('Link copied!');
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                toast.error('Failed to copy link');
+            }
+        }
     };
 
 
     // -- Rendering --
 
-    if (!isMounted || !board || !game) {
+    if (!isMounted) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
@@ -413,6 +656,21 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
         );
     }
 
+    if (!activeProject && isOnline) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+                    <div className="text-stone-400 font-bold uppercase tracking-widest text-xs animate-pulse">
+                        Synchronizing Game Data...
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!activeProject || !board || !game) return null;
+
     const allFiles = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     const allRanks = ['8', '7', '6', '5', '4', '3', '2', '1'];
 
@@ -424,23 +682,64 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
     return (
         <div className="min-h-screen flex flex-col">
             {/* Simple Header */}
-            <div className="h-14 flex items-center px-4 border-b border-stone-800 z-50">
+            <div className="h-14 flex items-center justify-between px-4 border-b border-stone-800 z-50">
                 <button onClick={() => router.push(`/editor/${projectId}`)} className="text-stone-400 hover:text-white flex items-center gap-2">
                     <ArrowLeft size={18} /> Back
                 </button>
+                {isOnline && roomId && (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-stone-800 rounded-lg border border-stone-700">
+                        <Globe size={14} className="text-amber-500" />
+                        <span className="text-xs font-mono text-stone-400">Room: <span className="text-white font-bold">{roomId}</span></span>
+                    </div>
+                )}
             </div>
 
             <div className="flex-1 flex flex-col lg:flex-row gap-8 p-4 lg:p-8 max-w-7xl mx-auto w-full justify-center">
 
                 {/* Board Area */}
-                <div className="flex-1 flex flex-col items-center justify-center min-h-0">
+                <div className="flex-1 flex flex-col items-center justify-center min-h-0 relative">
+
+                    {waitingForOpponent && (
+                        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm rounded-xl">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mb-4"></div>
+                            <h3 className="text-xl font-bold text-white mb-2">Waiting for Opponent...</h3>
+                            <div className="bg-stone-900/80 rounded-2xl p-6 max-w-sm">
+                                <p className="text-stone-400 text-sm mb-3 text-center">Share the room code:</p>
+                                <div
+                                    onClick={handleCopyRoomCode}
+                                    className="bg-stone-800 rounded-xl p-3 mb-4 cursor-pointer hover:bg-stone-700 transition-colors"
+                                >
+                                    <p className="text-amber-500 font-mono font-bold text-2xl text-center select-all">
+                                        {roomId}
+                                    </p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleCopyRoomCode}
+                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-stone-800 hover:bg-stone-700 rounded-xl text-white font-bold transition-colors"
+                                    >
+                                        <Copy size={16} />
+                                        {copySuccess ? 'Copied!' : 'Copy Code'}
+                                    </button>
+                                    <button
+                                        onClick={handleShareGame}
+                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 rounded-xl text-white font-bold transition-colors"
+                                    >
+                                        <Share2 size={16} />
+                                        Share
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <DndContext
                         sensors={sensors}
                         onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
                         measuring={{
                             droppable: {
-                                strategy: MeasuringStrategy.Always,
+                                strategy: MeasuringStrategy.WhileDragging,
                             },
                         }}
                     >
@@ -467,6 +766,11 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
                                             return <div key={pos} className="aspect-square bg-transparent" />;
                                         }
 
+                                        // Determine if it's my turn to allow interaction
+                                        const piece = squares[pos];
+                                        const pieceOwner = piece?.color === currentTurn;
+                                        const canInteract = !waitingForOpponent && (!isOnline || (myColor && piece?.color === myColor && currentTurn === (myColor === 'white' ? 'white' : 'black')));
+
                                         return (
                                             <BoardSquare
                                                 key={pos}
@@ -475,8 +779,9 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
                                                 piece={squares[pos]}
                                                 size={70}
                                                 onSelect={handleSquareClick}
+                                                onContextMenu={handleRightClick}
                                                 isSelected={selectedSquare === pos}
-                                                amIAtTurn={squares[pos]?.color === currentTurn}
+                                                amIAtTurn={canInteract}
                                                 effects={activeEffects.filter(e => e.position === pos)}
                                                 onEffectComplete={handleEffectComplete}
                                             />
@@ -502,23 +807,42 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
                     </DndContext>
 
                     <div className="mt-6 flex items-center gap-4">
-                        <button
-                            onClick={handleUndo}
-                            className="flex items-center gap-2 px-4 py-2 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 rounded-xl font-bold transition-colors text-white"
-                        >
-                            <Undo2 size={18} /> Undo
-                        </button>
-                        <button
-                            onClick={handleReset}
-                            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-all"
-                        >
-                            <RefreshCw size={18} /> Reset
-                        </button>
+                        {!isOnline && (
+                            <>
+                                <button
+                                    onClick={handleUndo}
+                                    className="flex items-center gap-2 px-4 py-2 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 rounded-xl font-bold transition-colors text-white"
+                                >
+                                    <Undo2 size={18} /> Undo
+                                </button>
+                                <button
+                                    onClick={handleReset}
+                                    className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold transition-all"
+                                >
+                                    <RefreshCw size={18} /> Reset
+                                </button>
+                            </>
+                        )}
+                        {isOnline && (
+                            <div className="px-4 py-2 bg-stone-800 rounded-xl text-stone-400 font-bold text-sm">
+                                Playing as: <span className={myColor === 'white' ? 'text-white' : 'text-stone-500'}>{myColor}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Sidebar Area - Replaced with 'Play against yourself' style */}
+                {/* Sidebar Area */}
                 <div className="w-full lg:w-80 flex flex-col gap-6 h-full justify-center">
+
+                    {/* Engine Toggle Card - Local Play Only */}
+                    {!isOnline && (
+                        <EngineToggleCard
+                            enabled={engineEnabled}
+                            color={engineColor}
+                            onToggle={() => setEngineEnabled(!engineEnabled)}
+                            onColorChange={setEngineColor}
+                        />
+                    )}
 
                     {/* Controls Card */}
                     <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 shadow-xl border border-stone-200 dark:border-stone-800 space-y-6">
@@ -527,8 +851,12 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
                                 <Play size={20} fill="currentColor" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-black uppercase tracking-tight leading-none text-stone-900 dark:text-white">Play</h2>
-                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-1">Gegen dich selbst spielen</p>
+                                <h2 className="text-lg font-black uppercase tracking-tight leading-none text-stone-900 dark:text-white">
+                                    {isOnline ? 'Online Match' : 'Play'}
+                                </h2>
+                                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mt-1">
+                                    {isOnline ? 'Multiplayer' : 'Gegen dich selbst spielen'}
+                                </p>
                             </div>
                         </div>
 
@@ -560,20 +888,22 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
                             </div>
                         </div>
 
-                        <div className="border-t border-stone-200 dark:border-white/10 pt-4 flex gap-2">
-                            <button
-                                onClick={handleReset}
-                                className="flex-1 py-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all"
-                            >
-                                Reset
-                            </button>
-                            <button
-                                onClick={handleUndo}
-                                className="flex-1 py-3 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-xl font-bold text-xs uppercase tracking-wider transition-all"
-                            >
-                                Undo
-                            </button>
-                        </div>
+                        {!isOnline && (
+                            <div className="border-t border-stone-200 dark:border-white/10 pt-4 flex gap-2">
+                                <button
+                                    onClick={handleReset}
+                                    className="flex-1 py-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all"
+                                >
+                                    Reset
+                                </button>
+                                <button
+                                    onClick={handleUndo}
+                                    className="flex-1 py-3 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700 rounded-xl font-bold text-xs uppercase tracking-wider transition-all"
+                                >
+                                    Undo
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Move History */}
@@ -606,7 +936,6 @@ export default function PlayBoard({ project, projectId }: PlayBoardProps) {
                         </div>
                         <div className="flex-1 overflow-y-auto p-2 scrollbar-thin">
                             <div className="grid grid-cols-2 gap-2">
-                                {/* Initial State Item Removed as per request */}
                                 {moveHistory.map((move, i) => (
                                     <button
                                         key={i}

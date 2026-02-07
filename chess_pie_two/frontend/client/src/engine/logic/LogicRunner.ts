@@ -1,6 +1,7 @@
 import { BoardClass } from '../board';
 import { Piece } from '../piece';
 import { toCoords, toSquare } from '../utils';
+import { EffectFactory, EffectExecutor } from '../effects';
 
 interface LogicPiece extends Piece {
     logic: any[];
@@ -14,9 +15,21 @@ export class LogicRunner {
     private static pendingTriggers: Array<{ pieceId: string, type: string, context: any }> = [];
     private static isExecuting: boolean = false;
     private static MAX_ITERATIONS = 20;
+    
+    // Effect executor for enqueueing effects
+    private static effectExecutor: EffectExecutor | null = null;
+    
+    static setEffectExecutor(executor: EffectExecutor) {
+        this.effectExecutor = executor;
+    }
 
-    static execute(piece: LogicPiece, triggerType: string, context: any, board: BoardClass) {
+    static execute(piece: LogicPiece, triggerType: string, context: any, board: BoardClass, effectExecutor?: EffectExecutor) {
         if (!piece.logic || !Array.isArray(piece.logic)) return;
+        
+        // Use provided executor or stored one
+        if (effectExecutor) {
+            this.effectExecutor = effectExecutor;
+        }
 
         // Queue trigger if already executing
         if (this.isExecuting) {
@@ -123,9 +136,17 @@ export class LogicRunner {
             case 'on-environment':
                 const [col, row] = toCoords(piece.position);
                 const isWhiteSquare = (col + row) % 2 === 0;
+                
+                // Check square tag conditions
                 if (vals.condition === 'White Square') return isWhiteSquare;
                 if (vals.condition === 'Black Square') return !isWhiteSquare;
                 if (vals.condition === 'Is Attacked') return context.isAttacked || false;
+                
+                // Check square tags from context
+                if (context.squareTags && vals.tag) {
+                    return context.squareTags.includes(vals.tag);
+                }
+                
                 return true;
 
             case 'on-var':
@@ -174,12 +195,13 @@ export class LogicRunner {
                 const isAttackerTarget = vals.target === 'Attacker';
                 const targetPiece = isAttackerTarget ? context.attacker : piece;
                 
-                if (targetPiece) {
+                if (targetPiece && this.effectExecutor) {
                     const tPos = targetPiece.position;
-                    board.setPiece(tPos, null);
-                    board.triggerEffect('kill', tPos);
+                    
+                    // Enqueue remove effect instead of direct mutation
+                    this.effectExecutor.enqueue(EffectFactory.remove(tPos, 'on-move'));
 
-                    // If the piece itself or the active attacker is killed, stop the move
+                    // If the piece itself or the active attacker is killed, enqueue cancelMove
                     if (targetPiece.id === piece.id || (context.attacker && targetPiece.id === context.attacker.id)) {
                         context.movePrevented = true;
                     }
@@ -187,13 +209,14 @@ export class LogicRunner {
                 break;
 
             case 'transformation':
-                if (vals.target) {
-                    const newPiece = Piece.create(piece.id, vals.target, piece.color, piece.position);
-                    newPiece.hasMoved = piece.hasMoved;
-                    // Preserve variables? Maybe. Logic suggests transformation usually resets or inherits.
-                    // Let's inherit "charge", "cooldown" if they exist, or just full variables?
-                    // Currently piece.ts re-creates. Let's keep it simple: new piece replaces old.
-                    board.setPiece(piece.position, newPiece);
+                if (vals.target && this.effectExecutor) {
+                    // Enqueue transform effect instead of direct mutation
+                    this.effectExecutor.enqueue(EffectFactory.transform(
+                        piece.position,
+                        vals.target,
+                        'on-move',
+                        piece.color
+                    ));
                 }
                 break;
 
@@ -228,9 +251,25 @@ export class LogicRunner {
             // Removed 'charge' and 'mode' as per Step 1, but if they exist in old logic we ignore or support generic mod-var.
 
             case 'prevent':
+                // Enqueue cancelMove effect for pre-move phase
+                if (this.effectExecutor) {
+                    this.effectExecutor.enqueue(EffectFactory.cancelMove('pre-move'));
+                }
                 context.prevented = true;
                 context.movePrevented = true;
                 context.capturePrevented = true;
+                break;
+
+            case 'win':
+                // Enqueue win effect
+                if (this.effectExecutor) {
+                    this.effectExecutor.enqueue(EffectFactory.win(
+                        piece.color as 'white' | 'black',
+                        'post-move'
+                    ));
+                }
+                context.gameWon = true;
+                context.winner = piece.color;
                 break;
         }
 

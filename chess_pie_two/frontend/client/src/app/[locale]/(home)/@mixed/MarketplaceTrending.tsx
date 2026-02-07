@@ -29,18 +29,18 @@ export default function MarketplaceTrending() {
                 {topItems.map((item) => (
                     <div
                         key={item.id}
-                        className="group cursor-pointer p-3 rounded-xl hover:bg-white/60 dark:hover:bg-stone-800/60 transition-all"
+                        className="group cursor-pointer p-3 rounded-xl hover:bg-white/40 dark:hover:bg-stone-800/40 transition-colors"
                     >
                         <div className="flex gap-3 items-center">
                             {/* Preview Image */}
-                            <div className="w-12 h-12 bg-linear-to-br from-gray-100 to-gray-50 dark:from-stone-800 dark:to-stone-900 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                            <div className="w-12 h-12 bg-linear-to-br from-gray-100 to-gray-50 dark:from-stone-800 dark:to-stone-900 rounded-xl flex items-center justify-center shrink-0">
                                 <Image
                                     src={item.image}
                                     alt={item.name}
                                     width={36}
                                     height={36}
                                     unoptimized
-                                    className="opacity-70 group-hover:opacity-100 transition-opacity"
+                                    className="opacity-80"
                                     priority
                                 />
                             </div>
