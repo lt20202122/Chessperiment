@@ -35,6 +35,7 @@ export default async function LegalNotice({ params }: { params: Promise<{ locale
             <section className={styles.section}>
                 <h2 className={styles.heading}>{t("providerHeading")}</h2>
                 <p className={styles.text}>{t("providerName")}</p>
+                <p className={styles.text}>{t("providerLegalForm")}</p>
                 <p className={styles.text}>{t("providerAddress")}</p>
             </section>
 

@@ -29,6 +29,8 @@ import Toast from "./Toast";
 import "./Board.css";
 import { useSocket } from "@/context/SocketContext";
 import filter from "leo-profanity";
+filter.loadDictionary("en");
+filter.loadDictionary("de");
 import { Chess } from "chess.js";
 import { useStockfish } from "@/hooks/useStockfish";
 
