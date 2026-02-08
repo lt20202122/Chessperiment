@@ -79,7 +79,7 @@ export default function PageClient({ projectId }: PageClientProps) {
         }
 
         loadProject();
-    }, [user, authLoading, projectId, router]);
+    }, [user?.uid, authLoading, projectId, router]);
 
     const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const initialPieceId = searchParams?.get('pieceId');

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
+import { createContext, useContext, ReactNode, useEffect, useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { User as NextAuthUser } from 'next-auth';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -32,29 +32,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     // Determine the user object
-    let user: User | null = null;
+    const user = useMemo(() => {
+        let u: User | null = null;
+        if (session?.user) {
+            u = {
+                ...session.user,
+                uid: (session.user as any).id || (session.user as any).uid || session.user.email || '',
+            } as User;
+        } else if (firebaseUser) {
+            u = {
+                id: firebaseUser.uid,
+                uid: firebaseUser.uid,
+                name: firebaseUser.displayName || null,
+                email: firebaseUser.email || null,
+                image: firebaseUser.photoURL || null,
+            } as User;
+        }
+        return u;
+    }, [session?.user, firebaseUser]);
 
-    if (session?.user) {
-        // Prefer NextAuth session if available (e.g. Google Login)
-        user = {
-            ...session.user,
-            uid: (session.user as any).id || (session.user as any).uid || session.user.email || '',
-        } as User;
-    } else if (firebaseUser) {
-        // Fallback to Firebase Client Auth (e.g. Email/Password)
-        user = {
-            id: firebaseUser.uid,
-            uid: firebaseUser.uid,
-            name: firebaseUser.displayName || null,
-            email: firebaseUser.email || null,
-            image: firebaseUser.photoURL || null,
-        } as User;
-    }
-
-    const value: AuthContextType = {
+    const value: AuthContextType = useMemo(() => ({
         user,
         loading: status === 'loading' || firebaseLoading,
-    };
+    }), [user, status, firebaseLoading]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
