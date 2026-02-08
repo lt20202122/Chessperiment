@@ -159,10 +159,10 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         }
     }, [selectedSquare, project]);
 
-    const handleSave = useCallback(async (xml: string, currentVars: any[] = variables) => {
+    const handleSave = useCallback(async (xml: string, currentVars: any[] = variables, logicJson: any[] = []) => {
         if (!project || !selectedSquare || isSavingRef.current) return;
 
-        const currentData = { xml, variables: currentVars };
+        const currentData = { xml, variables: currentVars, logic: logicJson };
         if (JSON.stringify(currentData) === lastSavedDataRef.current) return;
 
         isSavingRef.current = true;
@@ -173,7 +173,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                 [selectedSquare]: {
                     projectId,
                     squareId: selectedSquare,
-                    logic: [], // Keep compatibility for now
+                    logic: logicJson, // Save the generated logic JSON
                     blocklyXml: xml,
                     variables: currentVars,
                     updatedAt: new Date(),
@@ -224,11 +224,59 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         }
     }, [project, projectId, selectedSquare, variables]);
 
+    const generateLogicJson = (workspace: Blockly.Workspace) => {
+        const topBlocks = workspace.getTopBlocks(false); // Only top-level blocks
+        const logic: any[] = [];
+
+        const processBlock = (block: Blockly.Block): any => {
+            const blockDef = {
+                id: block.type,
+                type: block.type === 'on-step' || block.type === 'on-proximity' ? 'trigger' : 'effect',
+                instanceId: block.id,
+                socketValues: {} as any,
+                childId: null as string | null
+            };
+
+            // Extract fields (dropdowns, inputs)
+            // We iterate over all inputs to find fields
+            block.inputList.forEach(input => {
+                input.fieldRow.forEach(field => {
+                    const name = field.name;
+                    if (name) {
+                        blockDef.socketValues[name] = field.getValue();
+                    }
+                });
+            });
+
+            // Handle next block
+            const nextBlock = block.getNextBlock();
+            if (nextBlock) {
+                blockDef.childId = nextBlock.id;
+                // We don't recursively add to the list here, the loop below handles filtering
+                // But the runner needs clarity on the structure.
+                // Actually, the runner iterates logic.filter() to find triggers.
+                // Then it looks up blocks by ID in the SAME logic array.
+                // So we need to FLATTEN the entire tree into the `logic` array.
+            }
+
+            return blockDef;
+        };
+
+        // We need to traverse ALL blocks to ensure every connected block is in the array
+        const allBlocks = workspace.getAllBlocks(false);
+        allBlocks.forEach(block => {
+            logic.push(processBlock(block));
+        });
+
+        return logic;
+    };
+
     const onWorkspaceChange = useCallback((workspace: Blockly.Workspace) => {
         workspaceRef.current = workspace;
         const xml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
+        const logicJson = generateLogicJson(workspace); // Generate JSON
         const timer = setTimeout(() => {
-            handleSave(xml, variables);
+            handleSave(xml, variables, logicJson);
         }, SAVE_DEBOUNCE_MS);
         return () => clearTimeout(timer);
     }, [handleSave, variables]);

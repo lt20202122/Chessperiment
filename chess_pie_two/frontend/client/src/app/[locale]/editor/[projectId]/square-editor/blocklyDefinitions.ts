@@ -181,8 +181,7 @@ if (typeof window !== 'undefined') {
             'trigger_blocks': {
                 'colourPrimary': '#FFD700',
                 'colourSecondary': '#FFEC8B',
-                'colourTertiary': '#CDBE70',
-                'colourText': '#000000' // Black text for high contrast
+                'colourTertiary': '#CDBE70'
             }
         },
         'componentStyles': {

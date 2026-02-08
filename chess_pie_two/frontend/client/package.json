@@ -57,7 +57,11 @@
   },
   "overrides": {
     "fast-xml-parser": "^5.3.4",
-    "nodemailer": "^7.0.13"
+    "nodemailer": "^7.0.13",
+    "react-blockly": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
