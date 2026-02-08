@@ -28,7 +28,6 @@ import {
 import Toast from "./Toast";
 import "./Board.css";
 import { useSocket } from "@/context/SocketContext";
-import { initProfanity, getFilter } from "@/lib/profanity";
 import { Chess } from "chess.js";
 import { useStockfish } from "@/hooks/useStockfish";
 
@@ -406,11 +405,6 @@ export default function Board({
   }, []);
 
   const { requestMove, isReady, error: stockfishError } = useStockfish(currentRoom, difficulty, onBestMove);
-
-  useEffect(() => {
-    // Load profanity dictionaries on client-side only
-    initProfanity();
-  }, []);
 
   useEffect(() => {
     if (stockfishError) {
@@ -1091,15 +1085,10 @@ export default function Board({
   }, []);
 
   const filterMessage = (message: string) => {
-    return getFilter().clean(message);
+    return message;
   };
 
   const handleSendMessage = (message: string) => {
-    if (getFilter().check(message)) {
-      setToastMessage("Oh no, you can't say that word because it's a bad word.");
-      setShowToast(true);
-      return;
-    }
     if (socket) {
       socket.emit("chat_message", { message });
     }
