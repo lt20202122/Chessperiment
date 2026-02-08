@@ -107,6 +107,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 
 
+import Script from "next/script";
+
 export default async function RootLayout({
   children,
   params,
@@ -162,6 +164,13 @@ export default async function RootLayout({
             </AuthProvider>
           </NextIntlClientProvider>
         </SessionWrapper>
+
+        {/* Cloudflare Web Analytics */}
+        <Script
+          defer
+          src='https://static.cloudflareinsights.com/beacon.min.js'
+          data-cf-beacon='{"token": "574a56c75b824d799f176b92a9277f4d"}'
+        />
       </body>
     </html>
   );
