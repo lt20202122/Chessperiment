@@ -9,6 +9,11 @@ import { createRequire } from "module";
 import * as os from "os";
 import { fileURLToPath } from "url";
 import { createClient } from "redis";
+import filter from "leo-profanity";
+
+// Load German and English profanity dictionaries
+filter.loadDictionary("en");
+filter.loadDictionary("de");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -141,11 +146,25 @@ async function initRedis() {
 await initRedis();
 
 const app = express();
-app.use(cors());
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://chessperiment.app",
+  "https://www.chessperiment.app",
+  "https://chessperiment.org",
+  "https://www.chessperiment.org",
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+  }),
+);
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
   },
 });
@@ -953,10 +972,18 @@ io.on("connection", (socket) => {
     if (roomId) {
       const game = await getGame(roomId);
       if (game) {
-        game.chatMessages.push({ message: data.message, playerId: playerId });
+        // Server-side sanitization
+        const sanitizedMessage = filter.clean(data.message);
+        game.chatMessages.push({
+          message: sanitizedMessage,
+          playerId: playerId,
+        });
         await saveGame(game);
+        io.to(roomId).emit("chat_message", {
+          message: sanitizedMessage,
+          playerId,
+        });
       }
-      io.to(roomId).emit("chat_message", { message: data.message, playerId });
     }
   });
 

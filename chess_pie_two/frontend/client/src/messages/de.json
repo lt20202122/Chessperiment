@@ -11,7 +11,6 @@
         "pieceEditor": "Figuren-Editor",
         "marketplace": "Marktplatz",
         "library": "Bibliothek",
-
         "about": "Über uns",
         "feedback": "Feedback",
         "editor": "Editor"
@@ -386,7 +385,6 @@
             "noRules": "Noch keine Bewegungsmuster definiert.",
             "createFirstRule": "Erstelle deine erste Regel",
             "invert": "Invertieren",
-
             "pieceName": "Figurenname",
             "totalPieces": "Figuren im Projekt ({count})",
             "addNew": "Neu hinzufügen",
@@ -402,7 +400,6 @@
             "eraser": "Radiergummi",
             "clearCanvas": "Leinwand leeren",
             "comingSoon": "Demnächst",
-
             "imageUploadLabel": "Visuelle Basis",
             "uploadPicture": "Bild hochladen",
             "comingEndOfJanuary": "Verfügbar Ende Januar 2026",
@@ -581,7 +578,6 @@
         "newGame": "Neues Spiel",
         "rematchRequested": "Angefragt"
     },
-
     "Announcements": {
         "title": "Neueste Nachrichten & Updates",
         "by": "Von",
@@ -595,7 +591,8 @@
     "LegalNotice": {
         "title": "Impressum - Kontakt & Info",
         "providerHeading": "Anbieter",
-        "providerName": "Lasse Thoroe - chessperiment",
+        "providerName": "Lasse Thoroe",
+        "providerLegalForm": "Rechtsform: Einzelunternehmen",
         "providerAddress": "Ahlerfeld 29, 38527 Meine, Deutschland",
         "contactHeading": "Kontakt",
         "emailLabel": "E-Mail:",
@@ -618,7 +615,7 @@
         "title": "Datenschutzerklärung (DSGVO)",
         "lastUpdated": "(Stand: Juli 2024)",
         "controllerHeading": "1. Verantwortlicher",
-        "controllerText": "Verantwortlich für die Datenverarbeitung auf dieser Website ist:\n\nLasse Thoroe - chessperiment\nAdresse: Ahlerfeld 29, 38527 Meine, Deutschland\nE-Mail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
+        "controllerText": "Verantwortlich für die Datenverarbeitung auf dieser Website ist:\n\nLasse Thoroe\nAdresse: Ahlerfeld 29, 38527 Meine, Deutschland\nE-Mail: contact.chessperiment@gmail.com\n\nWebsite: https://chessperiment.org",
         "generalHeading": "2. Allgemeine Hinweise",
         "generalText": "Der Schutz Ihrer Daten ist uns wichtig. Wir verarbeiten personenbezogene Daten nur, wenn es für die Bereitstellung unserer Dienste erforderlich ist und halten uns an die Datenschutz-Grundverordnung (DSGVO).",
         "collectionHeading": "3. Von uns erhobene Daten",
@@ -632,17 +629,19 @@
         "analyticsText": "Wir nutzen Vercel Analytics und Speed Insights, um die Leistung unserer Website zu messen. Diese Dienste sind datenschutzfreundlich, verwenden keine Cookies und erheben keine personenbezogenen Daten. Es werden anonyme Nutzungsstatistiken wie besuchte Seiten und Ladezeiten erfasst. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO.",
         "hostingHeading": "5. Datenbank und Hosting",
         "hostingText": "Wir verwenden Google Firebase (Firestore) als Datenbank. Ihre Daten (Nutzerkonten, Spielverläufe, erstellte Inhalte) werden dort gespeichert. Daten können in den USA verarbeitet werden. Google ist nach dem EU-US Data Privacy Framework zertifiziert. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
-        "cookiesHeading": "6. Cookies",
+        "botidHeading": "6. Schutz vor Bots (BotID)",
+        "botidText": "Um unsere Website vor automatisierten Angriffen und Missbrauch zu schützen, setzen wir BotID ein. Dieser Dienst analysiert das Nutzerverhalten, um zwischen Menschen und Bots zu unterscheiden. Dabei können technische Daten wie IP-Adressen verarbeitet werden. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Sicherheit der Plattform).",
+        "cookiesHeading": "7. Cookies",
         "cookiesText": "Wir verwenden keine Cookies für Tracking oder Werbung. Einzig ein technisch notwendiger Sitzungs-Cookie (JWT) wird beim Login gesetzt, um Ihre Sitzung aufrechtzuerhalten. Dieser Cookie ist für die Funktion der Website unerlässlich. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.",
-        "retentionHeading": "7. Speicherdauer",
+        "retentionHeading": "8. Speicherdauer",
         "retentionText": "Wir speichern Ihre Daten, solange Sie ein Konto bei uns haben. Spielverläufe und erstellte Inhalte werden länger gespeichert, um die Plattformintegrität zu wahren. Sie können die Löschung Ihres Kontos und der damit verbundenen personenbezogenen Daten jederzeit beantragen.",
-        "minorsHeading": "8. Minderjährige",
+        "minorsHeading": "9. Minderjährige",
         "minorsText": "Personen unter 16 Jahren sollten unsere Dienste nur mit Zustimmung der Eltern nutzen.",
-        "rightsHeading": "9. Ihre Rechte",
+        "rightsHeading": "10. Ihre Rechte",
         "rightsText": "Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung und Datenübertragbarkeit. Bitte kontaktieren Sie uns unter der oben angegebenen E-Mail-Adresse.",
-        "complaintHeading": "10. Beschwerderecht",
+        "complaintHeading": "11. Beschwerderecht",
         "complaintText": "Sie haben das Recht, eine Beschwerde bei einer Datenschutzaufsichtsbehörde einzureichen.",
-        "changesHeading": "11. Änderungen",
+        "changesHeading": "12. Änderungen",
         "changesText": "Wir können diese Datenschutzerklärung anpassen. Es gilt die jeweils aktuelle Fassung.",
         "madeWith": "Erstellt mit freundlicher Unterstützung von",
         "dieterLinkText": "Dieter macht den Datenschutz"
@@ -653,7 +652,6 @@
             "description": "Erfahre mehr über chessperiment, unsere Mission, Schachkreativität neu zu definieren, und die einzigartigen Funktionen."
         },
         "Feedback": {
-
             "title": "Feedback",
             "description": "Teilen Sie Ihr Feedback, melden Sie Fehler oder schlagen Sie neue Funktionen für chessperiment vor"
         },
@@ -752,45 +750,44 @@
             "rematchRequested": "Angefragt"
         }
     },
-
     "PieceEditorFAQ": {
-      "title": "Figuren-Editor FAQ | Visuelle Skripterstellung Hilfe | chessperiment",
-      "description": "Lerne, wie du den Figuren-Editor, visuelle Logikblöcke und Bewegungsregeln verwendest. Detaillierte technische Anleitung zum Erstellen eigener Schachfiguren.",
-      "h1": "Figuren-Editor Technische FAQ",
-      "sections": {
-        "general": {
-          "title": "Allgemein",
-          "q1": "Was ist der Figuren-Editor?",
-          "a1": "Der Figuren-Editor ermöglicht es dir, eigene Schachfiguren mit einzigartigen Bewegungsmustern und Logik zu erstellen.",
-          "q2": "Wie speichere ich meine Figur?",
-          "a2": "Klicke auf den Button „Figur speichern“ in der Seitenleiste. Deine Figur wird im aktuellen Projekt gespeichert."
-        },
-        "moveEditor": {
-          "title": "Bewegungs-Editor",
-          "q1": "Wie definiere ich Bewegungen?",
-          "a1": "Nutze das visuelle Gitter, um Felder anzuklicken, auf die sich die Figur relativ zu ihrer Position bewegen kann.",
-          "q2": "Was sind „springende“ Züge?",
-          "a2": "Springende Züge erlauben es der Figur, über andere Figuren zu springen, wie ein Springer."
-        },
-        "logicEditor": {
-          "title": "Logik-Editor",
-          "q1": "Was ist der Logik-Editor?",
-          "a1": "Es ist eine visuelle Skripting-Umgebung, in der du komplexe Verhaltensweisen mit Blöcken definieren kannst.",
-          "q2": "Wie funktionieren Auslöser?",
-          "a2": "Auslöser starten eine Logikkette, wenn ein bestimmtes Ereignis eintritt, wie „onMove“ (bei Zug) oder „onCapture“ (bei Schlagen).",
-          "q3": "Kann ich Variablen verwenden?",
-          "a3": "Ja, du kannst Variablen definieren und ändern, um Figuren mit Zustand zu erstellen.",
-          "q4": "Welche Effekte gibt es?",
-          "a4": "Du kannst Figuren bewegen, schlagen, neue erstellen oder Spielzustandsvariablen ändern."
-        },
-        "troubleshooting": {
-          "title": "Fehlerbehebung",
-          "q1": "Warum bewegt sich meine Figur nicht?",
-          "a1": "Prüfe, ob du gültige Züge im Bewegungs- oder Logik-Editor definiert hast.",
-          "q2": "Meine Logik funktioniert nicht.",
-          "a2": "Stelle sicher, dass deine Blöcke richtig verbunden sind und die Auslöser-Bedingung erfüllt ist."
+        "title": "Figuren-Editor FAQ | Visuelle Skripterstellung Hilfe | chessperiment",
+        "description": "Lerne, wie du den Figuren-Editor, visuelle Logikblöcke und Bewegungsregeln verwendest. Detaillierte technische Anleitung zum Erstellen eigener Schachfiguren.",
+        "h1": "Figuren-Editor Technische FAQ",
+        "sections": {
+            "general": {
+                "title": "Allgemein",
+                "q1": "Was ist der Figuren-Editor?",
+                "a1": "Der Figuren-Editor ermöglicht es dir, eigene Schachfiguren mit einzigartigen Bewegungsmustern und Logik zu erstellen.",
+                "q2": "Wie speichere ich meine Figur?",
+                "a2": "Klicke auf den Button „Figur speichern“ in der Seitenleiste. Deine Figur wird im aktuellen Projekt gespeichert."
+            },
+            "moveEditor": {
+                "title": "Bewegungs-Editor",
+                "q1": "Wie definiere ich Bewegungen?",
+                "a1": "Nutze das visuelle Gitter, um Felder anzuklicken, auf die sich die Figur relativ zu ihrer Position bewegen kann.",
+                "q2": "Was sind „springende“ Züge?",
+                "a2": "Springende Züge erlauben es der Figur, über andere Figuren zu springen, wie ein Springer."
+            },
+            "logicEditor": {
+                "title": "Logik-Editor",
+                "q1": "Was ist der Logik-Editor?",
+                "a1": "Es ist eine visuelle Skripting-Umgebung, in der du komplexe Verhaltensweisen mit Blöcken definieren kannst.",
+                "q2": "Wie funktionieren Auslöser?",
+                "a2": "Auslöser starten eine Logikkette, wenn ein bestimmtes Ereignis eintritt, wie „onMove“ (bei Zug) oder „onCapture“ (bei Schlagen).",
+                "q3": "Kann ich Variablen verwenden?",
+                "a3": "Ja, du kannst Variablen definieren und ändern, um Figuren mit Zustand zu erstellen.",
+                "q4": "Welche Effekte gibt es?",
+                "a4": "Du kannst Figuren bewegen, schlagen, neue erstellen oder Spielzustandsvariablen ändern."
+            },
+            "troubleshooting": {
+                "title": "Fehlerbehebung",
+                "q1": "Warum bewegt sich meine Figur nicht?",
+                "a1": "Prüfe, ob du gültige Züge im Bewegungs- oder Logik-Editor definiert hast.",
+                "q2": "Meine Logik funktioniert nicht.",
+                "a2": "Stelle sicher, dass deine Blöcke richtig verbunden sind und die Auslöser-Bedingung erfüllt ist."
+            }
         }
-      }
     },
     "NotFound": {
         "title": "404 - Figur nicht gefunden",
@@ -900,4 +897,5 @@
         "emailPlaceholder": "Ihre E-Mail (optional)",
         "messageLabel": "Nachricht",
         "backToHome": "Zurück zur Startseite"
-    }}
+    }
+}

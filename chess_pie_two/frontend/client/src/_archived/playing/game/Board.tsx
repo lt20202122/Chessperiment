@@ -24,7 +24,6 @@ import {
 import Toast from "./Toast";
 import "./Board.css";
 import { useSocket } from "@/context/SocketContext";
-import filter from "leo-profanity";
 import { Chess } from "chess.js";
 import { useStockfish } from "@/hooks/useStockfish";
 
@@ -959,15 +958,10 @@ export default function Board({
   }, []);
 
   const filterMessage = (message: string) => {
-    return filter.clean(message);
+    return message;
   };
 
   const handleSendMessage = (message: string) => {
-    if (filter.check(message)) {
-      setToastMessage("Oh no, you can't say that word because it's a bad word.");
-      setShowToast(true);
-      return;
-    }
     if (socket) {
       socket.emit("chat_message", { message });
     }
