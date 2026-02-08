@@ -1,76 +1,30 @@
-'use client';
+"use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    DndContext,
-    useSensor,
-    DragEndEvent,
-    DragOverEvent,
-    DragStartEvent,
-    DragOverlay,
-    useSensors,
-    PointerSensor,
-    useDraggable,
-    useDroppable
-} from '@dnd-kit/core';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/navigation';
-import { ChevronLeft, Save, Grid3x3, Trash2, X } from 'lucide-react';
-import { getProjectAction, saveProjectAction } from '@/app/actions/editor';
+import { Save, ChevronLeft, X } from 'lucide-react';
 import { Project } from '@/types/Project';
 import { SquareLogicDefinition } from '@/types/firestore';
+import { getProjectAction, saveProjectAction } from '@/app/actions/editor';
+import { BlocklyWorkspace } from 'react-blockly';
+import * as Blockly from 'blockly';
+import './blocklyDefinitions'; // Registration happens here
 
-// Constants
+const SAVE_DEBOUNCE_MS = 2000;
 const BLOCK_HEIGHT = 48;
-const DEFAULT_WIDTH = 220;
-const VARIABLE_WIDTH = 160;
-const CONNECTOR_X = 24;
-const CONNECTOR_Y = BLOCK_HEIGHT + 4;
-const SNAP_X_TOLERANCE = 40;
-const SNAP_Y_TOLERANCE = 40;
-const SAVE_DEBOUNCE_MS = 3500;
-
-// Types
-type BlockCategory = 'trigger' | 'effects' | 'variables';
 
 interface BlockTemplate {
     id: string;
-    type: 'trigger' | 'effect' | 'terminal' | 'variable';
+    type: 'trigger' | 'effect' | 'terminal';
     label: string;
-    category: BlockCategory;
+    category: 'trigger' | 'effects';
     color: string;
     description: string;
-    sockets?: SocketConfig[];
-    width?: number;
+    sockets: any[];
+    width: number;
 }
 
-interface SocketConfig {
-    id: string;
-    type: 'number' | 'text' | 'select';
-    label?: string;
-    options?: string[];
-    acceptsVariable?: boolean;
-    variableOnly?: boolean;
-}
-
-interface BlockInstance extends BlockTemplate {
-    instanceId: string;
-    position: { x: number; y: number };
-    socketValues: Record<string, any>;
-    parentId?: string;
-    childId?: string;
-}
-
-interface GhostState {
-    x: number;
-    y: number;
-    parentId: string;
-    template: BlockTemplate;
-}
-
-// Block Templates for Squares
 const BLOCK_TEMPLATES: BlockTemplate[] = [
     {
         id: 'on-step',
@@ -93,9 +47,9 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         color: '#FFD700',
         description: 'Fires when a piece is near this square.',
         sockets: [
-            { id: 'distance', type: 'number', label: 'Distance', acceptsVariable: true }
+            { id: 'distance', type: 'number', label: 'Dist', defaultValue: 1 }
         ],
-        width: 240
+        width: 320
     },
     {
         id: 'teleport',
@@ -105,9 +59,29 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         color: '#4169E1',
         description: 'Teleport the piece to another square.',
         sockets: [
-            { id: 'targetSquare', type: 'text', label: 'to', acceptsVariable: true }
+            { id: 'targetSquare', type: 'text', label: 'To', defaultValue: 'a1' }
         ],
         width: 320
+    },
+    {
+        id: 'disable-square',
+        type: 'effect',
+        label: 'disableSquare',
+        category: 'effects',
+        color: '#FF4500',
+        description: 'Make this square inactive.',
+        sockets: [],
+        width: 280
+    },
+    {
+        id: 'enable-square',
+        type: 'effect',
+        label: 'enableSquare',
+        category: 'effects',
+        color: '#32CD32',
+        description: 'Make this square active.',
+        sockets: [],
+        width: 280
     },
     {
         id: 'kill',
@@ -117,88 +91,38 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         color: '#9370DB',
         description: 'Remove the piece from the board.',
         sockets: [],
-        width: 140
+        width: 240
     },
     {
         id: 'win',
         type: 'terminal',
         label: 'win',
         category: 'effects',
-        color: '#9370DB', // MediumPurple
+        color: '#9370DB',
         description: 'Declare a win for a specific side.',
         sockets: [
-            { id: 'side', type: 'select', label: 'Who', options: ['Trigger Side', 'White', 'Black'] }
+            { id: 'side', type: 'select', label: 'Side', options: ['Trigger Side', 'White', 'Black'] }
         ],
-        width: 200
-    },
-    {
-        id: 'disable-square',
-        type: 'effect',
-        label: 'disableSquare',
-        category: 'effects',
-        color: '#FF4500',
-        description: 'Make this square inactive.',
-        width: 200
-    },
-    {
-        id: 'enable-square',
-        type: 'effect',
-        label: 'enableSquare',
-        category: 'effects',
-        color: '#32CD32',
-        description: 'Make this square active.',
-        width: 200
-    },
-    {
-        id: 'modify-var',
-        type: 'effect',
-        label: 'modVar',
-        category: 'effects',
-        color: '#4169E1',
-        description: 'Modify a local square variable.',
-        sockets: [
-            { id: 'varName', type: 'text', acceptsVariable: true, variableOnly: true },
-            { id: 'op', type: 'select', options: ['+=', '-=', '='] },
-            { id: 'value', type: 'number', acceptsVariable: true }
-        ],
-        width: 440
+        width: 320
     }
 ];
 
-function getConnectorPosition(block: BlockInstance) {
-    return {
-        x: block.position.x + CONNECTOR_X,
-        y: block.position.y + CONNECTOR_Y
-    };
-}
-
 export default function SquareLogicPageClient({ projectId }: { projectId: string }) {
-    const t = useTranslations('EditorSidebar');
     const router = useRouter();
     const [project, setProject] = useState<Project | null>(null);
     const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
-
-    const [activeCategory, setActiveCategory] = useState<BlockCategory>('trigger');
-    const [canvasBlocks, setCanvasBlocks] = useState<BlockInstance[]>([]);
+    const [activeCategory, setActiveCategory] = useState<string>('trigger');
     const [variables, setVariables] = useState<{ id: string, name: string, value: any }[]>([]);
-    const [activeDragId, setActiveDragId] = useState<string | null>(null);
-    const [activeDragTemplate, setActiveDragTemplate] = useState<BlockTemplate | null>(null);
-    const [ghost, setGhost] = useState<GhostState | null>(null);
-    const [isCreatingVar, setIsCreatingVar] = useState(false);
-    const [newVarName, setNewVarName] = useState('');
-    const [infoPanelBlock, setInfoPanelBlock] = useState<BlockInstance | null>(null);
-
-    const activeTemplateRef = useRef<BlockTemplate | null>(null);
-    const draggedDescendantsRef = useRef<Set<string>>(new Set());
-    const [mounted, setMounted] = useState(false);
-
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const isSavingRef = useRef(false);
     const lastSavedDataRef = useRef<string>('');
-    const dragConnectorOffsetXRef = useRef<number>(CONNECTOR_X);
-
     const [isSelecting, setIsSelecting] = useState(false);
+    const [initialXml, setInitialXml] = useState<string>('');
+    const [mounted, setMounted] = useState(false);
+    const [isCreatingVar, setIsCreatingVar] = useState(false);
+    const [newVarName, setNewVarName] = useState('');
+    const workspaceRef = useRef<Blockly.Workspace | null>(null);
 
     useEffect(() => {
         setMounted(true);
@@ -219,26 +143,26 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
 
     useEffect(() => {
         if (!project || !selectedSquare) {
-            setCanvasBlocks([]);
+            setInitialXml('');
             setVariables([]);
             return;
         }
         const logicDef = project.squareLogic?.[selectedSquare];
         if (logicDef) {
-            setCanvasBlocks(logicDef.logic || []);
+            setInitialXml((logicDef as any).blocklyXml || '');
             setVariables((logicDef as any).variables || []);
-            lastSavedDataRef.current = JSON.stringify({ logic: logicDef.logic, variables: (logicDef as any).variables || [] });
+            lastSavedDataRef.current = JSON.stringify({ xml: (logicDef as any).blocklyXml || '', variables: (logicDef as any).variables || [] });
         } else {
-            setCanvasBlocks([]);
+            setInitialXml('');
             setVariables([]);
-            lastSavedDataRef.current = JSON.stringify({ logic: [], variables: [] });
+            lastSavedDataRef.current = JSON.stringify({ xml: '', variables: [] });
         }
     }, [selectedSquare, project]);
 
-    const handleSave = useCallback(async () => {
+    const handleSave = useCallback(async (xml: string, currentVars: any[] = variables) => {
         if (!project || !selectedSquare || isSavingRef.current) return;
 
-        const currentData = { logic: canvasBlocks, variables };
+        const currentData = { xml, variables: currentVars };
         if (JSON.stringify(currentData) === lastSavedDataRef.current) return;
 
         isSavingRef.current = true;
@@ -249,8 +173,9 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                 [selectedSquare]: {
                     projectId,
                     squareId: selectedSquare,
-                    logic: canvasBlocks,
-                    variables,
+                    logic: [], // Keep compatibility for now
+                    blocklyXml: xml,
+                    variables: currentVars,
                     updatedAt: new Date(),
                     userId: project.userId,
                     createdAt: project.squareLogic?.[selectedSquare]?.createdAt || new Date()
@@ -265,12 +190,8 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
 
             const serializeProjectForAction = (p: Project): any => {
                 const serialized = { ...p };
-
-                // Convert top-level dates
                 if (serialized.createdAt instanceof Date) serialized.createdAt = serialized.createdAt.toISOString() as any;
                 if (serialized.updatedAt instanceof Date) serialized.updatedAt = serialized.updatedAt.toISOString() as any;
-
-                // Convert custom pieces dates
                 if (serialized.customPieces) {
                     serialized.customPieces = serialized.customPieces.map(pc => ({
                         ...pc,
@@ -278,8 +199,6 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                         updatedAt: pc.updatedAt instanceof Date ? pc.updatedAt.toISOString() : pc.updatedAt,
                     })) as any;
                 }
-
-                // Convert square logic dates
                 if (serialized.squareLogic) {
                     const newSquareLogic: any = {};
                     for (const [key, val] of Object.entries(serialized.squareLogic)) {
@@ -291,7 +210,6 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                     }
                     serialized.squareLogic = newSquareLogic;
                 }
-
                 return serialized;
             };
 
@@ -304,600 +222,314 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
             setIsSaving(false);
             isSavingRef.current = false;
         }
-    }, [canvasBlocks, variables, project, selectedSquare, projectId]);
+    }, [project, projectId, selectedSquare, variables]);
 
-    useEffect(() => {
+    const onWorkspaceChange = useCallback((workspace: Blockly.Workspace) => {
+        workspaceRef.current = workspace;
+        const xml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
         const timer = setTimeout(() => {
-            handleSave();
+            handleSave(xml, variables);
         }, SAVE_DEBOUNCE_MS);
         return () => clearTimeout(timer);
-    }, [canvasBlocks, variables, handleSave]);
+    }, [handleSave, variables]);
 
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 10 } })
-    );
-
-    const handleDragStart = (event: DragStartEvent) => {
-        const { active } = event;
-        setActiveDragId(active.id as string);
-        draggedDescendantsRef.current.clear();
-
-        // Measure actual DOM offset from container to SVG block
-        const draggableElement = document.querySelector(`[data-id="${active.id}"]`);
-        const svg = draggableElement?.querySelector('svg');
-
-        if (svg && draggableElement) {
-            const svgRect = svg.getBoundingClientRect();
-            const containerRect = draggableElement.getBoundingClientRect();
-            const blockOffsetInContainer = svgRect.left - containerRect.left;
-            dragConnectorOffsetXRef.current = blockOffsetInContainer + CONNECTOR_X;
-        } else {
-            dragConnectorOffsetXRef.current = CONNECTOR_X;
-        }
-
-        let template = BLOCK_TEMPLATES.find(t => t.id === active.id);
-        if (!template) {
-            const variable = variables.find(v => v.id === active.id);
-            if (variable) {
-                template = {
-                    id: variable.id,
-                    type: 'variable',
-                    label: variable.name,
-                    category: 'variables',
-                    color: '#FF8C00',
-                    description: `Custom variable: ${variable.name}`
-                };
-            }
-        }
-
-        if (!template) {
-            const instance = canvasBlocks.find(b => b.instanceId === active.id);
-            if (instance) {
-                setActiveDragTemplate(instance);
-                activeTemplateRef.current = instance;
-                const findDescendants = (id: string) => {
-                    const child = canvasBlocks.find(b => b.parentId === id);
-                    if (child) {
-                        draggedDescendantsRef.current.add(child.instanceId);
-                        findDescendants(child.instanceId);
-                    }
-                };
-                findDescendants(instance.instanceId);
-            }
-        }
-
-        if (template) {
-            setActiveDragTemplate(template);
-            activeTemplateRef.current = template;
-        }
-    };
-
-    // Helper functions for connector positions
-    const getBottomConnector = (block: BlockInstance) => ({
-        x: block.position.x + CONNECTOR_X,
-        y: block.position.y + CONNECTOR_Y
-    });
-
-    // Snap search helper - takes canvas-relative coordinates
-    const findBestSnap = (canvasX: number, canvasY: number, template: BlockTemplate, excludeIds: Set<string> = new Set()): GhostState | null => {
-        // Child's connector position in canvas space
-        const childConnectorX = canvasX + dragConnectorOffsetXRef.current;
-
-        for (const block of canvasBlocks) {
-            // Skip invalid snap targets
-            if (excludeIds.has(block.instanceId)) continue;
-            if (block.type === 'variable' || block.childId || block.type === 'terminal') continue;
-            if (template.type === 'trigger' || template.type === 'variable') continue;
-
-            // Parent's bottom connector position
-            const parentBottom = getBottomConnector(block);
-            const dx = Math.abs(childConnectorX - parentBottom.x);
-            const dy = Math.abs(canvasY - parentBottom.y);
-
-            if (dx < SNAP_X_TOLERANCE && dy < SNAP_Y_TOLERANCE) {
-                // Calculate block position that aligns child connector with parent connector
-                return {
-                    x: block.position.x + CONNECTOR_X - dragConnectorOffsetXRef.current,
-                    y: block.position.y + BLOCK_HEIGHT,
-                    parentId: block.instanceId,
-                    template
-                };
-            }
-        }
-        return null;
-    };
-
-    // Throttle ref to limit drag over to 60fps
-    const dragOverThrottleRef = useRef<number>(0);
-
-    const handleDragOver = (event: DragOverEvent) => {
-        const now = Date.now();
-        if (now - dragOverThrottleRef.current < 16) return; // ~60fps
-        dragOverThrottleRef.current = now;
-
-        const { active, over } = event;
-        const currentTemplate = activeDragTemplate || activeTemplateRef.current;
-        if (!currentTemplate || !over || over.id !== 'canvas') {
-            setGhost(null);
-            return;
-        }
-
-        const canvasElement = document.getElementById('canvas');
-        if (!canvasElement) return;
-
-        const canvasRect = canvasElement.getBoundingClientRect();
-        const rect = active.rect.current.translated ?? active.rect.current.initial;
-        if (!rect) return;
-
-        // Normalize to canvas-relative coordinates
-        const canvasX = rect.left - canvasRect.left + canvasElement.scrollLeft;
-        const canvasY = rect.top - canvasRect.top + canvasElement.scrollTop;
-
-        // Build exclusion set for existing block drags
-        const excludeIds = new Set<string>([active.id as string, ...Array.from(draggedDescendantsRef.current)]);
-
-        // Use same snapping logic as final drop
-        const snap = findBestSnap(canvasX, canvasY, currentTemplate, excludeIds);
-        if (snap) {
-            setGhost(snap);
-        } else {
-            setGhost({
-                x: canvasX,
-                y: canvasY,
-                parentId: '',
-                template: currentTemplate
-            });
-        }
-    };
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over, delta } = event;
-        const currentTemplate = activeDragTemplate || activeTemplateRef.current;
-
-        setActiveDragId(null);
-        setActiveDragTemplate(null);
-        activeTemplateRef.current = null;
-        setGhost(null);
-
-        if (!currentTemplate) return;
-
-        // Variable socket assignment logic
-        if (over && over.data.current && over.data.current.type === 'socket' && currentTemplate.type === 'variable') {
-            const { blockId, socketId } = over.data.current;
-            setCanvasBlocks(prev => prev.map(b => {
-                if (b.instanceId === blockId) {
-                    return { ...b, socketValues: { ...b.socketValues, [socketId]: { type: 'variable', id: currentTemplate.id, name: currentTemplate.label } } };
-                }
-                return b;
-            }));
-            return;
-        }
-
-        const canvasElement = document.getElementById('canvas');
-        if (!canvasElement) return;
-
-        const canvasRect = canvasElement.getBoundingClientRect();
-
-        // Use initial rect + delta for position calculation
-        const initialRect = active.rect.current.initial;
-        if (!initialRect) return;
-
-        const currentLeft = initialRect.left + delta.x;
-        const currentTop = initialRect.top + delta.y;
-
-        // Normalize to canvas-relative coordinates
-        const canvasX = currentLeft - canvasRect.left + canvasElement.scrollLeft;
-        const canvasY = currentTop - canvasRect.top + canvasElement.scrollTop;
-
-        const isExisting = canvasBlocks.some(b => b.instanceId === active.id);
-
-        // Build exclusion set for finding snap targets
-        const excludeIds = new Set<string>([active.id as string, ...Array.from(draggedDescendantsRef.current)]);
-
-        // Use the same findBestSnap logic as ghost preview
-        const bestSnap = findBestSnap(canvasX, canvasY, currentTemplate, excludeIds);
-
-        if (bestSnap) {
-            // SNAP: Align child connector to parent connector
-            if (isExisting) {
-                // Moving existing block with its descendants
-                setCanvasBlocks(prev => {
-                    const oldBlock = prev.find(b => b.instanceId === active.id);
-                    if (!oldBlock) return prev;
-
-                    // Calculate delta for moving entire stack
-                    const dx = bestSnap.x - oldBlock.position.x;
-                    const dy = bestSnap.y - oldBlock.position.y;
-
-                    // Remove old parent-child link
-                    let updated = prev.map(b => b.childId === active.id ? { ...b, childId: undefined } : b);
-
-                    // Add new parent-child link
-                    updated = updated.map(b => b.instanceId === bestSnap.parentId ? { ...b, childId: active.id as string } : b);
-
-                    // Move the dragged block and all its descendants
-                    return updated.map(b => {
-                        if (b.instanceId === active.id) {
-                            return { ...b, position: { x: bestSnap.x, y: bestSnap.y }, parentId: bestSnap.parentId };
-                        }
-                        if (draggedDescendantsRef.current.has(b.instanceId)) {
-                            return { ...b, position: { x: b.position.x + dx, y: b.position.y + dy } };
-                        }
-                        return b;
-                    });
-                });
-            } else {
-                // Creating new block from template
-                const newInstanceId = `instance-${Date.now()}`;
-                const newBlock: BlockInstance = {
-                    ...bestSnap.template,
-                    instanceId: newInstanceId,
-                    position: { x: bestSnap.x, y: bestSnap.y },
-                    socketValues: {},
-                    parentId: bestSnap.parentId
-                };
-                setCanvasBlocks(prev => {
-                    const updated = prev.map(b => b.instanceId === bestSnap.parentId ? { ...b, childId: newInstanceId } : b);
-                    return [...updated, newBlock];
-                });
-            }
-        } else {
-            // FREE DROP: No snap target found
-            if (isExisting) {
-                // Moving existing block freely
-                setCanvasBlocks(prev => {
-                    const oldBlock = prev.find(b => b.instanceId === active.id);
-                    if (!oldBlock) return prev;
-
-                    // Calculate delta for moving entire stack
-                    const dx = canvasX - oldBlock.position.x;
-                    const dy = canvasY - oldBlock.position.y;
-
-                    // Remove parent-child link
-                    let updated = prev.map(b => b.childId === active.id ? { ...b, childId: undefined } : b);
-
-                    // Move the dragged block and all its descendants
-                    return updated.map(b => {
-                        if (b.instanceId === active.id) {
-                            return { ...b, position: { x: canvasX, y: canvasY }, parentId: undefined };
-                        }
-                        if (draggedDescendantsRef.current.has(b.instanceId)) {
-                            return { ...b, position: { x: b.position.x + dx, y: b.position.y + dy } };
-                        }
-                        return b;
-                    });
-                });
-            } else {
-                // Creating new block from template at free position
-                const newBlock: BlockInstance = {
-                    ...currentTemplate,
-                    instanceId: `instance-${Date.now()}`,
-                    position: { x: canvasX, y: canvasY },
-                    socketValues: {}
-                };
-                setCanvasBlocks(prev => [...prev, newBlock]);
-            }
-        }
-    };
     const createVariable = () => {
         if (!newVarName) return;
         const id = `var-${Date.now()}`;
-        setVariables([...variables, { id, name: newVarName, value: 0 }]);
+        const updated = [...variables, { id, name: newVarName, value: 0 }];
+        setVariables(updated);
         setNewVarName('');
         setIsCreatingVar(false);
+        handleSave(initialXml, updated);
     };
 
     const deleteVariable = (id: string) => {
-        setVariables(variables.filter(v => v.id !== id));
+        const updated = variables.filter(v => v.id !== id);
+        setVariables(updated);
+        handleSave(initialXml, updated);
     };
 
-    if (isLoading) return <div className="h-screen flex items-center justify-center bg-[#0f1115] text-white">Loading...</div>;
+    const spawnBlock = (type: string, x?: number, y?: number) => {
+        if (!workspaceRef.current) return;
+        const ws = workspaceRef.current as Blockly.WorkspaceSvg;
+        const block = ws.newBlock(type) as Blockly.BlockSvg;
+        block.initSvg();
+        block.render();
+        if (x !== undefined && y !== undefined) {
+            const workspacePoint = Blockly.utils.svgMath.screenToWsCoordinates(
+                ws,
+                new Blockly.utils.Coordinate(x, y)
+            );
+            block.moveTo(workspacePoint);
+        } else {
+            block.moveBy(100, 100);
+        }
+    };
+
+    const handleDragStart = (e: React.DragEvent, template: BlockTemplate) => {
+        e.dataTransfer.setData('blockType', template.id);
+        e.dataTransfer.effectAllowed = 'move';
+
+        // Create a high-quality drag ghost element
+        const ghost = document.createElement('div');
+        ghost.style.position = 'absolute';
+        ghost.style.top = '-1000px';
+        ghost.style.left = '-1000px';
+        ghost.style.width = `${template.width}px`;
+        ghost.style.height = '48px';
+        ghost.style.backgroundColor = template.color;
+        ghost.style.color = 'rgba(0,0,0,0.7)';
+        ghost.style.borderRadius = '12px';
+        ghost.style.display = 'flex';
+        ghost.style.alignItems = 'center';
+        ghost.style.padding = '0 16px';
+        ghost.style.fontFamily = 'sans-serif';
+        ghost.style.fontWeight = '900';
+        ghost.style.fontSize = '12px';
+        ghost.style.textTransform = 'uppercase';
+        ghost.style.boxShadow = '0 20px 25px -5px rgb(0 0 0 / 0.5)';
+        ghost.style.borderBottom = '4px solid rgba(0,0,0,0.2)';
+        ghost.innerText = template.label;
+
+        document.body.appendChild(ghost);
+        e.dataTransfer.setDragImage(ghost, 24, 24);
+
+        // Remove after the drag has started (browser takes a snapshot)
+        setTimeout(() => document.body.removeChild(ghost), 0);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        const blockType = e.dataTransfer.getData('blockType');
+        if (blockType) {
+            spawnBlock(blockType, e.clientX, e.clientY);
+        }
+    };
+
+    if (isLoading || !mounted) return <div className="h-screen flex items-center justify-center bg-[#0f1115] text-white">Loading...</div>;
 
     return (
-        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-            <div className="flex h-screen bg-[#0f1115] text-white overflow-hidden font-sans">
-                {/* Sidebars and Main Area */}
-                <div className="w-[60px] border-r border-white/5 bg-[#161920] flex flex-col items-center py-6 gap-8 z-30">
-                    <button onClick={() => router.push(`/editor/${projectId}`)} className="p-2 bg-white/5 rounded-xl text-white/50 hover:text-white transition-colors">
-                        <ChevronLeft size={20} />
+        <div className="flex h-screen bg-[#0f1115] text-white overflow-hidden font-sans">
+            <div className="w-[60px] border-r border-white/5 bg-[#161920] flex flex-col items-center py-6 gap-8 z-30">
+                <button onClick={() => router.push(`/editor/${projectId}`)} className="p-2 bg-white/5 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-all active:scale-95 duration-200">
+                    <ChevronLeft size={20} />
+                </button>
+                {(['trigger', 'effects', 'variables'] as const).map(cat => (
+                    <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`text-[10px] uppercase font-black transition-all duration-300 ${activeCategory === cat ? 'text-blue-400 scale-110' : 'text-stone-500 hover:text-stone-300 hover:scale-105'}`}
+                        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+                    >
+                        {cat}
                     </button>
-                    {(['trigger', 'effects', 'variables'] as BlockCategory[]).map(cat => (
-                        <button key={cat} onClick={() => setActiveCategory(cat)} className={`text-[10px] uppercase font-black transition-all ${activeCategory === cat ? 'text-blue-400 scale-110' : 'text-stone-500 hover:text-stone-300'}`} style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-                            {cat}
-                        </button>
-                    ))}
-                    <button onClick={handleSave} disabled={isSaving} className={`p-3 rounded-xl transition-all ${isSaving ? 'text-amber-500 bg-amber-500/10' : 'text-stone-500 hover:text-white hover:bg-white/5'}`}>
+                ))}
+                <div className="mt-auto mb-4">
+                    <button onClick={() => handleSave(initialXml)} disabled={isSaving} className={`p-3 rounded-xl transition-all duration-300 active:scale-90 ${isSaving ? 'text-amber-500 bg-amber-500/10' : 'text-stone-500 hover:text-white hover:bg-white/5'}`}>
                         <Save size={20} className={isSaving ? 'animate-pulse' : ''} />
                     </button>
                 </div>
+            </div>
 
-                <div className="w-[300px] border-r border-white/5 bg-[#12141a] z-20 flex flex-col shadow-xl">
-                    <div className="p-6 border-b border-white/5">
-                        <h2 className="text-xl font-black">{activeCategory.toUpperCase()}</h2>
-                    </div>
-                    <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
-                        {activeCategory === 'variables' ? (
-                            <div className="space-y-6">
-                                {variables.map(v => (
-                                    <div key={v.id} className="group relative">
-                                        <BlockTemplateItem template={{ id: v.id, type: 'variable', label: v.name, category: 'variables', color: '#FF8C00', description: `Var: ${v.name}` }} />
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); deleteVariable(v.id); }}
-                                            className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                        >
-                                            <X size={12} />
-                                        </button>
-                                    </div>
-                                ))}
-                                {isCreatingVar ? (
-                                    <div className="bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col gap-3">
-                                        <input autoFocus value={newVarName} onChange={e => setNewVarName(e.target.value)} onKeyDown={e => e.key === 'Enter' && createVariable()} placeholder="Variable name..." className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none" />
-                                        <button onClick={createVariable} className="py-2 bg-orange-500 rounded-lg text-xs font-bold">Create</button>
-                                    </div>
-                                ) : (
-                                    <button onClick={() => setIsCreatingVar(true)} className="w-full py-4 border-2 border-dashed border-white/10 rounded-xl text-stone-500 font-bold hover:border-orange-500/50 hover:text-orange-500 transition-all">+ New Variable</button>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {BLOCK_TEMPLATES.filter(t => t.category === activeCategory).map(t => (
-                                    <BlockTemplateItem key={t.id} template={t} />
-                                ))}
-                            </div>
-                        )}
-                    </div>
+            {/* 2. BLOCK PALETTE SIDEBAR */}
+            <div className="w-[340px] border-r border-white/5 bg-[#12141a] flex flex-col z-20 shadow-xl overflow-y-auto custom-scrollbar">
+                <div className="p-6 border-b border-white/5">
+                    <h2 className="text-xl font-black text-white/90">{activeCategory.toUpperCase()}</h2>
+                    <p className="text-xs text-stone-500 mt-1 uppercase tracking-widest font-bold">Block Palette</p>
                 </div>
-
-                <div className="flex-1 flex flex-col relative bg-[#0c0e12]">
-                    <div className="p-4 bg-black/40 border-b border-white/5 flex items-center justify-between z-10 backdrop-blur-md">
-                        <div className="flex items-center gap-4">
-                            <span className="text-stone-500 font-bold uppercase text-[10px] tracking-widest">Square:</span>
-                            <span className="px-4 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-sm shadow-[0_0_15px_rgba(59,130,246,0.1)] min-w-[60px] text-center">
-                                {selectedSquare || 'None'}
-                            </span>
-                            <button
-                                onClick={() => setIsSelecting(!isSelecting)}
-                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${isSelecting ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-blue-500 text-white hover:bg-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)]'}`}
-                            >
-                                {isSelecting ? 'Cancel' : 'Select Square'}
-                            </button>
-                        </div>
-                        {selectedSquare && (
-                            <button onClick={() => setCanvasBlocks([])} className="text-stone-500 hover:text-red-400 transition-colors">
-                                <Trash2 size={16} />
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="flex-1 relative overflow-hidden bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] bg-size-[40px_40px]">
-                        <div id="canvas" className="absolute inset-0 overflow-auto custom-scrollbar">
-                            <div className="relative w-[5000px] h-[5000px]">
-                                {canvasBlocks.map(block => (
-                                    <DraggableCanvasBlock key={block.instanceId} block={block}>
-                                        <BlockComponent
-                                            block={block}
-                                            onDelete={() => setCanvasBlocks(prev => prev.filter(b => b.instanceId !== block.instanceId))}
-                                            onUpdateSocket={(sid, val) => setCanvasBlocks(prev => prev.map(b => b.instanceId === block.instanceId ? { ...b, socketValues: { ...b.socketValues, [sid]: val } } : b))}
-                                            onShowInfo={() => setInfoPanelBlock(block)}
-                                        />
-                                    </DraggableCanvasBlock>
-                                ))}
-                                {ghost && (
-                                    <div className="absolute pointer-events-none opacity-50" style={{ left: `${ghost.x}px`, top: `${ghost.y}px` }}>
-                                        <BlockComponent block={{ ...ghost.template, instanceId: 'ghost', position: { x: 0, y: 0 }, socketValues: {} }} isGhost />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {(!selectedSquare || isSelecting) && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0c0e12]/80 backdrop-blur-md z-50 pointer-events-auto">
-                                <div className="bg-[#161920] p-8 rounded-[40px] border border-white/10 shadow-2xl flex flex-col items-center gap-8 relative">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setIsSelecting(false); }}
-                                        className="absolute top-6 right-6 text-stone-500 hover:text-white transition-colors"
-                                    >
-                                        <X size={20} />
-                                    </button>
-
-                                    <div className="text-center">
-                                        <h3 className="text-2xl font-black text-white">Select Coordinate</h3>
-                                        <p className="text-stone-500 text-sm mt-1 font-medium">Click on a square to edit its logic</p>
-                                    </div>
-
-                                    <div
-                                        className="grid gap-1.5 p-4 bg-black/20 rounded-3xl border border-white/5"
-                                        style={{
-                                            gridTemplateColumns: `repeat(${project?.cols || 8}, minmax(0, 1fr))`,
-                                            width: 'fit-content'
-                                        }}
-                                    >
-                                        {project && Array.from({ length: project.rows * project.cols }).map((_, i) => {
-                                            const row = project.rows - 1 - Math.floor(i / project.cols);
-                                            const col = i % project.cols;
-                                            const id = String.fromCharCode(97 + col) + (row + 1);
-                                            // Explicitly making it active for now to debug, or ensuring logic is truly permissive
-                                            const isActive = true;
-                                            const isSelected = selectedSquare === id;
-
-                                            return (
-                                                <button
-                                                    key={id}
-                                                    type="button"
-                                                    disabled={!isActive}
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        setSelectedSquare(id);
-                                                        setIsSelecting(false);
-                                                    }}
-                                                    className={`w-12 h-12 rounded-xl transition-all flex items-center justify-center group relative z-10 ${!isActive ? 'bg-white/2 cursor-not-allowed opacity-20' :
-                                                        isSelected ? 'bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.6)] ring-4 ring-blue-500/20' :
-                                                            'bg-white/5 hover:bg-white/10 hover:scale-105 active:scale-95 cursor-pointer pointer-events-auto'
-                                                        }`}
-                                                    title={id}
-                                                >
-                                                    <span className={`text-[10px] font-bold ${isSelected ? 'text-white' : 'text-stone-600 group-hover:text-stone-400'}`}>
-                                                        {id}
-                                                    </span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setIsSelecting(false); }}
-                                        className="text-xs font-bold text-stone-500 hover:text-white transition-colors uppercase tracking-widest"
-                                    >
-                                        Cancel
+                <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
+                    {activeCategory === 'variables' ? (
+                        <div className="space-y-6">
+                            {variables.map(v => (
+                                <div key={v.id} className="group relative bg-white/5 p-4 rounded-xl border border-white/10">
+                                    <span className="text-orange-400 font-bold">{v.name}</span>
+                                    <button onClick={(e) => { e.stopPropagation(); deleteVariable(v.id); }} className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                        <X size={12} />
                                     </button>
                                 </div>
-                            </div>
-                        )}
+                            ))}
+                            {isCreatingVar ? (
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col gap-3">
+                                    <input autoFocus value={newVarName} onChange={e => setNewVarName(e.target.value)} onKeyDown={e => e.key === 'Enter' && createVariable()} placeholder="Variable name..." className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none" />
+                                    <button onClick={createVariable} className="py-2 bg-orange-500 rounded-lg text-xs font-bold">Create</button>
+                                    <button onClick={() => setIsCreatingVar(false)} className="py-2 border border-white/10 rounded-lg text-xs font-bold">Cancel</button>
+                                </div>
+                            ) : (
+                                <button onClick={() => setIsCreatingVar(true)} className="w-full py-4 border-2 border-dashed border-white/10 rounded-xl text-stone-500 font-bold hover:border-orange-500/50 hover:text-orange-500 transition-all">+ New Variable</button>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {BLOCK_TEMPLATES.filter(t => t.category === activeCategory).map(template => (
+                                <button
+                                    key={template.id}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, template)}
+                                    onClick={() => spawnBlock(template.id)}
+                                    className="w-full text-left group relative cursor-grab active:cursor-grabbing transition-all duration-300 animate-in fade-in slide-in-from-left-4"
+                                >
+                                    <div
+                                        className="h-12 rounded-xl px-4 flex items-center shadow-lg transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-blue-500/20 border-b-4 border-black/20 group-active:scale-95"
+                                        style={{ backgroundColor: template.color }}
+                                    >
+                                        <span className="font-black text-[11px] text-black/70 uppercase tracking-tight">{template.label}</span>
+                                    </div>
+                                    <div className="mt-1 px-1">
+                                        <p className="text-[10px] text-stone-500 leading-tight">{template.description}</p>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* 3. MAIN WORKSPACE */}
+            <div className="flex-1 relative bg-[#0c0e12]">
+                <div className="absolute top-4 left-4 z-10 flex gap-2">
+                    <div className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-[10px] font-black border border-blue-500/30 uppercase tracking-widest leading-none flex items-center">
+                        Square: <span className="ml-2 bg-blue-500 text-white px-1.5 rounded">{selectedSquare || 'None'}</span>
                     </div>
+                    <button onClick={() => setIsSelecting(!isSelecting)} className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${isSelecting ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.5)] scale-105' : 'bg-white/5 text-stone-500 hover:text-white hover:bg-white/10 border border-white/10'}`}>
+                        {isSelecting ? 'Click a square on board...' : 'Select Square'}
+                    </button>
                 </div>
 
-                {mounted && createPortal(
-                    <DragOverlay dropAnimation={null} zIndex={100}>
-                        {activeDragTemplate ? (
-                            <div className="opacity-80">
-                                <BlockComponent block={{ ...activeDragTemplate, instanceId: 'overlay', position: { x: 0, y: 0 }, socketValues: {} }} />
-                            </div>
-                        ) : null}
-                    </DragOverlay>,
-                    document.body
+                <div
+                    className="w-full h-full blockly-parent custom-blockly"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                >
+                    <BlocklyWorkspace
+                        toolboxConfiguration={{ kind: 'categoryToolbox', contents: [] }} // Empty toolbox
+                        workspaceConfiguration={{
+                            grid: { spacing: 25, length: 1, colour: '#ffffff05', snap: true },
+                            renderer: 'custom_renderer',
+                            theme: 'custom_dark',
+                            zoom: { controls: true, wheel: true, startScale: 1.0, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
+                            move: { scrollbars: true, drag: true, wheel: true }
+                        }}
+                        className="w-full h-full"
+                        initialXml={initialXml}
+                        onWorkspaceChange={onWorkspaceChange}
+                    />
+                </div>
+
+                {/* 4. BOARD SELECTION OVERLAY */}
+                {(!selectedSquare || isSelecting) && (
+                    <div className="absolute inset-0 z-50 bg-[#0f1115]/95 backdrop-blur-md flex flex-col items-center justify-center p-8 animate-in fade-in zoom-in-95 duration-500 ease-out">
+                        <div className="mb-8 text-center animate-in slide-in-from-top-8 duration-700 delay-100">
+                            <h1 className="text-4xl font-black text-white mb-2 tracking-tighter">SELECT SQUARE TO EDIT</h1>
+                            <p className="text-stone-500 text-sm font-bold uppercase tracking-widest">Click on any square to configure its logic</p>
+                        </div>
+
+                        <div
+                            className="bg-[#161920] p-10 rounded-[3rem] shadow-2xl border border-white/5 animate-in slide-in-from-bottom-12 duration-700 delay-200"
+                            style={{
+                                display: 'grid',
+                                gridTemplateColumns: `repeat(${project?.cols || 8}, minmax(0, 1fr))`,
+                                gap: '12px'
+                            }}
+                        >
+                            {project && Array.from({ length: project.rows * project.cols }).map((_, i) => {
+                                const row = project.rows - 1 - Math.floor(i / project.cols);
+                                const col = i % project.cols;
+                                const id = String.fromCharCode(97 + col) + (row + 1);
+
+                                // Handle both coordinate formats: "a1" and "col,row"
+                                const coordId = `${col},${row}`;
+                                const isCoordActive = project.activeSquares?.includes(coordId);
+                                const isAlgebraicActive = project.activeSquares?.includes(id);
+
+                                // If activeSquares is missing or empty, default to active
+                                const isActive = (project.activeSquares && project.activeSquares.length > 0)
+                                    ? (isCoordActive || isAlgebraicActive)
+                                    : true;
+
+                                const isSelected = selectedSquare === id;
+
+                                return (
+                                    <button
+                                        key={id}
+                                        onClick={() => {
+                                            setSelectedSquare(id);
+                                            setIsSelecting(false);
+                                        }}
+                                        className={`
+                                                w-14 h-14 rounded-xl transition-all duration-200 flex items-center justify-center relative group
+                                                ${isActive ? 'bg-white/5 hover:bg-white/20 hover:scale-105 active:scale-95' : 'bg-black/40 opacity-30 cursor-not-allowed'}
+                                                ${isSelected ? 'ring-4 ring-blue-500 bg-blue-500/20' : ''}
+                                            `}
+                                        disabled={!isActive}
+                                    >
+                                        <span className={`text-[11px] font-black uppercase tracking-tighter ${isSelected ? 'text-blue-400' : 'text-stone-600 group-hover:text-stone-400'}`}>
+                                            {id}
+                                        </span>
+                                        {!isActive && (
+                                            <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
+                                                <div className="w-[140%] h-px bg-white/10 rotate-45 absolute" />
+                                                <div className="w-[140%] h-px bg-white/10 -rotate-45 absolute" />
+                                            </div>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {selectedSquare && (
+                            <button
+                                onClick={() => setIsSelecting(false)}
+                                className="mt-8 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-stone-400 hover:text-white font-bold transition-all border border-white/10"
+                            >
+                                Cancel Selection
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
             <style jsx global>{`
+                .blocklyToolboxDiv { display: none !important; }
+                .blocklyMainBackground { fill: #0c0e12 !important; }
+                .blocklyFlyout { display: none !important; }
+                .custom-blockly .blocklyWorkspace { background-color: #0c0e12; }
+                
+                /* CRITICAL: Hide problematic highlight paths that cause jagged/scrap artifacts */
+                .blocklyPathLight, .blocklyPathDark { 
+                    display: none !important; 
+                }
+
+                /* Ensure the main block path looks clean */
+                .blocklyPath {
+                    stroke-width: 1px !important;
+                    stroke: rgba(0,0,0,0.2) !important;
+                }
+
+                /* Move controls to bottom left */
+                .blocklyZoom {
+                    left: 24px !important;
+                    bottom: 24px !important;
+                    right: auto !important;
+                }
+                .blocklyTrash {
+                    left: 24px !important;
+                    bottom: 100px !important; /* Above zoom */
+                    right: auto !important;
+                }
+                .blocklyNavigationControlGroup {
+                    left: 24px !important;
+                    bottom: 180px !important;
+                    right: auto !important;
+                }
+
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
             `}</style>
-        </DndContext >
+        </div>
     );
 }
-
-const DraggableCanvasBlock = React.memo(({ block, children }: { block: BlockInstance, children: React.ReactNode }) => {
-    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-        id: block.instanceId,
-        data: { block }
-    });
-
-    return (
-        <div
-            ref={setNodeRef}
-            {...listeners}
-            {...attributes}
-            data-id={block.instanceId}
-            className={`absolute cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-0 pointer-events-none' : 'pointer-events-auto'}`}
-            style={{ left: `${block.position.x}px`, top: `${block.position.y}px`, zIndex: block.parentId ? 10 : 20 }}
-        >
-            {children}
-        </div>
-    );
-}, (prev, next) => prev.block.instanceId === next.block.instanceId && prev.block.position.x === next.block.position.x && prev.block.position.y === next.block.position.y);
-
-const BlockTemplateItem = React.memo(({ template }: { template: BlockTemplate }) => {
-    const { attributes, listeners, setNodeRef } = useDraggable({ id: template.id });
-    const width = template.type === 'variable' ? VARIABLE_WIDTH : (template.width || DEFAULT_WIDTH);
-    return (
-        <div
-            ref={setNodeRef}
-            {...listeners}
-            {...attributes}
-            data-id={template.id}
-            className="cursor-grab active:cursor-grabbing"
-            style={{ width: `${width}px` }}
-        >
-            <BlockComponent block={{ ...template, instanceId: 'template', position: { x: 0, y: 0 }, socketValues: {} }} />
-        </div>
-    );
-}, (prev, next) => prev.template.id === next.template.id);
-
-const BlockComponent = React.memo(({ block, isGhost, onDelete, onUpdateSocket, onShowInfo }: { block: any, isGhost?: boolean, onDelete?: () => void, onUpdateSocket?: (sid: string, val: any) => void, onShowInfo?: () => void }) => {
-    const width = block.type === 'variable' ? VARIABLE_WIDTH : (block.width || DEFAULT_WIDTH);
-    const height = BLOCK_HEIGHT;
-    const notchX = CONNECTOR_X; // Using unified constant
-    const notchW = 16;
-    const r = 4; // Sharp LEGO-like corners
-
-    const hasTopNotch = block.type !== 'trigger' && block.type !== 'variable';
-    const hasBottomTab = block.type !== 'terminal' && block.type !== 'variable';
-
-    // Build path starting from top-left (0,r)
-    // 1. Top side + Notch
-    let path = `M 0 ${r} A ${r} ${r} 0 0 1 ${r} 0 `;
-    if (hasTopNotch) {
-        path += `H ${notchX} L ${notchX + 4} 4 H ${notchX + notchW - 4} L ${notchX + notchW} 0 `;
-    }
-    path += `H ${width - r} A ${r} ${r} 0 0 1 ${width} ${r} `;
-
-    // 2. Right side
-    path += `V ${height - r} A ${r} ${r} 0 0 1 ${width - r} ${height} `;
-
-    // 3. Bottom side + Tab
-    if (hasBottomTab) {
-        path += `H ${notchX + notchW} L ${notchX + notchW - 4} ${height + 4} H ${notchX + 4} L ${notchX} ${height} `;
-    }
-    path += `H ${r} A ${r} ${r} 0 0 1 0 ${height - r} Z`;
-
-    return (
-        <div className={`relative group ${isGhost ? 'opacity-40' : 'opacity-100'}`} style={{ width, height: height + 10 }}>
-            <svg width={width} height={height + 10} className="drop-shadow-lg overflow-visible">
-                <path d={path} fill={block.color} />
-                <path d={path} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-                {isGhost && <path d={path} fill="none" stroke="white" strokeWidth="2" strokeDasharray="4 4" />}
-            </svg>
-            <div className="absolute inset-0 flex items-center gap-3 select-none pointer-events-none" style={{ paddingLeft: `${CONNECTOR_X}px` }}>
-                <span className="font-black text-[11px] text-black/80 uppercase tracking-tighter min-w-[40px]">{block.label}</span>
-                <div className="flex-1 flex items-center gap-2 pointer-events-auto">
-                    {block.sockets?.map((s: any) => (
-                        <SocketComponent key={s.id} socket={s} block={block} onUpdateSocket={onUpdateSocket} />
-                    ))}
-                </div>
-            </div>
-            {onDelete && !isGhost && (
-                <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                    className="absolute -top-1 -right-1 bg-black/80 hover:bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all border border-white/10 shadow-xl z-20"
-                >
-                    <Trash2 size={12} />
-                </button>
-            )}
-        </div>
-    );
-}, (prev, next) =>
-    prev.block.instanceId === next.block.instanceId &&
-    prev.block.color === next.block.color &&
-    prev.block.label === next.block.label &&
-    prev.isGhost === next.isGhost &&
-    JSON.stringify(prev.block.socketValues) === JSON.stringify(next.block.socketValues)
-);
-
-const SocketComponent = React.memo(({ socket, block, onUpdateSocket }: { socket: any, block: any, onUpdateSocket?: (sid: string, val: any) => void }) => {
-    const { setNodeRef, isOver } = useDroppable({ id: `socket-${block.instanceId}-${socket.id}`, data: { type: 'socket', blockId: block.instanceId, socketId: socket.id } });
-    const val = block.socketValues?.[socket.id];
-    const isVar = val && typeof val === 'object' && val.type === 'variable';
-
-    return (
-        <div ref={setNodeRef} className={`flex items-center gap-1 bg-black/10 rounded px-1.5 py-0.5 border ${isOver ? 'border-orange-500' : 'border-transparent'}`}>
-            {socket.label && <span className="text-[8px] font-bold text-black/40 uppercase">{socket.label}</span>}
-            {isVar ? (
-                <div className="bg-orange-500 text-white rounded px-1.5 py-0.5 text-[9px] font-bold flex items-center gap-1">
-                    {val.name}
-                    <button onClick={() => onUpdateSocket?.(socket.id, undefined)} className="hover:text-black">×</button>
-                </div>
-            ) : socket.type === 'select' ? (
-                <select value={val || ''} onChange={e => onUpdateSocket?.(socket.id, e.target.value)} className="bg-transparent text-[10px] font-bold outline-none text-black">
-                    <option value="">-</option>
-                    {socket.options?.map((o: any) => <option key={o} value={o}>{o}</option>)}
-                </select>
-            ) : (
-                <input type={socket.type === 'number' ? 'number' : 'text'} value={val || ''} onChange={e => onUpdateSocket?.(socket.id, e.target.value)} className="bg-transparent text-[10px] font-bold outline-none w-10 text-black text-center" placeholder="..." />
-            )}
-        </div>
-    );
-}, (prev, next) =>
-    prev.socket.id === next.socket.id &&
-    prev.block.instanceId === next.block.instanceId &&
-    JSON.stringify(prev.block.socketValues?.[prev.socket.id]) === JSON.stringify(next.block.socketValues?.[next.socket.id])
-);

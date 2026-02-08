@@ -9,7 +9,11 @@ function getFirebaseAdminApp() {
 
     const privateKey = process.env.FIREBASE_PRIVATE_KEY;
     if (!privateKey) {
-        console.error("FIREBASE_PRIVATE_KEY is not set");
+        if (process.env.NEXT_PHASE === 'phase-production-build') {
+            console.log("FIREBASE_PRIVATE_KEY not available during build (this is normal if not provided as build secret)");
+        } else {
+            console.warn("FIREBASE_PRIVATE_KEY is not set");
+        }
         return null;
     }
 

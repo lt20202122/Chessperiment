@@ -3,7 +3,7 @@ import { authConfig } from "./auth.config";
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 
-export const runtime = 'edge';
+
 
 const { auth } = NextAuth(authConfig);
 const i18nMiddleware = createMiddleware(routing);
