@@ -1,15 +1,22 @@
-import filter from "leo-profanity";
+// lib/profanity.ts
+// Use a placeholder if not on client to avoid build/SSR issues
+let filter: any = {
+    clean: (s: string) => s,
+    check: () => false,
+    loadDictionary: () => {}
+};
 
-let initialized = false;
-
-export function initProfanity() {
-    if (initialized) return filter;
-
-    filter.loadDictionary("en");
-    filter.loadDictionary("de");
-    initialized = true;
-
+export async function initProfanity() {
+    if (typeof window !== 'undefined') {
+        const leoProfanity = (await import('leo-profanity')).default;
+        leoProfanity.loadDictionary('en');
+        leoProfanity.loadDictionary('de');
+        filter = leoProfanity;
+        return filter;
+    }
     return filter;
 }
 
-export default filter;
+export function getFilter() {
+    return filter;
+}

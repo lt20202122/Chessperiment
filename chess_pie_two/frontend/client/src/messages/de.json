@@ -11,7 +11,6 @@
         "pieceEditor": "Figuren-Editor",
         "marketplace": "Marktplatz",
         "library": "Bibliothek",
-
         "about": "Über uns",
         "feedback": "Feedback",
         "editor": "Editor"
@@ -386,7 +385,6 @@
             "noRules": "Noch keine Bewegungsmuster definiert.",
             "createFirstRule": "Erstelle deine erste Regel",
             "invert": "Invertieren",
-
             "pieceName": "Figurenname",
             "totalPieces": "Figuren im Projekt ({count})",
             "addNew": "Neu hinzufügen",
@@ -402,7 +400,6 @@
             "eraser": "Radiergummi",
             "clearCanvas": "Leinwand leeren",
             "comingSoon": "Demnächst",
-
             "imageUploadLabel": "Visuelle Basis",
             "uploadPicture": "Bild hochladen",
             "comingEndOfJanuary": "Verfügbar Ende Januar 2026",
@@ -581,7 +578,6 @@
         "newGame": "Neues Spiel",
         "rematchRequested": "Angefragt"
     },
-
     "Announcements": {
         "title": "Neueste Nachrichten & Updates",
         "by": "Von",
@@ -656,7 +652,6 @@
             "description": "Erfahre mehr über chessperiment, unsere Mission, Schachkreativität neu zu definieren, und die einzigartigen Funktionen."
         },
         "Feedback": {
-
             "title": "Feedback",
             "description": "Teilen Sie Ihr Feedback, melden Sie Fehler oder schlagen Sie neue Funktionen für chessperiment vor"
         },
@@ -755,45 +750,44 @@
             "rematchRequested": "Angefragt"
         }
     },
-
     "PieceEditorFAQ": {
-      "title": "Figuren-Editor FAQ | Visuelle Skripterstellung Hilfe | chessperiment",
-      "description": "Lerne, wie du den Figuren-Editor, visuelle Logikblöcke und Bewegungsregeln verwendest. Detaillierte technische Anleitung zum Erstellen eigener Schachfiguren.",
-      "h1": "Figuren-Editor Technische FAQ",
-      "sections": {
-        "general": {
-          "title": "Allgemein",
-          "q1": "Was ist der Figuren-Editor?",
-          "a1": "Der Figuren-Editor ermöglicht es dir, eigene Schachfiguren mit einzigartigen Bewegungsmustern und Logik zu erstellen.",
-          "q2": "Wie speichere ich meine Figur?",
-          "a2": "Klicke auf den Button „Figur speichern“ in der Seitenleiste. Deine Figur wird im aktuellen Projekt gespeichert."
-        },
-        "moveEditor": {
-          "title": "Bewegungs-Editor",
-          "q1": "Wie definiere ich Bewegungen?",
-          "a1": "Nutze das visuelle Gitter, um Felder anzuklicken, auf die sich die Figur relativ zu ihrer Position bewegen kann.",
-          "q2": "Was sind „springende“ Züge?",
-          "a2": "Springende Züge erlauben es der Figur, über andere Figuren zu springen, wie ein Springer."
-        },
-        "logicEditor": {
-          "title": "Logik-Editor",
-          "q1": "Was ist der Logik-Editor?",
-          "a1": "Es ist eine visuelle Skripting-Umgebung, in der du komplexe Verhaltensweisen mit Blöcken definieren kannst.",
-          "q2": "Wie funktionieren Auslöser?",
-          "a2": "Auslöser starten eine Logikkette, wenn ein bestimmtes Ereignis eintritt, wie „onMove“ (bei Zug) oder „onCapture“ (bei Schlagen).",
-          "q3": "Kann ich Variablen verwenden?",
-          "a3": "Ja, du kannst Variablen definieren und ändern, um Figuren mit Zustand zu erstellen.",
-          "q4": "Welche Effekte gibt es?",
-          "a4": "Du kannst Figuren bewegen, schlagen, neue erstellen oder Spielzustandsvariablen ändern."
-        },
-        "troubleshooting": {
-          "title": "Fehlerbehebung",
-          "q1": "Warum bewegt sich meine Figur nicht?",
-          "a1": "Prüfe, ob du gültige Züge im Bewegungs- oder Logik-Editor definiert hast.",
-          "q2": "Meine Logik funktioniert nicht.",
-          "a2": "Stelle sicher, dass deine Blöcke richtig verbunden sind und die Auslöser-Bedingung erfüllt ist."
+        "title": "Figuren-Editor FAQ | Visuelle Skripterstellung Hilfe | chessperiment",
+        "description": "Lerne, wie du den Figuren-Editor, visuelle Logikblöcke und Bewegungsregeln verwendest. Detaillierte technische Anleitung zum Erstellen eigener Schachfiguren.",
+        "h1": "Figuren-Editor Technische FAQ",
+        "sections": {
+            "general": {
+                "title": "Allgemein",
+                "q1": "Was ist der Figuren-Editor?",
+                "a1": "Der Figuren-Editor ermöglicht es dir, eigene Schachfiguren mit einzigartigen Bewegungsmustern und Logik zu erstellen.",
+                "q2": "Wie speichere ich meine Figur?",
+                "a2": "Klicke auf den Button „Figur speichern“ in der Seitenleiste. Deine Figur wird im aktuellen Projekt gespeichert."
+            },
+            "moveEditor": {
+                "title": "Bewegungs-Editor",
+                "q1": "Wie definiere ich Bewegungen?",
+                "a1": "Nutze das visuelle Gitter, um Felder anzuklicken, auf die sich die Figur relativ zu ihrer Position bewegen kann.",
+                "q2": "Was sind „springende“ Züge?",
+                "a2": "Springende Züge erlauben es der Figur, über andere Figuren zu springen, wie ein Springer."
+            },
+            "logicEditor": {
+                "title": "Logik-Editor",
+                "q1": "Was ist der Logik-Editor?",
+                "a1": "Es ist eine visuelle Skripting-Umgebung, in der du komplexe Verhaltensweisen mit Blöcken definieren kannst.",
+                "q2": "Wie funktionieren Auslöser?",
+                "a2": "Auslöser starten eine Logikkette, wenn ein bestimmtes Ereignis eintritt, wie „onMove“ (bei Zug) oder „onCapture“ (bei Schlagen).",
+                "q3": "Kann ich Variablen verwenden?",
+                "a3": "Ja, du kannst Variablen definieren und ändern, um Figuren mit Zustand zu erstellen.",
+                "q4": "Welche Effekte gibt es?",
+                "a4": "Du kannst Figuren bewegen, schlagen, neue erstellen oder Spielzustandsvariablen ändern."
+            },
+            "troubleshooting": {
+                "title": "Fehlerbehebung",
+                "q1": "Warum bewegt sich meine Figur nicht?",
+                "a1": "Prüfe, ob du gültige Züge im Bewegungs- oder Logik-Editor definiert hast.",
+                "q2": "Meine Logik funktioniert nicht.",
+                "a2": "Stelle sicher, dass deine Blöcke richtig verbunden sind und die Auslöser-Bedingung erfüllt ist."
+            }
         }
-      }
     },
     "NotFound": {
         "title": "404 - Figur nicht gefunden",
@@ -903,4 +897,5 @@
         "emailPlaceholder": "Ihre E-Mail (optional)",
         "messageLabel": "Nachricht",
         "backToHome": "Zurück zur Startseite"
-    }}
+    }
+}
