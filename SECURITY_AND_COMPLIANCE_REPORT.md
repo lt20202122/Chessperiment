@@ -19,7 +19,7 @@ This report summarizes the findings of a security and legal compliance audit per
 
 ### 4. Lack of Server-side Chat Sanitization
 - **Issue:** Chat messages were only sanitized on the client-side, making the system vulnerable to users bypassing the UI to send offensive or malicious content directly to the socket.
-- **Fix:** Implemented server-side chat sanitization using the `leo-profanity` library. Both English and German dictionaries are now loaded to provide better coverage for the target audience.
+- **Fix:** Implemented server-side chat sanitization using the `leo-profanity` library. Both English and German dictionaries are loaded to provide coverage for the target audience. In the frontend, the dictionary loading is wrapped in a `useEffect` hook to ensure compatibility with Server-Side Rendering (SSR) environments like Cloudflare Workers.
 
 ### 5. Sensitive Data Exposure in Repository
 - **Issue:** A file named `2026-01-25_venture-full-export.pdf` was found in the repository. This appeared to be a business data export containing potentially sensitive information.

@@ -29,8 +29,6 @@ import Toast from "./Toast";
 import "./Board.css";
 import { useSocket } from "@/context/SocketContext";
 import filter from "leo-profanity";
-filter.loadDictionary("en");
-filter.loadDictionary("de");
 import { Chess } from "chess.js";
 import { useStockfish } from "@/hooks/useStockfish";
 
@@ -408,6 +406,12 @@ export default function Board({
   }, []);
 
   const { requestMove, isReady, error: stockfishError } = useStockfish(currentRoom, difficulty, onBestMove);
+
+  useEffect(() => {
+    // Load profanity dictionaries on client-side only
+    filter.loadDictionary("en");
+    filter.loadDictionary("de");
+  }, []);
 
   useEffect(() => {
     if (stockfishError) {
