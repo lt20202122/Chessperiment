@@ -170,7 +170,7 @@ export default function PlaySidebar({
 
                 <TabsContent value="info" className="flex-1 p-6 space-y-6 overflow-y-auto bg-white/10 dark:bg-transparent">
                     {/* Game Status Card */}
-                    <div className="bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 p-px rounded-3xl shadow-xl shadow-amber-500/10">
+                    <div className="bg-linear-to-br from-amber-500 via-orange-500 to-amber-600 p-px rounded-3xl shadow-xl shadow-amber-500/10">
                         <div className="bg-white dark:bg-stone-900 p-6 rounded-[23px] space-y-4">
                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">{t('GameSidebar.gameStatus')}</h3>
                             <div className="flex items-center justify-between">

@@ -1,14 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { Project } from '@/types/Project';
-import { getProjectAction, saveProjectAction } from '@/app/actions/editor';
+import { useProject } from '@/hooks/useProject';
 import { CustomPiece } from '@/types/firestore';
-import { Loader2, Palette, Check, Zap, ArrowLeft } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, Palette, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 import PieceEditorSidebar from '@/components/editor/PieceEditorSidebar';
@@ -28,20 +27,17 @@ export default function PageClient({ projectId }: PageClientProps) {
     const router = useRouter();
     const locale = useLocale();
 
-    const [project, setProject] = useState<Project | null>(null);
-    const [loading, setLoading] = useState(true);
+    const {
+        project,
+        loading,
+        saveProject,
+        isSaving,
+        isGuest
+    } = useProject(projectId);
+
     const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
     const [mode, setMode] = useState<'design' | 'moves'>('design');
-    const [isSaving, setIsSaving] = useState(false);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
-
-    // Use a ref to always have the latest state for auto-saves
-    const projectRef = useRef<Project | null>(null);
-
-    // Sync ref with state
-    useEffect(() => {
-        projectRef.current = project;
-    }, [project]);
 
     // Editor state for the CURRENTLY selected piece
     const [currentName, setCurrentName] = useState('New Piece');
@@ -61,67 +57,13 @@ export default function PageClient({ projectId }: PageClientProps) {
     const [historyIndex, setHistoryIndex] = useState(-1);
     const gridSize = 64;
 
-    useEffect(() => {
-        if (!selectedPieceId || !project) return;
-        const piece = project.customPieces.find(p => p.id === selectedPieceId);
-        if (piece) {
-            const pixels = editingColor === 'white' ? piece.pixelsWhite : piece.pixelsBlack;
-            setHistory([JSON.parse(JSON.stringify(pixels))]);
-            setHistoryIndex(0);
-        }
-    }, [editingColor]);
-
-    useEffect(() => {
-        if (authLoading) return;
-        if (!user) {
-            router.push('/login');
-            return;
-        }
-
-        loadProject();
-    }, [user?.uid, authLoading, projectId, router]);
-
     const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const initialPieceId = searchParams?.get('pieceId');
 
-    async function loadProject() {
-        if (!user) return;
-
-        setLoading(true);
-        try {
-            const result = await getProjectAction(projectId);
-            if (result.success && result.data) {
-                const loadedProject = result.data;
-                setProject(loadedProject);
-
-                // Auto-select piece: check URL first, then first piece
-                const pieces = loadedProject.customPieces || [];
-                if (pieces.length > 0) {
-                    const targetPiece = initialPieceId
-                        ? (pieces.find(p => p.id === initialPieceId || p.name === initialPieceId) || pieces[0])
-                        : pieces[0];
-                    selectPiece(targetPiece.id || targetPiece.name, pieces);
-                } else {
-                    // Create a starter piece if none exists
-                    await createNewPiece(loadedProject);
-                }
-            } else {
-                console.error('Failed to load project:', result.error);
-                router.push('/editor');
-            }
-        } catch (error) {
-            console.error('Error loading project:', error);
-            router.push('/editor');
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    const selectPiece = (pieceId: string, optionalPieces?: CustomPiece[]) => {
-        const targetPieces = optionalPieces || projectRef.current?.customPieces || [];
+    const selectPiece = useCallback((pieceId: string, optionalPieces?: CustomPiece[]) => {
+        const targetPieces = optionalPieces || project?.customPieces || [];
         const piece = targetPieces.find(p => p.id === pieceId || p.name === pieceId);
         if (piece) {
-            // Prefer ID if it exists, otherwise name
             setSelectedPieceId(piece.id || piece.name);
             setCurrentName(piece.name);
             setCurrentPixelsWhite(piece.pixelsWhite);
@@ -132,11 +74,41 @@ export default function PageClient({ projectId }: PageClientProps) {
             setHistory([JSON.parse(JSON.stringify(editingColor === 'white' ? piece.pixelsWhite : piece.pixelsBlack))]);
             setHistoryIndex(0);
         }
-    };
+    }, [project, editingColor]);
 
-    const createNewPiece = async (currentProject?: Project) => {
-        const targetProject = currentProject || projectRef.current;
-        if (!targetProject || !user) return;
+    // Initial piece selection
+    // Note: We use a separate state to track if we've done the initial selection to avoid re-selecting when project updates
+    const [hasSelectedInitial, setHasSelectedInitial] = useState(false);
+
+    useEffect(() => {
+        if (!loading && project && !hasSelectedInitial) {
+            const pieces = project.customPieces || [];
+            if (pieces.length > 0) {
+                const targetPiece = initialPieceId
+                    ? (pieces.find(p => p.id === initialPieceId || p.name === initialPieceId) || pieces[0])
+                    : pieces[0];
+                selectPiece(targetPiece.id || targetPiece.name, pieces);
+                setHasSelectedInitial(true);
+            } else if (!isSaving) {
+                // If no pieces, create a starter piece
+                createNewPiece();
+                setHasSelectedInitial(true);
+            }
+        }
+    }, [loading, project, initialPieceId, selectPiece, hasSelectedInitial]);
+
+    useEffect(() => {
+        if (!selectedPieceId || !project) return;
+        const piece = project.customPieces.find(p => p.id === selectedPieceId);
+        if (piece) {
+            const pixels = editingColor === 'white' ? currentPixelsWhite : currentPixelsBlack;
+            setHistory([JSON.parse(JSON.stringify(pixels))]);
+            setHistoryIndex(0);
+        }
+    }, [editingColor, selectedPieceId]);
+
+    const createNewPiece = async () => {
+        if (!project || !user) return;
 
         const newPiece: CustomPiece = {
             id: crypto.randomUUID(),
@@ -151,110 +123,58 @@ export default function PageClient({ projectId }: PageClientProps) {
             setId: '' // Legacy
         };
 
-        const updatedProject: Project = {
-            ...targetProject,
-            customPieces: [...targetProject.customPieces, newPiece],
-            updatedAt: new Date()
-        };
+        const success = await saveProject({
+            customPieces: [...project.customPieces, newPiece]
+        });
 
-        try {
-            // Update local state and ref immediately
-            setProject(updatedProject);
-            projectRef.current = updatedProject;
-
-            await saveProjectAction(serializeProjectForAction(updatedProject));
-            selectPiece(newPiece.id!, updatedProject.customPieces);
-        } catch (error) {
-            console.error('Error creating piece:', error);
+        if (success) {
+            selectPiece(newPiece.id!, [...project.customPieces, newPiece]);
         }
     };
 
     const handleSavePiece = async (overrides?: Partial<CustomPiece>, silent: boolean = false) => {
-        const currentProject = projectRef.current;
-        if (!currentProject || !user || !selectedPieceId) return;
+        if (!project || !user || !selectedPieceId) return;
 
-        if (!silent) setIsSaving(true);
-        try {
-            // 1. Calculate the updated piece
-            const pieceToUpdate = currentProject.customPieces.find(p => p.id === selectedPieceId || p.name === selectedPieceId);
-            if (!pieceToUpdate) return;
+        // 1. Calculate the updated piece
+        const pieceToUpdate = project.customPieces.find(p => p.id === selectedPieceId || p.name === selectedPieceId);
+        if (!pieceToUpdate) return;
 
-            const updatedPiece: CustomPiece = {
-                ...pieceToUpdate,
-                name: overrides?.name ?? currentName,
-                pixelsWhite: overrides?.pixelsWhite ?? (pieceToUpdate.id === selectedPieceId || pieceToUpdate.name === selectedPieceId ? currentPixelsWhite : pieceToUpdate.pixelsWhite),
-                pixelsBlack: overrides?.pixelsBlack ?? (pieceToUpdate.id === selectedPieceId || pieceToUpdate.name === selectedPieceId ? currentPixelsBlack : pieceToUpdate.pixelsBlack),
-                imageWhite: overrides?.imageWhite ?? currentImageWhite,
-                imageBlack: overrides?.imageBlack ?? currentImageBlack,
-                moves: overrides?.moves ?? currentMoves,
-                updatedAt: new Date()
-            };
-
-            // 2. Create the full project update
-            const updatedProject: Project = {
-                ...currentProject,
-                customPieces: currentProject.customPieces.map(p =>
-                    (p.id === selectedPieceId || p.name === selectedPieceId) ? updatedPiece : p
-                ),
-                updatedAt: new Date()
-            };
-
-            // 3. Update local state AND ref immediately for responsiveness and to prevent stale overwrites
-            setProject(updatedProject);
-            projectRef.current = updatedProject;
-
-            // 4. Save to database - Ensure serializable data for server action
-            const result = await saveProjectAction(serializeProjectForAction(updatedProject));
-
-            if (result.success) {
-                if (!silent) {
-                    setSaveStatus('success');
-                    setTimeout(() => setSaveStatus('idle'), 3000);
-                }
-            } else {
-                console.error('Failed to save piece:', result.error);
-                if (!silent) setSaveStatus('error');
-            }
-        } catch (error) {
-            console.error('Error saving piece:', error);
-            if (!silent) setSaveStatus('error');
-        } finally {
-            if (!silent) setIsSaving(false);
-        }
-    };
-
-    // Helper to ensure Dates are strings before sending to server action
-    const serializeProjectForAction = (p: Project): any => {
-        return {
-            ...p,
-            createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
-            updatedAt: p.updatedAt instanceof Date ? p.updatedAt.toISOString() : p.updatedAt,
-            customPieces: p.customPieces.map(pc => ({
-                ...pc,
-                createdAt: pc.createdAt instanceof Date ? pc.createdAt.toISOString() : pc.createdAt,
-                updatedAt: pc.updatedAt instanceof Date ? pc.updatedAt.toISOString() : pc.updatedAt,
-            }))
+        const updatedPiece: CustomPiece = {
+            ...pieceToUpdate,
+            name: overrides?.name ?? currentName,
+            pixelsWhite: overrides?.pixelsWhite ?? (pieceToUpdate.id === selectedPieceId || pieceToUpdate.name === selectedPieceId ? currentPixelsWhite : pieceToUpdate.pixelsWhite),
+            pixelsBlack: overrides?.pixelsBlack ?? (pieceToUpdate.id === selectedPieceId || pieceToUpdate.name === selectedPieceId ? currentPixelsBlack : pieceToUpdate.pixelsBlack),
+            imageWhite: overrides?.imageWhite ?? currentImageWhite,
+            imageBlack: overrides?.imageBlack ?? currentImageBlack,
+            moves: overrides?.moves ?? currentMoves,
+            updatedAt: new Date()
         };
+
+        // 2. Create the full project update
+        const success = await saveProject({
+            customPieces: project.customPieces.map(p =>
+                (p.id === selectedPieceId || p.name === selectedPieceId) ? updatedPiece : p
+            )
+        });
+
+        if (success && !silent) {
+            setSaveStatus('success');
+            setTimeout(() => setSaveStatus('idle'), 3000);
+        } else if (!success && !silent) {
+            setSaveStatus('error');
+        }
     };
 
     const handleDeletePiece = async (pieceId: string) => {
         if (!project || !confirm(t('deleteConfirm'))) return;
 
-        try {
-            const targetProject = projectRef.current; // Use ref for latest project state
-            if (!targetProject) return;
+        const updatedPieces = project.customPieces.filter((p: CustomPiece) => p.id !== pieceId && p.name !== pieceId);
 
-            const updatedPieces = targetProject.customPieces.filter((p: CustomPiece) => p.id !== pieceId && p.name !== pieceId);
-            const updatedProject: Project = {
-                ...targetProject,
-                customPieces: updatedPieces,
-                updatedAt: new Date()
-            };
+        const success = await saveProject({
+            customPieces: updatedPieces
+        });
 
-            setProject(updatedProject);
-            projectRef.current = updatedProject;
-            await saveProjectAction(serializeProjectForAction(updatedProject));
-
+        if (success) {
             if (selectedPieceId === pieceId) {
                 if (updatedPieces.length > 0) {
                     selectPiece(updatedPieces[0].id || updatedPieces[0].name, updatedPieces);
@@ -262,8 +182,6 @@ export default function PageClient({ projectId }: PageClientProps) {
                     setSelectedPieceId(null);
                 }
             }
-        } catch (error) {
-            console.error('Error deleting piece:', error);
         }
     };
 
@@ -322,8 +240,6 @@ export default function PageClient({ projectId }: PageClientProps) {
             const dataUrl = event.target?.result as string;
             if (!dataUrl) return;
 
-            // In project mode, we might want to just handle it locally or through some action
-            // For now, let's just use the dataUrl directly
             if (editingColor === 'white') {
                 setCurrentImageWhite(dataUrl);
                 handleSavePiece({ imageWhite: dataUrl });
@@ -401,7 +317,7 @@ export default function PageClient({ projectId }: PageClientProps) {
             <PieceEditorSidebar
                 pieces={project.customPieces as any}
                 selectedPieceId={selectedPieceId}
-                setSelectedPieceId={(id) => selectPiece(id)}
+                setSelectedPieceId={(id: string) => selectPiece(id)}
                 onCreateNewPiece={() => createNewPiece()}
                 onSavePiece={() => handleSavePiece()}
                 isSaving={isSaving}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -16,8 +16,7 @@ import {
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { ChevronLeft, Save } from 'lucide-react';
-import { getCustomPieceAction, saveCustomPieceAction } from '@/app/actions/library';
-import { getProjectAction, saveProjectAction } from '@/app/actions/editor';
+import { useProject } from '@/hooks/useProject';
 import { CustomPiece } from '@/types/firestore';
 import { Project } from '@/types/Project';
 
@@ -198,6 +197,18 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         width: 160
     },
     {
+        id: 'explode',
+        type: 'effect',
+        label: 'explode',
+        category: 'effects',
+        color: '#FF4500',
+        description: 'explode',
+        sockets: [
+            { id: 'radius', type: 'number', label: 'radius', acceptsVariable: true }
+        ],
+        width: 240
+    },
+    {
         id: 'variable-position',
         type: 'variable',
         label: 'position',
@@ -223,72 +234,63 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
     const activeTemplateRef = useRef<BlockTemplate | null>(null);
     const draggedDescendantsRef = useRef<Set<string>>(new Set());
     const [mounted, setMounted] = useState(false);
-
-    // Integration Setup
-    const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const isSavingRef = useRef(false);
     const lastSavedDataRef = useRef<string>('');
-    const initialPieceRef = useRef<CustomPiece | null>(null);
-    const projectRef = useRef<Project | null>(null);
-    const locale = useLocale();
+
+    // Unified Hook
+    const {
+        project,
+        loading: projectLoading,
+        saveProject,
+        isSaving: projectIsSaving,
+        isGuest,
+        user
+    } = useProject(projectId || '');
+
+    const piece = useMemo(() => {
+        if (!project) return null;
+        return project.customPieces.find(p => p.id === id || p.name === id);
+    }, [project, id]);
 
     useEffect(() => {
         setMounted(true);
-        if (!id) {
-            setIsLoading(false);
-            return;
-        }
-        const loadPiece = async () => {
+    }, []);
+
+    useEffect(() => {
+        if (projectLoading || !piece) return;
+
+        // Load blocks and variables from piece data
+        if (piece.logic) {
             try {
-                let piece: CustomPiece | null = null;
-                if (projectId) {
-                    const result = await getProjectAction(projectId);
-                    if (result.success && result.data) {
-                        projectRef.current = result.data;
-                        const p = result.data.customPieces.find((p: CustomPiece) => p.id === id || p.name === id);
-                        if (p) piece = p;
-                    }
-                }
-
-                if (!piece) {
-                    piece = await getCustomPieceAction(id);
-                }
-                if (piece) {
-                    initialPieceRef.current = piece;
-                    if (piece.logic) {
-                        try {
-                            const parsedLogic = typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic;
-                            setCanvasBlocks(Array.isArray(parsedLogic) ? parsedLogic : []);
-                        } catch (e) {
-                            console.error("Failed to parse logic:", e);
-                            setCanvasBlocks([]);
-                        }
-                    }
-                    if (piece.variables && Array.isArray(piece.variables)) {
-                        setVariables(piece.variables);
-                    }
-
-                    // Initialize lastSavedDataRef to current state
-                    const initialLogic = piece.logic ? (typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic) : [];
-                    const initialVars = piece.variables || [];
-                    lastSavedDataRef.current = JSON.stringify({
-                        canvasBlocks: Array.isArray(initialLogic) ? initialLogic : [],
-                        variables: Array.isArray(initialVars) ? initialVars : []
-                    });
-                }
-            } catch (error) {
-                console.error("Failed to load piece logic:", error);
-            } finally {
-                setIsLoading(false);
+                const parsedLogic = typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic;
+                setCanvasBlocks(Array.isArray(parsedLogic) ? parsedLogic : []);
+            } catch (e) {
+                console.error("Failed to parse logic:", e);
+                setCanvasBlocks([]);
             }
-        };
-        loadPiece();
-    }, [id]);
+        } else {
+            setCanvasBlocks([]);
+        }
+
+        if (piece.variables && Array.isArray(piece.variables)) {
+            setVariables(piece.variables);
+        } else {
+            setVariables([]);
+        }
+
+        // Initialize lastSavedDataRef to current state
+        const initialLogic = piece.logic ? (typeof piece.logic === 'string' ? JSON.parse(piece.logic) : piece.logic) : [];
+        const initialVars = piece.variables || [];
+        lastSavedDataRef.current = JSON.stringify({
+            canvasBlocks: Array.isArray(initialLogic) ? initialLogic : [],
+            variables: Array.isArray(initialVars) ? initialVars : []
+        });
+    }, [piece, projectLoading]);
 
     // Auto-save
     const handleManualSave = useCallback(async () => {
-        if (isLoading || !initialPieceRef.current || isSavingRef.current) return;
+        if (projectLoading || !project || !piece || isSavingRef.current) return;
 
         // Only save if data has actually changed
         const currentDataString = JSON.stringify({ canvasBlocks, variables });
@@ -297,68 +299,13 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
         isSavingRef.current = true;
         setIsSaving(true);
         try {
-            let pieceToUpdate: CustomPiece;
+            const updatedPieces = project.customPieces.map((p: CustomPiece) =>
+                (p.id === id || p.name === id) ? { ...p, logic: canvasBlocks, variables: variables } : p
+            );
 
-            if (projectId && projectRef.current) {
-                const targetProject = projectRef.current;
-                const updatedPieces = targetProject.customPieces.map((p: CustomPiece) =>
-                    (p.id === id || p.name === id) ? { ...p, logic: canvasBlocks, variables: variables } : p
-                );
-                const updatedProject: Project = {
-                    ...targetProject,
-                    customPieces: updatedPieces,
-                    updatedAt: new Date()
-                };
-
-                pieceToUpdate = updatedPieces.find(p => p.id === id || p.name === id) || { ...initialPieceRef.current, logic: canvasBlocks, variables: variables };
-
-                // Helper to ensure Dates are strings before sending to server action
-                const serializeProjectForAction = (p: Project): any => {
-                    return {
-                        ...p,
-                        createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
-                        updatedAt: p.updatedAt instanceof Date ? p.updatedAt.toISOString() : p.updatedAt,
-                        customPieces: p.customPieces.map(pc => ({
-                            ...pc,
-                            createdAt: pc.createdAt instanceof Date ? pc.createdAt.toISOString() : pc.createdAt,
-                            updatedAt: pc.updatedAt instanceof Date ? pc.updatedAt.toISOString() : pc.updatedAt,
-                        }))
-                    };
-                };
-
-                await saveProjectAction(serializeProjectForAction(updatedProject));
-                projectRef.current = updatedProject;
-            } else {
-                pieceToUpdate = {
-                    ...initialPieceRef.current,
-                    logic: canvasBlocks,
-                    variables: variables
-                } as CustomPiece;
-                const { userId, createdAt, updatedAt, ...safePiece } = pieceToUpdate;
-                await saveCustomPieceAction(safePiece);
-                initialPieceRef.current = pieceToUpdate;
-            }
-
-            // Sync to localStorage for immediate use in Board Editor
-            if (typeof window !== 'undefined') {
-                const existingCollection = JSON.parse(localStorage.getItem('piece_collection') || '{}');
-                const pId = pieceToUpdate.id;
-
-                if (pId) {
-                    // Raw ID entry
-                    existingCollection[pId] = { ...existingCollection[pId], ...pieceToUpdate, logic: canvasBlocks, variables: variables };
-
-                    // Update compatibility keys
-                    if (existingCollection[`${pId}_white`]) {
-                        existingCollection[`${pId}_white`] = { ...existingCollection[`${pId}_white`], logic: canvasBlocks, variables: variables };
-                    }
-                    if (existingCollection[`${pId}_black`]) {
-                        existingCollection[`${pId}_black`] = { ...existingCollection[`${pId}_black`], logic: canvasBlocks, variables: variables };
-                    }
-
-                    localStorage.setItem('piece_collection', JSON.stringify(existingCollection));
-                }
-            }
+            await saveProject({
+                customPieces: updatedPieces
+            });
 
             // Update last saved data
             lastSavedDataRef.current = JSON.stringify({ canvasBlocks, variables });
@@ -368,14 +315,14 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
             setIsSaving(false);
             isSavingRef.current = false;
         }
-    }, [canvasBlocks, variables, isLoading, id, projectId]);
+    }, [canvasBlocks, variables, projectLoading, project, piece, id, saveProject]);
 
     // Auto-save
     useEffect(() => {
-        if (isLoading || !initialPieceRef.current) return;
+        if (projectLoading || !project || !piece) return;
         const timer = setTimeout(handleManualSave, SAVE_DEBOUNCE_MS);
         return () => clearTimeout(timer);
-    }, [canvasBlocks, variables, isLoading, handleManualSave]);
+    }, [canvasBlocks, variables, projectLoading, project, piece, handleManualSave]);
 
 
     const sensors = useSensors(
@@ -665,7 +612,7 @@ export default function LogicPageClient({ id, projectId }: { id: string, project
         setIsCreatingVar(false);
     };
 
-    if (isLoading) {
+    if (projectLoading) {
         return <div className="flex h-screen items-center justify-center bg-[#0f1115] text-white">Loading Logic Editor...</div>
     }
 

@@ -225,6 +225,25 @@ export class LogicRunner {
                 }
                 break;
 
+            case 'explode':
+                if (vals.radius !== undefined) {
+                    const r = Number(vals.radius) || 0;
+                    const square = piece.position;
+                    const [targetCol, targetRow] = toCoords(square);
+                    const useAlgebraic = !square.includes(',');
+
+                    for (let col = targetCol - r; col <= targetCol + r; col++) {
+                        for (let row = targetRow - r; row <= targetRow + r; row++) {
+                            const sq = toSquare([col, row], useAlgebraic);
+                            if (board.isActive(sq)) {
+                                board.setPiece(sq, null);
+                                board.triggerEffect('kill', sq);
+                            }
+                        }
+                    }
+                }
+                break;
+
             // Removed 'charge' and 'mode' as per Step 1, but if they exist in old logic we ignore or support generic mod-var.
 
             case 'prevent':

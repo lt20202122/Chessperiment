@@ -16,8 +16,6 @@ import { Analytics } from "@vercel/analytics/next"
 import { SEOFooter } from "@/components/SEOFooter";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { ReferralSurvey } from "@/components/ReferralSurvey";
-import { OnboardingTour } from "@/components/OnboardingTour";
-import { CreationGuide } from "@/components/CreationGuide";
 
 import { AuthProvider } from "@/context/AuthContext";
 import { BotIdClient } from "botid/client";
@@ -154,8 +152,6 @@ export default async function RootLayout({
                   <UserPanel />
                   <ThemeToggle />
                   <ReferralSurvey />
-                  <CreationGuide />
-                  <OnboardingTour />
                   <HeaderWrapper />
                   {children}
                   <SEOFooter />

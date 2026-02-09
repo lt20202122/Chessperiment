@@ -1,6 +1,8 @@
 import Btn from "./Buttons"
 import { getTranslations } from 'next-intl/server';
 import { HelpArticlesAll } from "@/components/help/HelpArticles";
+import { auth } from "@/auth";
+import LandingPage from "@/components/landing/LandingPage";
 
 const siteUrl = "https://chessperiment.app";
 
@@ -43,7 +45,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
+  const session = await auth();
   const t = await getTranslations({ locale, namespace: 'SEO.Home' });
+
+  if (!session) {
+    return <LandingPage />;
+  }
 
   const jsonLd_home = {
     "@context": "https://schema.org",

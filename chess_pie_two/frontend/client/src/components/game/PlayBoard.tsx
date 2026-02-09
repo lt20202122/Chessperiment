@@ -471,9 +471,9 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
         if (viewIndex !== historySnapshots.length - 1) return;
 
         const piece = squares[e.active.id as Square];
-        // Check turn and ownership
-        if (piece && piece.color === currentTurn) {
-            // Online check
+        // Check turn and ownership (bypass if validation disabled)
+        if (piece && (!validationEnabled || piece.color === currentTurn)) {
+            // Online check (still enforce online ownership if enabled)
             if (isOnline && myColor && piece.color !== myColor) return;
 
             setActivePiece(piece);
@@ -488,7 +488,7 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
         if (validationEnabled) {
             success = game.makeMove(from, to);
         } else {
-            success = board.movePiece(from, to, 'Queen');
+            success = game.forceMove(from, to);
         }
 
         if (success) {
@@ -532,9 +532,9 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
                 if (moveSuccess) {
                     setSelectedSquare(null);
                 } else {
-                    // Check if clicked another of own pieces
+                    // Check if clicked another piece (bypass turn check if validation disabled)
                     const pieceOnTarget = squares[pos];
-                    if (pieceOnTarget && pieceOnTarget.color === currentTurn) {
+                    if (pieceOnTarget && (!validationEnabled || pieceOnTarget.color === currentTurn)) {
                         if (isOnline && myColor && pieceOnTarget.color !== myColor) return;
                         setSelectedSquare(pos);
                     } else {
@@ -544,7 +544,7 @@ export default function PlayBoard({ project, projectId, roomId, mode }: PlayBoar
             }
         } else {
             const piece = squares[pos];
-            if (piece && piece.color === currentTurn) {
+            if (piece && (!validationEnabled || piece.color === currentTurn)) {
                 if (isOnline && myColor && piece.color !== myColor) return;
                 setSelectedSquare(pos);
             }

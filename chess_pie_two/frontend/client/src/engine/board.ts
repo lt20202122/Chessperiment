@@ -186,13 +186,13 @@ export class BoardClass {
         }
     }
 
-    movePiece(from: Square, to: Square, promotion?: string): boolean {
+    movePiece(from: Square, to: Square, promotion?: string, force: boolean = false): boolean {
         const piece = this.getPiece(from);
         if (piece) {
             this.saveSnapshot(); // Save state before any potential logic execution or move
 
             let destinationPiece = this.getPiece(to);
-            if (destinationPiece && destinationPiece.color === piece.color) {
+            if (!force && destinationPiece && destinationPiece.color === piece.color) {
                 console.warn(`[Engine] Move rejected: Cannot capture own pieces (${piece.color} at ${from} vs ${destinationPiece.color} at ${to})`);
                 this.snapshots.pop();
                 return false;

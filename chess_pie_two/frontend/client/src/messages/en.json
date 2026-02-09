@@ -448,7 +448,9 @@
           "modVar": "Modify Variable",
           "kill": "Kill Piece",
           "prevent": "Prevent DEFAULT",
-          "win": "Win Game"
+          "win": "Win Game",
+          "explode": "Explode",
+          "radius": "Radius"
         },
         "descriptions": {
           "onIsCaptured": "Triggers when a piece is captured.",
@@ -461,7 +463,8 @@
           "modVar": "Modifies a variable value.",
           "kill": "Immediately removes the piece from play.",
           "prevent": "Prevents the default engine behavior.",
-          "win": "Immediately wins the game for this piece's owner."
+          "win": "Immediately wins the game for this piece's owner.",
+          "explode": "Removes pieces in a area around this piece."
         }
             }
         }
@@ -862,39 +865,6 @@
     "title": "404 - Piece Not Found",
     "description": "It looks like this move was illegal. The page you are looking for does not exist or has been shifted.",
     "backHome": "Return to the Game"
-  },
-
-  "Onboarding": {
-    "editorTitle": "Board Editor",
-    "editorMessage": "Create your own, your first board.",
-    "playTitle": "Play",
-    "playMessage": "Play against others with your custom creations."
-  },
-  "CreationGuide": {
-    "title": "Creation Guide",
-    "subtitle": "Your Journey to Custom Chess",
-    "steps": {
-      "1": {
-        "title": "Choose the Grid",
-        "description": "Start by selecting the board layout. Classic 8x8 squares or hexagonal fields? You decide the battlefield."
-      },
-      "2": {
-        "title": "Shape the Board",
-        "description": "Customize the board dimensions. Remove squares to create holes, islands, or unique shapes."
-      },
-      "3": {
-        "title": "Define Movement",
-        "description": "Create custom pieces in the Pixel Editor. Draw their appearance and define exactly how they move."
-      },
-      "4": {
-        "title": "Design the Pieces",
-        "description": "Give your pieces a unique look using the pixel art tools. Retro style or modern design?"
-      },
-      "5": {
-        "title": "Play & Share",
-        "description": "Test your creation against the AI or challenge friends online. Share your variant with the world!"
-      }
-    }
   },
     "Feedback": {
         "title": "Share Your Feedback",

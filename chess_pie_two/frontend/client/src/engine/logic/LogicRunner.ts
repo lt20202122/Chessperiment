@@ -248,6 +248,16 @@ export class LogicRunner {
                 }
                 break;
 
+            case 'explode':
+                if (vals.radius !== undefined && this.effectExecutor) {
+                    this.effectExecutor.enqueue(EffectFactory.explode(
+                        piece.position,
+                        Number(vals.radius),
+                        'on-move'
+                    ));
+                }
+                break;
+
             // Removed 'charge' and 'mode' as per Step 1, but if they exist in old logic we ignore or support generic mod-var.
 
             case 'prevent':

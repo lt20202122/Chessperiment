@@ -1,6 +1,7 @@
 import { Square } from './types';
 import type { BoardClass } from './board';
 import { Piece } from './piece';
+import { toCoords, toSquare } from './utils';
 
 /**
  * Effect phase - determines when effects execute during a turn.
@@ -12,7 +13,7 @@ export type EffectPhase = 'pre-move' | 'on-move' | 'post-move' | 'end-of-turn';
  * ALL game state changes must flow through the effect system.
  */
 export interface Effect {
-    type: 'transform' | 'remove' | 'spawn' | 'move' | 'setSquareState' | 'addSquareTag' | 'removeSquareTag' | 'cancelMove' | 'win';
+    type: 'transform' | 'remove' | 'spawn' | 'move' | 'setSquareState' | 'addSquareTag' | 'removeSquareTag' | 'cancelMove' | 'win' | 'explode';
     phase: EffectPhase;
     target: Square | string; // Square or piece ID
     params: Record<string, any>;
@@ -95,6 +96,10 @@ export class EffectExecutor {
             
             case 'win':
                 this.executeWin(effect, board);
+                break;
+            
+            case 'explode':
+                this.executeExplode(effect, board);
                 break;
         }
     }
@@ -209,6 +214,25 @@ export class EffectExecutor {
     private executeWin(effect: Effect, board: BoardClass): void {
         const { winner } = effect.params;
         board.triggerEffect('win', winner === 'white' ? 'white_win' as any : 'black_win' as any);
+    }
+
+    private executeExplode(effect: Effect, board: BoardClass): void {
+        const square = effect.target as Square;
+        const { radius } = effect.params;
+        const r = Number(radius) || 0;
+        
+        const [targetCol, targetRow] = toCoords(square);
+        const useAlgebraic = !square.includes(',');
+
+        for (let col = targetCol - r; col <= targetCol + r; col++) {
+            for (let row = targetRow - r; row <= targetRow + r; row++) {
+                const sq = toSquare([col, row], useAlgebraic);
+                if (board.isActive(sq)) {
+                    board.setPiece(sq, null);
+                    board.triggerEffect('kill', sq); // Reuse kill effect visual for each exploded square
+                }
+            }
+        }
     }
 
     /**
@@ -343,6 +367,18 @@ export class EffectFactory {
             phase,
             target: '' as Square,
             params: { winner }
+        };
+    }
+
+    /**
+     * Explode all pieces within a radius.
+     */
+    static explode(square: Square, radius: number, phase: EffectPhase = 'on-move'): Effect {
+        return {
+            type: 'explode',
+            phase,
+            target: square,
+            params: { radius }
         };
     }
 }

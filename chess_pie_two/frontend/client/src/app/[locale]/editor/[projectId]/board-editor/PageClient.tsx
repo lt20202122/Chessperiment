@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Project } from '@/types/Project';
-import { getProjectAction, saveProjectAction, saveProjectBoardAction } from '@/app/actions/editor';
+import { useProject } from '@/hooks/useProject';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import BoardEditor from '@/components/editor/BoardEditor';
@@ -22,17 +22,11 @@ export default function PageClient({ projectId }: PageClientProps) {
     const t = useTranslations('Editor.Board');
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
-    const [project, setProject] = useState<Project | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    // Use a ref to always have the latest project state for callbacks without re-creating them
-    const projectRef = useRef<Project | null>(null);
-    useEffect(() => {
-        projectRef.current = project;
-    }, [project]);
     const [editMode, setEditMode] = useState<EditMode>('shape');
     const [selectedPiece, setSelectedPiece] = useState<{ type: string, color: string, movement?: 'run' | 'jump' }>({ type: 'Pawn', color: 'white' });
     const [boardStyle, setBoardStyle] = useState('v3');
+
+    const { project, loading, saveBoard } = useProject(projectId);
 
     // Transform project.customPieces into the format expected by BoardEditor
     const customCollection = useMemo(() => {
@@ -61,68 +55,14 @@ export default function PageClient({ projectId }: PageClientProps) {
         return collection;
     }, [project?.customPieces]);
 
-    useEffect(() => {
-        if (!authLoading && !user) {
-            router.push('/login');
-        }
-    }, [user, authLoading, router]);
-
-    useEffect(() => {
-        if (authLoading || !user) return;
-        if (project?.id === projectId) return; // Already loaded
-
-        loadProject();
-    }, [user?.uid, authLoading, projectId]);
-
-    async function loadProject() {
-        if (!user) return;
-
-        // Only show full loader if we don't have a project at all or it's a different one
-        if (!project || project.id !== projectId) {
-            setLoading(true);
-        }
-        try {
-            const result = await getProjectAction(projectId);
-            if (result.success && result.data) {
-                setProject(result.data);
-            } else {
-                console.error('Failed to load project:', result.error);
-                router.push('/editor');
-            }
-        } catch (error) {
-            console.error('Error loading project:', error);
-            router.push('/editor');
-        } finally {
-            setLoading(false);
-        }
-    }
-
     const handleGenerateBoardData = useCallback(async (rows: number, cols: number, activeSquares: Set<string>, placedPieces: Record<string, { type: string; color: string }>) => {
-        if (!user || !projectRef.current) return;
-
-        const updatedProject: Project = {
-            ...projectRef.current,
-            rows,
-            cols,
-            activeSquares: Array.from(activeSquares),
-            placedPieces: placedPieces as any,
-            updatedAt: new Date()
-        };
-
-        // Update local state
-        setProject(updatedProject);
-
-        // Call side effect outside of any state update logic
-        // Optimized board-only save to prevent large payload issues
-        saveProjectBoardAction(projectId, {
+        saveBoard({
             rows,
             cols,
             activeSquares: Array.from(activeSquares),
             placedPieces: placedPieces as any
-        }).catch(err => {
-            console.error('Failed to save board:', err);
         });
-    }, [user, projectId]);
+    }, [saveBoard]);
 
     if (authLoading || loading) {
         return (

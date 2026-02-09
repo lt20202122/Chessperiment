@@ -1,4 +1,6 @@
-export default function HomeLayout({
+import { auth } from "@/auth";
+
+export default async function HomeLayout({
     children,
     statistics,
     mixed
@@ -7,6 +9,17 @@ export default function HomeLayout({
     statistics?: React.ReactNode;
     mixed?: React.ReactNode
 }) {
+    const session = await auth();
+
+    // If not logged in, we show the landing page full-screen without sidebars
+    if (!session) {
+        return (
+            <main className="w-full">
+                {children}
+            </main>
+        );
+    }
+
     return (
         <main className="px-4 md:px-10 pb-20 max-w-[1920px] mx-auto">
             {/* 3-column grid for desktop, stacks on mobile */}

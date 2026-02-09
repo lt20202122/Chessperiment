@@ -6,6 +6,7 @@ import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Project } from '@/types/Project';
 import { saveProjectAction } from '@/app/actions/editor';
+import { LocalProjectStore } from '@/lib/local-persistence';
 import { Loader2, ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -25,12 +26,12 @@ export default function PageClient() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user || isSaving) return;
+        if (isSaving) return;
 
         setIsSaving(true);
         try {
             const newProject: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> = {
-                userId: user.uid,
+                userId: user?.uid || 'guest',
                 name: formData.name || t('unnamedProject'),
                 description: formData.description,
                 rows: formData.rows,
@@ -46,12 +47,17 @@ export default function PageClient() {
                 customPieces: []
             };
 
-            const result = await saveProjectAction(newProject as Project);
-            if (result.success && result.projectId) {
-                router.push(`/editor/${result.projectId}/board-editor`);
+            if (user) {
+                const result = await saveProjectAction(newProject as Project);
+                if (result.success && result.projectId) {
+                    router.push(`/editor/${result.projectId}/board-editor`);
+                } else {
+                    console.error('Failed to create project:', result.error);
+                    setIsSaving(false);
+                }
             } else {
-                console.error('Failed to create project:', result.error);
-                setIsSaving(false);
+                const projectId = LocalProjectStore.saveProject(newProject);
+                router.push(`/editor/${projectId}/board-editor`);
             }
         } catch (error) {
             console.error('Error creating project:', error);

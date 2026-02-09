@@ -5,10 +5,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Project } from '@/types/Project';
-import { getProjectAction, saveProjectAction } from '@/app/actions/editor';
+import { useProject } from '@/hooks/useProject';
 import { Loader2, Pencil, Check, X, Gamepad2, Globe, Copy, Share2, ExternalLink } from 'lucide-react';
 import ProjectEditorSidebar from '@/components/editor/ProjectEditorSidebar';
-import BottomPiecePanel from '@/components/editor/BottomPiecePanel';
 import BoardPreviewWrapper from '@/components/editor/BoardPreviewWrapper';
 import { useSocket } from '@/context/SocketContext';
 
@@ -20,31 +19,34 @@ export default function PageClient({ projectId }: PageClientProps) {
     const t = useTranslations('ProjectView');
     const { user, loading: authLoading } = useAuth();
     const router = useRouter();
-    const [project, setProject] = useState<Project | null>(null);
-    const [loading, setLoading] = useState(true);
     const socket = useSocket();
+
+    const {
+        project,
+        loading,
+        saveProject,
+        isSaving,
+        isGuest
+    } = useProject(projectId);
 
     // Edit states
     const [isEditingName, setIsEditingName] = useState(false);
     const [isEditingDescription, setIsEditingDescription] = useState(false);
     const [editedName, setEditedName] = useState('');
     const [editedDescription, setEditedDescription] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
 
     // Room code modal state
     const [showRoomModal, setShowRoomModal] = useState(false);
     const [roomCode, setRoomCode] = useState('');
     const [copySuccess, setCopySuccess] = useState(false);
 
+    // Sync edited fields when project loads
     useEffect(() => {
-        if (authLoading) return;
-        if (!user) {
-            router.push('/login');
-            return;
+        if (project) {
+            setEditedName(project.name);
+            setEditedDescription(project.description || '');
         }
-
-        loadProject();
-    }, [user, authLoading, projectId, router]);
+    }, [project]);
 
     // Socket listener for room creation - auto-join the game
     useEffect(() => {
@@ -73,60 +75,21 @@ export default function PageClient({ projectId }: PageClientProps) {
         };
     }, [socket, router, projectId, project]);
 
-    async function loadProject() {
-        if (!user) return;
-
-        setLoading(true);
-        try {
-            const result = await getProjectAction(projectId);
-            if (result.success && result.data) {
-                setProject(result.data);
-                setEditedName(result.data.name);
-                setEditedDescription(result.data.description || '');
-            } else {
-                router.push('/editor');
-            }
-        } catch (error) {
-            console.error('Error loading project:', error);
-            router.push('/editor');
-        } finally {
-            setLoading(false);
-        }
-    }
-
     const handleSaveInfo = async () => {
-        if (!project || !user || isSaving) return;
+        if (!project) return;
+        const success = await saveProject({
+            name: editedName.trim() || project.name,
+            description: editedDescription.trim(),
+        });
 
-        setIsSaving(true);
-        try {
-            const updatedProject: Project = {
-                ...project,
-                name: editedName.trim() || project.name,
-                description: editedDescription.trim(),
-                updatedAt: new Date()
-            };
-
-            const result = await saveProjectAction(updatedProject);
-            if (result.success) {
-                setProject(updatedProject);
-                setIsEditingName(false);
-                setIsEditingDescription(false);
-            } else {
-                console.error('Failed to save project:', result.error);
-            }
-        } catch (error) {
-            console.error('Error saving project:', error);
-        } finally {
-            setIsSaving(false);
+        if (success) {
+            setIsEditingName(false);
+            setIsEditingDescription(false);
         }
     };
 
     const handlePlayOnline = () => {
         console.log('🎮 Play Online clicked');
-        console.log('Socket object exists:', !!socket);
-        console.log('Socket connected:', socket?.connected);
-        console.log('Socket ID:', socket?.id);
-
         if (!socket || !socket.connected) {
             console.error('❌ Socket not connected');
             alert('Connection error. Please refresh the page and try again.');
@@ -318,7 +281,7 @@ export default function PageClient({ projectId }: PageClientProps) {
                             <button
                                 onClick={handlePlayOnline}
                                 disabled={!socket || !project}
-                                className="flex-1 group relative inline-flex items-center justify-center gap-3 px-8 py-5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-lg hover:from-amber-600 hover:to-orange-600 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                className="flex-1 group relative inline-flex items-center justify-center gap-3 px-8 py-5 bg-linear-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-lg hover:from-amber-600 hover:to-orange-600 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                             >
                                 <Globe size={24} />
                                 <span>Play with Friends</span>
@@ -389,7 +352,7 @@ export default function PageClient({ projectId }: PageClientProps) {
 
                             <button
                                 onClick={handleShare}
-                                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-xl font-bold text-white shadow-lg shadow-orange-500/20 transition-all"
+                                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-br from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-xl font-bold text-white shadow-lg shadow-orange-500/20 transition-all"
                             >
                                 <Share2 size={18} />
                                 Share Link
@@ -397,7 +360,7 @@ export default function PageClient({ projectId }: PageClientProps) {
 
                             <button
                                 onClick={handleJoinGame}
-                                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/20 transition-all"
+                                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-linear-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 rounded-xl font-bold text-white shadow-lg shadow-indigo-500/20 transition-all"
                             >
                                 <ExternalLink size={18} />
                                 Join Game

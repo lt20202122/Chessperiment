@@ -15,14 +15,14 @@ export default function EngineToggleCard({ enabled, color, onToggle, onColorChan
             relative overflow-hidden rounded-2xl p-6 
             transition-all duration-300 ease-out
             ${enabled
-                ? 'bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-orange-500/20 border-2 border-purple-400/50 shadow-2xl shadow-purple-500/30'
+                ? 'bg-linear-to-br from-purple-500/20 via-pink-500/20 to-orange-500/20 border-2 border-purple-400/50 shadow-2xl shadow-purple-500/30'
                 : 'bg-stone-100/80 dark:bg-stone-800/80 border-2 border-stone-200 dark:border-stone-700'
             }
             backdrop-blur-md
         `}>
             {/* Background glow effect when enabled */}
             {enabled && (
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-orange-500/10 animate-pulse" />
+                <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/10 to-orange-500/10 animate-pulse" />
             )}
 
             <div className="relative z-10">
@@ -32,7 +32,7 @@ export default function EngineToggleCard({ enabled, color, onToggle, onColorChan
                         <div className={`
                             p-3 rounded-xl transition-all duration-300
                             ${enabled
-                                ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/50'
+                                ? 'bg-linear-to-br from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/50'
                                 : 'bg-stone-200 dark:bg-stone-700 text-stone-500'
                             }
                         `}>
@@ -54,7 +54,7 @@ export default function EngineToggleCard({ enabled, color, onToggle, onColorChan
                         className={`
                             relative w-16 h-8 rounded-full transition-all duration-300 ease-out
                             ${enabled
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-purple-500/50'
+                                ? 'bg-linear-to-r from-purple-500 to-pink-500 shadow-lg shadow-purple-500/50'
                                 : 'bg-stone-300 dark:bg-stone-600'
                             }
                             focus:outline-none focus:ring-4 focus:ring-purple-500/30

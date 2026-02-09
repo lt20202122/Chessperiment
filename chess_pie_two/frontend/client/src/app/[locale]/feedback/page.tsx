@@ -92,21 +92,21 @@ export default function FeedbackPage() {
             {/* Hero Section */}
             <section className="relative overflow-hidden py-16 sm:py-24">
                 <div className="absolute inset-0 -z-10 bg-[radial-gradient(45rem_50rem_at_top,var(--color-amber-500),transparent)]/[0.1]" />
-                
+
                 <div className="mx-auto max-w-4xl px-6 lg:px-8">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <Link 
-                            href="/" 
+                        <Link
+                            href="/"
                             className="inline-flex items-center space-x-2 text-sm font-medium text-amber-600 dark:text-amber-400 hover:text-amber-500 transition-colors mb-6"
                             aria-label={t("backToHome")}
                         >
                             <span>← chessperiment</span>
                         </Link>
-                        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 mb-4">
+                        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl bg-clip-text text-transparent bg-linear-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 mb-4">
                             {t("title")}
                         </h1>
                         <p className="text-lg leading-8 text-stone-600 dark:text-stone-400">
@@ -137,7 +137,7 @@ export default function FeedbackPage() {
                                         whileTap={{ scale: 0.98 }}
                                         aria-label={`Select ${option.title}`}
                                     >
-                                        <div className={`absolute inset-0 bg-gradient-to-br ${option.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                                        <div className={`absolute inset-0 bg-linear-to-br ${option.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
                                         <div className={`flex justify-center mb-4 ${option.colorClass}`}>
                                             {option.icon}
                                         </div>
@@ -231,7 +231,7 @@ export default function FeedbackPage() {
                                     <button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        className="w-full bg-linear-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
                                         {isSubmitting ? (
                                             <>

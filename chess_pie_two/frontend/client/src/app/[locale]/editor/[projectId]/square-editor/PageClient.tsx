@@ -1,18 +1,17 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { Save, ChevronLeft, X } from 'lucide-react';
+import { Save, ChevronLeft, X, Loader2 } from 'lucide-react';
 import { Project } from '@/types/Project';
 import { SquareLogicDefinition } from '@/types/firestore';
-import { getProjectAction, saveProjectAction } from '@/app/actions/editor';
+import { useProject } from '@/hooks/useProject';
 import { BlocklyWorkspace } from 'react-blockly';
 import * as Blockly from 'blockly';
 import './blocklyDefinitions'; // Registration happens here
 
 const SAVE_DEBOUNCE_MS = 2000;
-const BLOCK_HEIGHT = 48;
 
 interface BlockTemplate {
     id: string;
@@ -21,7 +20,6 @@ interface BlockTemplate {
     category: 'trigger' | 'effects';
     color: string;
     description: string;
-    sockets: any[];
     width: number;
 }
 
@@ -33,10 +31,6 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'trigger',
         color: '#FFD700',
         description: 'Fires when a piece lands on this square.',
-        sockets: [
-            { id: 'pieceType', type: 'select', label: 'Type', options: ['Any', 'Pawn', 'Knight', 'Bishop', 'Rook', 'Queen', 'King'] },
-            { id: 'pieceColor', type: 'select', label: 'Color', options: ['Any', 'White', 'Black'] }
-        ],
         width: 320
     },
     {
@@ -46,9 +40,6 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'trigger',
         color: '#FFD700',
         description: 'Fires when a piece is near this square.',
-        sockets: [
-            { id: 'distance', type: 'number', label: 'Dist', defaultValue: 1 }
-        ],
         width: 320
     },
     {
@@ -58,9 +49,6 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'effects',
         color: '#4169E1',
         description: 'Teleport the piece to another square.',
-        sockets: [
-            { id: 'targetSquare', type: 'text', label: 'To', defaultValue: 'a1' }
-        ],
         width: 320
     },
     {
@@ -70,7 +58,6 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'effects',
         color: '#FF4500',
         description: 'Make this square inactive.',
-        sockets: [],
         width: 280
     },
     {
@@ -80,7 +67,6 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'effects',
         color: '#32CD32',
         description: 'Make this square active.',
-        sockets: [],
         width: 280
     },
     {
@@ -90,7 +76,6 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'effects',
         color: '#9370DB',
         description: 'Remove the piece from the board.',
-        sockets: [],
         width: 240
     },
     {
@@ -100,20 +85,24 @@ const BLOCK_TEMPLATES: BlockTemplate[] = [
         category: 'effects',
         color: '#9370DB',
         description: 'Declare a win for a specific side.',
-        sockets: [
-            { id: 'side', type: 'select', label: 'Side', options: ['Trigger Side', 'White', 'Black'] }
-        ],
         width: 320
     }
 ];
 
 export default function SquareLogicPageClient({ projectId }: { projectId: string }) {
     const router = useRouter();
-    const [project, setProject] = useState<Project | null>(null);
+    const t = useTranslations('Editor.Square'); // Use translations if available
+
+    const {
+        project,
+        loading,
+        saveProject,
+        isSaving: hookIsSaving
+    } = useProject(projectId);
+
     const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
     const [activeCategory, setActiveCategory] = useState<string>('trigger');
     const [variables, setVariables] = useState<{ id: string, name: string, value: any }[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const isSavingRef = useRef(false);
     const lastSavedDataRef = useRef<string>('');
@@ -126,20 +115,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
 
     useEffect(() => {
         setMounted(true);
-        const load = async () => {
-            try {
-                const result = await getProjectAction(projectId);
-                if (result.success && result.data) {
-                    setProject(result.data);
-                }
-            } catch (error) {
-                console.error("Failed to load project:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        load();
-    }, [projectId]);
+    }, []);
 
     useEffect(() => {
         if (!project || !selectedSquare) {
@@ -173,7 +149,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                 [selectedSquare]: {
                     projectId,
                     squareId: selectedSquare,
-                    logic: logicJson, // Save the generated logic JSON
+                    logic: logicJson,
                     blocklyXml: xml,
                     variables: currentVars,
                     updatedAt: new Date(),
@@ -182,39 +158,10 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                 }
             };
 
-            const updatedProject: Project = {
-                ...project,
-                squareLogic: updatedSquareLogic as Record<string, SquareLogicDefinition>,
-                updatedAt: new Date()
-            };
+            await saveProject({
+                squareLogic: updatedSquareLogic as Record<string, SquareLogicDefinition>
+            });
 
-            const serializeProjectForAction = (p: Project): any => {
-                const serialized = { ...p };
-                if (serialized.createdAt instanceof Date) serialized.createdAt = serialized.createdAt.toISOString() as any;
-                if (serialized.updatedAt instanceof Date) serialized.updatedAt = serialized.updatedAt.toISOString() as any;
-                if (serialized.customPieces) {
-                    serialized.customPieces = serialized.customPieces.map(pc => ({
-                        ...pc,
-                        createdAt: pc.createdAt instanceof Date ? pc.createdAt.toISOString() : pc.createdAt,
-                        updatedAt: pc.updatedAt instanceof Date ? pc.updatedAt.toISOString() : pc.updatedAt,
-                    })) as any;
-                }
-                if (serialized.squareLogic) {
-                    const newSquareLogic: any = {};
-                    for (const [key, val] of Object.entries(serialized.squareLogic)) {
-                        newSquareLogic[key] = {
-                            ...val,
-                            createdAt: val.createdAt instanceof Date ? val.createdAt.toISOString() : (val.createdAt as any),
-                            updatedAt: val.updatedAt instanceof Date ? val.updatedAt.toISOString() : (val.updatedAt as any)
-                        };
-                    }
-                    serialized.squareLogic = newSquareLogic;
-                }
-                return serialized;
-            };
-
-            await saveProjectAction(serializeProjectForAction(updatedProject));
-            setProject(updatedProject);
             lastSavedDataRef.current = JSON.stringify(currentData);
         } catch (error) {
             console.error("Save failed:", error);
@@ -222,12 +169,10 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
             setIsSaving(false);
             isSavingRef.current = false;
         }
-    }, [project, projectId, selectedSquare, variables]);
+    }, [project, projectId, selectedSquare, variables, saveProject]);
 
     const generateLogicJson = (workspace: Blockly.Workspace) => {
-        const topBlocks = workspace.getTopBlocks(false); // Only top-level blocks
         const logic: any[] = [];
-
         const processBlock = (block: Blockly.Block): any => {
             const blockDef = {
                 id: block.type,
@@ -237,8 +182,6 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                 childId: null as string | null
             };
 
-            // Extract fields (dropdowns, inputs)
-            // We iterate over all inputs to find fields
             block.inputList.forEach(input => {
                 input.fieldRow.forEach(field => {
                     const name = field.name;
@@ -248,21 +191,14 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                 });
             });
 
-            // Handle next block
             const nextBlock = block.getNextBlock();
             if (nextBlock) {
                 blockDef.childId = nextBlock.id;
-                // We don't recursively add to the list here, the loop below handles filtering
-                // But the runner needs clarity on the structure.
-                // Actually, the runner iterates logic.filter() to find triggers.
-                // Then it looks up blocks by ID in the SAME logic array.
-                // So we need to FLATTEN the entire tree into the `logic` array.
             }
 
             return blockDef;
         };
 
-        // We need to traverse ALL blocks to ensure every connected block is in the array
         const allBlocks = workspace.getAllBlocks(false);
         allBlocks.forEach(block => {
             logic.push(processBlock(block));
@@ -274,7 +210,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
     const onWorkspaceChange = useCallback((workspace: Blockly.Workspace) => {
         workspaceRef.current = workspace;
         const xml = Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(workspace));
-        const logicJson = generateLogicJson(workspace); // Generate JSON
+        const logicJson = generateLogicJson(workspace);
         const timer = setTimeout(() => {
             handleSave(xml, variables, logicJson);
         }, SAVE_DEBOUNCE_MS);
@@ -318,7 +254,6 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         e.dataTransfer.setData('blockType', template.id);
         e.dataTransfer.effectAllowed = 'move';
 
-        // Create a high-quality drag ghost element
         const ghost = document.createElement('div');
         ghost.style.position = 'absolute';
         ghost.style.top = '-1000px';
@@ -341,8 +276,6 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
 
         document.body.appendChild(ghost);
         e.dataTransfer.setDragImage(ghost, 24, 24);
-
-        // Remove after the drag has started (browser takes a snapshot)
         setTimeout(() => document.body.removeChild(ghost), 0);
     };
 
@@ -359,7 +292,16 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
         }
     };
 
-    if (isLoading || !mounted) return <div className="h-screen flex items-center justify-center bg-[#0f1115] text-white">Loading...</div>;
+    if (loading || !mounted) {
+        return (
+            <div className="h-screen flex flex-col items-center justify-center bg-[#0f1115] text-white">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-4" />
+                <p className="font-bold uppercase tracking-widest text-xs animate-pulse">Loading Workspace</p>
+            </div>
+        );
+    }
+
+    if (!project) return null;
 
     return (
         <div className="flex h-screen bg-[#0f1115] text-white overflow-hidden font-sans">
@@ -378,13 +320,12 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                     </button>
                 ))}
                 <div className="mt-auto mb-4">
-                    <button onClick={() => handleSave(initialXml)} disabled={isSaving} className={`p-3 rounded-xl transition-all duration-300 active:scale-90 ${isSaving ? 'text-amber-500 bg-amber-500/10' : 'text-stone-500 hover:text-white hover:bg-white/5'}`}>
-                        <Save size={20} className={isSaving ? 'animate-pulse' : ''} />
+                    <button onClick={() => handleSave(initialXml)} disabled={isSaving || hookIsSaving} className={`p-3 rounded-xl transition-all duration-300 active:scale-90 ${isSaving || hookIsSaving ? 'text-amber-500 bg-amber-500/10' : 'text-stone-500 hover:text-white hover:bg-white/5'}`}>
+                        <Save size={20} className={isSaving || hookIsSaving ? 'animate-pulse' : ''} />
                     </button>
                 </div>
             </div>
 
-            {/* 2. BLOCK PALETTE SIDEBAR */}
             <div className="w-[340px] border-r border-white/5 bg-[#12141a] flex flex-col z-20 shadow-xl overflow-y-auto custom-scrollbar">
                 <div className="p-6 border-b border-white/5">
                     <h2 className="text-xl font-black text-white/90">{activeCategory.toUpperCase()}</h2>
@@ -437,7 +378,6 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                 </div>
             </div>
 
-            {/* 3. MAIN WORKSPACE */}
             <div className="flex-1 relative bg-[#0c0e12]">
                 <div className="absolute top-4 left-4 z-10 flex gap-2">
                     <div className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-[10px] font-black border border-blue-500/30 uppercase tracking-widest leading-none flex items-center">
@@ -454,7 +394,7 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                     onDrop={handleDrop}
                 >
                     <BlocklyWorkspace
-                        toolboxConfiguration={{ kind: 'categoryToolbox', contents: [] }} // Empty toolbox
+                        toolboxConfiguration={{ kind: 'categoryToolbox', contents: [] }}
                         workspaceConfiguration={{
                             grid: { spacing: 25, length: 1, colour: '#ffffff05', snap: true },
                             renderer: 'custom_renderer',
@@ -468,12 +408,11 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                     />
                 </div>
 
-                {/* 4. BOARD SELECTION OVERLAY */}
                 {(!selectedSquare || isSelecting) && (
                     <div className="absolute inset-0 z-50 bg-[#0f1115]/95 backdrop-blur-md flex flex-col items-center justify-center p-8 animate-in fade-in zoom-in-95 duration-500 ease-out">
                         <div className="mb-8 text-center animate-in slide-in-from-top-8 duration-700 delay-100">
                             <h1 className="text-4xl font-black text-white mb-2 tracking-tighter">SELECT SQUARE TO EDIT</h1>
-                            <p className="text-stone-500 text-sm font-bold uppercase tracking-widest">Click on any square to configure its logic</p>
+                            <p className="text-stone-500 text-sm font-bold uppercase tracking-widest">{project.name}</p>
                         </div>
 
                         <div
@@ -488,17 +427,12 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                                 const row = project.rows - 1 - Math.floor(i / project.cols);
                                 const col = i % project.cols;
                                 const id = String.fromCharCode(97 + col) + (row + 1);
-
-                                // Handle both coordinate formats: "a1" and "col,row"
                                 const coordId = `${col},${row}`;
                                 const isCoordActive = project.activeSquares?.includes(coordId);
                                 const isAlgebraicActive = project.activeSquares?.includes(id);
-
-                                // If activeSquares is missing or empty, default to active
                                 const isActive = (project.activeSquares && project.activeSquares.length > 0)
                                     ? (isCoordActive || isAlgebraicActive)
                                     : true;
-
                                 const isSelected = selectedSquare === id;
 
                                 return (
@@ -518,17 +452,10 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                                         <span className={`text-[11px] font-black uppercase tracking-tighter ${isSelected ? 'text-blue-400' : 'text-stone-600 group-hover:text-stone-400'}`}>
                                             {id}
                                         </span>
-                                        {!isActive && (
-                                            <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
-                                                <div className="w-[140%] h-px bg-white/10 rotate-45 absolute" />
-                                                <div className="w-[140%] h-px bg-white/10 -rotate-45 absolute" />
-                                            </div>
-                                        )}
                                     </button>
                                 );
                             })}
                         </div>
-
                         {selectedSquare && (
                             <button
                                 onClick={() => setIsSelecting(false)}
@@ -545,35 +472,11 @@ export default function SquareLogicPageClient({ projectId }: { projectId: string
                 .blocklyMainBackground { fill: #0c0e12 !important; }
                 .blocklyFlyout { display: none !important; }
                 .custom-blockly .blocklyWorkspace { background-color: #0c0e12; }
-                
-                /* CRITICAL: Hide problematic highlight paths that cause jagged/scrap artifacts */
-                .blocklyPathLight, .blocklyPathDark { 
-                    display: none !important; 
-                }
-
-                /* Ensure the main block path looks clean */
-                .blocklyPath {
-                    stroke-width: 1px !important;
-                    stroke: rgba(0,0,0,0.2) !important;
-                }
-
-                /* Move controls to bottom left */
-                .blocklyZoom {
-                    left: 24px !important;
-                    bottom: 24px !important;
-                    right: auto !important;
-                }
-                .blocklyTrash {
-                    left: 24px !important;
-                    bottom: 100px !important; /* Above zoom */
-                    right: auto !important;
-                }
-                .blocklyNavigationControlGroup {
-                    left: 24px !important;
-                    bottom: 180px !important;
-                    right: auto !important;
-                }
-
+                .blocklyPathLight, .blocklyPathDark { display: none !important; }
+                .blocklyPath { stroke-width: 1px !important; stroke: rgba(0,0,0,0.2) !important; }
+                .blocklyZoom { left: 24px !important; bottom: 24px !important; right: auto !important; }
+                .blocklyTrash { left: 24px !important; bottom: 100px !important; right: auto !important; }
+                .blocklyNavigationControlGroup { left: 24px !important; bottom: 180px !important; right: auto !important; }
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }

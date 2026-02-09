@@ -18,6 +18,10 @@ export class Game {
         return false;
     }
 
+    forceMove(from: Square, to: Square, promotion?: string): boolean {
+        return this.board.movePiece(from, to, promotion, true);
+    }
+
     getBoard(): BoardClass {
         return this.board;
     }

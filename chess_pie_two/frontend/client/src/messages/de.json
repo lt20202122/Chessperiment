@@ -457,7 +457,10 @@
                     "transformation": "Verwandlung",
                     "modVar": "Var ändern",
                     "kill": "Eliminieren",
-                    "prevent": "Standard verhindern"
+                    "prevent": "Standard verhindern",
+                    "win": "Spiel gewinnen",
+                    "explode": "Explosion",
+                    "radius": "Radius"
                 },
                 "descriptions": {
                     "onIsCaptured": "Wird ausgelöst, wenn eine Figur geschlagen wird.",
@@ -469,7 +472,9 @@
                     "transformation": "Verwandelt die Figur in einen anderen Typ.",
                     "modVar": "Ändert einen Variablenwert.",
                     "kill": "Entfernt die Figur sofort aus dem Spiel.",
-                    "prevent": "Verhindert das Standardverhalten der Engine."
+                    "prevent": "Verhindert das Standardverhalten der Engine.",
+                    "win": "Beendet das Spiel sofort mit einem Sieg für den Besitzer dieser Figur.",
+                    "explode": "Entfernt Figuren in einem Umkreis um diese Figur."
                 }
             }
         }
@@ -828,14 +833,6 @@
             "description": "Chessperiment wird von einem einzelnen Entwickler entwickelt, der auf Reddit und GitHub aktiv ist. Erst vor wenigen Wochen gestartet, hat die Plattform bereits über 100 Nutzer angezogen, die die endlosen Möglichkeiten des anpassbaren Schachs erkunden."
         }
     },
-    "Onboarding": {
-        "editorTitle": "Board-Editor",
-        "editorMessage": "Erstelle dein eigenes, dein erstes Brett.",
-        "playTitle": "Spielen",
-        "playMessage": "Spiele gegen andere mit deinen eigenen Kreationen.",
-        "next": "Weiter",
-        "finish": "Fertig"
-    },
     "ProjectView": {
         "boardViewComingSoon": "Erstelle ein Brett, um es hier zu sehen",
         "boardDim": "{rows}×{cols} Brett",
@@ -845,32 +842,6 @@
         "placeholderDescription": "Füge eine Beschreibung hinzu...",
         "save": "Speichern",
         "cancel": "Abbrechen"
-    },
-    "CreationGuide": {
-        "title": "Erstellungs-Guide",
-        "subtitle": "Dein Weg zum eigenen Schach",
-        "steps": {
-            "1": {
-                "title": "Wähle das Raster",
-                "description": "Beginne mit dem Layout des Brettes. Klassisch 8x8 Quadrate oder hexagonale Felder? Du entscheidest das Schlachtfeld."
-            },
-            "2": {
-                "title": "Forme das Brett",
-                "description": "Passe die Dimensionen an. Entferne Felder, um Löcher, Inseln oder einzigartige Formen zu schaffen."
-            },
-            "3": {
-                "title": "Definiere Bewegung",
-                "description": "Erstelle eigene Figuren im Pixel-Editor. Zeichne ihr Aussehen und lege exakt fest, wie sie ziehen."
-            },
-            "4": {
-                "title": "Designe die Figuren",
-                "description": "Gib deinen Figuren einen einzigartigen Look mit den Pixel-Art-Tools. Retro-Stil oder modernes Design?"
-            },
-            "5": {
-                "title": "Spielen & Teilen",
-                "description": "Teste deine Kreation gegen die KI oder fordere Freunde online heraus. Teile deine Variante mit der Welt!"
-            }
-        }
     },
     "Feedback": {
         "title": "Teilen Sie Ihr Feedback",

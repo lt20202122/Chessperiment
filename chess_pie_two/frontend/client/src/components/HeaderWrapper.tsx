@@ -4,10 +4,12 @@ import { usePathname } from "@/i18n/navigation";
 import { Header } from "./Header";
 import { useLocale } from "next-intl";
 import { MobileMenu } from "./MobileMenu";
+import { useAuth } from "@/context/AuthContext";
 
 export function HeaderWrapper() {
     const pathname = usePathname();
     const locale = useLocale();
+    const { user, loading } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
 

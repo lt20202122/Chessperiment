@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { pieces, getPieceImage, PieceType } from "./Data";
 import { Hand, MessageSquare, Info, History, Shield, Trophy, User, Gamepad2, Settings, ChevronLeft, ChevronRight, X, User2, MonitorOff, UserPlus, Crown, AlertCircle, Check } from "lucide-react";
+import PieceRenderer from "@/components/game/PieceRenderer";
 import { BoardClass } from '@/engine/board';
 import { Piece as EngPiece } from '@/engine/piece';
 import { Square as EngSquare } from '@/engine/types';
@@ -140,15 +141,14 @@ const DraggablePiece = memo(function DraggablePiece({
         onClick(e);
       }}
     >
-      <Image
-        src={getPieceImage(boardStyle, piece.color, piece.type)}
-        alt={`${piece.color} ${piece.type}`}
-        height={piece.size}
-        width={piece.size}
-        unoptimized
-        className="bg-transparent"
-        style={{ height: size, width: "auto", pointerEvents: "none" }}
-        priority
+      <PieceRenderer
+        type={piece.type}
+        color={piece.color}
+        size={size}
+        boardStyle={boardStyle}
+        className="pointer-events-none"
+        pixels={(piece as any).pixels}
+        image={(piece as any).image}
       />
     </div>
   );
@@ -467,6 +467,26 @@ export default function Board({
       if (isNewMove && !previousStateRef.current) {
         new Audio("/sounds/move-self.mp3").play().catch(() => { });
       }
+
+      // Update Custom Board if applicable
+      if ((isCustomGame || data.isCustom) && customBoard) {
+        // Optimistically move piece on custom board
+        // Note: The server sends 'fen' which we might interpret differently later,
+        // but for now we rely on the move event to sync the board class.
+        // If we want exact sync, we should implement serialize/deserialize on updateBoardState.
+        // For now, re-executing the move ensures visual consistency.
+
+        try {
+          // We need to check if it's a capture to play capture sound? (Already handled by server 'san'?)
+          // Just move the piece
+          customBoard.movePiece(data.from as any, data.to as any, data.promotion);
+          // Force re-render
+          setCustomBoard(customBoard.clone());
+        } catch (e) {
+          console.error("Failed to update custom board on move:", e);
+        }
+      }
+
       // After processing the move, clear the optimistic state if it matched
       if (!isNewMove) {
         previousStateRef.current = null;
@@ -773,9 +793,41 @@ export default function Board({
 
 
   const displayPieces = useMemo(() => {
+    if (isCustomGame && customBoard) {
+      const squares = customBoard.getSquares();
+      const pieces: PieceType[] = [];
+      const customPieces = customData?.customPieces || [];
+
+      for (const [pos, p] of Object.entries(squares)) {
+        if (p) {
+          const cp = customPieces.find((c: any) => c.name === p.type);
+          let pixels, image;
+          if (cp) {
+            if (p.color === 'white') {
+              pixels = cp.pixelsWhite;
+              image = cp.imageWhite;
+            } else {
+              pixels = cp.pixelsBlack;
+              image = cp.imageBlack;
+            }
+          }
+
+          pieces.push({
+            type: p.type,
+            color: p.color,
+            position: pos,
+            size: 80, // Updated in render loop
+            ...(pixels ? { pixels } : {}),
+            ...(image ? { image } : {})
+          } as any);
+        }
+      }
+      return pieces;
+    }
+
     const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? (initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : null);
     return activeFEN ? parseFen(activeFEN) : boardPieces;
-  }, [isViewingHistory, historyIndex, historyFens, initialFen, boardPieces]);
+  }, [isViewingHistory, historyIndex, historyFens, initialFen, boardPieces, isCustomGame, customBoard, customData]);
 
   const activeTurn = useMemo(() => {
     const activeFEN = isViewingHistory && historyIndex >= 0 ? historyFens[historyIndex] : (isViewingHistory && historyIndex === -1 ? (initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") : null);
@@ -844,7 +896,17 @@ export default function Board({
       const mover = boardPieces.find(p => p.position === from);
       if (mover) {
         // If viewing history, we need to rewind first
-        if (isViewingHistory && historyIndex >= -1) {
+        if (isCustomGame && customBoard) {
+          // Updating local custom board optimistically
+          try {
+            customBoard.movePiece(from as any, to as any, promotion);
+            setCustomBoard(customBoard.clone());
+            new Audio("/sounds/move-self.mp3").play().catch(() => { });
+            // We should also update history logs if needed
+          } catch (e) {
+            console.error("Optimistic custom board update failed", e);
+          }
+        } else if (isViewingHistory && historyIndex >= -1) {
           // Load the historical position
           let fenToLoad = initialFen || "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
           if (historyIndex >= 0) {
@@ -1210,11 +1272,21 @@ export default function Board({
                       <DndContext sensors={sensors} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
                         {boardContent}
                         <DragOverlay dropAnimation={null}>
-                          {activePiece ? (
-                            <div style={{ width: blockSize, height: blockSize, display: 'flex', alignItems: 'center', justifyItems: 'center', pointerEvents: 'none' }}>
-                              <Image src={getPieceImage(boardStyle, getPieceAt(activePiece)?.color || 'white', getPieceAt(activePiece)?.type || 'Pawn')} alt="" width={blockSize} height={blockSize} unoptimized />
-                            </div>
-                          ) : null}
+                          {activePiece ? (() => {
+                            const p = getPieceAt(activePiece);
+                            return p ? (
+                              <div style={{ width: blockSize, height: blockSize, display: 'flex', alignItems: 'center', justifyItems: 'center', pointerEvents: 'none' }}>
+                                <PieceRenderer
+                                  type={p.type}
+                                  color={p.color}
+                                  size={blockSize}
+                                  boardStyle={boardStyle}
+                                  pixels={(p as any).pixels}
+                                  image={(p as any).image}
+                                />
+                              </div>
+                            ) : null;
+                          })() : null}
                         </DragOverlay>
                       </DndContext>
                     </div>

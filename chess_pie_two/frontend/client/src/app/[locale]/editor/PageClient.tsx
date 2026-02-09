@@ -12,6 +12,7 @@ import {
     toggleProjectStarAction,
     saveProjectAction
 } from '@/app/actions/editor';
+import { LocalProjectStore } from '@/lib/local-persistence';
 import { Plus, Sparkles, Loader2 } from 'lucide-react';
 import ProjectList from '@/components/editor/ProjectList';
 
@@ -25,53 +26,70 @@ export default function PageClient() {
     const isLoadingRef = useRef(false);
 
     useEffect(() => {
-        if (authLoading) return;
-        if (!user) {
-            router.push('/login');
-            return;
-        }
-
         loadProjects();
-    }, [user, authLoading, router]);
+    }, [user, authLoading]);
 
     async function loadProjects() {
-        if (!user || isLoadingRef.current) return;
+        if (authLoading || isLoadingRef.current) return;
         isLoadingRef.current = true;
 
         console.time('editor-load');
         setLoading(true);
         try {
-            console.log('Loading user data for:', user.uid);
+            let allProjects: Project[] = [];
 
-            // Call server action to get projects
-            // This is much faster than client-side Firestore because it uses the Admin SDK
-            const result = await getUserProjectsAction();
+            // 1. Load guest projects from localStorage
+            const guestProjects = LocalProjectStore.getProjects();
+            allProjects = [...guestProjects];
 
-            if (result.success && result.data && result.data.length > 0) {
-                console.log('Found projects via server action:', result.data.length);
-                setProjects(result.data);
-                setLoading(false);
-                console.timeEnd('editor-load');
-                return;
-            }
+            // 2. Load user projects if authenticated
+            if (user) {
+                console.log('Loading user data for:', user.uid);
+                const result = await getUserProjectsAction();
 
-            // If no projects found, trigger migration check via server action
-            console.log('No projects found, checking migration...');
-            setMigrating(true);
-
-            // Get ID token to authenticate server action robustly
-            const idToken = await auth.currentUser?.getIdToken();
-            const migrationResult = await migrateUserAction(idToken);
-            console.log('Migration result:', migrationResult);
-
-            if (migrationResult.success) {
-                // Refetch projects after migration
-                const refetchResult = await getUserProjectsAction();
-                if (refetchResult.success && refetchResult.data) {
-                    setProjects(refetchResult.data);
+                if (result.success && result.data) {
+                    // Filter out any duplicates if they somehow exist, or just merge
+                    // User projects take precedence if same ID (unlikely due to prefixes)
+                    const userProjects = result.data;
+                    allProjects = [...userProjects, ...allProjects.filter(gp => !userProjects.find(up => up.id === gp.id))];
+                } else if (!result.success && result.error === "Unauthorized") {
+                    // Ignore unauthorized if we are just checking
                 }
             }
-            setMigrating(false);
+
+            // Sort all projects by updatedAt
+            setProjects(allProjects.sort((a, b) => {
+                if (a.isStarred && !b.isStarred) return -1;
+                if (!a.isStarred && b.isStarred) return 1;
+                return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+            }));
+
+            // Handle migration if needed (only if logged in and no projects)
+            if (user && allProjects.filter(p => p.id && !p.id.startsWith('guest-')).length === 0) {
+                console.log('No cloud projects found, checking migration...');
+                // Trigger migration in background or show UI? For now keep it as is
+                // but only if migration hasn't been done
+                const idToken = await auth.currentUser?.getIdToken();
+                if (idToken) {
+                    setMigrating(true);
+                    const migrationResult = await migrateUserAction(idToken);
+                    if (migrationResult.success) {
+                        const refetchResult = await getUserProjectsAction();
+                        if (refetchResult.success && refetchResult.data) {
+                            const migratedProjects = refetchResult.data;
+                            setProjects(prev => {
+                                const combined = [...migratedProjects, ...prev.filter(gp => !migratedProjects.find(up => up.id === gp.id))];
+                                return combined.sort((a, b) => {
+                                    if (a.isStarred && !b.isStarred) return -1;
+                                    if (!a.isStarred && b.isStarred) return 1;
+                                    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+                                });
+                            });
+                        }
+                    }
+                    setMigrating(false);
+                }
+            }
         } catch (error) {
             console.error('Error loading projects:', error);
         } finally {
@@ -87,11 +105,11 @@ export default function PageClient() {
     };
 
     const handleQuickCreate = async () => {
-        if (!user || isCreating) return;
+        if (isCreating) return;
         setIsCreating(true);
         try {
             const newProject: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> = {
-                userId: user.uid,
+                userId: user?.uid || 'guest',
                 name: t('unnamedProject'),
                 description: '',
                 rows: 8,
@@ -103,11 +121,16 @@ export default function PageClient() {
                 customPieces: []
             };
 
-            const result = await saveProjectAction(newProject as Project);
-            if (result.success && result.projectId) {
-                router.push(`/editor/${result.projectId}/board-editor`);
+            if (user) {
+                const result = await saveProjectAction(newProject as Project);
+                if (result.success && result.projectId) {
+                    router.push(`/editor/${result.projectId}/board-editor`);
+                } else {
+                    throw new Error(result.error || 'Failed to create project');
+                }
             } else {
-                throw new Error(result.error || 'Failed to create project');
+                const projectId = LocalProjectStore.saveProject(newProject);
+                router.push(`/editor/${projectId}/board-editor`);
             }
         } catch (error) {
             console.error('Error in quick create:', error);
@@ -116,21 +139,31 @@ export default function PageClient() {
     };
 
     const handleToggleStar = async (projectId: string) => {
-        if (!user) return;
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
 
         try {
-            const result = await toggleProjectStarAction(projectId);
-            if (result.success) {
-                // Optimistic update
+            if (projectId.startsWith('guest-')) {
+                const isStarred = LocalProjectStore.toggleStar(projectId);
                 setProjects(prev => prev.map(p =>
-                    p.id === projectId ? { ...p, isStarred: result.isStarred ?? !p.isStarred } : p
+                    p.id === projectId ? { ...p, isStarred } : p
                 ).sort((a, b) => {
                     if (a.isStarred && !b.isStarred) return -1;
                     if (!a.isStarred && b.isStarred) return 1;
                     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
                 }));
+            } else if (user) {
+                const result = await toggleProjectStarAction(projectId);
+                if (result.success) {
+                    // Optimistic update
+                    setProjects(prev => prev.map(p =>
+                        p.id === projectId ? { ...p, isStarred: result.isStarred ?? !p.isStarred } : p
+                    ).sort((a, b) => {
+                        if (a.isStarred && !b.isStarred) return -1;
+                        if (!a.isStarred && b.isStarred) return 1;
+                        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+                    }));
+                }
             }
         } catch (error) {
             console.error('Error starring project:', error);
@@ -138,11 +171,16 @@ export default function PageClient() {
     };
 
     const handleDeleteProject = async (projectId: string) => {
-        if (!user || !confirm(t('deleteConfirm'))) return;
+        if (!confirm(t('deleteConfirm'))) return;
         try {
-            const result = await deleteProjectAction(projectId);
-            if (result.success) {
+            if (projectId.startsWith('guest-')) {
+                LocalProjectStore.deleteProject(projectId);
                 setProjects(prev => prev.filter(p => p.id !== projectId));
+            } else if (user) {
+                const result = await deleteProjectAction(projectId);
+                if (result.success) {
+                    setProjects(prev => prev.filter(p => p.id !== projectId));
+                }
             }
         } catch (error) {
             console.error('Error deleting project:', error);
